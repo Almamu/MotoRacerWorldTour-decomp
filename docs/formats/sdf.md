@@ -166,20 +166,37 @@ copies them to the scratchpad and indexes them by `index * 8`.
 | 0x16   | u8, u8 | u3, v3                                                    |
 | 0x18   | u32    | flags. High half seen: 0x1000, 0x1002, 0x1800, 0x1802, 0x5002, 0x5800, 0x5802. Bit 30 changes back-face handling; bits 11–12 give a Z (depth sort) bias |
 
-Group types seen in the draw items of all levels:
+Group types, from all levels and scenes. "Packets" lists the GPU packet
+length(s) written per polygon (the length byte of the packet tag), read from
+the routine; where a routine writes two packets, the second one is an
+overlay pass.
 
-| Type | Shape    | Word at 0x08                       | GPU packet (words)    | Routine    |
-|------|----------|------------------------------------|-----------------------|------------|
-| 5    | triangle | RGB + 0x20                         | `POLY_F3`             | 0x8007A6C4 |
-| 7    | triangle | pointer to 3 colour words          | `POLY_G3`             | 0x8007AA74 |
-| 9    | quad     | RGB + 0x28                         | `POLY_F4`             | 0x8007B164 |
-| 11   | quad     | pointer to 4 colour words          | `POLY_G4` (9)         | 0x8007AED0 |
-| 13   | triangle | RGB + 0x24                         | `POLY_FT3` (7)        | 0x8007BB24 |
-| 14   | triangle | pointer to 3 colour words          | `POLY_GT3` (9)        | 0x8007B664 |
-| 15   | quad     | RGB + 0x2C (0x2E semi-transparent) | `POLY_FT4` (9)        | 0x8007BD1C |
-| 16   | quad     | pointer to 4 colour words          | `POLY_GT4` (12)       | 0x8007B870 |
-| 21   | triangle | RGB + 0x24                         | 2 × `POLY_FT3`        | 0x8007E18C |
-| 23   | quad     | RGB + 0x2C                         | 2 × `POLY_FT4`        | 0x8007E408 |
+| Type | Shape    | Word at 0x08                    | Packets  | Primitive                       | Routine    |
+|------|----------|---------------------------------|----------|---------------------------------|------------|
+| 2    | line     | RGB + 0x42                      | —        | `LINE_F2` (no routine: not drawn) | —        |
+| 5    | triangle | RGB + 0x20                      |          | `POLY_F3`                       | 0x8007A6C4 |
+| 6    | triangle | RGB + 0x22                      | 6        | ?                               | 0x8007A884 |
+| 7    | triangle | pointer to colours              |          | `POLY_G3`                       | 0x8007AA74 |
+| 8    | triangle | pointer to colours              | 8        | ?                               | 0x8007AC90 |
+| 9    | quad     | RGB + 0x28                      |          | `POLY_F4`                       | 0x8007B164 |
+| 10   | quad     | RGB + 0x2A                      | 7        | ?                               | 0x8007C4EC |
+| 11   | quad     | pointer to 4 colour words       | 8        | `POLY_G4`                       | 0x8007AED0 |
+| 12   | quad     | pointer to colours              | 10       | ?                               | 0x8007B3C0 |
+| 13   | triangle | RGB + 0x24 (0x26)               | 7        | `POLY_FT3`                      | 0x8007BB24 |
+| 14   | triangle | pointer to 3 colour words       | 9        | `POLY_GT3`                      | 0x8007B664 |
+| 15   | quad     | RGB + 0x2C (0x2E)               | 9        | `POLY_FT4`                      | 0x8007BD1C |
+| 16   | quad     | pointer to 4 colour words       | 12       | `POLY_GT4`                      | 0x8007B870 |
+| 17   | triangle | RGB + 0x20                      | 7 + 4    | ? + overlay                     | 0x8007D638 |
+| 18   | triangle | pointer to colours              |          | ?                               | 0x8007DBB8 |
+| 19   | quad     | RGB + 0x28                      | 9 + 5    | ? + overlay                     | 0x8007D8B4 |
+| 20   | quad     | pointer to colours              |          | ?                               | 0x8007DE6C |
+| 21   | triangle | RGB + 0x24                      | 7 + 7    | `POLY_FT3` + overlay            | 0x8007E18C |
+| 22   | triangle | pointer to colours              | 7 + 9    | ? + overlay                     | 0x8007E744 |
+| 23   | quad     | RGB + 0x2C                      | 9 + 9    | `POLY_FT4` + overlay            | 0x8007E408 |
+| 24   | quad     | pointer to colours              | 9 + 12   | ? + overlay                     | 0x8007E9E4 |
+
+The rows marked `?` (mostly menu-scene types) still need their routines
+read in detail. Unused index slots hold 0xFFFF or the 0xCDCD padding.
 
 Types 21 and 23 draw the polygon normally plus a second, semi-transparent
 textured packet (command 0x26/0x2E, colour 0x808080). Its tpage/CLUT come

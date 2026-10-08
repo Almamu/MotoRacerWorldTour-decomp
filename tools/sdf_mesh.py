@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Export the geometry of a level SDF to Wavefront OBJ.
+"""Export the geometry of a level or scene SDF to Wavefront OBJ.
 
 Writes:
-  <out>/ground.obj           the track ground (world mesh), assembled from its
-                             blocks and sectors, in world coordinates
+  <out>/ground.obj           levels only: the track ground (world mesh),
+                             assembled from its blocks and sectors
   <out>/items/item_NNN.obj   every draw item's mesh, in its own coordinates
   <out>/scene.obj            every Cobjet placed with its matrix (LOD 0), in
                              the same coordinates as ground.obj
@@ -15,7 +15,7 @@ tpage/CLUT pair, 256x256 page coordinates).
 See docs/formats/sdf.md for the structures. PS1 Y points down; the OBJ
 output flips Y so that up is up.
 
-usage: sdf_mesh.py <level.sdf> <out_dir> [--vrm <level.Vrm>]
+usage: sdf_mesh.py <file.sdf> <out_dir> [--vrm <bank.Vrm>]
 """
 
 import struct
@@ -27,6 +27,7 @@ from sdf import parse
 
 ROOT_DRAW_ITEMS = 1  # root 1: {DrawItem** items, u32 count, ...}
 ROOT_WORLD = 6       # root 6: world struct (grid, sectors, blocks, ground mesh)
+LEVEL_ROOTS = 51     # levels have 51 roots; menu/end scenes have 15 and no world
 COBJET = "Cobjet"
 BLOCK_SCALE = 128    # block origin units -> vertex units
 TRANSLATION_SCALE = 32  # object translations are in 1/32 vertex units
@@ -76,8 +77,9 @@ def read_item_mesh(sdf, item):
         ptype, count = header & 0x3F, header >> 6
         for _ in range(count):
             idx = list(struct.unpack_from("<4H", sdf.data, p))
-            if idx[3] == 0xFFFF:
-                idx = idx[:3]
+            # Unused index slots are 0xFFFF (or 0xCDCD padding): lines have 2, triangles 3.
+            while idx and idx[-1] in (0xFFFF, 0xCDCD):
+                idx.pop()
             uv0, clut, uv1, tpage, uv2, uv3 = struct.unpack_from("<6H", sdf.data, p + 12)
             polygons.append(Polygon(idx, split_uv((uv0, uv1, uv2, uv3), len(idx)), clut, tpage,
                                     ptype in TEXTURED_TYPES, ptype))
@@ -200,6 +202,9 @@ def write_obj(path, groups, materials):
         lines += [f"v {x} {-y} {z}" for x, y, z in verts]
         current = None
         for poly in mesh.polygons:
+            if len(poly.indices) < 3:
+                lines.append("l " + " ".join(str(vbase + i) for i in poly.indices))
+                continue
             order = [0, 1, 2] if len(poly.indices) == 3 else [0, 1, 3, 2]
             mat = materials.name(poly)
             if mat != current:
@@ -230,8 +235,10 @@ def main():
     (out / "items").mkdir(parents=True, exist_ok=True)
     materials = Materials(vrm, out)
 
-    ground = read_ground(sdf)
-    write_obj(out / "ground.obj", [("ground", ground.vertices, ground)], materials)
+    ground = None
+    if len(sdf.roots) == LEVEL_ROOTS:
+        ground = read_ground(sdf)
+        write_obj(out / "ground.obj", [("ground", ground.vertices, ground)], materials)
 
     meshes = {i: read_item_mesh(sdf, off) for i, off in draw_items(sdf).items()}
     for i, mesh in meshes.items():
@@ -246,8 +253,8 @@ def main():
             scene.append((f"{name or 'obj'}_{obj:x}", [transform(m, t, v) for v in mesh.vertices], mesh))
     write_obj(out / "scene.obj", scene, materials)
     materials.write()
-    print(f"ground: {len(ground.vertices)} vertices, {len(ground.polygons)} polygons; "
-          f"{len(meshes)} draw items, {len(scene)} placed objects; "
+    summary = f"ground: {len(ground.vertices)} vertices, {len(ground.polygons)} polygons; " if ground else ""
+    print(f"{summary}{len(meshes)} draw items, {len(scene)} placed objects; "
           f"{len(materials.used)} texture pages -> {out}")
 
 
