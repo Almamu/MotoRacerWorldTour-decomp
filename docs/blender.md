@@ -12,8 +12,10 @@ shared between the objects that use them, and per-face game data survives.
 python3 tools/blender/build.py            # -> build/mrwt_blender.zip
 ```
 
-Blender: Edit > Preferences > Add-ons > (menu) Install from Disk, pick the
-zip, enable "Moto Racer World Tour scenes". The zip carries its own copies
+Blender (4.2 or later): Edit > Preferences > Get Extensions > (menu)
+Install from Disk, pick the zip. It is a regular extension
+(`blender_manifest.toml`, GPL-3.0-or-later) and loads as
+`bl_ext.user_default.mrwt_blender`. The zip carries its own copies
 of `sdf.py`, `sdf_mesh.py`, `sdf_geom.py` and `vrm.py`; rebuild it after
 changing those. (From a checkout, `tools/blender` can also be put on
 Blender's script path; the add-on then uses the repo's `tools/` directly.)

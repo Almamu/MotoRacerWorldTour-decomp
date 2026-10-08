@@ -1,0 +1,16 @@
+schema_version = "1.0.0"
+
+id = "mrwt_blender"
+version = "0.1.0"
+name = "Moto Racer World Tour scenes"
+tagline = "Import and export PS1 Moto Racer World Tour scenes (.sdf)"
+maintainer = "MotoRacerWorldTour decomp project"
+type = "add-on"
+website = "https://github.com/Almamu/MotoRacerWorldTour-decomp"
+tags = ["Import-Export"]
+
+blender_version_min = "4.2.0"
+license = ["SPDX:GPL-3.0-or-later"]
+
+[permissions]
+files = "Read .sdf / .Vrm game files and write edited .sdf files"
