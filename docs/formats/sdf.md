@@ -168,21 +168,30 @@ copies them to the scratchpad and indexes them by `index * 8`.
 
 Group types seen in the draw items of all levels:
 
-| Type | Shape    | Word at 0x08                     | GPU primitive        | Routine    |
-|------|----------|----------------------------------|----------------------|------------|
-| 5    | triangle | RGB + 0x20                       | `POLY_F3`            | 0x8007A6C4 |
-| 7    | triangle | pointer to colours               | `POLY_G3`            | 0x8007AA74 |
-| 9    | quad     | RGB + 0x28                       | `POLY_F4`            | 0x8007B164 |
-| 11   | quad     | pointer to colours               | `POLY_G4`            | 0x8007AED0 |
-| 13   | triangle | RGB + 0x24                       | `POLY_FT3`           | 0x8007BB24 |
-| 14   | triangle | pointer to colours               | `POLY_GT3`?          | 0x8007B664 |
-| 15   | quad     | RGB + 0x2C (0x2E semi-transparent) | `POLY_FT4`         | 0x8007BD1C |
-| 16   | quad     | pointer to colours               | `POLY_GT4`?          | 0x8007B870 |
-| 21   | triangle | RGB + 0x24                       | `POLY_FT3` (variant) | 0x8007E18C |
-| 23   | quad     | RGB + 0x2C                       | `POLY_FT4` (variant) | 0x8007E408 |
+| Type | Shape    | Word at 0x08                       | GPU packet (words)    | Routine    |
+|------|----------|------------------------------------|-----------------------|------------|
+| 5    | triangle | RGB + 0x20                         | `POLY_F3`             | 0x8007A6C4 |
+| 7    | triangle | pointer to 3 colour words          | `POLY_G3`             | 0x8007AA74 |
+| 9    | quad     | RGB + 0x28                         | `POLY_F4`             | 0x8007B164 |
+| 11   | quad     | pointer to 4 colour words          | `POLY_G4` (9)         | 0x8007AED0 |
+| 13   | triangle | RGB + 0x24                         | `POLY_FT3` (7)        | 0x8007BB24 |
+| 14   | triangle | pointer to 3 colour words          | `POLY_GT3` (9)        | 0x8007B664 |
+| 15   | quad     | RGB + 0x2C (0x2E semi-transparent) | `POLY_FT4` (9)        | 0x8007BD1C |
+| 16   | quad     | pointer to 4 colour words          | `POLY_GT4` (12)       | 0x8007B870 |
+| 21   | triangle | RGB + 0x24                         | 2 × `POLY_FT3`        | 0x8007E18C |
+| 23   | quad     | RGB + 0x2C                         | 2 × `POLY_FT4`        | 0x8007E408 |
 
-The routine for type 11 builds a 9-word `POLY_G4` packet from the 4 colour
-words. The `?` rows and the 21/23 variants still need their routines read.
+Types 21 and 23 draw the polygon normally plus a second, semi-transparent
+textured packet (command 0x26/0x2E, colour 0x808080). Its tpage/CLUT come
+from globals, and its UVs come from the **pad halfword of each vertex**
+(the 4th `s16` of the `SVECTOR`): an environment-map style overlay,
+presumably with UVs written into the vertices at runtime.
+
+The textured routines add a per-object value to the word holding uv0 and
+the CLUT before writing the packet (`DAT_800C88FC`, set from object+0x47
+shifted into the top byte, i.e. the CLUT's upper bits). That's how one model
+can be drawn with different palettes, matching the CLUT variant lists of
+the `.Vrm` `BLKS` entries.
 
 Quads use the GPU vertex order (0, 1, 2, 3 = top-left, top-right,
 bottom-left, bottom-right), so the outline is 0-1-3-2.
@@ -394,6 +403,5 @@ table and count whose purpose isn't known yet.
   (see [../ghidra.md](../ghidra.md)).
 - World: the grid data at world+0x04, the field at 0x4C, and how cell
   object lists relate to `Cobjet`s.
-- Read the remaining polygon routines (types 14, 16, 21, 23) and the
-  flags-bit-1 path.
+- The flags-bit-1 mesh path (second dispatcher, table at 0x800C896C).
 - Decode the camera/light motion classes.
