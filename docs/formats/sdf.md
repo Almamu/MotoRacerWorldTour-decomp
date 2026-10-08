@@ -499,10 +499,23 @@ are translated. The game loads it at 0x800A048C with root destinations
 | 1    | teams: 12-byte entries `{char* name ("TEAM 1" … "TEAM 8"), 0xFFFFFF, 0}` |
 | 5    | `300, 100, 60, 30, 0`                                              |
 | 6    | demo replays: `{char* path, 0}` × 4, `Data\DemoPsx1.rep` … `DemoPsx4.rep` (these files aren't in `MR3.DAT`) |
-| 9    | `{u32 18, ptr, …}`: the best-times table header (18 tracks)        |
+| 9    | `{u32 18, Track* tracks, …}`: the track table (below)              |
 | 10   | best times: `u32 ?`, then 12-byte entries `{u32 time, char initials[4], u32 0xFFFF}`; times look like milliseconds (0x30EEE = 200430 → 3:20.43) |
 
-Roots 2, 3, 4, 7 and 8 (the track table among them) aren't decoded yet.
+Track record (28 bytes), in the same order as the level code table
+(`Sdf Suz Bar Chi Rey Usa …`):
+
+| Offset | Type  | Meaning                                                 |
+|--------|-------|---------------------------------------------------------|
+| 0x00   | char* | level directory, e.g. `Data\Levels\Suzuka`             |
+| 0x04   | char* | level name, e.g. `Suzuka`                               |
+| 0x08   | char* | country (translated)                                    |
+| 0x0C   | char* | length in km, e.g. `" 5.77 Km"`                         |
+| 0x10   | char* | length in miles, e.g. `" 3.61 Miles"`                   |
+| 0x14   | u32   | 1–7 (default lap count?)                                |
+| 0x18   | u32   | discipline: 1 motocross, 2 supercross, 3 speed (road and traffic), 5 trial, 6 freestyle, 7 dragster |
+
+Roots 2, 3, 4, 7 and 8 aren't decoded yet.
 
 ## Level roots
 

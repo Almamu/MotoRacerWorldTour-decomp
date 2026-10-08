@@ -121,30 +121,31 @@ executable through a block marked 0x12345670.
 From the table in the game code, in order. Track names are from each code's
 loading screen (`Data\Final\<code>.bs`):
 
-| Code | Track                | Discipline (judging by the loading screen) |
-|------|----------------------|-----------------------------------------|
-| Sdf  | Stade de France      | supercross                              |
-| Suz  | Suzuka               | speed                                   |
-| Bar  | Barcelona            | supercross                              |
-| Chi  | Belo Horizonte       | supercross                              |
-| Rey  | Reygades             | motocross                               |
-| Usa  | USA Park             | motocross                               |
-| Sac  | Sachsenring          | speed                                   |
-| Eas  | Eastern Creek        | speed                                   |
-| IdM  | Isle of Man – Hills  | road                                    |
-| IM2  | Isle of Man – Town   | road                                    |
-| IM3  | Isle of Man – Road   | road                                    |
-| Tri  | Night Show           | trial                                   |
-| Tr2  | Indoor               | trial (`Tr2P.bs` = "Trial 2 players")   |
-| FSt  | Freestyle            | freestyle                               |
-| Tfc  | Rive Gauche          | traffic                                 |
-| Tf2  | West Coast           | traffic                                 |
-| Dr1  | Speed Ring           | dragster                                |
-| Dr2  | Highway              | dragster                                |
+| Code | Track                | Discipline (from the DB track table) |
+|------|----------------------|--------------------------------------|
+| Sdf  | Stade de France      | supercross                           |
+| Suz  | Suzuka               | speed                                |
+| Bar  | Barcelona            | supercross                           |
+| Chi  | Belo Horizonte       | supercross                           |
+| Rey  | Reygades             | motocross                            |
+| Usa  | USA Park             | motocross                            |
+| Sac  | Sachsenring          | speed                                |
+| Eas  | Eastern Creek        | speed                                |
+| IdM  | Isle of Man – Hills  | speed (road)                         |
+| IM2  | Isle of Man – Town   | speed (road)                         |
+| IM3  | Isle of Man – Road   | speed (road)                         |
+| Tri  | Night Show           | trial                                |
+| Tr2  | Indoor               | trial (`Tr2P.bs` = "Trial 2 players") |
+| FSt  | Freestyle            | freestyle                            |
+| Tfc  | Rive Gauche          | speed (traffic)                      |
+| Tf2  | West Coast           | speed (traffic)                      |
+| Dr1  | Speed Ring           | dragster                             |
+| Dr2  | Highway              | dragster                             |
 
-The discipline column is inferred and still needs checking against the
-game. What exactly `B` changes for a track (layout, reverse, time of day…)
-is also still open.
+The disciplines come from the database's track table
+([sdf.md](sdf.md), Database), whose entries are in this same order. What
+exactly `B` changes for a track (layout, reverse, time of day…) is still
+open.
 
 ### Still unnamed
 
