@@ -247,6 +247,93 @@ dividing them by 32 puts the objects exactly in place on the world geometry
 (`b_sky`) sits at the origin. Most of each level is the world geometry,
 below.
 
+## Animation (menu scenes)
+
+Menu and end scenes are animated with keyframed objects, exported from
+LightWave motions. Confirmed from the code (key timing 0x80074AC8,
+linear interpolation 0x80075588, applying to an object 0x80017B88,
+sequence update 0x8001983C) and the `Menu_0.Sdf` data.
+
+### Canim (base of `CanimMove`, `CanimMoveCamera`, `CanimSide`, `CanimVertex`)
+
+Offsets from the object start (vtable slot - 0x34):
+
+| Offset | Type   | Meaning                                                    |
+|--------|--------|------------------------------------------------------------|
+| 0x00   | u32    | animation kind (3–5 move the target's matrix)              |
+| 0x04   | u32    | play mode (1, 2: what happens at the last key)             |
+| 0x0C   | u32    | flags: bits 0–3 direction (+1 forward / -1 backward), bits 4–7 which game clock drives it, bits 8–11 / 12–15 runtime state |
+| 0x10   | s32    | runtime: blend between current and next key, 16.16 (0x10000 = 1.0) |
+| 0x14   | s32    | runtime: current segment duration                          |
+| 0x20   | Key*   | first key                                                  |
+| 0x24   | s32    | runtime: segment start time                                |
+| 0x28   | Key*   | current key                                                |
+| 0x2C   | Key*   | next key (runtime)                                         |
+| 0x34   | vtable*|                                                            |
+
+### CanimMove (0x9C bytes)
+
+| Offset | Type    | Meaning                                                   |
+|--------|---------|-----------------------------------------------------------|
+| 0x44   | VECTOR  | current position                                          |
+| 0x50   | VECTOR  | previous position                                         |
+| 0x74   | SVECTOR | current rotation (x, y, z; 4096 = 360°)                    |
+| 0x7C   | SVECTOR | previous rotation                                         |
+| 0x94   | u32     | flags; byte 0 = 0 means the rotation is animated too       |
+
+### Key (32 bytes)
+
+Keys form a circular doubly linked list:
+
+| Offset | Type      | Meaning                                                 |
+|--------|-----------|---------------------------------------------------------|
+| 0x00   | Key*      | next                                                    |
+| 0x04   | Key*      | previous                                                |
+| 0x08   | u32       | key index                                               |
+| 0x0C   | s32       | duration of the segment to the next key, playing forward (clock ticks) |
+| 0x10   | s32       | the same, playing backward                              |
+| 0x14   | VECTOR*   | position                                                |
+| 0x18   | SVECTOR*  | rotation (keys without rotation share one zero rotation) |
+| 0x1C   | u8        | interpolation to the next key: 0 = linear, 1 = spline    |
+
+Linear interpolation: `pos = cur + (next - cur) * blend >> 16`, the same per
+rotation axis. The result is then written into the target object's matrix
+(0x800168A8 / 0x80016268).
+
+In `Menu_0.Sdf` all 269 `CanimMove` key lists are consistent rings (694
+keys, 49 of them spline). 380 keys share one rotation, (0, 0, 0).
+
+### Sequences
+
+Root 2 of a menu scene is `{CanimMove** animations, u32 capacity (2000), …}`.
+Sequences (28 bytes each) bind objects to animations:
+
+| Offset | Type      | Meaning                                                 |
+|--------|-----------|---------------------------------------------------------|
+| 0x00   | char*     | name, e.g. `1ERPAGE`, `TIMEATTACK`, `motos_me2mf`, `world_rot3` |
+| 0x04   | ptr       | object group: `{Cobjet** objects, ?, u32 count}`         |
+| 0x08   | ptr       | the animation root (root 2)                             |
+| 0x0C   | ptr       | another sequence (chaining)                             |
+| 0x10   | Binding*  | binding list                                            |
+| 0x14   | u32       | length (e.g. 4000, 1000, 333, 33)                       |
+| 0x18   | u32       | flags                                                   |
+
+Binding: `{u32 packed, Binding* next}`. `packed` bits 0–11 (signed) = index
+into the group's objects, bits 12–23 = index into the animation table
+(0xFFF = no animation). Each update plays every bound animation on its
+object; the object gets flag 0x200 (matrix changed).
+
+`Menu_0.Sdf` has 148 sequences, named after the menu pages and their
+transitions: page open/close (`1ERPAGE`, `START`, `TIMEATTACK`, `WORLD`,
+…), bike carousel steps (`motos_me2mf` …), globe turns (`world_rot1` …
+`world_rot11`).
+
+### Object hierarchy
+
+In menu scenes `Cobjet` + 0x40 points to a list of child objects
+(LightWave parenting, e.g. `1iconenull (1)` and its icons), and + 0x4C to a
+second list (not decoded).
+
 ## World (track ground)
 
 Most of a level is its ground ("world") geometry: one large mesh (flags 9)
@@ -465,4 +552,5 @@ table and count whose purpose isn't known yet.
   (see [../ghidra.md](../ghidra.md)).
 - World: the field at 0x4C; the grid cell size.
 - The flags-bit-1 mesh path (second dispatcher, table at 0x800C896C).
-- Decode the camera/light motion classes.
+- `CanimMoveCamera`, `CobjetCameraMotion`, `CobjetLightMotion`, `CanimSide`,
+  `CanimVertex`; spline interpolation; the other menu roots.
