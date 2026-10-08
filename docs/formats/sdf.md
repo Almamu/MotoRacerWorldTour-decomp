@@ -527,6 +527,29 @@ Texture entry: `u8 u0, v0; u16 clut; u8 u1, v1; u16 tpage; u8 u2, v2;
 u8 u3, v3` (12 bytes), in format 2 followed by 4 colour words (flat
 polygons use the first, Gouraud ones the first 3 or 4).
 
+## Menu and end scene roots
+
+Menu/end scenes have 15 roots, loaded at 0x80046F2C (menu module `M`). The
+module shares its first fields with the level module, so roots 1–4 land in
+the same places as in levels:
+
+| Root | Written to  | Contents                                                     |
+|------|-------------|--------------------------------------------------------------|
+| 0    | M+0xA4      | ? (`0, -, 21, 190, …`)                                       |
+| 1    | M+0x78      | draw-item table (as in levels)                               |
+| 2    | M+0x70      | animation table `{Canim** table, u32 2000, …}`; the sequences point at it |
+| 3, 4 | M+0x7C, M+0x80 | ? (same shape as level roots 3/4: a pointer and an array of 3 × s16 + 0xCDCD padding) |
+| 5    | M+0xB0      | array of small integers (?)                                  |
+| 6    | M+0xAC      | ?                                                            |
+| 7, 8 | 0x800C9C08, 0x800C9C0C | `{u32 26, u32 27, u32 187, Cobjet* objects[187]}` (scene objects such as `moto_1st (1)`) |
+| 9, 10, 12 | 0x800C9BF8, 0x800C9C18, 0x800C92C4 | structs pointing at text objects (`CobjetVFonts`) |
+| 11   | 0x800C8DCC  | zeros                                                        |
+| 13   | M+0x9C      | **text table**: `{0, u32 count (323), char** strings}`, the menu's localised strings (`ENGLISH`, `NONE`, country names, …) |
+| 14   | 0x800C9F30  | HUD sprite hash list (same global as level root 14)          |
+
+The sequences (see Animation) are only referenced from each other, so the
+way the menu code finds them isn't known yet.
+
 ## Database (`Data\DB_D_0..5.sdf`)
 
 Partly decoded. An SDF with 11 roots and no C++ objects, loaded at
@@ -653,4 +676,4 @@ table and count whose purpose isn't known yet.
   28 `cammotion (1)` cameras with the 237 `Cobjet2dVFonts` HUD texts and the
   light, so these cameras look like part of the HUD/overlay scene rather
   than race cameras (each sits 512 units back from the origin).
-- The other menu roots.
+- Menu roots 0, 3–6 and the entry point to the sequences.
