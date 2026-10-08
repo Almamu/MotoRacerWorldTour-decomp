@@ -20,13 +20,16 @@ Chunk tags:
         u16 n and n clut ids (palette variants; the first equals `clut`)
 
 usage: vrm.py export <file.vrm> <out_dir>   (or just vrm.py <file.vrm> <out_dir>)
-  writes vram.png (16-bit view of the whole block), blks/<hash>.png and
-  fonts/<hash>.png + fonts/<hash>.json (glyph strip and metrics)
+  writes vram.png (16-bit view of the whole block), blks/<hash>.png,
+  fonts/<hash>.png + fonts/<hash>.json (glyph strip and metrics) and
+  cluts/<id>.png (one pixel per colour; alpha 0 = transparent 0x0000,
+  128 = STP bit set, 255 = opaque) with cluts.json listing their users
        vrm.py import <file.vrm> <dir> <out.vrm>
   writes edited blks/*.png and fonts/*.png from <dir> back into VRAM: colours
   are mapped to each texture's own palette (nearest colour; alpha 0 =
   transparent index); unchanged pixels keep their index, so an unedited
-  export imports back byte-identical. Palettes and sizes don't change.
+  export imports back byte-identical. Edited palettes are written first
+  (exact 15-bit colours + STP), then textures; sizes never change.
 """
 
 import json
@@ -191,7 +194,75 @@ def font_strip(vrm, font):
     return strip
 
 
+def palette_to_rgba(words):
+    """CLUT entries -> RGBA with the STP bit in alpha: 0 = 0x0000 (transparent),
+    128 = STP set (semi-transparent / opaque black), 255 = STP clear."""
+    w = np.asarray(words, np.uint16)
+    rgba = rgb555_to_rgba(w & 0x7FFF)
+    rgba[..., 3] = np.where(w == 0, 0, np.where(w & 0x8000, 128, 255))
+    return rgba
+
+
+def rgba_to_palette(rgba):
+    rgba = np.asarray(rgba, np.uint16)
+    w = (rgba[..., 0] >> 3) | (rgba[..., 1] >> 3) << 5 | (rgba[..., 2] >> 3) << 10
+    a = rgba[..., 3]
+    w = np.where((a > 64) & (a < 192), w | 0x8000, w)            # STP set
+    w = np.where((a >= 192) & (w == 0), 0x8000, w)                # opaque black needs STP
+    return np.where(a <= 64, 0, w).astype(np.uint16)
+
+
+def palettes(vrm):
+    """{clut id: (colour count, [users])} for every CLUT named by the bank's chunks."""
+    out = {}
+    def add(clut, colours, user):
+        n, users = out.get(clut, (colours, []))
+        out[clut] = (max(n, colours), users + [user])
+    for tag, h, blob in vrm.chunks:
+        if tag == "BLKS":
+            uvs, clut, tpage, cluts = parse_blks(blob)
+            colours = 256 if (tpage >> 7) & 3 == 1 else 16
+            if (tpage >> 7) & 3 < 2:
+                for c in {clut, *cluts}:
+                    add(c, colours, f"BLKS {h:08x}")
+        elif tag == "FNTS":
+            font = parse_font(blob)
+            add(font["clut"], 256 if (font["tpage"] >> 7) & 3 == 1 else 16, f"FNTS {h:08x}")
+        elif tag == "DPAL":
+            _, colours, x, y = struct.unpack_from("<4H", blob)
+            add(y << 6 | x, colours, f"DPAL {h:08x}")
+    return out
+
+
+def export_palettes(vrm, out):
+    (out / "cluts").mkdir(parents=True, exist_ok=True)
+    index = {}
+    for clut, (colours, users) in sorted(palettes(vrm).items()):
+        Image.fromarray(palette_to_rgba(vrm.clut(clut, colours))[None, :]).save(out / "cluts" / f"{clut:04x}.png")
+        index[f"{clut:04x}"] = {"colours": colours, "x": (clut & 0x3F) * 16, "y": clut >> 6, "used_by": users}
+    (out / "cluts.json").write_text(json.dumps(index, indent=1))
+
+
+def import_palettes(vrm, src):
+    changed = 0
+    for clut, (colours, _) in palettes(vrm).items():
+        png = src / "cluts" / f"{clut:04x}.png"
+        if not png.exists():
+            continue
+        new = rgba_to_palette(np.array(Image.open(png).convert("RGBA"))[0, :colours])
+        x = (clut & 0x3F) * 16 - vrm.x
+        y = (clut >> 6) - vrm.y
+        old = vrm.original[y, x:x + len(new)]
+        diff = new != old
+        if diff.any():
+            vrm.vram[y, x:x + len(new)] = np.where(diff, new, vrm.vram[y, x:x + len(new)])
+            print(f"CLUT {clut:04x}: {int(diff.sum())} colours changed")
+            changed += int(diff.sum())
+    return changed
+
+
 def export(vrm, out):
+    export_palettes(vrm, out)
     (out / "blks").mkdir(parents=True, exist_ok=True)
     (out / "fonts").mkdir(parents=True, exist_ok=True)
     Image.fromarray(rgb555_to_rgba(vrm.vram)).save(out / "vram.png")
@@ -211,8 +282,9 @@ def export(vrm, out):
 
 
 def import_(vrm, src):
-    """Write edited blks/<hash>.png and fonts/<hash>.png back into VRAM."""
-    changed = 0
+    """Write edited cluts/*.png, then blks/<hash>.png and fonts/<hash>.png back
+    into VRAM (palettes first, so edited textures map to the new colours)."""
+    changed = import_palettes(vrm, src)
     for tag, h, blob in vrm.chunks:
         if tag == "BLKS":
             png = src / "blks" / f"{h:08x}.png"
@@ -247,7 +319,7 @@ def main():
         vrm = Vrm(Path(a[1]).read_bytes())
         n = import_(vrm, Path(a[2]))
         Path(a[3]).write_bytes(vrm.to_bytes())
-        print(f"{n} pixels changed -> {a[3]}")
+        print(f"{n} pixels/colours changed -> {a[3]}")
     else:
         sys.exit(__doc__)
 

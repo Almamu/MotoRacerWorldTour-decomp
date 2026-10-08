@@ -38,13 +38,14 @@ What can be edited:
 | Asset | Edit as | Notes |
 |---|---|---|
 | Textures, fonts (`.Vrm`) | PNG | mapped to each texture's existing palette; size/position fixed |
+| Palettes (`.Vrm`) | PNG strip per CLUT | exact 15-bit colours; alpha = transparency / STP bit |
 | Loading screens (`.bs`) | PNG | re-encoded no larger than the original |
 | Sound banks (`.snd`) | WAV (16-bit mono) | ADPCM-encoded; loop layout kept; SPU RAM is 512 KB |
 | Text in scenes/database (`.sdf`) | JSON | new strings appended, pointers redirected |
 | Meshes, ground, object placements (`.sdf`) | OBJ / JSON | same topology: positions and UVs in place; draw items can get a new mesh (textured or flat tris/quads) |
 | Anything else in `MR3.DAT` | raw file | replace it under `ws/mr3dat` |
 
-Not supported yet: animation edits, new ground topology, movies (`.DPS`). None of this has been tested in an emulator or on hardware yet.
+Not supported yet: animation edits, new ground topology, new textures/palettes (only existing ones can be changed), movies (`.DPS`). None of this has been tested in an emulator or on hardware yet.
 
 ## Tools
 

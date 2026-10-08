@@ -113,4 +113,11 @@ indices 16–20). At load the game resolves it into descriptor pointers at
   write its old pixels back over an edited one.
 - An unedited export imports back byte-identical.
 
-Palettes themselves aren't editable through the tool yet.
+Palettes are exported as `cluts/<id>.png` (one pixel per colour) for every
+CLUT named by a `BLKS` (including its variant list), `FNTS` or `DPAL` chunk;
+`cluts.json` lists each one's VRAM position and users. That covers every
+palette the level geometry uses (checked for USA Park). Alpha carries the
+PS1 STP bit: 0 = colour 0x0000 (transparent), 128 = STP set, 255 = STP
+clear (opaque black is written as 0x8000). Edited palettes are imported
+before textures, colour by colour, so textures that use them change
+everywhere they're drawn.
