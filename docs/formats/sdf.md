@@ -944,9 +944,15 @@ draw-item indices, the bike model `MOTOSOPEN` puts in the displayed bike
 object's model slot depending on mode and player; +0x88/+0x8C give per-bike
 values for the 8 + 8 stat bars.
 
-To mod: edit `PAGELIST` names in place, integer literals in scripts, or the
-`Valid*` defaults; text is in root 13 (`sdf_text.py`). New pages or widgets
-would need new records and relocations (not supported).
+To mod: `menu_script.py export` (or the workspace's `<entry>.menu.json`)
+gives the variable defaults, every page's lists, item/event scripts and the
+widgets' page links and scripts as JSON; edit and `import`. Scripts are
+compiled back (all 5390 scripts in the game round-trip to identical
+tokens); a script that grows gets a new token array appended to the file,
+with its relocations. Text is in root 13 (`sdf_text.py`). Checked in the
+emulator: `ValidTraffic = 1` unlocks Traffic on the MODE page, and WORLD's
+`PAGELIST[2] = options` makes picking Sachsenring open OPTIONS. New pages,
+widgets or list entries would need new records (not supported).
 
 ## Database (`Data\DB_D_0..5.sdf`)
 

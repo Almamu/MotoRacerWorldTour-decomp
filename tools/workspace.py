@@ -14,6 +14,9 @@ unpack creates:
       <entry>.json  for .sdf files: their strings   (tools/sdf_text.py)
       <entry>.geom/ for .sdf files: meshes, ground, object placements as
                     OBJ/JSON                        (tools/sdf_geom.py)
+      <entry>.menu.json for menu / end scenes and levels (in-game menu):
+                    variable defaults, page lists, scripts, page links
+                                                    (tools/menu_script.py)
   <ws>/workspace.json  checksums of everything above
 
 repack converts every asset that was edited back into its MR3.DAT entry
@@ -83,6 +86,8 @@ def unpack(track, ws):
         elif k == ".sdf":
             run("sdf_text.py", "export", src, dst.with_suffix(dst.suffix + ".json"))
             run("sdf_geom.py", "export", src, Path(str(dst) + ".geom"))
+            if not e["file"].lower().split("/")[-1].startswith("db_"):
+                run("menu_script.py", "export", src, Path(str(dst) + ".menu.json"))
     state = {"assets": tree_hashes(assets), "mr3dat": tree_hashes(ws / "mr3dat")}
     (ws / "workspace.json").write_text(json.dumps(state, indent=1))
     print(f"unpacked into {ws}")
@@ -112,12 +117,15 @@ def repack(ws, out_track):
         elif k == ".sdf":
             geom = changed_under(e["file"] + ".geom/", now, state["assets"])
             text = now.get(e["file"] + ".json") != state["assets"].get(e["file"] + ".json")
-            if not (geom or text):
+            menu = now.get(e["file"] + ".menu.json") != state["assets"].get(e["file"] + ".menu.json")
+            if not (geom or text or menu):
                 continue
             if geom:
                 run("sdf_geom.py", "import", entry, Path(str(a) + ".geom"), entry)
             if text:
                 run("sdf_text.py", "import", entry, a.with_suffix(a.suffix + ".json"), entry)
+            if menu:
+                run("menu_script.py", "import", entry, Path(str(a) + ".menu.json"), entry)
         else:
             continue
         rebuilt += 1

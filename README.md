@@ -43,6 +43,8 @@ What can be edited:
 | Sound banks (`.snd`) | WAV (16-bit mono) | ADPCM-encoded; loop layout kept; SPU RAM is 512 KB |
 | Text in scenes/database (`.sdf`) | JSON | new strings appended, pointers redirected |
 | Meshes, ground, object placements (`.sdf`) | Blender (`tools/blender`, recommended) or OBJ / JSON | same topology: positions and UVs in place; draw items can get a new mesh (textured or flat tris/quads) |
+| Menus (`Menu_N`, `EndM_N`, levels' in-game menu) | `<entry>.menu.json` | variable defaults (e.g. `Valid*` unlocks), `PAGELIST` page names, button page links, item/event/button scripts as expressions (recompiled; grown scripts are appended) |
+| Track gates, AI racing lines (`.sdf`) | Blender | gate position/direction/width; racing-line lane offsets, target speeds, flags |
 | Collision surface (`.sdf`) | Blender | corner moves re-encode the faces; "Snap Collision to Ground" after ground edits |
 | Anything else in `MR3.DAT` | raw file | replace it under `ws/mr3dat` |
 
