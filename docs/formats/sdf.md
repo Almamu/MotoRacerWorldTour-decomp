@@ -753,7 +753,7 @@ the same places as in levels:
 | 3, 4 | 0x800CBE90/94 | unused (only ever written)                                 |
 | 5    | M+0xB0      | same data as level root 33                                   |
 | 6    | M+0xAC      | same data as level root 32 (bike physics table)              |
-| 7, 8 | 0x800C9C08, 0x800C9C0C | `MOTOS` / `MOTOS2` page data (bike selection, players 1 and 2): +0x00…+0x08 selection values (26, 27, 187), +0x2C/+0x30 widgets, +0x34 and +0x54 eight widget pointers each (stat bars), +0x74 an object, +0x88/+0x8C per-bike tables |
+| 7, 8 | 0x800C9C08, 0x800C9C0C | `MOTOS` / `MOTOS2` page data (bike selection, players 1 and 2): +0x00…+0x08 bike model draw-item indices (26, 27, 187), +0x2C/+0x30 widgets, +0x34 and +0x54 eight widget pointers each (stat bars), +0x74 an object, +0x88/+0x8C per-bike tables |
 | 9    | 0x800C9BF8  | `LOAD` / `LECTURE` page data                                  |
 | 10   | 0x800C9C18  | `SAVE` page data                                              |
 | 11   | 0x800C8DCC  | `CONFIGURATION` page data: 252 zero bytes, filled at load from the pad configuration (0x80099F88); +0xE0… pad type per port |
@@ -786,6 +786,101 @@ its data from `*(UI + 0xA80) + 0x60`. The scene's strings also hold the
 menu script vocabulary: `ChangePage`, `CondChangePage`, `GoBackPage`,
 `PlaySnd`, `CondPlaySnd`, `PAGELIST` and variables such as `CurTrack`,
 `GameMode`, `NbPlayers`, `P1_NoMoto`, `Difficulty`.
+
+### Menu pages and scripts
+
+The menus are data-driven by a small script system stored in the scene;
+only the page callbacks (`<PAGE>OPEN`, `<PAGE>HANDLE`…) are C code. Pages
+list named lists, items and events; **widgets** (the buttons) carry action
+scripts; page changes go through each page's `PAGELIST`. Menu flow and
+unlocks can therefore be changed by editing data. `tools/menu_script.py`
+prints a scene's pages, lists and decompiled scripts (menus, end scenes, and
+a level's in-game menu from root 41).
+
+Checked in the emulator (menu data block at RAM 0x80119DD8 in `Menu_0`):
+renaming WORLD's `PAGELIST[2]` from `motos` to `options` makes picking
+Sachsenring open OPTIONS instead of bike selection; setting the variable
+`ValidTraffic` to 1 shows the Traffic mode unlocked.
+
+UI manager (root 0; root 41 of a level for the in-game menu):
+
+| Offset | Meaning |
+|--------|---------|
+| +0x60  | object group list |
+| +0x74  | variable table `{u32* values, VarInfo* info, …, +0x14 u32 count}`; VarInfo `{char* name, u32 changed}` (107 variables in `Menu_0`) |
+| +0x7C  | function table: 0x2C-byte entries `{char name[32], fn*, ctx, u32 argc}`, count at +0x8C, bound to code by name at load (0x8003F740) |
+| +0x15C | UI sound table (`PlaySnd`) |
+| +0xA7C / +0xA80 / +0xA84 | first page (the pages are an array of 0x74-byte records) / current / previous |
+| +0xA90 | transition state |
+| +0xA94 | flags: 0x100 page change requested, 0x4 leave the menu |
+| +0xA98 / +0xA9C | game-state structs |
+
+Variables (u32) include `GameMode`, `NbPlayers`, `Difficulty`, `Language`,
+`CurTrack`, `TrialTrack`, `TrafficTrack`, `DragsterTrack`, `P1_NoMoto`,
+`P2_NoMoto`, the unlocks `Valid<Track>` / `Valid500Speed` / `Valid250Dirt`,
+championship state, sound volumes, screen position, pads, the remembered
+cursor per page `nBP<page>`, and bike setup (`VitesseCouple1..8` gear
+ratios, `PowerCurve`, `TiresType`, `SusPensionType`).
+
+Functions: `ChangePage(cond, i)` opens entry `i` of the current page's
+`PAGELIST` (-1 leaves the menu; 0x8003D73C), `CondChangePage(c, cond, a,
+b)`, `GoBackPage(cond)`, `EndMenu(cond)`, `PlaySnd(cond, n)`,
+`CondPlaySnd(cond, a, b)`, `if(cond, a, b)`, `PageDLInt(t, i)`.
+
+**Scripts** are 16 bytes `{Token* tokens, u32 status, u32 count, VarTable*}`,
+evaluated by 0x80097128 as a postfix stack machine. Token (8 bytes):
+`{u32 value, u16 op, u16 subtype}`:
+
+| op | Meaning |
+|----|---------|
+| 0  | push: subtype 2 variable (value → its slot in the values array), 3 address, 4 integer |
+| 1  | call (value → function-table entry; pops argc, pushes the result) |
+| 2, 3 | negate, logical not |
+| 4–8 | `*` `/` `%` `-` `+` |
+| 9–14 | `>` `<` `<=` `>=` `!=` `==` |
+| 15, 16 | `&&` `\|\|` |
+| 17 | dereference |
+| 18 | assign |
+
+Example, the Traffic icon on MODES: `GameMode = 1; TrafficTrack = 14;
+ChangePage(ValidTraffic == 1 && ValidTraffic2 == 0, 0); ChangePage(ValidTraffic
+== 1 && ValidTraffic2 == 1, 5); CondPlaySnd(ValidTraffic == 1, 5, 3);
+ReStartMenu = 1; nBPModes = 4`.
+
+**Page** (0x74 bytes): +0x00 name, +0x2C u8 item count, +0x2D u8 event
+count, +0x2F flags, +0x34 runtime block, +0x38 object groups (the ones the
+sequences use), +0x3C items, +0x40 events, +0x44 → UI manager, +0x48 named
+lists, +0x4C page data, +0x50 sequence player, +0x54 opening sequence.
+
+- **Item** (0x54): `char name[32]` (a scene object), +0x24 type (5 or 8),
+  +0x50 condition script that shows it (the red crosses over locked modes:
+  `ValidTraffic == 0`, …).
+- **Event** (0x34): +0x00 type (1–4 page open/close transitions; 5 = named
+  event), +0x04 `char name[32]`, +0x24 condition script, +0x30 sequence to
+  play. 0x8003B248(page, type, name) takes the first matching event whose
+  condition holds.
+- **Named list**: linked `{next, char name[32], u8 count (+0x24), data*
+  (+0x28)}` (page +0x48, else the UI manager's). `PAGELIST` holds 32-byte
+  lowercase page names (MODES: `endmenu, dragster, newchamp, ecurie, trial,
+  traffic`); other lists are u32 tables: text-table indices (`Difficulty` =
+  30, 31, 32) or sprite/model hashes.
+
+**Widget** (0x48 bytes, a table of 872 pointers in `Menu_0`, 94 with
+actions): +0x00 flags, +0x04 button index, +0x08 `char name[32]`, +0x28
+→ scene object, +0x2C display states (highlight colours), +0x30 action
+scripts (consecutive 16-byte scripts), +0x34 action count, +0x38 colour.
+The main-menu buttons only set variables (Arcade: `NbPlayers = 0; GameMode
+= 4; ReStartMenu = 3; nBPStart = 0`); their page change is in the C
+`STARTHANDLE`; deeper pages use `ChangePage`.
+
+`MOTOS` page data (roots 7/8): the three u32 values (26, 27, 187) are
+draw-item indices, the bike model `MOTOSOPEN` puts in the displayed bike
+object's model slot depending on mode and player; +0x88/+0x8C give per-bike
+values for the 8 + 8 stat bars.
+
+To mod: edit `PAGELIST` names in place, integer literals in scripts, or the
+`Valid*` defaults; text is in root 13 (`sdf_text.py`). New pages or widgets
+would need new records and relocations (not supported).
 
 ## Database (`Data\DB_D_0..5.sdf`)
 
@@ -1013,7 +1108,8 @@ a flag bit: an 8-bit value, a 16-bit button mask (1 = accelerate), another
 
 - Root 9's packed pose words and which atlas record is the number plate /
   suit; root 10's dashboard struct.
-- Menu UI manager internals, widget lists and event records.
+- Menu: item types 5/8, event types 1–4, widget display states and flags,
+  how the C page handlers pick the next page from `nBP*`.
 - Gate +0x12/+0x13; what the racing lines' speed-control zones stand for
   on the track.
 
