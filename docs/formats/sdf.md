@@ -480,6 +480,27 @@ Texture entry: `u8 u0, v0; u16 clut; u8 u1, v1; u16 tpage; u8 u2, v2;
 u8 u3, v3` (12 bytes), in format 2 followed by 4 colour words (flat
 polygons use the first, Gouraud ones the first 3 or 4).
 
+## Database (`Data\DB_D_0..5.sdf`)
+
+Partly decoded. An SDF with 11 roots and no C++ objects, loaded at
+0x800A053C, holding the game's tables. Its strings include the track list
+(country, length such as "1.49 Miles", level directory `Data\Levels\…`),
+AI rider names (`ROBERTSON William`, `RODRIGUEZ Luis`, …), and default best
+times with three-letter initials (`VPG`, `CHV`, `TOM`, `RIC`, `OLD`, `LUD`).
+The six files are nearly the same size and all use miles; how they differ
+hasn't been looked at.
+
+| Root | Contents                                                          |
+|------|-------------------------------------------------------------------|
+| 0    | players: 20-byte entries `{char* name ("Player 1", "Player 2", "Player 1 shadow", …), 0, u32 (0x314C50…), -1, 0}` |
+| 1    | teams: 12-byte entries `{char* name ("TEAM 1" … "TEAM 8"), 0xFFFFFF, 0}` |
+| 5    | `300, 100, 60, 30, 0`                                              |
+| 6    | demo replays: `{char* path, 0}` × 4, `Data\DemoPsx1.rep` … `DemoPsx4.rep` (these files aren't in `MR3.DAT`) |
+| 9    | `{u32 18, ptr, …}`: the best-times table header (18 tracks)        |
+| 10   | best times: `u32 ?`, then 12-byte entries `{u32 time, char initials[4], u32 0xFFFF}`; times look like milliseconds (0x30EEE = 200430 → 3:20.43) |
+
+Roots 2, 3, 4, 7 and 8 (the track table among them) aren't decoded yet.
+
 ## Level roots
 
 The level loader (0x80049C14, call at 0x8004A71C) passes 51 destination
