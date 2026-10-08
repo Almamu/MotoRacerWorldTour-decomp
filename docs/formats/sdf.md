@@ -84,6 +84,27 @@ rider names in the DB). Inserting bytes in the middle would mean shifting
 every offset after them (relocations, objects, roots, exports and the
 pointer values), which the tools don't do.
 
+### Editing geometry
+
+`tools/sdf_geom.py` exports every draw item and the ground as OBJ (faces in
+polygon order; materials `page_TTTT_CCCC` = tpage/CLUT for textured
+polygons, `color_RRGGBB` for flat ones; the ground with one vertex per block
+vertex) and the `Cobjet` placements as JSON, and imports edits:
+
+- same vertex/face counts: positions and textured UVs are rewritten in
+  place (ground: positions, converted back to block-relative coordinates);
+- different counts (draw items only): new vertex and polygon arrays are
+  appended and the mesh repointed; faces become group types 13/15 (textured)
+  or 5/9 (flat) with the polygon flags word most used for that type in the
+  file; the mesh flags become 1 (the extra lighting/env blocks are dropped);
+- mesh bounds (mesh + 0x08) are raised where the new geometry reaches
+  further, never lowered.
+
+Forcing every item, the ground and all placements of three levels through
+the update path reproduces the files byte for byte. The ground's collision
+data hasn't been identified, so reshaped ground may not match what the
+bikes ride on.
+
 A few relocated pointers in the levels hold garbage from the exporter
 (`0xCDCDCD00`, or `0x00BCxxxx` addresses from the PC tool's heap). The game
 presumably never reads them.
@@ -178,7 +199,7 @@ add up exactly to the mesh's polygon count.
 | 0x04   | u16   | vertex count                                         |
 | 0x06   | u8    | flags: bit 0 always set; bit 1 = special path (block at 0x28); bit 2 = extra lighting pass (uses block+0x20). Draw-item meshes only use 1, 3, 5; the track-ground mesh is 9 |
 | 0x07   | u8    | padding (0xCD)                                       |
-| 0x08   | s32[4]| bounds (?)                                           |
+| 0x08   | s32[4]| bounds in 1/32 units: max \|x\|, \|y\|, \|z\| of the model and its radius (rounded up from the original float model; some meshes, like the sky, have larger values) |
 | 0x18   | ptr   | vertices                                             |
 | 0x1C   | ptr   | polygons                                             |
 | 0x20   | ptr   | optional 16-byte block                                |

@@ -12,11 +12,14 @@ unpack creates:
       <entry>.png   for .bs loading screens         (tools/bs.py)
       <entry>.snd/  vagNN.wav                       (tools/snd.py)
       <entry>.json  for .sdf files: their strings   (tools/sdf_text.py)
+      <entry>.geom/ for .sdf files: meshes, ground, object placements as
+                    OBJ/JSON                        (tools/sdf_geom.py)
   <ws>/workspace.json  checksums of everything above
 
 repack converts every asset that was edited back into its MR3.DAT entry
 (textures and fonts are palette-mapped, loading screens re-encoded no
-larger than the original, samples ADPCM-encoded, strings appended), packs
+larger than the original, samples ADPCM-encoded, strings appended, meshes
+and placements written back or replaced), packs
 MR3.DAT (unchanged entries are copied byte for byte) and writes a new data
 track. Entries under <ws>/mr3dat can also be replaced directly. With no edits
 the output track is identical to the input.
@@ -79,6 +82,7 @@ def unpack(track, ws):
             run("snd.py", src, dst)
         elif k == ".sdf":
             run("sdf_text.py", "export", src, dst.with_suffix(dst.suffix + ".json"))
+            run("sdf_geom.py", "export", src, Path(str(dst) + ".geom"))
     state = {"assets": tree_hashes(assets), "mr3dat": tree_hashes(ws / "mr3dat")}
     (ws / "workspace.json").write_text(json.dumps(state, indent=1))
     print(f"unpacked into {ws}")
@@ -105,8 +109,15 @@ def repack(ws, out_track):
         elif k == ".bs" and now.get(e["file"] + ".png") != state["assets"].get(e["file"] + ".png"):
             size = entry.stat().st_size
             run("bs.py", "encode", a.with_suffix(a.suffix + ".png"), entry, f"max={size}")
-        elif k == ".sdf" and now.get(e["file"] + ".json") != state["assets"].get(e["file"] + ".json"):
-            run("sdf_text.py", "import", entry, a.with_suffix(a.suffix + ".json"), entry)
+        elif k == ".sdf":
+            geom = changed_under(e["file"] + ".geom/", now, state["assets"])
+            text = now.get(e["file"] + ".json") != state["assets"].get(e["file"] + ".json")
+            if not (geom or text):
+                continue
+            if geom:
+                run("sdf_geom.py", "import", entry, Path(str(a) + ".geom"), entry)
+            if text:
+                run("sdf_text.py", "import", entry, a.with_suffix(a.suffix + ".json"), entry)
         else:
             continue
         rebuilt += 1

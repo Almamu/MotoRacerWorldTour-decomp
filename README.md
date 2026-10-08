@@ -41,10 +41,10 @@ What can be edited:
 | Loading screens (`.bs`) | PNG | re-encoded no larger than the original |
 | Sound banks (`.snd`) | WAV (16-bit mono) | ADPCM-encoded; loop layout kept; SPU RAM is 512 KB |
 | Text in scenes/database (`.sdf`) | JSON | new strings appended, pointers redirected |
+| Meshes, ground, object placements (`.sdf`) | OBJ / JSON | same topology: positions and UVs in place; draw items can get a new mesh (textured or flat tris/quads) |
 | Anything else in `MR3.DAT` | raw file | replace it under `ws/mr3dat` |
 
-Not supported yet: geometry and animation edits, palette edits, movies
-(`.DPS`). None of this has been tested in an emulator or on hardware yet.
+Not supported yet: animation edits, new ground topology, movies (`.DPS`). None of this has been tested in an emulator or on hardware yet.
 
 ## Tools
 
@@ -81,6 +81,7 @@ python3 tools/sdf_mesh.py extracted/mr3dat/data/final/Usa_PS.sdf extracted/sdf/U
 | `bs.py`                | `.bs` ⇄ PNG       | decode; `encode` (BS v2, qscale or size target) |
 | `snd.py`               | `.snd` ⇄ WAV      | export names + samples; `import` edited WAVs (ADPCM encoder) |
 | `sdf.py`               | `.sdf`            | parse / serialize (byte-identical), summary     |
+| `sdf_geom.py`          | `.sdf` ⇄ OBJ/JSON | export meshes/ground/placements; import edits or new meshes |
 | `sdf_text.py`          | `.sdf` ⇄ JSON     | export / re-import text strings (menus, DB)    |
 | `sdf_mesh.py`          | level `.sdf` (+`.Vrm`) | textured OBJ: ground, draw items, placed objects |
 | `dps.py`               | `.DPS`            | MP4 (via ffmpeg, correct frame rate)           |
