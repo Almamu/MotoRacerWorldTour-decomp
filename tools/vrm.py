@@ -38,7 +38,10 @@ import sys
 from pathlib import Path
 
 import numpy as np
-from PIL import Image
+
+# PIL is imported where PNGs are read or written, so the VRAM code also
+# works inside Blender (tools/blender), which ships numpy but not PIL.
+
 
 def rgb555_to_rgba(words):
     w = np.asarray(words, dtype=np.uint16)
@@ -235,6 +238,7 @@ def palettes(vrm):
 
 
 def export_palettes(vrm, out):
+    from PIL import Image
     (out / "cluts").mkdir(parents=True, exist_ok=True)
     index = {}
     for clut, (colours, users) in sorted(palettes(vrm).items()):
@@ -244,6 +248,7 @@ def export_palettes(vrm, out):
 
 
 def import_palettes(vrm, src):
+    from PIL import Image
     changed = 0
     for clut, (colours, _) in palettes(vrm).items():
         png = src / "cluts" / f"{clut:04x}.png"
@@ -262,6 +267,7 @@ def import_palettes(vrm, src):
 
 
 def export(vrm, out):
+    from PIL import Image
     export_palettes(vrm, out)
     (out / "blks").mkdir(parents=True, exist_ok=True)
     (out / "fonts").mkdir(parents=True, exist_ok=True)
@@ -284,6 +290,7 @@ def export(vrm, out):
 def import_(vrm, src):
     """Write edited cluts/*.png, then blks/<hash>.png and fonts/<hash>.png back
     into VRAM (palettes first, so edited textures map to the new colours)."""
+    from PIL import Image
     changed = import_palettes(vrm, src)
     for tag, h, blob in vrm.chunks:
         if tag == "BLKS":

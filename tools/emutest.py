@@ -2,15 +2,16 @@
 """Boot a (rebuilt) disc in Mednafen headless, press buttons, keep frames.
 
   emutest.py --bios SCPH.BIN --cue "iso/<game>.cue" [--track01 new_track01.bin]
-             [--seconds 60] [--keys "12:start,14:cross,..."] [--every 5]
+             [--seconds 60] [--keys "12:start,14:cross,70:cross:20"] [--every 5]
              [--unlock-bios] <out_dir>
 
 Writes <out_dir>/run.mov (Mednafen's own recording), frames/NNN.png (one
 every --every seconds) and sheet.png (all frames). The disc is the original
 cue with track 01 swapped for --track01, so the audio tracks are reused.
 
-Buttons for --keys (time in seconds:button): up down left right cross
-circle square triangle start select l1 r1 l2 r2.
+Buttons for --keys (time in seconds:button[:seconds held]): up down left
+right cross circle square triangle start select l1 r1 l2 r2. In a race,
+cross accelerates, e.g. "68:cross:30" drives for 30 s.
 
 Mednafen refuses a BIOS it knows to be from another region than the disc
 (e.g. SCPH1001, North America, for this PAL game). --unlock-bios writes a
@@ -94,8 +95,8 @@ def main():
         opts += [f"-psx.input.port1.gamepad.{name}", f"keyboard 0x0 {scancode}"]
     schedule = []
     for item in filter(None, a.keys.split(",")):
-        t, button = item.split(":")
-        schedule.append((float(t), KEYS[button.strip()][1]))
+        t, button, *hold = item.split(":")
+        schedule.append((float(t), KEYS[button.strip()][1], float(hold[0]) if hold else 0.15))
     schedule.sort()
 
     script = ["set -u", f'export MEDNAFEN_HOME="{home}" SDL_AUDIODRIVER=dummy',
@@ -105,12 +106,12 @@ def main():
               '[ -n "$WIN" ] || { echo "mednafen window not found" >&2; kill -INT $PID; exit 1; }',
               'xdotool windowfocus "$WIN" 2>/dev/null || true']
     now = 3.0
-    for t, key in schedule:
+    for t, key, hold in schedule:
         if t > now:
             script.append(f"sleep {t - now}")
             now = t
-        script.append(f'xdotool keydown --window "$WIN" {key}; sleep 0.15; xdotool keyup --window "$WIN" {key}')
-        now += 0.15
+        script.append(f'xdotool keydown --window "$WIN" {key}; sleep {hold}; xdotool keyup --window "$WIN" {key}')
+        now += hold
     script += [f"sleep {max(1, a.seconds - now)}", "kill -INT $PID", "wait $PID || true"]
     (out / "run.sh").write_text("\n".join(script) + "\n")
     subprocess.run(["xvfb-run", "-a", "-s", "-screen 0 1024x768x24", "bash", str(out / "run.sh")], check=True)

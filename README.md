@@ -42,7 +42,7 @@ What can be edited:
 | Loading screens (`.bs`) | PNG | re-encoded no larger than the original |
 | Sound banks (`.snd`) | WAV (16-bit mono) | ADPCM-encoded; loop layout kept; SPU RAM is 512 KB |
 | Text in scenes/database (`.sdf`) | JSON | new strings appended, pointers redirected |
-| Meshes, ground, object placements (`.sdf`) | OBJ / JSON | same topology: positions and UVs in place; draw items can get a new mesh (textured or flat tris/quads) |
+| Meshes, ground, object placements (`.sdf`) | Blender (`tools/blender`, recommended) or OBJ / JSON | same topology: positions and UVs in place; draw items can get a new mesh (textured or flat tris/quads) |
 | Anything else in `MR3.DAT` | raw file | replace it under `ws/mr3dat` |
 
 Not supported yet: animation edits, new ground topology, new textures/palettes (only existing ones can be changed), movies (`.DPS`). None of this has been tested in an emulator or on hardware yet.
@@ -88,4 +88,5 @@ python3 tools/sdf_mesh.py extracted/mr3dat/data/final/Usa_PS.sdf extracted/sdf/U
 | `dps.py`               | `.DPS`            | MP4 (via ffmpeg, correct frame rate)           |
 | `dxr.py`               | `.dxr`            | code relocated to a fixed base (for Ghidra)    |
 | `ghidra/`              | `LANGIMG.DAT`     | headless decompilation, see `docs/ghidra.md`   |
+| `blender/`             | `.sdf` ⇄ Blender  | add-on: import levels/scenes with textures, export edits; see `docs/blender.md` |
 | `emutest.py`           | data track + cue  | boots it in Mednafen headless, presses buttons, saves frames; see `docs/testing.md` |
