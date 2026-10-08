@@ -84,65 +84,120 @@ Class names seen (all files): `Cobjet`, `CobjetCameraMotion`,
 `Cobjet`, `Cobjet2dVFonts`, `CobjetCameraMotion`, `CobjetLightMotion` (and
 `CanimMoveCamera`).
 
-### Cobjet (partly known)
+### Cobjet
+
+Offsets from the start of the object. Confirmed by the draw code
+(0x80016A8C, which receives the object + 4):
 
 | Offset | Type      | Meaning                                              |
 |--------|-----------|------------------------------------------------------|
 | 0x00   | vtable    | (class index in the file)                            |
 | 0x04   | char*     | instance name, LightWave style (e.g. `"d_c011 (1)"`)  |
-| 0x08   | u32       | ?                                                    |
 | 0x18   | MATRIX    | GTE matrix: `s16 m[3][3]` (4.12 fixed point), padding, `s32 t[3]` at 0x2C |
-| 0x38   | ptr       | points to this object's own matrix (0x18)            |
-| 0x3C   | ptr       | array of small integers (?)                          |
-| 0x4C   | u32       | colour (0x808080 = neutral)                           |
+| 0x38   | MATRIX*   | the matrix used for drawing (normally this object's own, 0x18) |
+| 0x3C   | s16*      | draw-item index per LOD                              |
+| 0x40   | u8        | LOD count (0 = not drawn this way)                   |
+| 0x41   | u8        | LOD currently selected (written at runtime)          |
+| 0x4C   | u32       | colour (0x808080 = neutral)                          |
 
-## Meshes (confirmed for the simple case)
+The game picks a LOD from the distance to the camera, then draws
+`draw_items[lod_index[lod]]` (see below) with the object's matrix.
 
-A mesh header is 44 bytes:
+## Draw items
+
+Root 1 of a level points to `{DrawItem** items, u32 count, ...}`: a table of
+draw-item pointers (null entries allowed). The draw code reaches the table
+through `**0x800C8C68`.
+
+A draw item is 44 bytes:
+
+| Offset | Type      | Meaning                                              |
+|--------|-----------|------------------------------------------------------|
+| 0x00   | u16       | not used by the draw code (0, 1, 2, …)                |
+| 0x04   | Mesh*     | mesh                                                 |
+| 0x08   | u32       | passed to a setup routine before drawing (0x8007C1B8) |
+| 0x0C   | u16       | GTE `ZSF3` (average-Z scale for triangles)            |
+| 0x0E   | u16       | GTE `ZSF4` (average-Z scale for quads)                |
+| 0x10   | u16[]     | polygon groups, 0-terminated, at most 25: `type \| count << 6` |
+
+The mesh's polygons are stored grouped by primitive type, in the order of
+the group list. Each type has its own draw routine, through the table at
+0x800C8908 (`type & 0x3F` × 4). Meshes with flags bit 1 set use a second
+dispatcher and table (0x8007C780, table at 0x800C896C) together with the
+block at mesh+0x28.
+
+Checked on every level: for all 1276 non-null draw items, the group counts
+add up exactly to the mesh's polygon count.
+
+## Meshes
+
+44-byte header:
 
 | Offset | Type  | Meaning                                              |
 |--------|-------|------------------------------------------------------|
 | 0x00   | u16   | polygon count                                        |
 | 0x02   | u16   | ? (non-zero when flags bit 1 is set)                  |
 | 0x04   | u16   | vertex count                                         |
-| 0x06   | u8    | flags (1 = plain; 3 and 9 seen with extra data)       |
+| 0x06   | u8    | flags: bit 0 always set; bit 1 = special path (block at 0x28); bit 2 = extra lighting pass (uses block+0x20). Draw-item meshes only use 1, 3, 5; the track-ground mesh is 9 |
 | 0x07   | u8    | padding (0xCD)                                       |
 | 0x08   | s32[4]| bounds (?)                                           |
 | 0x18   | ptr   | vertices                                             |
-| 0x1C   | ptr   | polygons (null for the track-ground mesh, see below)  |
-| 0x20   | ptr   | optional 16-byte block (colours?)                     |
+| 0x1C   | ptr   | polygons                                             |
+| 0x20   | ptr   | optional 16-byte block                                |
 | 0x24   | u32   | 0                                                    |
-| 0x28   | ptr   | optional 48-byte block (more data, see below)         |
+| 0x28   | ptr   | optional 48-byte block                                |
 
-Vertices are `SVECTOR`s: `s16 x, y, z, pad` (pad = 0xCDCD).
+Vertices are `SVECTOR`s: `s16 x, y, z, pad` (pad = 0xCDCD). The draw code
+copies them to the scratchpad and indexes them by `index * 8`.
 
-Polygons are 28 bytes, mirroring the GPU packet fields:
+### Polygons
+
+28 bytes (7 words), read by the per-type routines:
 
 | Offset | Type   | Meaning                                                   |
 |--------|--------|-----------------------------------------------------------|
 | 0x00   | u16[4] | vertex indices; index 3 = 0xFFFF for a triangle            |
-| 0x08   | u8[3]  | RGB                                                       |
-| 0x0B   | u8     | GPU command: 0x24 textured triangle, 0x2C textured quad, 0x28 flat quad, 0x2A flat quad semi-transparent, 0x2E textured quad semi-transparent, 0 = ? |
+| 0x08   | u32    | RGB + GPU command byte, **or** a pointer to 4 colour words (Gouraud types) |
 | 0x0C   | u8, u8 | u0, v0                                                    |
 | 0x0E   | u16    | CLUT id                                                   |
 | 0x10   | u8, u8 | u1, v1                                                    |
 | 0x12   | u16    | tpage                                                     |
 | 0x14   | u8, u8 | u2, v2                                                    |
 | 0x16   | u8, u8 | u3, v3                                                    |
-| 0x18   | u16[2] | ? (e.g. `0001 1002`)                                       |
+| 0x18   | u32    | flags. High half seen: 0x1000, 0x1002, 0x1800, 0x1802, 0x5002, 0x5800, 0x5802. Bit 30 changes back-face handling; bits 11–12 give a Z (depth sort) bias |
+
+Group types seen in the draw items of all levels:
+
+| Type | Shape    | Word at 0x08                     | GPU primitive        | Routine    |
+|------|----------|----------------------------------|----------------------|------------|
+| 5    | triangle | RGB + 0x20                       | `POLY_F3`            | 0x8007A6C4 |
+| 7    | triangle | pointer to colours               | `POLY_G3`            | 0x8007AA74 |
+| 9    | quad     | RGB + 0x28                       | `POLY_F4`            | 0x8007B164 |
+| 11   | quad     | pointer to colours               | `POLY_G4`            | 0x8007AED0 |
+| 13   | triangle | RGB + 0x24                       | `POLY_FT3`           | 0x8007BB24 |
+| 14   | triangle | pointer to colours               | `POLY_GT3`?          | 0x8007B664 |
+| 15   | quad     | RGB + 0x2C (0x2E semi-transparent) | `POLY_FT4`         | 0x8007BD1C |
+| 16   | quad     | pointer to colours               | `POLY_GT4`?          | 0x8007B870 |
+| 21   | triangle | RGB + 0x24                       | `POLY_FT3` (variant) | 0x8007E18C |
+| 23   | quad     | RGB + 0x2C                       | `POLY_FT4` (variant) | 0x8007E408 |
+
+The routine for type 11 builds a 9-word `POLY_G4` packet from the 4 colour
+words. The `?` rows and the 21/23 variants still need their routines read.
 
 Quads use the GPU vertex order (0, 1, 2, 3 = top-left, top-right,
 bottom-left, bottom-right), so the outline is 0-1-3-2.
 
-This was checked visually on the Night Show level (`Tri_PS.sdf`): the
-grandstand ring, a rider on a bike, number signs and a dome render
-correctly. Across all levels, meshes with flags = 1 always have valid
-indices and command bytes 0x24/0x28/0x2A/0x2C/0x2E/0.
+`tools/sdf_mesh.py` exports every draw item's mesh, and every `Cobjet`
+placed with its matrix, to OBJ. The meshes look right (grandstands, riders
+on bikes, signs). The placed objects are only props, and whether the
+translations use the same units as the vertices isn't confirmed yet. Most of
+each level is the track-ground ("world") geometry, below.
 
 **Track ground.** The big ground mesh has flags 9, ~1400 vertices and no
-polygon pointer. Its polygons hang off the 48-byte block at 0x28, which
-points to compact 12-byte records (`u16, u16 base, u8 i0..i3, ptr` to four
-per-vertex colours) and more data. Not decoded yet.
+polygon pointer. Its vertices are the level's exported vertex pool (see
+Level roots). Its polygons hang off the 48-byte block at 0x28, which points
+to compact 12-byte records (`u16, u16 base, u8 i0..i3, ptr` to four colour
+words) and more data. Not decoded yet.
 
 ## Level roots
 
@@ -153,7 +208,7 @@ the same function, and plain addresses are globals in the game code.
 | Root | Written to   | Contents (where known)                                    |
 |------|--------------|-----------------------------------------------------------|
 |  0 | L+0x74       |  |
-|  1 | L+0x78       | model tables (see below) |
+|  1 | L+0x78       | draw-item table (see Draw items) |
 |  2 | L+0x70       |  |
 |  3 | L+0x7C       |  |
 |  4 | L+0x80       |  |
@@ -208,16 +263,16 @@ The level's single export goes to `L+0x47C` (pointer) and `L+0x480`
 (value): it is the **ground vertex pool** (an `SVECTOR` array) and its size
 in bytes. Checked on all 58 level files.
 
-Root 1 points to `{ptr table_a, u32 n_a, ptr table_b, u32 n_b, ...}`. Each
-table entry points to an array of 44-byte part slots whose first u16 is the
-part count and whose +4 is a mesh pointer. That holds for the Trial level;
-in other levels many slots don't point to meshes, so this is not fully right
-yet.
+Root 1 is described under Draw items; its third/fourth words are another
+table and count whose purpose isn't known yet.
 
 ## Next steps
 
 - Read the level-setup and drawing code to pin down the root structures,
   the model/part layout and the mesh flags, instead of inferring them
   (see [../ghidra.md](../ghidra.md)).
-- Decode the ground mesh, `Cobjet` fully, and the camera/light motion
+- Decode the track-ground geometry (the bulk of each level).
+- Read the remaining polygon routines (types 14, 16, 21, 23) and the
+  flags-bit-1 path.
+- Confirm the units of object translations; decode the camera/light motion
   classes.
