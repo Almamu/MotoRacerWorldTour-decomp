@@ -237,14 +237,14 @@ recognisable tracks with correct textures (`tools/sdf_mesh.py`).
 
 | Offset | Type      | Meaning                                                    |
 |--------|-----------|------------------------------------------------------------|
-| 0x04   | ptr       | grid data (not decoded)                                     |
-| 0x08   | u32       | 29 in `Tri_PS` (grid width?)                                |
-| 0x10   | u32       | 21 in `Tri_PS` (grid height?)                               |
-| 0x14   | u32       | number of cells in the cell table                           |
+| 0x04   | Row**     | grid rows (one pointer per row)                              |
+| 0x08   | u32       | grid width (columns)                                        |
+| 0x10   | u32       | grid height (rows)                                          |
+| 0x14   | u32       | number of cells                                             |
 | 0x18   | u32       | runtime: entries in visible list C                           |
 | 0x1C   | u32       | runtime: entries in visible list B                           |
 | 0x20   | u32       | runtime: entries in visible list A                           |
-| 0x24   | Cell**    | cell table                                                 |
+| 0x24   | Cell*     | cell array (12-byte cells)                                  |
 | 0x28   | ptr       | runtime: visible list C (allocated by the level setup)      |
 | 0x2C   | ptr       | runtime: visible list B                                     |
 | 0x30   | ptr       | runtime: visible list A                                     |
@@ -260,16 +260,35 @@ recognisable tracks with correct textures (`tools/sdf_mesh.py`).
 The PC exporter's leftover heap pointers sit in the runtime fields
 0x28–0x30 in the file; the game overwrites them.
 
-### Cell
+### Grid
+
+The cells form a run-length-encoded 2D grid over X/Z. Row record:
+
+| Offset | Type  | Meaning                                                    |
+|--------|-------|------------------------------------------------------------|
+| 0x00   | u8    | grid width (low byte)                                      |
+| 0x01   | u8    | number of runs                                             |
+| 0x06   | u16   | index of this row's first cell in the cell array           |
+| 0x08   | s8*   | runs: negative = that many empty columns, positive = that many cells; -128 ends the row |
+
+Rows' first-cell indices follow on from each other, and the cells of all
+rows add up to world+0x14 (checked on all 58 level files).
+
+Each frame the camera's view frustum is projected onto the grid
+(0x8001E240 → 0x8001E458 → 0x8001EAF4, coordinates divided by the cell
+size) and the cells it covers are collected into the visible lists.
+
+### Cell (12 bytes)
 
 | Offset | Type   | Meaning                                                      |
 |--------|--------|--------------------------------------------------------------|
-| 0x04   | ptr*   | list of objects in this cell (marked visible with bit 0x10 at object+4) |
-| 0x08   | s16    | object count; bit 15 is a runtime "already visited" flag      |
+| 0x04   | ptr*   | objects in this cell: pointers to `Cobjet` + 4 (34510 of 35100 references across the levels; the rest point at similar structs outside the object list) |
+| 0x08   | u16    | object count; bit 15 is a runtime "already visited" flag      |
 | 0x0A   | s16    | sector index, or -1                                          |
 
-Each frame the camera's view frustum is projected onto the grid (coordinates
-divided by the cell size) to find the visible cells.
+When a cell is visible, its objects get bit 0x10 set in the word at
+`Cobjet + 8` and its sector is queued for drawing. In every level the
+cells together reference every sector.
 
 ### Sector (16 bytes)
 
@@ -418,7 +437,6 @@ table and count whose purpose isn't known yet.
 - Read the level-setup and drawing code to pin down the root structures,
   the model/part layout and the mesh flags, instead of inferring them
   (see [../ghidra.md](../ghidra.md)).
-- World: the grid data at world+0x04, the field at 0x4C, and how cell
-  object lists relate to `Cobjet`s.
+- World: the field at 0x4C; the grid cell size.
 - The flags-bit-1 mesh path (second dispatcher, table at 0x800C896C).
 - Decode the camera/light motion classes.
