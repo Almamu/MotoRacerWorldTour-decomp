@@ -852,26 +852,88 @@ count, +0x2F flags, +0x34 runtime block, +0x38 object groups (the ones the
 sequences use), +0x3C items, +0x40 events, +0x44 → UI manager, +0x48 named
 lists, +0x4C page data, +0x50 sequence player, +0x54 opening sequence.
 
-- **Item** (0x54): `char name[32]` (a scene object), +0x24 type (5 or 8),
-  +0x50 condition script that shows it (the red crosses over locked modes:
-  `ValidTraffic == 0`, …).
-- **Event** (0x34): +0x00 type (1–4 page open/close transitions; 5 = named
-  event), +0x04 `char name[32]`, +0x24 condition script, +0x30 sequence to
-  play. 0x8003B248(page, type, name) takes the first matching event whose
-  condition holds.
+- **Item** (0x54 bytes, page +0x3C): a **rule applied at a page phase**
+  (0x80039E74): it applies when its phase matches and its condition holds.
+
+  | Offset | Meaning |
+  |--------|---------|
+  | +0x00  | `char name[32]`: scene object (looked up in the page's object groups) |
+  | +0x20  | condition script (0 = always) |
+  | +0x24  | sub-type |
+  | +0x28  | phase: 0 every frame, 1 page change starts, 7 before the new page opens, 4/5 after opening (forward/back), 2/3 old page closed (forward/back), 6 old page closed (new-page side), 8 a list selection changed |
+  | +0x2C  | kind (below) |
+  | +0x30  | `char arg[32]`: sequence / list / variable / text / sprite name |
+  | +0x50  | value script |
+
+  | Kind | Action |
+  |------|--------|
+  | 0 / 1 | object visibility (sub 3 hide, 4 show, 5 show if the value ≠ 0; 9–11 rotate by the value in degrees) / the same with the value from list `arg` |
+  | 2 / 3 | play sequence `arg` / `list[arg][value]` |
+  | 4 | widget state: sub 8 greys the widget out when the value ≠ 0 (its colour +0x38); 3/4/6/7 clear/set state bits; 2 binds variable `arg` to the widget's list value |
+  | 5 | run the value script |
+  | 6 / 7 | set the object's model (draw-item index, object +8) to `arg` / `list[arg][value]` |
+  | 8 / 9 | set the object's text to `arg` / the 32-byte string `list[arg][value]` |
+  | 10 / 11 | set the object's +0x54 (colour/value) |
+  | 12 / 13 | set the object's sprite to the `BLKS` texture named `arg` / `list[arg][value]` |
+
+  MODES greys the locked modes out (`B0` … kind 4/8 with `ValidTraffic == 0`)
+  and shows the red crosses (`f_croix*`, kind 0/5).
+- **Event** (0x34): +0x00 type (1 opened going forward, 2 closed going
+  forward, 3 opened going back, 4 closed going back, 5 selection event),
+  +0x04 `char name[32]` (matched against the other page's name; empty in
+  the files), +0x24 condition script, +0x28 play reversed, +0x2C continue
+  from the current position, +0x30 sequence to play (`NULL` = none).
+  0x8003B248 picks the event; type-5 events are raised by list selectors
+  with the chosen list entry as the sequence name (WORLD's globe turns
+  `world_rot*`).
 - **Named list**: linked `{next, char name[32], u8 count (+0x24), data*
   (+0x28)}` (page +0x48, else the UI manager's). `PAGELIST` holds 32-byte
   lowercase page names (MODES: `endmenu, dragster, newchamp, ecurie, trial,
   traffic`); other lists are u32 tables: text-table indices (`Difficulty` =
   30, 31, 32) or sprite/model hashes.
 
-**Widget** (0x48 bytes, a table of 872 pointers in `Menu_0`, 94 with
-actions): +0x00 flags, +0x04 button index, +0x08 `char name[32]`, +0x28
-→ scene object, +0x2C display states (highlight colours), +0x30 action
-scripts (consecutive 16-byte scripts), +0x34 action count, +0x38 colour.
-The main-menu buttons only set variables (Arcade: `NbPlayers = 0; GameMode
-= 4; ReStartMenu = 3; nBPStart = 0`); their page change is in the C
-`STARTHANDLE`; deeper pages use `ChangePage`.
+**Widget** (a table of 872 pointers in `Menu_0`); the record is 0x48 bytes
+plus the action's argument:
+
+| Offset | Meaning |
+|--------|---------|
+| +0x00  | s16 action on press (0x8003CDEC) |
+| +0x02  | flags (low 4 bits = 1: selectable) |
+| +0x04  | button index |
+| +0x08  | `char name[32]`, also looked up in the action-callback registry (`PIGNON`, …) |
+| +0x28  | → scene object |
+| +0x2C  | control list (below) |
+| +0x30 / +0x34 | action scripts / count (run on press) |
+| +0x38  | colour when greyed out |
+| +0x3E  | s8 sound on press (0xFF = none); +0x40 / +0x42 sounds for the next page / going back |
+| +0x48  | action argument |
+
+| Action | Effect |
+|--------|--------|
+| -1 | scripts only (0x48 bytes) |
+| 0 | open the page named `char[32]` at +0x48 (case-insensitive; `EndMenu` leaves, `GoBack` goes back); +0x68 ≠ 0 appends the current page's `_suffix`, +0x6A ≠ 0 replaces the current page in the history (0x6C bytes) |
+| 1 | set widget group `+0x48`'s value to `+0x4C` |
+| 2 | go back `+0x48` pages through the page history (UI +0xA88, depth +0xA8C) |
+| 3 | leave the menu |
+| 4 | nothing (no press sound either) |
+
+`Menu_0` has 45 direct page links (action 0), 29 "back" buttons and 11
+"leave" buttons; most navigation is these links, `ChangePage` scripts and
+`PAGELIST`s, not C code. E.g. the MODES icons: `open page 'World':
+GameMode = 5 | ReStartMenu = 7 | nBPModes = 0`.
+
+**Controls** (widget +0x2C, linked `{u32 type, u32 trigger (0 on focus, 1
+on losing focus, 2 on press), next*, …}`): type 1 colour (focused 0xFFFFFF,
+else 0x808080), 2 attach a cursor object (`controlnull`), 3 list selector
+(named list, wrap mode; raises type-5 events; read by `_CurALSelect`), 4
+value selector (left/right steps a page widget group between min and max,
+initial value from a script), 5 forward to another widget. Page widget
+groups (page +0x4C) are 12-byte `{s32 value, u32 count, Entry*}`, three
+per player view.
+
+The `nBP<page>` variables are never read by the game code: buttons set
+them and a page's value-selector initial script reads them back
+(`nBPModes / 4`), so a page reopens on the last button pressed.
 
 `MOTOS` page data (roots 7/8): the three u32 values (26, 27, 187) are
 draw-item indices, the bike model `MOTOSOPEN` puts in the displayed bike
@@ -1085,8 +1147,12 @@ count, use CLUT`, +0x08 → polygons to patch, +0x0C per polygon `s16` base
 CLUT and the four UV words. For rider variant n, 0x8006139C / 0x80061484
 add `(n % columns) × width | (n / columns) × height << 8` to the UVs and,
 with the CLUT flag, `((n >> 2) << 6) | (n & 3)` to the CLUT: one rider model
-shows every rider's own number and suit from an atlas. Every level uses
-(8 columns, 32 × 32) and (4 columns, 64 × 64, CLUT).
+shows every rider's own number and team decals. Rendered from `Sac.Vrm`:
+record 0 (8 columns, 32 × 32) is the **race numbers** 1–8, record 1 (4
+columns, 64 × 64, with a CLUT shift) the **team sponsor decals** (Michelin,
+Wilkinson, DSI, Fructis, Certina, Motul, …). The variant is the bike
+object's `flags & 7`. The second pair (+0x2B8) patches the second rider
+model, drawn when root 15's mode word has bits 0xA8 set (0x800618BC).
 
 ### Trackside cameras (roots 16, 17)
 
@@ -1119,8 +1185,7 @@ a flag bit: an 8-bit value, a 16-bit button mask (1 = accelerate), another
 
 ## Next steps
 
-- Root 9's packed pose words and which atlas record is the number plate /
-  suit; root 10's dashboard struct.
-- Menu: item types 5/8, event types 1–4, widget display states and flags,
-  how the C page handlers pick the next page from `nBP*`.
+- Root 9's packed pose words and what its index lists select; which game
+  modes use the second rider model; root 10's dashboard struct.
+- Menu: widget flag bits beyond "selectable", list-selector wrap modes.
 

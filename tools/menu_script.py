@@ -24,7 +24,11 @@ from sdf import parse
 PAGE_SIZE = 0x74
 ITEM_SIZE = 0x54
 EVENT_SIZE = 0x34
-WIDGET_SIZE = 0x48
+WIDGET_SIZE = 0x48  # grows with the action: 0x6C for "open page", 0x4C for 2/3
+ITEM_KINDS = {0: "visibility", 1: "visibility from list", 2: "play sequence", 3: "play sequence from list",
+              4: "widget state", 5: "run script", 6: "set model", 7: "set model from list", 8: "set text",
+              9: "set text from list", 10: "set value", 11: "set value from list", 12: "set sprite",
+              13: "set sprite from list"}
 BINOPS = {4: "*", 5: "/", 6: "%", 7: "-", 8: "+", 9: ">", 10: "<", 11: "<=", 12: ">=",
           13: "!=", 14: "==", 15: "&&", 16: "||"}
 
@@ -118,8 +122,13 @@ class Menu:
             items, events = self.ptr(page + 0x3C), self.ptr(page + 0x40)
             for k in range(d[page + 0x2C] if items is not None else 0):
                 it = items + ITEM_SIZE * k
-                cond = self.script(self.ptr(it + 0x50)) if self.ptr(it + 0x50) is not None else ""
-                out(f"  item {self.str(it)!r} type {self.sdf.u32(it + 0x24)}" + (f" if {cond}" if cond else ""))
+                cond = self.script(self.ptr(it + 0x20)) if self.ptr(it + 0x20) is not None else ""
+                value = self.script(self.ptr(it + 0x50)) if self.ptr(it + 0x50) is not None else ""
+                kind, subtype, phase = self.sdf.u32(it + 0x2C), self.sdf.u32(it + 0x24), self.sdf.u32(it + 0x28)
+                arg = d[it + 0x30:it + 0x50].split(b"\0")[0].decode("latin-1")
+                out(f"  item {self.str(it)!r} phase {phase} {ITEM_KINDS.get(kind, f'kind {kind}')}/{subtype}"
+                    + (f" {arg!r}" if arg.isprintable() and arg else "")
+                    + (f" value {value}" if value else "") + (f" if {cond}" if cond else ""))
             for k in range(d[page + 0x2D] if events is not None else 0):
                 ev = events + EVENT_SIZE * k
                 kind = self.sdf.u32(ev)
@@ -151,15 +160,24 @@ class Menu:
         return [self.sdf.u32(r) for r in best]
 
     def widgets(self):
-        """(name, button index, decompiled action scripts) per widget with actions."""
+        """(name, button index, press action, decompiled action scripts) per widget."""
         for w in self.widget_table():
             n = self.sdf.u32(w + 0x34)
             acts = self.ptr(w + 0x30)
-            if acts is None or not 0 < n < 64:
+            scripts = [x for x in (self.script(acts + 16 * k) for k in range(n)) if x] \
+                if acts is not None and 0 < n < 64 else []
+            action = struct.unpack_from("<h", self.sdf.data, w)[0]
+            if action == 0:
+                press = f"open page {self.str(w + 0x48)!r}"
+            elif action == 2:
+                press = f"go back {self.sdf.u32(w + 0x48)}"
+            else:
+                press = {-1: "", 1: "set group value", 3: "leave menu", 4: "no action"}.get(action, f"action {action}")
+            if not (scripts or press):
                 continue
-            name = self.str(w + 8) or self.str(self.sdf.u32(self.sdf.u32(w + 0x28))) \
-                if (w + 0x28) in self.relocs and self.sdf.u32(w + 0x28) in self.relocs else self.str(w + 8)
-            yield name, self.sdf.u32(w + 4), [x for x in (self.script(acts + 16 * k) for k in range(n)) if x]
+            obj = self.ptr(w + 0x28)
+            name = self.str(w + 8) or (self.str(self.sdf.u32(obj)) if obj is not None and obj in self.relocs else "")
+            yield name, self.sdf.u32(w + 4), press, scripts
 
 
 def main():
@@ -172,8 +190,8 @@ def main():
     print(f"functions: {', '.join(f'{n}/{a}' for n, a in menu.funcs.values())}")
     menu.dump()
     print("== widgets")
-    for name, index, scripts in menu.widgets():
-        print(f"  {name} [{index}]: " + " | ".join(scripts))
+    for name, index, press, scripts in menu.widgets():
+        print(f"  {name} [{index}]" + (f" press: {press}" if press else "") + (": " + " | ".join(scripts) if scripts else ""))
 
 
 if __name__ == "__main__":
