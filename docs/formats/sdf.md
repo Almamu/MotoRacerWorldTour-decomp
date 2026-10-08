@@ -541,8 +541,8 @@ the same places as in levels:
 | 3, 4 | M+0x7C, M+0x80 | ? (same shape as level roots 3/4: a pointer and an array of 3 × s16 + 0xCDCD padding) |
 | 5    | M+0xB0      | array of small integers (?)                                  |
 | 6    | M+0xAC      | ?                                                            |
-| 7, 8 | 0x800C9C08, 0x800C9C0C | `{u32 26, u32 27, u32 187, Cobjet* objects[187]}` (scene objects such as `moto_1st (1)`) |
-| 9, 10, 12 | 0x800C9BF8, 0x800C9C18, 0x800C92C4 | structs pointing at text objects (`CobjetVFonts`) |
+| 7, 8 | 0x800C9C08, 0x800C9C0C | `{u32 26, u32 27, u32 187, ptr[187]}`: mixed pointers (32 `CobjetEnvMap`, 2 `CanimMove`, the rest other structures); not decoded |
+| 9, 10, 12 | 0x800C9BF8, 0x800C9C18, 0x800C92C4 | structs of mostly raw pointers, with a few to `CobjetVFonts` (9, 10) or a `Cobjet` (12); not decoded |
 | 11   | 0x800C8DCC  | zeros                                                        |
 | 13   | M+0x9C      | **text table**: `{0, u32 count (323), char** strings}`, the menu's localised strings (`ENGLISH`, `NONE`, country names, …) |
 | 14   | 0x800C9F30  | HUD sprite hash list (same global as level root 14)          |
@@ -676,4 +676,4 @@ table and count whose purpose isn't known yet.
   28 `cammotion (1)` cameras with the 237 `Cobjet2dVFonts` HUD texts and the
   light, so these cameras look like part of the HUD/overlay scene rather
   than race cameras (each sits 512 units back from the origin).
-- Menu roots 0, 3–6 and the entry point to the sequences.
+- Menu roots 0, 3–12 and the entry point to the sequences.
