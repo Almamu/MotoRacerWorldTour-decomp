@@ -192,40 +192,43 @@ copies them to the scratchpad and indexes them by `index * 8`.
 | 0x16   | u8, u8 | u3, v3                                                    |
 | 0x18   | u32    | flags. High half seen: 0x1000, 0x1002, 0x1800, 0x1802, 0x5002, 0x5800, 0x5802. Bit 30 changes back-face handling; bits 11–12 give a Z (depth sort) bias |
 
-Group types, from all levels and scenes. "Packets" lists the GPU packet
-length(s) written per polygon (the length byte of the packet tag), read from
-the routine; where a routine writes two packets, the second one is an
-overlay pass.
+Group types, from all levels and scenes, with the GPU packet length(s)
+each routine writes (the length byte of the packet tag). The numbering is
+regular:
 
-| Type | Shape    | Word at 0x08                    | Packets  | Primitive                       | Routine    |
-|------|----------|---------------------------------|----------|---------------------------------|------------|
-| 2    | line     | RGB + 0x42                      | —        | `LINE_F2` (no routine: not drawn) | —        |
-| 5    | triangle | RGB + 0x20                      |          | `POLY_F3`                       | 0x8007A6C4 |
-| 6    | triangle | RGB + 0x22                      | 6        | ?                               | 0x8007A884 |
-| 7    | triangle | pointer to colours              |          | `POLY_G3`                       | 0x8007AA74 |
-| 8    | triangle | pointer to colours              | 8        | ?                               | 0x8007AC90 |
-| 9    | quad     | RGB + 0x28                      |          | `POLY_F4`                       | 0x8007B164 |
-| 10   | quad     | RGB + 0x2A                      | 7        | ?                               | 0x8007C4EC |
-| 11   | quad     | pointer to 4 colour words       | 8        | `POLY_G4`                       | 0x8007AED0 |
-| 12   | quad     | pointer to colours              | 10       | ?                               | 0x8007B3C0 |
-| 13   | triangle | RGB + 0x24 (0x26)               | 7        | `POLY_FT3`                      | 0x8007BB24 |
-| 14   | triangle | pointer to 3 colour words       | 9        | `POLY_GT3`                      | 0x8007B664 |
-| 15   | quad     | RGB + 0x2C (0x2E)               | 9        | `POLY_FT4`                      | 0x8007BD1C |
-| 16   | quad     | pointer to 4 colour words       | 12       | `POLY_GT4`                      | 0x8007B870 |
-| 17   | triangle | RGB + 0x20                      | 7 + 4    | ? + overlay                     | 0x8007D638 |
-| 18   | triangle | pointer to colours              |          | ?                               | 0x8007DBB8 |
-| 19   | quad     | RGB + 0x28                      | 9 + 5    | ? + overlay                     | 0x8007D8B4 |
-| 20   | quad     | pointer to colours              |          | ?                               | 0x8007DE6C |
-| 21   | triangle | RGB + 0x24                      | 7 + 7    | `POLY_FT3` + overlay            | 0x8007E18C |
-| 22   | triangle | pointer to colours              | 7 + 9    | ? + overlay                     | 0x8007E744 |
-| 23   | quad     | RGB + 0x2C                      | 9 + 9    | `POLY_FT4` + overlay            | 0x8007E408 |
-| 24   | quad     | pointer to colours              | 9 + 12   | ? + overlay                     | 0x8007E9E4 |
+| Type | Shape    | Word at 0x08              | Draws                                   | Packets | Routine    |
+|------|----------|---------------------------|-----------------------------------------|---------|------------|
+| 2    | line     | RGB + 0x42                | `LINE_F2` — no routine, never drawn     | —       | —          |
+| 5    | triangle | RGB + 0x20                | `POLY_F3`                               |         | 0x8007A6C4 |
+| 6    | triangle | RGB + 0x22                | `POLY_F3`, semi-transparent              | 6       | 0x8007A884 |
+| 7    | triangle | pointer to colours        | `POLY_G3`                               |         | 0x8007AA74 |
+| 8    | triangle | pointer to colours        | `POLY_G3`, semi-transparent              | 8       | 0x8007AC90 |
+| 9    | quad     | RGB + 0x28                | `POLY_F4`                               |         | 0x8007B164 |
+| 10   | quad     | RGB + 0x2A                | `POLY_F4`, semi-transparent              | 7       | 0x8007C4EC |
+| 11   | quad     | pointer to 4 colour words | `POLY_G4`                               | 8       | 0x8007AED0 |
+| 12   | quad     | pointer to colours        | `POLY_G4`, semi-transparent              | 10      | 0x8007B3C0 |
+| 13   | triangle | RGB + 0x24 (0x26)         | `POLY_FT3`                              | 7       | 0x8007BB24 |
+| 14   | triangle | pointer to 3 colour words | `POLY_GT3`                              | 9       | 0x8007B664 |
+| 15   | quad     | RGB + 0x2C (0x2E)         | `POLY_FT4`                              | 9       | 0x8007BD1C |
+| 16   | quad     | pointer to 4 colour words | `POLY_GT4`                              | 12      | 0x8007B870 |
+| 17   | triangle | RGB + 0x20                | overlay + `POLY_F3`                     | 7 + 4   | 0x8007D638 |
+| 18   | triangle | pointer to colours        | overlay + `POLY_G3`                     |         | 0x8007DBB8 |
+| 19   | quad     | RGB + 0x28                | overlay + `POLY_F4`                     | 9 + 5   | 0x8007D8B4 |
+| 20   | quad     | pointer to colours        | overlay + `POLY_G4`                     |         | 0x8007DE6C |
+| 21   | triangle | RGB + 0x24                | overlay + `POLY_FT3`                    | 7 + 7   | 0x8007E18C |
+| 22   | triangle | pointer to colours        | overlay + `POLY_GT3`                    | 7 + 9   | 0x8007E744 |
+| 23   | quad     | RGB + 0x2C                | overlay + `POLY_FT4`                    | 9 + 9   | 0x8007E408 |
+| 24   | quad     | pointer to colours        | overlay + `POLY_GT4`                    | 9 + 12  | 0x8007E9E4 |
 
-The rows marked `?` (mostly menu-scene types) still need their routines
-read in detail. Unused index slots hold 0xFFFF or the 0xCDCD padding.
+The semi-transparent types (6, 8, 10, 12) put a draw-mode command in front
+of the polygon (`0xE1000600` + blend mode from bits 5–6 of the polygon
+flags), which accounts for their longer packets. Types 18 and 20 are
+inferred from the pattern; their packet sizes weren't read. Unused index
+slots hold 0xFFFF or the 0xCDCD padding.
 
-Types 21 and 23 draw the polygon normally plus a second, semi-transparent
-textured packet (command 0x26/0x2E, colour 0x808080). Its tpage/CLUT come
+Types 17–24 draw the polygon plus a second, semi-transparent textured
+"overlay" packet (`POLY_FT3` for triangles, `POLY_FT4` for quads). For 21 and
+23 (read in detail) it is (command 0x26/0x2E, colour 0x808080). Its tpage/CLUT come
 from globals, and its UVs come from the **pad halfword of each vertex**
 (the 4th `s16` of the `SVECTOR`): an environment-map style overlay,
 presumably with UVs written into the vertices at runtime.
@@ -331,8 +334,9 @@ transitions: page open/close (`1ERPAGE`, `START`, `TIMEATTACK`, `WORLD`,
 ### Object hierarchy
 
 In menu scenes `Cobjet` + 0x40 points to a list of child objects
-(LightWave parenting, e.g. `1iconenull (1)` and its icons), and + 0x4C to a
-second list (not decoded).
+(LightWave parenting, e.g. `1iconenull (1)` and its icons). `Cobjet` + 0x4C
+is the object's own animation: the destructor (0x8001603C) frees the LOD
+list at 0x38 and deletes the animation at 0x4C.
 
 ## World (track ground)
 
@@ -552,5 +556,10 @@ table and count whose purpose isn't known yet.
   (see [../ghidra.md](../ghidra.md)).
 - World: the field at 0x4C; the grid cell size.
 - The flags-bit-1 mesh path (second dispatcher, table at 0x800C896C).
-- `CanimMoveCamera`, `CobjetCameraMotion`, `CobjetLightMotion`, `CanimSide`,
-  `CanimVertex`; spline interpolation; the other menu roots.
+- `CanimMoveCamera` (a `CanimMove` of kind 4 with one more field at 0x9C),
+  `CobjetCameraMotion` (`Cobjet` + 3 fields: 0x54, 0x58, 0x5C), and
+  `CobjetLightMotion`. In levels, root 36 points into a list that mixes the
+  28 `cammotion (1)` cameras with the 237 `Cobjet2dVFonts` HUD texts and the
+  light, so these cameras look like part of the HUD/overlay scene rather
+  than race cameras (each sits 512 units back from the origin).
+- `CanimSide`, `CanimVertex`; spline interpolation; the other menu roots.
