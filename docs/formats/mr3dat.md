@@ -124,7 +124,9 @@ The names come from format strings in the game code
 | literal                            | `data\LANGIMG.DAT`, `data\cineendr.dxr`, `data\Final\fl256.bs`, `data\Final\fl512.bs` (512x512 generic "Loading"), `data\menu\banks\MMenuVrm.vrm`, `data\menu\sc_banks\MENDVRM.vrm` |
 
 In the level names, `B` is a variant of the same track (it has its own
-`B.Vrm`), `2` marks the two-player version, and `_PS` presumably stands
+`B.Vrm`), `2` marks the two-player split-screen version (confirmed: its
+level root 15 mode word has a two-player bit, and riders use the low-poly
+second model), and `_PS` presumably stands
 for PlayStation. The 6 variants of `Menu_%d`, `EndM_%d` and `DB_D_%d` are
 the languages, by index: 0 English, 1 French, 2 German, 3 Spanish,
 4 Italian, 5 Swedish (checked from their strings). The DB name is built from

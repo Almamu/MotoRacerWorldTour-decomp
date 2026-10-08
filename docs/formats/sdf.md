@@ -1022,12 +1022,12 @@ level: `PAUSEWITHRESTART` `PAUSEWITHOUTRESTART` `PAUSERETIRE`
 |  7 | L+0x6C       | the level's sequence player `{0, Channel* list, active mask, previous mask}` (see Sequences); plays the intro (root 26); channels 5–7 are stopped at the start (0x80019DC0) |
 |  8 | L+0x3E0      | runtime effect list head (0 in the files; nodes: next at +0x94, active at +0xB0; 0x800925A8 update, 0x80092684 draw) |
 |  9 | L+0x3E4      | rider rig and appearance, see below |
-| 10 | L+0x3E8      | first-person (cockpit) camera: +0x00 enabled (0 in FSt), +0x04/+0x08 eye offset rotated by the bike's matrix (4200, 500 on road; 6000, −800 in Bar), +0x0C pitch (s16, 4096 = 360°; −200 ≈ −17.6°), +0x44 → dashboard data (its s16 at +10 picks a draw-function pair from 0x800C8D34), +0x194 runtime matrix. Built into a view by 0x8003425C; copied into the player bike (+0x31C) by 0x80051060; 0x80033E4C writes the speedometer digits |
+| 10 | L+0x3E8      | first-person (cockpit) view: +0x00 enabled (0 in FSt), +0x04/+0x08 eye offset rotated by the bike's matrix (4200, 500 on road; 6000, −800 off-road), +0x0C pitch (s16, −200 ≈ −17.6°), +0x10 speed-needle gain (needle angle = speed × gain × 16 >> 16), +0x18 / +0x24 rotation axes of the rev and speed needles, +0x3C smoothed rev-needle angle (runtime), +0x44 → the **cockpit model**: a rig with `Corps` (bodywork), `Guidon` (handlebar), `Aiguille1/2` (needles), `Embrayage`/`Frein` (clutch/brake levers), grips, hands and fingers. Each frame 0x80033E4C writes the speed digits (texture-atlas patching), rotates the needles, blinks a warning light and poses the levers and hands; +0x14, +0x30…+0x38, +0x40 not read on that path |
 | 11 | 0x800C5E0C   | rider animation set `{AnimRec*, Triple*, char* path}`, e.g. `Data\Bikes\speed\Anims\C_dummy.san`; AnimRec (20 bytes) `{keys*, key count, length, 0, name*}` |
 | 12 | 0x800C5E10   | an object handled by 0x80020200–0x80020AB0: 200-entry ring buffer of 24-byte entries plus up to 1600 56-byte records in a buffer it's given (skid marks / decals?) |
 | 13 | 0x800C7F28   | sound state (runtime): 0x988 bytes of channel slots (0x40 each), then +0x988 → s16[112] sound → slot map; reset 0x8006CA50, play 0x8006CA84, update 0x8006DF68. Zeroed in RAM, the race freezes at the countdown |
 | 14 | 0x800C9F30   | HUD sprite hash list |
-| 15 | L+0x378      | bike setup: starts with the `Data\Bikes\…` path; +0x10 → struct whose +0x52C is the level's discipline: 1 motocross (Rey, Usa), 2 supercross (Bar, Chi, Sdf), 3 speed (Eas, IM2, IM3, IdM, Sac, Suz, Tf2), 5 trial (Tri, Tr2), 6 freestyle (FSt), 7 dragster (Dr1, Dr2), 8 traffic (Tfc) |
+| 15 | L+0x378      | race setup: +0x00 mode word (0x40 one player; 0x80 / 0x20 / 0x08 = two players in the road+dirt / freestyle / trial `…2_PS` files; `& 0xA8` is tested as "two players"), +0x04 lap count (filled at run time), +0x08 discipline in the game's own numbering (1 motocross, 2 supercross, 3 trial, 4 freestyle, 5 speed incl. traffic, 6 dragster), the `Data\Bikes\…` path, +0x10 → struct whose +0x52C is the database discipline (1 motocross: Rey, Usa; 2 supercross: Bar, Chi, Sdf; 3 speed: Eas, IM2, IM3, IdM, Sac, Suz, Tf2; 5 trial: Tri, Tr2; 6 freestyle: FSt; 7 dragster: Dr1, Dr2; 8 traffic: Tfc), +0x2E8 five bike slots of 0x568 bytes |
 | 16 | L+0x458      | trackside (replay/TV) cameras, see below |
 | 17 | L+0x45C      | null in the files; the current trackside camera at run time |
 | 18 | L+0x84       | u32[4], all equal: how many of root 0's objects are processed per frame |
@@ -1138,9 +1138,28 @@ bytes) +0x5C.
 | +0x290 | 2 rider models; the rider draw (0x800618BC) uses entry 1 in mode 2, else entry 0 |
 | +0x298 | 2 × 2 texture-atlas records (16 bytes each), one pair per mode |
 
-Part record: `u8 slots (21)`, `u8 len(list B)`, `u8 len(list A)` (both
-lists 0xFF-terminated), +0x04 packed 32-bit pose words, +0x08 u8* list A,
-+0x0C u8* list B, +0x10 SVECTOR* one offset per list-B entry.
+Part records are **static poses** of the 21-joint skeleton; the base
+riding pose (record 8) is applied every frame by 0x80060980 →
+0x8008E1F8:
+
+| Offset | Type | Meaning |
+|--------|------|---------|
+| +0x00  | u8   | joint count (21) |
+| +0x01  | u8   | length of the translation list (+0x0C), with its 0xFF terminator |
+| +0x02  | u8   | length of the rotation list (+0x08), with its 0xFF terminator |
+| +0x03  | u8   | 1 = every joint has both (lists ignored) |
+| +0x04  | u32* | packed rotations, one per joint in the rotation list: x bits 0–9, y 10–19, z 20–29 (10-bit signed × 4, so 4096 = 360°), bits 30–31 flags (3) |
+| +0x08  | u8*  | joints that get a rotation |
+| +0x0C  | u8*  | joints that get a translation |
+| +0x10  | SVECTOR* | one translation per entry of the translation list |
+
+The rider **models** (+0x290) are rigs: `{s16 part count, …, +0x0A s16
+type (draw-function pair from 0x800C8D34), …, +0x28 Part** parts}`; their 31
+named parts form a LightWave skeleton for rider and bike (`pilot`, `Pilot
+Spine1`, `pilot L/R Clavicle`, `… Hand`, `… Foot`, `Moto PoigneeG/D`
+grips, `Moto CalePiedG/D` footpegs, `Moto Muffler1/2`, `Moto FourcheAv`
+fork). Model 0 is the normal rider; model 1 a low-poly one (276 vs 418) for
+**two-player split screen**.
 
 **Texture atlas** record: `u8 columns, cell width, cell height, polygon
 count, use CLUT`, +0x08 → polygons to patch, +0x0C per polygon `s16` base
@@ -1152,7 +1171,8 @@ record 0 (8 columns, 32 × 32) is the **race numbers** 1–8, record 1 (4
 columns, 64 × 64, with a CLUT shift) the **team sponsor decals** (Michelin,
 Wilkinson, DSI, Fructis, Certina, Motul, …). The variant is the bike
 object's `flags & 7`. The second pair (+0x2B8) patches the second rider
-model, drawn when root 15's mode word has bits 0xA8 set (0x800618BC).
+model, drawn when root 15's mode word has a two-player bit (0xA8) set
+(0x800618BC).
 
 ### Trackside cameras (roots 16, 17)
 
@@ -1185,7 +1205,7 @@ a flag bit: an 8-bit value, a 16-bit button mask (1 = accelerate), another
 
 ## Next steps
 
-- Root 9's packed pose words and what its index lists select; which game
-  modes use the second rider model; root 10's dashboard struct.
+- Root 9: what the 13 poses besides the riding pose are for (crashes,
+  blends?); root 15's other mode bits; what the level `B` variants are.
 - Menu: widget flag bits beyond "selectable", list-selector wrap modes.
 
