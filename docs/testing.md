@@ -87,3 +87,33 @@ Experiments done this way: raising the visible ground (root 6 vertices)
 doesn't move the bike; raising collision faces (root 5) lifts it by the same
 amount; a disc whose ground and collision were both raised in Blender has
 the bikes riding on the raised track.
+
+## Regression tests (`tools/regress.py`)
+
+`regress.py` plays scripted scenarios on the deterministic runner and
+compares checkpoints with references taken from the original disc:
+
+```
+python3 tools/regress.py refs "iso/<game>.cue" bios.bin extracted/regress/refs
+python3 tools/regress.py run  "iso/<game>.cue" bios.bin extracted/regress/refs out \
+    --track01 build/track01.bin
+```
+
+Scenarios (in the script): `arcade_race` (main menu → Sachsenring loading
+screen → countdown → 1200 frames of racing with the throttle held),
+`world_tour` (MODE page, track select, bike select) and `options`. Steps
+wait for screen conditions (the main menu is detected by its blue
+background), so the changed CD timing of a rebuilt disc doesn't matter.
+
+The report lists each checkpoint as `same` or `DIFFERENT` (mean pixel
+difference against the reference; menus animate, so up to ~3 is noise and
+small edits such as a single icon may not stand out), live race shots as
+information only, and these problems, which make the exit status 1:
+`FROZEN` (the picture stopped changing while it should animate: a hang),
+`BLACK`, `TIMEOUT`. `out/sheet.png` shows reference and result side by
+side.
+
+Checked: the original disc matches its references exactly; a disc with
+edited menus differs only where the edit shows (the retargeted page link);
+a disc whose loading screen lacks the BS end-of-frame markers (the bug
+found earlier) is reported `BLACK`/`FROZEN` from the loading screen on.
