@@ -12,6 +12,7 @@ in hex. "VRAM" means the PS1 GPU's 1024x512 16-bit frame buffer.
 | [formats/bs.md](formats/bs.md)         | `.bs` (BSx0) still images                            |
 | [formats/snd.md](formats/snd.md)       | `.snd` sound banks                                   |
 | [formats/sdf.md](formats/sdf.md)       | `.sdf` (SDF0) scenes and levels (work in progress)   |
+| [ghidra.md](ghidra.md)                 | Decompiling the game code with Ghidra (headless)     |
 
 ## Status
 

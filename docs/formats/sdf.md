@@ -144,18 +144,80 @@ polygon pointer. Its polygons hang off the 48-byte block at 0x28, which
 points to compact 12-byte records (`u16, u16 base, u8 i0..i3, ptr` to four
 per-vertex colours) and more data. Not decoded yet.
 
-## Level roots (tentative)
+## Level roots
 
-Levels have 51 roots. What's known:
+The level loader (0x80049C14, call at 0x8004A71C) passes 51 destination
+addresses. `L` is the level object being set up, `O` another object held by
+the same function, and plain addresses are globals in the game code.
 
-| Root   | Points to                                                        |
-|--------|------------------------------------------------------------------|
-| 1      | model tables: `{ptr table_a, u32 n_a, ptr table_b, u32 n_b, ...}`; each entry points to an array of 44-byte part slots whose first u16 is the part count and whose +4 is a mesh pointer. Holds for the Trial level; in other levels many slots don't point to meshes, so this is not fully right yet |
-| 14, 35, 43 | lists of texture name hashes (they match `BLKS` hashes in the level's `.Vrm`) |
+| Root | Written to   | Contents (where known)                                    |
+|------|--------------|-----------------------------------------------------------|
+|  0 | L+0x74       |  |
+|  1 | L+0x78       | model tables (see below) |
+|  2 | L+0x70       |  |
+|  3 | L+0x7C       |  |
+|  4 | L+0x80       |  |
+|  5 | L+0xC6C      |  |
+|  6 | L+0xC70      |  |
+|  7 | L+0x6C       |  |
+|  8 | L+0x3E0      |  |
+|  9 | L+0x3E4      |  |
+| 10 | L+0x3E8      |  |
+| 11 | 0x800C5E0C   |  |
+| 12 | 0x800C5E10   | working copy of the ground vertices is made at the address stored here |
+| 13 | 0x800C7F28   |  |
+| 14 | 0x800C9F30   | texture hash list |
+| 15 | L+0x378      |  |
+| 16 | L+0x458      |  |
+| 17 | L+0x45C      |  |
+| 18 | L+0x84       |  |
+| 19 | 0x800C89F4   |  |
+| 20 | 0x800C89F8   |  |
+| 21 | 0x800CBDB8   |  |
+| 22 | 0x800CBD50   |  |
+| 23 | 0x800C89FC   |  |
+| 24 | 0x800C8A00   |  |
+| 25 | L+0xC64      |  |
+| 26 | L+0x498      |  |
+| 27 | L+0xC60      |  |
+| 28 | L+0x3EC      |  |
+| 29 | L+0x37C      |  |
+| 30 | L+0x3F4      |  |
+| 31 | L+0x390      |  |
+| 32 | L+0x388      |  |
+| 33 | L+0x38C      |  |
+| 34 | L+0x398      |  |
+| 35 | L+0x460      | texture hash list (u32 count, -1, hashes) |
+| 36 | L+0x464      |  |
+| 37 | L+0x494      |  |
+| 38 | L+0x484      |  |
+| 39 | O+0x78       |  |
+| 40 | O+0x7C       |  |
+| 41 | O+0xA0       |  |
+| 42 | O+0x70       |  |
+| 43 | O+0x144      | texture hash list |
+| 44 | L+0xB0       |  |
+| 45 | L+0xB4       |  |
+| 46 | L+0x2FC      |  |
+| 47 | 0x800C5F28   | ground header: +4 = size of the vertex working buffer in vertices (0x1400 in most levels) |
+| 48 | 0x800CAB68   |  |
+| 49 | L+0x3B8      |  |
+| 50 | L+0xAC       |  |
+
+The level's single export goes to `L+0x47C` (pointer) and `L+0x480`
+(value): it is the **ground vertex pool** (an `SVECTOR` array) and its size
+in bytes. Checked on all 58 level files.
+
+Root 1 points to `{ptr table_a, u32 n_a, ptr table_b, u32 n_b, ...}`. Each
+table entry points to an array of 44-byte part slots whose first u16 is the
+part count and whose +4 is a mesh pointer. That holds for the Trial level;
+in other levels many slots don't point to meshes, so this is not fully right
+yet.
 
 ## Next steps
 
 - Read the level-setup and drawing code to pin down the root structures,
-  the model/part layout and the mesh flags, instead of inferring them.
+  the model/part layout and the mesh flags, instead of inferring them
+  (see [../ghidra.md](../ghidra.md)).
 - Decode the ground mesh, `Cobjet` fully, and the camera/light motion
   classes.
