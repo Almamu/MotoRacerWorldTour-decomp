@@ -162,4 +162,4 @@ is also still open.
 | 21    | `BSx0`    | [bs.md](bs.md)                             |
 | 18    | SND       | [snd.md](snd.md)                           |
 | 1     | code      | `data\LANGIMG.DAT`                         |
-| 1     | ?         | `data\cineendr.dxr` (contains MIPS code)    |
+| 1     | DXR       | `data\cineendr.dxr`, [dxr.md](dxr.md)        |

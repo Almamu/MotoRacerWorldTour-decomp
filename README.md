@@ -46,4 +46,5 @@ python3 tools/sdf_mesh.py extracted/mr3dat/data/final/Usa_PS.sdf extracted/sdf/U
 | `sdf.py`               | `.sdf`            | link block, classes, roots (`--objects` lists objects) |
 | `sdf_mesh.py`          | level `.sdf` (+`.Vrm`) | textured OBJ: ground, draw items, placed objects |
 | `dps.py`               | `.DPS`            | MP4 (via ffmpeg, correct frame rate)           |
+| `dxr.py`               | `.dxr`            | code relocated to a fixed base (for Ghidra)    |
 | `ghidra/`              | `LANGIMG.DAT`     | headless decompilation, see `docs/ghidra.md`   |
