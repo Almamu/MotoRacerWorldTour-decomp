@@ -88,3 +88,4 @@ python3 tools/sdf_mesh.py extracted/mr3dat/data/final/Usa_PS.sdf extracted/sdf/U
 | `dps.py`               | `.DPS`            | MP4 (via ffmpeg, correct frame rate)           |
 | `dxr.py`               | `.dxr`            | code relocated to a fixed base (for Ghidra)    |
 | `ghidra/`              | `LANGIMG.DAT`     | headless decompilation, see `docs/ghidra.md`   |
+| `emutest.py`           | data track + cue  | boots it in Mednafen headless, presses buttons, saves frames; see `docs/testing.md` |

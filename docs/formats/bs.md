@@ -64,7 +64,23 @@ Then a regular 8x8 IDCT, +128 on luma, chroma upsampled 2x, and BT.601
 YCbCr → RGB (R = Y + 1.402 Cr, G = Y − 0.344 Cb − 0.714 Cr,
 B = Y + 1.772 Cb).
 
-Columns are padded to a multiple of 4 bytes.
+After the last block every column has an **end-of-frame marker**: a block
+whose 10-bit DC is 0x1FF (bits `0111111111`), then zero bits. The game's
+decoder (`0x80087468` → the library VLC decoder) stops there; without it,
+it runs on into the next column and the MDEC never completes, which hangs
+the game on the loading screen. The bitstream is followed by at least one
+zero half-word, and columns are padded to a multiple of 4 bytes.
+
+### Loader (`0x80087468`)
+
+Checks `MCOL`, then for each column: reads the MDEC word count from the
+column header, decodes the bitstream into a work buffer, places the 16 x
+height output right after the run-length data (`buffer + words*4 + 4`), runs
+the MDEC, and uploads the column to VRAM at x + 16·column. In 16-bit mode
+without a mask it clears pixels whose components are all very dark (so
+they become transparent); with a mask (+0x4E in the mask data) it clears
+the masked pixels. Columns are skipped if the output wouldn't fit in the
+work buffer. The next column starts `size & ~3` bytes later.
 
 ## Encoding
 
@@ -72,7 +88,7 @@ Columns are padded to a multiple of 4 bytes.
 file: per 16x16 macroblock, BT.601 RGB → YCbCr with 2x2 chroma averaging,
 forward DCT, quantisation with the same matrix and qscale (the DC divided
 by 2 and clamped to 10 bits), zig-zag run/level coding with table B.14 (or
-the escape code), EOB. Re-encoding `Bar.bs` (34 KB): qscale 1 gives 62 KB
+the escape code), EOB, then the end-of-frame marker. Re-encoding `Bar.bs` (34 KB): qscale 1 gives 62 KB
 at 49 dB PSNR, qscale 4 gives 33 KB at 41 dB. The game loads these into
 buffers sized for the originals, so `max=<original size>` is the safe
 choice.

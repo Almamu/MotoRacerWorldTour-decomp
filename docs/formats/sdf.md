@@ -47,7 +47,10 @@ All fields are u32 unless stated otherwise, in this order:
 | `roots[n_roots]`          | offsets of the root structures, or 0xFFFFFFFF for null     |
 
 The link block always ends exactly at the end of the file (checked on all 76
-files).
+files). The data size is always a multiple of 4: the loader reads the link
+block with 32-bit loads, and a file whose link block isn't 4-aligned hangs
+the game (seen in the emulator after appending a 3-byte string);
+`sdf.py` pads the data block.
 
 ### Loading (game code, `0x800A5530`)
 

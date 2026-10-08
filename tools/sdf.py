@@ -129,7 +129,10 @@ def serialize(sdf):
     def u32s(values):
         return struct.pack(f"<{len(values)}I", *values)
 
-    out = bytearray(b"SDF0" + struct.pack("<I", len(sdf.data)) + bytes(sdf.data))
+    # The loader reads the link block with 32-bit loads, so the data block must
+    # end on a 4-byte boundary (true for every original file).
+    data = bytes(sdf.data) + b"\0" * (-len(sdf.data) % 4)
+    out = bytearray(b"SDF0" + struct.pack("<I", len(data)) + data)
     out += u32s([len(sdf.exports)] + [o for o, _ in sdf.exports] + [v for _, v in sdf.exports])
     out += u32s([len(sdf.relocs), len(sdf.objects), len(sdf.classes), len(sdf.roots)])
     out += u32s(sdf.relocs) + u32s(sdf.objects)

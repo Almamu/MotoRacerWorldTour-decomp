@@ -23,7 +23,8 @@ usage: bs.py <file.bs> [more.bs ...] <out_dir>     decode to PNG
 
 Each column header's first u16 is the number of 32-bit MDEC words the
 column decodes to (DC + run/level + EOB codes, two per word), rounded up to
-a multiple of 32; columns are padded to 4 bytes.
+a multiple of 32; the bitstream is followed by at least one zero
+half-word, then padding to 4 bytes.
 """
 
 import struct
@@ -241,8 +242,13 @@ def encode_frame(rgb, qscale):
             for k in range(4):
                 oy, ox = my + (k >> 1) * 8, mx + (k & 1) * 8
                 codes += encode_block(bw, y[oy:oy + 8, ox:ox + 8] - 128, qscale)
+    # End of frame: a block whose 10-bit DC is 0x1FF (the game's decoder
+    # stops there; without it it runs on into the next column and hangs).
+    bw.write(0x1FF, 10)
     mdec_words = -(-((codes + 1) // 2) // 32) * 32
-    body = struct.pack("<4H", mdec_words, 0x3800, qscale, 2) + bw.to_bytes()
+    # Like the originals: at least one zero half-word after the bitstream,
+    # then padding to 4 bytes.
+    body = struct.pack("<4H", mdec_words, 0x3800, qscale, 2) + bw.to_bytes() + b"\0\0"
     return body + b"\0" * (-len(body) % 4)
 
 
@@ -253,8 +259,8 @@ def encode_bsx0(rgb, qscale=1):
         raise ValueError("width and height must be multiples of 16")
     cols = [encode_frame(rgb[:, x:x + 16], qscale) for x in range(0, w, 16)]
     body = b"MCOL" + struct.pack(f"<{len(cols)}I", *map(len, cols)) + b"".join(cols)
-    head = struct.pack("<HH", w, h)
-    return b"BSx0" + struct.pack("<I", len(head) + len(body)) + head + body
+    # The size field counts what follows the width/height (file size - 12).
+    return b"BSx0" + struct.pack("<IHH", len(body), w, h) + body
 
 
 def main():
