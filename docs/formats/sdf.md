@@ -198,9 +198,9 @@ add up exactly to the mesh's polygon count.
 | Offset | Type  | Meaning                                              |
 |--------|-------|------------------------------------------------------|
 | 0x00   | u16   | polygon count                                        |
-| 0x02   | u16   | ? (non-zero when flags bit 1 is set)                  |
+| 0x02   | u16   | ? (0 on most meshes; no reader found)                 |
 | 0x04   | u16   | vertex count                                         |
-| 0x06   | u8    | flags: bit 0 always set; bit 1 = special path (block at 0x28); bit 2 = extra lighting pass (uses block+0x20). Draw-item meshes only use 1, 3, 5; the track-ground mesh is 9 |
+| 0x06   | u8    | flags: bit 0 always set; bit 1 = depth-bucketed, sphere-culled mesh (block at 0x28, see below); bit 2 = extra lighting pass (0x8007ED28, uses block+0x20). Draw-item meshes only use 1, 3, 5; the track-ground mesh is 9 |
 | 0x07   | u8    | padding (0xCD)                                       |
 | 0x08   | s32[4]| bounds in 1/32 units: max \|x\|, \|y\|, \|z\| of the model and its radius (rounded up from the original float model; some meshes, like the sky, have larger values) |
 | 0x18   | ptr   | vertices                                             |
@@ -211,6 +211,26 @@ add up exactly to the mesh's polygon count.
 
 Vertices are `SVECTOR`s: `s16 x, y, z, pad` (pad = 0xCDCD). The draw code
 copies them to the scratchpad and indexes them by `index * 8`.
+
+### Bucketed meshes (flags bit 1)
+
+The draw entry (0x8007C354) draws flag-1 meshes through 0x8007BFB0 and the
+routine table 0x800C8908; with bit 1 set it uses 0x8007C780 and a second
+table at 0x800C896C, reading the 48-byte block at mesh + 0x28:
+
+| Offset | Type | Meaning                                                    |
+|--------|------|------------------------------------------------------------|
+| 0x0A   | u8   | depth buckets: a private ordering table of `4 << bits(n)` entries, linked into the frame's as one entry |
+| 0x0B   | u8   | culling spheres                                            |
+| 0x0C   | ptr  | one u16 per polygon: low byte = bucket, high byte = sphere |
+| 0x10   | ptr  | spheres, 16 bytes: `s32 x, y, z, radius` (1/32 units)       |
+
+Each frame the spheres are tested against the camera (0x8001DFD8 →
+0x8001E1C8 → 0x8001E118, one visibility byte per sphere in the scratchpad);
+the polygon routines (e.g. 0x8007C978) skip polygons whose sphere is hidden
+and insert the rest at `bucket × 4` (plus the Z-bias flag bits), so the
+polygons are pre-sorted by the exporter. 80 draw items use it (grandstands,
+arena roofs). Two freestyle meshes have bucket 0xFF on a few polygons.
 
 ### Polygons
 
@@ -399,7 +419,7 @@ Sequences (28 bytes each) bind objects to animations:
 | 0x00   | char*     | name, e.g. `1ERPAGE`, `TIMEATTACK`, `motos_me2mf`, `world_rot3` |
 | 0x04   | ptr       | object group: `{Cobjet** objects, ?, u32 count}`         |
 | 0x08   | ptr       | the animation root (root 2)                             |
-| 0x0C   | ptr       | another sequence (chaining)                             |
+| 0x0C   | ptr       | next sequence in a player's active list (runtime link)  |
 | 0x10   | Binding*  | binding list                                            |
 | 0x14   | u32       | length (e.g. 4000, 1000, 333, 33)                       |
 | 0x18   | u32       | flags                                                   |
@@ -408,6 +428,16 @@ Binding: `{u32 packed, Binding* next}`. `packed` bits 0–11 (signed) = index
 into the group's objects, bits 12–23 = index into the animation table
 (0xFFF = no animation). Each update plays every bound animation on its
 object; the object gets flag 0x200 (matrix changed).
+
+A **sequence player** keeps the active sequences in a list at its +4
+(linked through +0x0C): `FUN_80019D0C(player, seq, …)` starts one,
+`FUN_80019E30(player)` updates those whose +0x18 bits 0–1 say they're
+playing (via 0x8001983C). Menu pages have a player at +0x50 and their
+opening sequence at +0x54; widget event records (found with 0x8003B248)
+hold sequences at +0x30. Levels have one player (root 7) for the intro
+(root 26). Objects also keep a list of their own animations at
+`Cobjet` + 0x4C (`{next, index into root 2}`; restarted by 0x80017A9C,
+stopped by 0x80017A30).
 
 `Menu_0.Sdf` has 148 sequences, named after the menu pages and their
 transitions: page open/close (`1ERPAGE`, `START`, `TIMEATTACK`, `WORLD`,
@@ -453,7 +483,9 @@ recognisable tracks with correct textures (`tools/sdf_mesh.py`).
 | 0x40   | u32       | length of the vertex-index list (u16 entries)               |
 | 0x44   | u32       | block count                                                |
 | 0x48   | u32       | sector count                                               |
-| 0x4C   | ptr       | ? (an array of identical pointers in `Tri_PS`)              |
+| 0x34   | u32       | grid cell diagonal in 1/32 units: 0x16A09 = 65536·√2 (2048-unit cells), 0xB504 in FSt/Tri/Tr2 (1024-unit cells) |
+| 0x38   | u32       | 10 × 0x34: object visibility distance (0x8001DF10)          |
+| 0x4C   | ptr       | 4 `Cobjet` pointers (e.g. `d_bat27` × 4); no reader found (exporter leftover?) |
 | 0x50   | Sector*   | sector table                                               |
 | 0x54   | Block*    | block table                                                |
 | 0x58   | u16*      | vertex-index list                                          |
@@ -477,8 +509,10 @@ Rows' first-cell indices follow on from each other, and the cells of all
 rows add up to world+0x14 (checked on all 58 level files).
 
 Each frame the camera's view frustum is projected onto the grid
-(0x8001E240 → 0x8001E458 → 0x8001EAF4, coordinates divided by the cell
-size) and the cells it covers are collected into the visible lists.
+(0x8001E240 → 0x8001E458 → 0x8001EAF4) and the cells it covers are
+collected into the visible lists. The divisor comes from the camera
+(camera + 0x164: 0x400 or 0x1000, set at 0x80035474); world + 0x34 holds
+the cell diagonal.
 
 ### Cell (12 bytes)
 
@@ -701,20 +735,45 @@ the same places as in levels:
 
 | Root | Written to  | Contents                                                     |
 |------|-------------|--------------------------------------------------------------|
-| 0    | M+0xA4      | ? (`0, -, 21, 190, …`)                                       |
+| 0    | M+0xA4      | **UI manager** (≥ 0xAC0 bytes, mostly 0xCD fill, set up by 0x8003B484): +0x7C current page name, +0xA7C/+0xA80 page list / current page, +0xA98/+0xA9C game-state structs, +0xAB8 `{type, ptr, ptr, ptr}` list |
 | 1    | M+0x78      | draw-item table (as in levels)                               |
 | 2    | M+0x70      | animation table `{Canim** table, u32 2000, …}`; the sequences point at it |
-| 3, 4 | M+0x7C, M+0x80 | ? (same shape as level roots 3/4: a pointer and an array of 3 × s16 + 0xCDCD padding) |
-| 5    | M+0xB0      | array of small integers (?)                                  |
-| 6    | M+0xAC      | ?                                                            |
-| 7, 8 | 0x800C9C08, 0x800C9C0C | `{u32 26, u32 27, u32 187, ptr[187]}`: mixed pointers (32 `CobjetEnvMap`, 2 `CanimMove`, the rest other structures); not decoded |
-| 9, 10, 12 | 0x800C9BF8, 0x800C9C18, 0x800C92C4 | structs of mostly raw pointers, with a few to `CobjetVFonts` (9, 10) or a `Cobjet` (12); not decoded |
-| 11   | 0x800C8DCC  | zeros                                                        |
+| 3, 4 | 0x800CBE90/94 | unused (only ever written)                                 |
+| 5    | M+0xB0      | same data as level root 33                                   |
+| 6    | M+0xAC      | same data as level root 32 (bike physics table)              |
+| 7, 8 | 0x800C9C08, 0x800C9C0C | `MOTOS` / `MOTOS2` page data (bike selection, players 1 and 2): +0x00…+0x08 selection values (26, 27, 187), +0x2C/+0x30 widgets, +0x34 and +0x54 eight widget pointers each (stat bars), +0x74 an object, +0x88/+0x8C per-bike tables |
+| 9    | 0x800C9BF8  | `LOAD` / `LECTURE` page data                                  |
+| 10   | 0x800C9C18  | `SAVE` page data                                              |
+| 11   | 0x800C8DCC  | `CONFIGURATION` page data: 252 zero bytes, filled at load from the pad configuration (0x80099F88); +0xE0… pad type per port |
+| 12   | 0x800C92C4  | `BDVITESSE` / `CURVE` / `STAND` page data (gearbox, power curve, bike setup); 8676 bytes, starting with a pointer to root 6 |
 | 13   | M+0x9C      | **text table**: `{0, u32 count (323), char** strings}`, the menu's localised strings (`ENGLISH`, `NONE`, country names, …) |
 | 14   | 0x800C9F30  | HUD sprite hash list (same global as level root 14)          |
 
-The sequences (see Animation) are only referenced from each other, so the
-way the menu code finds them isn't known yet.
+`EndM_N` has roots 7–12 null.
+
+**Pages** are 0x74-byte records in the UI manager's page list: +0x00 name,
++0x44 → UI manager, +0x50 sequence player, +0x54 opening sequence (+0x34,
++0x38, +0x4C: widget lists, not decoded). `Menu_N` has 34 pages (`1ERPAGE`
+`LECTURE` `START` `MODES` `WORLD` `WORLD2` `TIMEATTACK` `NEWCHAMP`
+`VOULEZVOUS` `CHAMP` `CC_COURSE` `CC_CROSS` `DRAGSTER` `TRIAL` `TRAFFIC`
+`ECURIE` `MANUAL` `MANUAL2` `MANUALCH` `SRSINGLE` `SRCHAMP` `MOTOS` `MOTOS2`
+`OPTIONS` `SOUND` `DIFFICULTY` `CONFIGURATION` `LOAD` `SAVE` `SCREENPOS`
+`STAND` `CURVE` `TIRES` `BDVITESSE`), `EndM_N` 20 (`MENUSC`, `MENUSP`,
+`SC.*`).
+
+The code binds pages **by name**: 0x8009D2E0 builds four `{char* name,
+value}` registries: open/close callbacks at 0x800C9750 (`<PAGE>OPEN`,
+`<PAGE>CLOSE`, `<PAGE>START`, e.g. `MOTOSOPEN` = 0x8009E954), actions at
+0x800C98F4 (`PIGNON`, `CLEAR`, `PitsYes`, `PitsNo`, `VIB`, `CLEARCHAMP`,
+`SNDCB`, `SNDMASTERCB`), per-frame callbacks at 0x800C9A6C (`<PAGE>DRAW`,
+`<PAGE>HANDLE`, `<PAGE>DISP`) and page data at 0x800CBEA0 (filled by
+0x8009D410: `MOTOS` → root 7, `MOTOS2` → root 8, `LOAD`/`LECTURE` → root 9,
+`SAVE` → root 10, `CONFIGURATION` → root 11, `BDVITESSE`/`CURVE`/`STAND` →
+root 12, `WORLD` and the race modes → a runtime struct). A callback gets
+its data from `*(UI + 0xA80) + 0x60`. The scene's strings also hold the
+menu script vocabulary: `ChangePage`, `CondChangePage`, `GoBackPage`,
+`PlaySnd`, `CondPlaySnd`, `PAGELIST` and variables such as `CurTrack`,
+`GameMode`, `NbPlayers`, `P1_NoMoto`, `Difficulty`.
 
 ## Database (`Data\DB_D_0..5.sdf`)
 
@@ -731,10 +790,15 @@ are translated. The game loads it at 0x800A048C with root destinations
 
 | Root | Contents                                                          |
 |------|-------------------------------------------------------------------|
-| 0    | riders: 20-byte entries `{char* name, ?, char tag[4], s32, u32}`: `Player 1`/`2` (tags `PL1`, `PL2`), `Player 1`/`2 shadow` (`SH1`, `SH2`), then the AI riders (`MAURICE Jean` = `MJ`, `MCINLAY Stephan` = `MS`, `BALMANN Klaus` = `BK`, `RODRIGUEZ Luis` = `RL`, …) |
-| 1    | teams: 12-byte entries `{char* name ("TEAM 1" … "TEAM 8"), 0xFFFFFF, 0}` |
+| 0    | riders: 20-byte entries `{char* name, char* first name, char tag[4], s32 index, u32 age}`: `Player 1`/`2` (tags `PL1`, `PL2`), `Player 1`/`2 shadow` (`SH1`, `SH2`), then the AI riders (`MAURICE Jean` = `MJ`, `MCINLAY Stephan` = `MS`, `BALMANN Klaus` = `BK`, `RODRIGUEZ Luis` = `RL`, …); `index` is -1 for players, else used as `index + 0xE` for a menu sprite; age below 2 marks a player |
+| 1    | teams: 12-byte entries `{char* name ("TEAM 1" … "TEAM 8"), 0xFFFFFF (colour?), 0}` |
+| 2    | arcade cups (0x800C9EE8): three pointers, each to three 24-byte groups (one per difficulty) `{s32* offsets[3 per track], s32* tracks (3 track indices), u32 count (3/4/5, laps?), u32 flag}`; the per-track offsets are negative and shrink with difficulty (AI handicaps?). Accessors 0x800A14B8, 0x800A14CC |
+| 3    | championship (0x800C9EEC): `{u32 11, ptr}` → 32-byte rounds `{s32 ?, s32 track, s32 4, s32 0, s32 laps, s32 value[3]}` (`value[difficulty]`, difficulty index at 0x800D5F30); rounds: Sachsen 3 laps, Barcelon 6, Suzuka 3, Usa 3, Ile2Man3 4, StdFranc 4, Eastern 3, Regade 2, IleDeMan 3, Chicago 5, Ile2Man2 4. Read at 0x8004AFBC in game mode 4 |
+| 4    | 18 × 0xCDCDCDCD; filled at startup (0x8009FE70) with each track's discipline |
 | 5    | `300, 100, 60, 30, 0`                                              |
-| 6    | demo replays: `{char* path, 0}` × 4, `Data\DemoPsx1.rep` … `DemoPsx4.rep` (these files aren't in `MR3.DAT`) |
+| 6    | demo replays: `{char* path, 0}` × 4, `Data\DemoPsx1.rep` … `DemoPsx4.rep` (these files aren't in `MR3.DAT`; the PS1 demos are in level root 45) |
+| 7    | in-game text table (0x800C9EFC, copied to 0x800C8C0C): `{0, u32 155, char** strings}` (`France` …, `LAPS`, `MAX SPEED`, `START`, …, `YES`, `NO`, `CANCEL`), read through 0x80086A38(table, index) |
+| 8    | font table (0x800C8D8C): `{Font** fonts, u32 3}`: `MR3`, `CENTURGI`, `CENTURYG` (`char name[32]` at +4, pointers at +0x30/+0x34), looked up by name (0x800955C4) |
 | 9    | `{u32 18, Track* tracks, …}`: the track table (below)              |
 | 10   | best times: `u32 ?`, then 12-byte entries `{u32 time, char initials[4], u32 0xFFFF}`; times look like milliseconds (0x30EEE = 200430 → 3:20.43) |
 
@@ -748,13 +812,12 @@ Track record (28 bytes), in the same order as the level code table
 | 0x08   | char* | country (translated)                                    |
 | 0x0C   | char* | length in km, e.g. `" 5.77 Km"`                         |
 | 0x10   | char* | length in miles, e.g. `" 3.61 Miles"`                   |
-| 0x14   | u32   | 1–7 (default lap count?)                                |
+| 0x14   | u32   | default lap count (matches the championship's)          |
 | 0x18   | u32   | discipline: 1 motocross, 2 supercross, 3 speed (road and traffic), 5 trial, 6 freestyle, 7 dragster |
 
-Not decoded yet: root 3 (`u32 11`, then groups of 4 pointers + 2 u32s,
-perhaps championship definitions), roots 7/8 (they point into the string
-pool of nationalities and countries: `France`, `SP`, `D`, `AUS`, `USA`,
-`Japanese`, …), root 2 and root 4.
+Not decoded yet: the championship round's +0x00 and +0x08, the meaning of
+the cups' negative per-difficulty values, and which sprite a rider's index
+selects.
 
 ## Level roots
 
@@ -764,57 +827,57 @@ the same function, and plain addresses are globals in the game code.
 
 | Root | Written to   | Contents (where known)                                    |
 |------|--------------|-----------------------------------------------------------|
-|  0 | L+0x74       |  |
-|  1 | L+0x78       | draw-item table (see Draw items) |
-|  2 | L+0x70       | animation table `{Canim** table, u32 capacity (800), ptr, u32}`, as in menus: up to 3 `CanimMoveCamera` flights plus object animations (`CanimMove`, `CanimSide`) |
-|  3 | L+0x7C       |  |
-|  4 | L+0x80       |  |
+|  0 | L+0x74       | object list `{Cobjet** objects, ptr, u32 count, …}` (Sac: 80); each frame objects with `(flags & 0xE) == 2` are sphere-tested (0x80053D4C → 0x8001DF10) and get the visible bit 0x10 |
+|  1 | L+0x78       | draw-item table `{DrawItem** table, u32 count}` (see Draw items); the next 8 bytes are root 39 |
+|  2 | L+0x70       | animation table `{Canim** table, u32 capacity (800), ptr, u32}`, as in menus: the intro `CanimMoveCamera` flights plus object animations (`CanimMove`, `CanimSide`) |
+|  3 | L+0x7C       | `{0, 0}`; copied to 0x800CBE90 and never read |
+|  4 | L+0x80       | `{bike setup, 0, bike setup, 0}`; copied to 0x800CBE94 and never read |
 |  5 | L+0xC6C      | collision surface (see Collision) |
 |  6 | L+0xC70      | world struct (see World) |
-|  7 | L+0x6C       |  |
-|  8 | L+0x3E0      |  |
-|  9 | L+0x3E4      |  |
-| 10 | L+0x3E8      |  |
-| 11 | 0x800C5E0C   |  |
+|  7 | L+0x6C       | the level's sequence player `{0, Channel* list, active mask, previous mask}` (see Sequences); plays the intro (root 26); channels 5–7 are stopped at the start (0x80019DC0) |
+|  8 | L+0x3E0      | runtime effect list head (0 in the files; nodes: next at +0x94, active at +0xB0; 0x800925A8 update, 0x80092684 draw) |
+|  9 | L+0x3E4      | bike/rider rig: 14 part records of 0x1C bytes at +0x04, animation count (26 road, 36 dirt, 50 freestyle) and pointers into root 11 at +0x1C4 (0x80060980, 0x800618BC) |
+| 10 | L+0x3E8      | cockpit (first-person) dashboard: enable flag (0 in FSt) and parameters, copied into the player bike at +0x31C (0x80051060); 0x80033E4C writes the speed digits |
+| 11 | 0x800C5E0C   | rider animation set `{AnimRec*, Triple*, char* path}`, e.g. `Data\Bikes\speed\Anims\C_dummy.san`; AnimRec (20 bytes) `{keys*, key count, length, 0, name*}` |
 | 12 | 0x800C5E10   | an object handled by 0x80020200–0x80020AB0: 200-entry ring buffer of 24-byte entries plus up to 1600 56-byte records in a buffer it's given (skid marks / decals?) |
-| 13 | 0x800C7F28   |  |
-| 14 | 0x800C9F30   | texture hash list |
+| 13 | 0x800C7F28   | sound state (runtime): 0x988 bytes of channel slots (0x40 each), then +0x988 → s16[112] sound → slot map; reset 0x8006CA50, play 0x8006CA84, update 0x8006DF68. Zeroed in RAM, the race freezes at the countdown |
+| 14 | 0x800C9F30   | HUD sprite hash list |
 | 15 | L+0x378      | bike setup: starts with the `Data\Bikes\…` path; +0x10 → struct whose +0x52C is the level's discipline: 1 motocross (Rey, Usa), 2 supercross (Bar, Chi, Sdf), 3 speed (Eas, IM2, IM3, IdM, Sac, Suz, Tf2), 5 trial (Tri, Tr2), 6 freestyle (FSt), 7 dragster (Dr1, Dr2), 8 traffic (Tfc) |
-| 16 | L+0x458      |  |
-| 17 | L+0x45C      |  |
-| 18 | L+0x84       |  |
-| 19 | 0x800C89F4   |  |
-| 20 | 0x800C89F8   |  |
-| 21 | 0x800CBDB8   |  |
-| 22 | 0x800CBD50   |  |
-| 23 | 0x800C89FC   |  |
-| 24 | 0x800C8A00   |  |
+| 16 | L+0x458      | trackside (replay/TV) cameras, see below |
+| 17 | L+0x45C      | null in the files; the current trackside camera at run time |
+| 18 | L+0x84       | u32[4], all equal: how many of root 0's objects are processed per frame |
+| 19 | 0x800C89F4   | HUD state (runtime): lap text ("/", count, "Lap(s)"), speed digits (+0x90), per-bike records (+0x98 + 16·i); methods 0x80082904–0x800831BC |
+| 20 | 0x800C89F8   | HUD strings `{?, "Best speed", "\|", "{"}`; 0x8008267C picks one of the two glyphs (speed unit?) |
+| 21 | 0x800CBDB8   | HUD text descriptor pool (64 slots) |
+| 22 | 0x800CBD50   | HUD elements per game mode: `table[(j + (32 − lzc(mode))·9)·2 + k]` (0x8008280C) |
+| 23 | 0x800C89FC   | per-player HUD layout (runtime; 0x800831BC, 0x8008350C, 0x80083618) |
+| 24 | 0x800C8A00   | freestyle trick display (runtime, FSt): trick name from the table at 0x800C73F8 (`SPLIT`, …), points, 300-tick timer (0x80083D40) |
 | 25 | L+0xC64      | surface bump maps (see Collision / Surface types) |
-| 26 | L+0x498      |  |
-| 27 | L+0xC60      |  |
-| 28 | L+0x3EC      |  |
-| 29 | L+0x37C      |  |
-| 30 | L+0x3F4      |  |
-| 31 | L+0x390      |  |
-| 32 | L+0x388      |  |
-| 33 | L+0x38C      |  |
-| 34 | L+0x398      |  |
+| 26 | L+0x498      | intro script, see below |
+| 27 | L+0xC60      | sky: +0x00 → the `b_sky (1)` object (null in Bar, indoors), then parameters and per-view state; 0x800939CC sets up the view, 0x80093150 draws |
+| 28 | L+0x3EC      | **track gates** and racing lines, see below |
+| 29 | L+0x37C      | 80 × s16, the same in every level (no reader found) |
+| 30 | L+0x3F4      | road-traffic controller, see below |
+| 31 | L+0x390      | 5 AI performance records of 0x34 bytes, scaled by difficulty into the AI bikes (+0x45C…+0x48C) by 0x80064AA0; null in FSt and Tri |
+| 32 | L+0x388      | 16 bike handling records of 0x198 bytes: `bike+0x5A0 = root32 + model·0x198` (0x8005DC10), from which 0x80024824 / 0x80024168 / 0x80024584 derive the physics. Menus carry the same table (menu root 6) |
+| 33 | L+0x38C      | lists of grid-cell (x, z) byte pairs and fixed-point values (no reader found); same data as menu root 5 |
+| 34 | L+0x398      | start-grid headings: 6 × `(0, yaw, 0, 0xCCCC)`, 4096 = 360° (Sac about −167°, the measured start direction); no reader found |
 | 35 | L+0x460      | texture hash list (u32 count, -1, hashes) |
-| 36 | L+0x464      |  |
-| 37 | L+0x494      |  |
-| 38 | L+0x484      |  |
-| 39 | O+0x78       |  |
+| 36 | L+0x464      | per-view intro camera `{CobjetCameraMotion*, 0, 0}`: the level's `cammotion (1)`; while the intro runs the view uses camera mode 3 (0x8004C9D0); `+0x5C` of the camera is a look-at object index (0x8004CD5C) |
+| 37 | L+0x494      | post-race phase queue `{slots*, s32 current (−1), u32 8}`: 20-byte slots `{kind, ?, duration ms (−1 = until skipped), a, b}`, filled at the end of a race (0x800557C4), stepped by 0x80051AE0 / 0x80051EA4 |
+| 38 | L+0x484      | **minimap**: +4 3×3 s16 world→map matrix, +0x18 translation, +0x24 dot sprite, +0x28 104×64 map sprite; 0x80086A78 draws it with one dot per bike. Zeroed in RAM, the map disappears. Null in FSt and Tri |
+| 39 | O+0x78       | (follows root 1's table) |
 | 40 | O+0x7C       |  |
 | 41 | O+0xA0       |  |
 | 42 | O+0x70       |  |
 | 43 | O+0x144      | texture hash list |
-| 44 | L+0xB0       |  |
-| 45 | L+0xB4       |  |
-| 46 | L+0x2FC      |  |
+| 44 | L+0xB0       | null in every level |
+| 45 | L+0xB4       | attract-mode demo / replay buffer `{ptr, u32 size}` (size × 2 bytes), see below |
+| 46 | L+0x2FC      | demo header (308 bytes): bike slots, +0xF4 = 0x3000 replay buffer size (0 = no demo), +0xF8 best lap in ms, +0xFC best-lap initials (Sac: 54000, `TOM`, the HUD's "Best Lap 00:54:00") |
 | 47 | 0x800C5F28   | +4 = buffer size for the root-12 object, in 8-byte units (0x1400 in most levels) |
-| 48 | 0x800CAB68   |  |
-| 49 | L+0x3B8      |  |
-| 50 | L+0xAC       |  |
+| 48 | 0x800CAB68   | track-section visibility (Eas, Rey, Sac, Suz, Usa): sections `{prev, next, u32, s16 lo/hi track progress, object lists}`; 0x80034AC8 follows the bike's progress and 0x80034C0C hides objects outside the current section |
+| 49 | L+0x3B8      | 3 viewports × 92 bytes: projection, screen rectangle, clip rectangles, split-screen transition (from/to rectangles, start, duration, blend), player index (0x8005C128, 0x8005CA00; drawn by 0x800865B4) |
+| 50 | L+0xAC       | Trial restart points (Tri): `{count, {0xD, Point*}…}`; 0x8005148C saves a rider's start position and heading at bike +0x548… |
 
 The level's single export goes to `L+0x47C` (pointer) and `L+0x480`
 (value: a byte size). During level setup (0x8005CDA4) the game hands this
@@ -822,26 +885,79 @@ block to the root-12 object as its record buffer, with a size of
 `root47[+4] * 8` bytes (0x1400 * 8 in most levels). The flag-9 mesh's vertex
 pointer points at the start of the same block.
 
-Root 1 is described under Draw items; its third/fourth words are another
-table and count whose purpose isn't known yet.
+### Track gates (root 28)
+
+A 392-byte struct, mostly runtime (0xCDCD in the file): +0x24 number of
+gate lists, +0x28 → gate lists (20 bytes: `{u32 count, Gate* gates,
+Line** racing lines (null-terminated), u32 ?, s32 gate of list 0 where this
+list rejoins it (-1 for list 0)}`), +0x34 enabled. List 0 is the lap;
+others are branches (Barcelona's start straight rejoins at gate 13).
+
+Gate (20 bytes): `s32 x, y, z` (1/32 units), `u32` distance along the list
+(1/32 units), `u16` direction (4096 = 360°), `s16` ?. Sachsenring has 550
+gates; the last distance, 14 055 359 (= 439 230 game units for a circuit of
+about 3.7 km, so **a game unit is about a centimetre**), matches the summed
+gate-to-gate lengths. Plotted over the collision surface the gates follow
+every track. Per bike, 0x8001B974 finds the last gate plane passed
+(direction · (bike − gate) ≥ 0) and keeps the current/next gate at bike
++0x1F4…+0x200: race progress and laps.
+
+Racing lines: one 32-byte record per gate; byte 7 (s8) is a lateral offset
+(`offset << 9`, 1/32 units, along the gate's perpendicular). Sac has 2
+lines, Barcelona 4 (parallel grid lanes that merge). The traffic code
+follows them (0x80073E54); the AI bikes probably do too.
+
+### Intro (roots 26, 36, 7)
+
+Root 26 (48 bytes): +0x00 state (bits 27–31 = current step, 31 = idle),
++0x04 + 4k the sequence `intro<k>` for step k (or null), +0x2C `prestart`
+(motocross/supercross). Each `introN` binds the intro camera (root 36) to
+one `CanimMoveCamera` flight. 0x8005663C advances the step and plays it on
+the level's player (root 7) only in a replay or for step 1; replays show
+"Replay Present" at step 2 and "Replay Starting" at step 7. So a live race
+only shows `intro1`, which only Bar, Chi, Sdf and FSt have: the road
+tracks' flights play before replays (checked in the emulator: copying
+Sachsenring's `intro2` into the `intro1` slot makes the race open with a
+flight down the start straight). Start skips to step 7 (0x80060668).
+`CanimMoveCamera` (0xA0 bytes, vtable 0x800C877C) copies its +0x9C (-1 in
+every file) into the camera's look-at target, `CobjetCameraMotion` (0x60
+bytes) +0x5C.
+
+### Trackside cameras (roots 16, 17)
+
+Root 16: `{u32 count (Sac 19), Camera* list (next at +0x54), 0, ptr}`.
+Camera: positions at +0x00 and +0x0C, two zone planes (+0x2C/+0x38,
++0x3C/+0x48), mask +0x5C, zone mode +0x76. 0x8008C678 picks the nearest
+camera whose zone (0x8008B998) contains the bike (0x8008C500 by time);
+the current one is kept in root 17.
+
+### Traffic (root 30)
+
+116 bytes, updated by 0x80072ED4: +0x2C enabled (1 in Tfc and Tf2), +0x30
+vehicle count (8 / 12), +0x34 → 0xCC-byte vehicle records, +0x40…+0x4C
+distances, +0x50 `c_trf_`: the name prefix of the traffic objects, whose
+matrices are left unfilled in the file and set when they're placed along the
+racing lines (0x80073E54, 0x800731EC).
+
+### Demo (roots 45, 46)
+
+The object at L+0x308 (built by 0x8006BDDC) records the player's input
+every frame into a 0x3000-byte bit stream (0x8006C140) and plays it back
+(0x8006C330, 0x8006C4A0). Root 45 is that buffer; in Sac, Sdf and Usa (one
+per discipline) it holds the **attract-mode demo** the title screen plays.
+The stream is 32-bit little-endian words read LSB first; per frame: 4 bits
+(a position parity check and 3 booleans), then optional fields each behind
+a flag bit: an 8-bit value, a 16-bit button mask (1 = accelerate), another
+8-bit value and three analog bytes. A mask of 14135 ends it (Sachsenring:
+5335 frames in exactly 9976 bytes). 0x8005A59C plays a demo only if root
+46's +0xF4 ≠ 0 and +0xF0 > 0.
 
 ## Next steps
 
-- Read the level-setup and drawing code to pin down the root structures,
-  the model/part layout and the mesh flags, instead of inferring them
-  (see [../ghidra.md](../ghidra.md)).
-- World: the field at 0x4C; the grid cell size.
+- Level roots 39–42 (the second object `O`), 29 and 33 (no reader), the
+  racing-line records beyond the offset byte, root 9's part records and
+  root 10's parameters; whether the AI follows the racing lines.
+- Menu UI manager internals, widget lists and event records.
 - Collision: what surface types 5–7 and 31 mean in the off-road levels
   (they only matter for the discipline flags).
-- The flags-bit-1 mesh path (second dispatcher, table at 0x800C896C).
-- `CanimMoveCamera` (a `CanimMove` of kind 4 with one more field at 0x9C,
-  -1 in every file): levels hold about 3 of them (178 in 58 files) in the
-  root 2 animation table, each a camera path through the track (e.g. 5, 19
-  and 4 keys over ~3800 ticks in Suzuka), likely the pre-race shots; not
-  confirmed where the game plays them.
-  `CobjetCameraMotion` (`Cobjet` + 3 fields: 0x54, 0x58, 0x5C), and
-  `CobjetLightMotion`. In levels, root 36 points into a list that mixes the
-  28 `cammotion (1)` cameras with the 237 `Cobjet2dVFonts` HUD texts and the
-  light, so these cameras look like part of the HUD/overlay scene rather
-  than race cameras (each sits 512 units back from the origin).
-- Menu roots 0, 3–12 and the entry point to the sequences.
+

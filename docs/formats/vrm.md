@@ -64,8 +64,12 @@ Colour modes: 0 = 4 bpp (16-colour CLUT), 1 = 8 bpp (256-colour CLUT),
 | 0x06   | u16  | CLUT y                        |
 
 Every level bank has exactly these two (`0002 0010 0020 0135` and
-`0002 0010 0021 0135`); the two menu banks have none. Possibly palettes
-the game rewrites at runtime.
+`0002 0010 0021 0135`, hashes 0xD9162723 and 0x9092FD46); the two menu banks
+have none. They are entries 35 and 36 of the HUD sprite hash list (level
+root 14, resolved into 0x800CC030 by 0x800A1B54), but no code reads those
+entries with a constant index, so their use is still unknown. The bank
+loader (0x80096290) only special-cases `LPAL` chunks (relocating their +8
+field), which no bank contains.
 
 ## FNTS — bitmap font
 

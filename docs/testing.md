@@ -79,8 +79,8 @@ Useful addresses on that path (European version, Sachsenring):
 | Address      | What |
 |--------------|------|
 | 0x800F7200   | the level's SDF data block (`Sac_PS.sdf` offset 0) |
-| 0x8017D300   | player bike: position x, y, z (s32, 1/32 units, Y down), then velocity |
-| 0x8017D324   | four contact points (x, y, z) |
+| 0x8017D288   | player bike object (AI bikes follow every 0x580 bytes): +0x64 position x, y, z (s32, 1/32 units, Y down), +0x220…+0x230 collision face records (body, wheels), +0x42C surface type, +0x494 state flags, +0x5A0 handling record |
+| 0x8017D300   | a second position (camera/body follower, 1/32 units) with four contact points at 0x8017D324 |
 
 Experiments done this way: raising the visible ground (root 6 vertices)
 doesn't move the bike; raising collision faces (root 5) lifts it by the same
