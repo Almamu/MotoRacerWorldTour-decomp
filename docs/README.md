@@ -11,7 +11,8 @@ in hex. "VRAM" means the PS1 GPU's 1024x512 16-bit frame buffer.
 | [formats/vrm.md](formats/vrm.md)       | `.Vrm` texture banks                                 |
 | [formats/bs.md](formats/bs.md)         | `.bs` (BSx0) still images                            |
 | [formats/snd.md](formats/snd.md)       | `.snd` sound banks                                   |
-| [formats/sdf.md](formats/sdf.md)       | `.sdf` (SDF0) scenes and levels (work in progress)   |
+| [formats/sdf.md](formats/sdf.md)       | `.sdf` (SDF0) scenes and levels                      |
+| [formats/dps.md](formats/dps.md)       | `.DPS` movies (STR)                                  |
 | [ghidra.md](ghidra.md)                 | Decompiling the game code with Ghidra (headless)     |
 
 ## Status
@@ -25,5 +26,5 @@ in hex. "VRAM" means the PS1 GPU's 1024x512 16-bit frame buffer.
 | `.Vrm`      | Textures done; `FNTS` chunks and one `DPAL` field unknown       |
 | `.snd`      | Names and samples done; one table and sample rates unknown     |
 | `.sdf`      | Container, draw items, meshes and track ground done (exports textured OBJ); some object/world fields open |
-| `.dps`      | Not started (FMV)                                             |
+| `.dps`      | Done (STR + header sector; converts with ffmpeg)              |
 | `.dxr`      | Not started                                                   |
