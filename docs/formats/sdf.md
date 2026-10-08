@@ -86,14 +86,14 @@ registries (0x80049C14, 0x80046F2C):
 
 | Class                | Size  | vtable at | Used in        |
 |----------------------|-------|-----------|----------------|
-| `CanimVertex`        | 0x4C  | 0x34      | registries only |
-| `CanimSide`          | 0x48  | 0x34      | menus          |
+| `CanimVertex`        | 0x4C  | 0x34      | registries only (0 in the files) |
+| `CanimSide`          | 0x48  | 0x34      | 14 in total    |
 | `CanimMove`          | 0x9C  | 0x34      | menus          |
 | `CanimMoveCamera`    | 0xA0  | 0x34      | levels         |
 | `Cobjet`             | 0x54  | 0x50      | all            |
-| `CobjetHud`          | 0x64  | 0x50      | registries only |
+| `CobjetHud`          | 0x64  | 0x50      | registries only (0 in the files) |
 | `CobjetCameraMotion` | 0x60  | 0x50      | all            |
-| `CobjetMotoHumain`   | 0x5D4 | 0x50      | registries only |
+| `CobjetMotoHumain`   | 0x5D4 | 0x50      | registries only (0 in the files) |
 | `CobjetVFonts`       | 0x5C  | 0x50      | menus          |
 | `CobjetLightMotion`  | 0x58  | 0x50      | all            |
 | `CobjetEnvMap`       | 0x58  | 0x50      | menus          |
@@ -327,6 +327,31 @@ Catmull-Rom. The result is then written into the target object's matrix
 
 In `Menu_0.Sdf` all 269 `CanimMove` key lists are consistent rings (694
 keys, 49 of them spline). 380 keys share one rotation, (0, 0, 0).
+
+### CanimSide (0x48 bytes) — polygon surface animation
+
+A flip-book on some polygons of one draw item's mesh: at each key the
+polygons' UVs, colours, tpage and CLUT are overwritten (methods 0x80076658,
+0x80076948, 0x80076BD8; there's no interpolation).
+
+| Offset | Type   | Meaning                                                  |
+|--------|--------|----------------------------------------------------------|
+| 0x00   | u32    | animation kind, 1                                        |
+| 0x38   | u32    | draw-item index (into the root 1 table)                  |
+| 0x3C   | u32    | number of animated polygons `n`                          |
+| 0x40   | s32*   | `n` polygon indices into the item's mesh                 |
+| 0x44   | ptr    | runtime: `n` × 36-byte backup of the original values     |
+
+Each key's +0x14 (the "position" pointer for `CanimMove`) points to `n`
+36-byte records:
+
+| Offset | Type    | Meaning                                                 |
+|--------|---------|---------------------------------------------------------|
+| 0x00   | u8[4]   | u of vertices 0–3                                       |
+| 0x04   | u8[4]   | v of vertices 0–3                                       |
+| 0x08   | u32[4]  | RGB per vertex (flat polygons use the first one)        |
+| 0x18   | s8      | tpage (written to the polygon's 0x12)                   |
+| 0x1A   | u16     | CLUT (written to the polygon's 0x0E)                    |
 
 ### Sequences
 
@@ -624,4 +649,4 @@ table and count whose purpose isn't known yet.
   28 `cammotion (1)` cameras with the 237 `Cobjet2dVFonts` HUD texts and the
   light, so these cameras look like part of the HUD/overlay scene rather
   than race cameras (each sits 512 units back from the origin).
-- `CanimSide`, `CanimVertex`; the other menu roots.
+- The other menu roots.
