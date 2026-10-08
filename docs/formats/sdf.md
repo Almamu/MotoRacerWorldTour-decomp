@@ -197,8 +197,14 @@ each level is other geometry that hasn't been found yet.
 vertices in `Tri_PS`), no polygon pointer, and a vertex pointer into the
 exported block (see Level roots). Its polygons hang off the 48-byte block at
 0x28, which points to compact 12-byte records (`u16, u16, u8 i0..i3, ptr` to
-four colour words) and more data. It isn't in the draw-item table. What it
-is (track ground, skid-mark template, …) is still open.
+four colour words) and more data. It isn't in the draw-item table: its
+draw item sits inside the struct that root 6 points to (stored at
+`L+0xC70`), whose group list accounts for all of the mesh's polygons (in
+`Tri_PS`: types 13/14/15/16, 65 + 66 + 304 + 744 = 1179). That struct also
+points to a 598-pointer table and several raw arrays, and the level setup
+(0x8005CDA4) allocates runtime buffers into its fields 0x28, 0x2C and 0x30.
+This looks like the level's world geometry, with polygons assembled at
+runtime from sector data. Not decoded yet.
 
 ## Level roots
 
@@ -214,7 +220,7 @@ the same function, and plain addresses are globals in the game code.
 |  3 | L+0x7C       |  |
 |  4 | L+0x80       |  |
 |  5 | L+0xC6C      |  |
-|  6 | L+0xC70      |  |
+|  6 | L+0xC70      | world struct: holds the flag-9 mesh's draw item and sector data |
 |  7 | L+0x6C       |  |
 |  8 | L+0x3E0      |  |
 |  9 | L+0x3E4      |  |
