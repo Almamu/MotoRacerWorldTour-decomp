@@ -67,20 +67,33 @@ Every level bank has exactly these two (`0002 0010 0020 0135` and
 `0002 0010 0021 0135`); the two menu banks have none. Possibly palettes
 the game rewrites at runtime.
 
-## FNTS — font
+## FNTS — bitmap font
 
-Not decoded yet. Level banks have 5, menu banks 4. Each starts with a
-12-u16 header that is the same in every font except for a few fields, e.g.
-in `Usa.Vrm`:
+Decoded from the text drawing routine (0x80080040 in `data\LANGIMG.DAT`).
+Each glyph is drawn as a textured sprite (`SPRT`, command 0x64) of
+`width x height` pixels.
 
-```
-9111 0120 0301 0005 0000 ffff 4da7 0000 00a2 05f6 0022 0018
-```
+| Offset | Type      | Meaning                                       |
+|--------|-----------|-----------------------------------------------|
+| 0x00   | u8        | height (pixels)                               |
+| 0x01   | u8        | glyph count                                   |
+| 0x02   | u8        | first character code (32, or 33 in one menu font) |
+| 0x04   | s8        | letter spacing (added after every glyph)       |
+| 0x06   | u8        | width of a space                              |
+| 0x14   | u16       | CLUT id                                       |
+| 0x16   | u16       | tpage                                         |
+| 0x18   | u32[count]| glyphs: byte 0 = u, byte 1 = v, byte 2 = width (byte 3 = height again) |
 
-Word 1 (0x0120) and word 9 (0x05F6 / 0x05FA) are valid CLUT ids inside the
-bank, and word 10 differs per font (0x22, 0x23, 0x60, 0x61, 0x62). Then
-come u16 pairs, one per character (27 to 224 of them). Reading a pair as
-(u, v) + (width, height) does **not** line up with the glyphs in the bank's
-font page (tpage 0x18), and in some fonts the first values climb in steps of
-6, so they're more likely offsets into glyph data. The text classes
-(`CobjetVFonts`, `Cobjet2dVFonts`) need to be read to finish this.
+Characters outside `first .. first + count - 1` are skipped, except:
+space (advances by the space width + spacing), 0x01 (the next three bytes
+of the string are a new RGB colour), and 0x02 (the next byte is an index
+into the HUD sprite table, drawn inline).
+
+All 31 level banks carry the same 5 fonts (heights 17, 18, 17, 12 and 10;
+27 to 224 glyphs), all on tpage 0x18 with their own CLUT. `MMenuVrm.vrm`
+has 4 different ones (heights 17, 21, 12, 10; on tpages 0x18 and 0x08).
+
+The HUD sprite table: level root 14 is a list of 163 chunk hashes (fonts at
+indices 16–20). At load the game resolves it into descriptor pointers at
+0x800CC030 (0x800A1B54), which the HUD code and the 0x02 escape use.
+`tools/vrm.py` writes each font as a glyph strip plus JSON metrics.

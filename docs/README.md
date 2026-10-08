@@ -24,7 +24,7 @@ in hex. "VRAM" means the PS1 GPU's 1024x512 16-bit frame buffer.
 | `MR3.DAT`   | Done (incl. per-entry CRC); 146 of 150 file names recovered   |
 | LZSS        | Done                                                          |
 | `.bs`       | Done                                                          |
-| `.Vrm`      | Textures done; `FNTS` chunks and one `DPAL` field unknown       |
+| `.Vrm`      | Textures and fonts done; one `DPAL` field unknown             |
 | `.snd`      | Names and samples done; one table and sample rates unknown     |
 | `.sdf`      | Container, draw items, meshes and track ground done (exports textured OBJ); some object/world fields open |
 | `.dps`      | Done (STR + header sector; converts with ffmpeg)              |

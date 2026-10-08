@@ -13,14 +13,18 @@ all tpage/clut values in the descriptors are absolute VRAM coordinates.
 
 Chunk tags:
   DPAL  palette descriptor: u16 ?, u16 colour count, u16 clut x/16, u16 clut y
-  FNTS  font / sprite sheet (format not decoded yet)
+  FNTS  bitmap font: u8 height, u8 glyph count, u8 first char, u8 ?,
+        s8 letter spacing, u8 ?, u8 space width, ..., u16 clut at 0x14,
+        u16 tpage at 0x16, then u32 per glyph: u, v, width (bytes 0-2)
   BLKS  texture: GPU POLY_FT4-style uv0, clut, uv1, tpage, uv2, uv3, then
         u16 n and n clut ids (palette variants; the first equals `clut`)
 
 usage: vrm.py <file.vrm> <out_dir>
-  writes vram.png (16-bit view of the whole block) and blks/<hash>.png
+  writes vram.png (16-bit view of the whole block), blks/<hash>.png and
+  fonts/<hash>.png + fonts/<hash>.json (glyph strip and metrics)
 """
 
+import json
 import struct
 import sys
 from pathlib import Path
@@ -86,18 +90,52 @@ def parse_blks(blob):
     return [uv(w[0]), uv(w[2]), uv(w[4]), uv(w[5])], w[1], w[3], cluts
 
 
+def parse_font(blob):
+    height, count, first = blob[0], blob[1], blob[2]
+    spacing = struct.unpack_from("<b", blob, 4)[0]
+    space = blob[6]
+    clut, tpage = struct.unpack_from("<HH", blob, 0x14)
+    glyphs = []
+    for i in range(count):
+        g = struct.unpack_from("<I", blob, 0x18 + i * 4)[0]
+        glyphs.append({"char": first + i, "u": g & 0xFF, "v": (g >> 8) & 0xFF, "width": (g >> 16) & 0xFF})
+    return {"height": height, "first": first, "spacing": spacing, "space_width": space,
+            "clut": clut, "tpage": tpage, "glyphs": glyphs}
+
+
+def font_strip(vrm, font):
+    """All glyphs side by side (1 px apart), in character order."""
+    page = vrm.texture([(0, 0), (255, 255)], font["clut"], font["tpage"])
+    h = font["height"]
+    width = sum(g["width"] + 1 for g in font["glyphs"]) + 1
+    strip = np.zeros((h, max(width, 1), 4), np.uint8)
+    x = 1
+    for g in font["glyphs"]:
+        if g["width"]:
+            strip[:, x:x + g["width"]] = page[g["v"]:g["v"] + h, g["u"]:g["u"] + g["width"]]
+        x += g["width"] + 1
+    return strip
+
+
 def main():
     if len(sys.argv) != 3:
         sys.exit(__doc__)
     vrm = Vrm(Path(sys.argv[1]).read_bytes())
     out = Path(sys.argv[2])
     (out / "blks").mkdir(parents=True, exist_ok=True)
+    (out / "fonts").mkdir(parents=True, exist_ok=True)
     Image.fromarray(rgb555_to_rgba(vrm.vram)).save(out / "vram.png")
     for tag, h, blob in vrm.chunks:
         if tag == "BLKS":
             uvs, clut, tpage, cluts = parse_blks(blob)
             Image.fromarray(vrm.texture(uvs, clut, tpage)).save(out / "blks" / f"{h:08x}.png")
             print(f"BLKS {h:08x} tpage {tpage:04x} clut {clut:04x} uv {uvs} variants {len(cluts)}")
+        elif tag == "FNTS":
+            font = parse_font(blob)
+            Image.fromarray(font_strip(vrm, font)).save(out / "fonts" / f"{h:08x}.png")
+            (out / "fonts" / f"{h:08x}.json").write_text(json.dumps(font, indent=1))
+            print(f"FNTS {h:08x} height {font['height']} glyphs {len(font['glyphs'])} "
+                  f"from {font['first']} clut {font['clut']:04x} tpage {font['tpage']:04x}")
         else:
             print(f"{tag} {h:08x} {len(blob)} bytes")
 
