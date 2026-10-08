@@ -13,18 +13,38 @@ are ignored).
 See [`docs/`](docs/README.md) for the disc layout, the executables and every
 file format worked out so far.
 
-## Rebuilding
+## Modding workflow
+
+```sh
+# everything into editable files (PNG textures/fonts/loading screens, WAV samples, JSON strings)
+python3 tools/workspace.py unpack "iso/<track 01>.bin" ws
+# ...edit files under ws/assets (or replace raw entries under ws/mr3dat)...
+python3 tools/workspace.py repack ws "build/<track 01>.bin"
+# put the original .cue and audio tracks next to the new data track
+```
+
+Only edited assets are converted back; everything else is copied byte for
+byte, so a repack without edits reproduces the original data track. The
+individual steps are also available on their own:
 
 ```sh
 python3 tools/mr3dat.py extract extracted/disc/MR3.DAT extracted/mr3dat
-# ...edit files under extracted/mr3dat...
 python3 tools/mr3dat.py pack extracted/mr3dat build/MR3.DAT extracted/disc/MR3.DAT
 python3 tools/disc.py replace "iso/<track 01>.bin" "build/<track 01>.bin" MR3.DAT build/MR3.DAT
-# copy the .cue and the audio tracks next to it; the other tracks are unchanged
 ```
 
-A rebuild without edits reproduces both `MR3.DAT` and the data track byte
-for byte.
+What can be edited:
+
+| Asset | Edit as | Notes |
+|---|---|---|
+| Textures, fonts (`.Vrm`) | PNG | mapped to each texture's existing palette; size/position fixed |
+| Loading screens (`.bs`) | PNG | re-encoded no larger than the original |
+| Sound banks (`.snd`) | WAV (16-bit mono) | ADPCM-encoded; loop layout kept; SPU RAM is 512 KB |
+| Text in scenes/database (`.sdf`) | JSON | new strings appended, pointers redirected |
+| Anything else in `MR3.DAT` | raw file | replace it under `ws/mr3dat` |
+
+Not supported yet: geometry and animation edits, palette edits, movies
+(`.DPS`). None of this has been tested in an emulator or on hardware yet.
 
 ## Tools
 
@@ -53,6 +73,7 @@ python3 tools/sdf_mesh.py extracted/mr3dat/data/final/Usa_PS.sdf extracted/sdf/U
 | Tool                   | Input             | Output                                        |
 |------------------------|-------------------|-----------------------------------------------|
 | `extract_iso.py`       | data track (.bin) | disc files + `files.txt`                       |
+| `workspace.py`         | disc ⇄ workspace  | unpack everything / repack edited assets into a new data track |
 | `disc.py`              | data track (.bin) | replace files (in place or moved to the end), EDC/ECC regenerated; `verify` |
 | `mr3dat.py`            | `MR3.DAT` ⇄ dir   | extract (+ `manifest.json`) / pack (LZSS encoder, CRCs, hash table) |
 | `mr3dat_names.txt`     | —                 | recovered `MR3.DAT` file names                 |
