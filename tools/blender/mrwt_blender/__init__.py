@@ -33,6 +33,7 @@ bl_info = {
     "category": "Import-Export",
 }
 
+import math
 import sys
 from pathlib import Path
 
@@ -244,6 +245,96 @@ def collision_faces(ob, s):
     return out
 
 
+def gate_ends(g):
+    """Gate edge end points (game units): negative side, positive side."""
+    _, (px, pz) = sc.gate_frame(g.angle)
+    a = (g.x - px * g.width_neg * sc.WIDTH_UNIT, g.y, g.z - pz * g.width_neg * sc.WIDTH_UNIT)
+    b = (g.x + px * g.width_pos * sc.WIDTH_UNIT, g.y, g.z + pz * g.width_pos * sc.WIDTH_UNIT)
+    return a, b
+
+
+def build_track(name, track, s, coll):
+    """One mesh per gate list (an edge across the track per gate) and one
+    polyline per racing line, with editable attributes."""
+    for gl in track:
+        verts, edges = [], []
+        for i, g in enumerate(gl.gates):
+            a, b = gate_ends(g)
+            verts += [to_blender(a, s), to_blender(b, s)]
+            edges.append((2 * i, 2 * i + 1))
+        me = bpy.data.meshes.new(f"{name}_gates_{gl.index}")
+        me.from_pydata(verts, edges, [])
+        me["mrwt_gates"] = gl.index
+        ob = bpy.data.objects.new(f"{name} gates {gl.index}", me)
+        coll.objects.link(ob)
+        for j, line in enumerate(gl.lines):
+            pts = []
+            for g, p in zip(gl.gates, line):
+                _, (px, pz) = sc.gate_frame(g.angle)
+                off = p.lane * sc.LANE_UNIT
+                pts.append(to_blender((g.x + px * off, g.y, g.z + pz * off), s))
+            lm = bpy.data.meshes.new(f"{name}_line_{gl.index}_{j}")
+            lm.from_pydata(pts, [(i, i + 1) for i in range(len(pts) - 1)], [])
+            for attr, vals in (("speed", [p.speed for p in line]), ("flags", [p.flags for p in line]),
+                               ("steer", [p.steer for p in line])):
+                a = lm.attributes.new(attr, "INT", "POINT")
+                a.data.foreach_set("value", vals)
+            lm["mrwt_line"] = [gl.index, j]
+            lo = bpy.data.objects.new(f"{name} line {gl.index}.{j}", lm)
+            coll.objects.link(lo)
+
+
+def track_from_blender(root, s, old):
+    """Gate lists and racing lines from the Blender objects (game units)."""
+    import copy
+    new = copy.deepcopy(old)
+    by_list = {gl.index: gl for gl in new}
+    for ob in root.all_objects:
+        if ob.type != "MESH":
+            continue
+        me = ob.data
+        if "mrwt_gates" in me:
+            gl = by_list[me["mrwt_gates"]]
+            if len(me.vertices) != 2 * len(gl.gates):
+                raise ValueError(f"{ob.name}: gates can't be added or removed")
+            for i, g in enumerate(gl.gates):
+                a = to_game_float(ob.matrix_world @ me.vertices[2 * i].co, s)
+                b = to_game_float(ob.matrix_world @ me.vertices[2 * i + 1].co, s)
+                orig = old[[x.index for x in old].index(gl.index)].gates[i]
+                oa, ob_ = gate_ends(orig)
+                if all(abs(u - v) < 0.5 for p, q in ((a, oa), (b, ob_)) for u, v in zip(p, q)):
+                    continue  # untouched (float noise)
+                px, pz = b[0] - a[0], b[2] - a[2]
+                length = math.hypot(px, pz) or 1.0
+                px, pz = px / length, pz / length
+                g.angle = round(math.atan2(px, -pz) * 4096 / (2 * math.pi)) & 0xFFF
+                half = length / 2 / sc.WIDTH_UNIT
+                g.width_pos = g.width_neg = max(0, min(255, round(half)))
+                g.x, g.y, g.z = (a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2
+    for ob in root.all_objects:
+        if ob.type != "MESH" or "mrwt_line" not in ob.data:
+            continue
+        me = ob.data
+        k, j = me["mrwt_line"]
+        gl = by_list[k]
+        pts = gl.lines[j]
+        if len(me.vertices) != len(pts):
+            raise ValueError(f"{ob.name}: racing-line points can't be added or removed")
+        vals = {}
+        for attr in ("speed", "flags", "steer"):
+            buf = [0] * len(me.vertices)
+            if attr in me.attributes:
+                me.attributes[attr].data.foreach_get("value", buf)
+                vals[attr] = buf
+        for i, (g, p) in enumerate(zip(gl.gates, pts)):
+            x, _, z = to_game_float(ob.matrix_world @ me.vertices[i].co, s)
+            _, (px, pz) = sc.gate_frame(g.angle)
+            p.lane = max(-128, min(127, round(((x - g.x) * px + (z - g.z) * pz) / sc.LANE_UNIT)))
+            if "speed" in vals:
+                p.speed, p.flags, p.steer = vals["speed"][i], vals["flags"][i], vals["steer"][i]
+    return new
+
+
 def import_scene(context, path, vrm_path, s):
     data = sc.load(path)
     name = Path(path).stem
@@ -283,6 +374,10 @@ def import_scene(context, path, vrm_path, s):
         ob.display_type = "WIRE"
         ob.hide_render = True
         root.objects.link(ob)
+    if data.track:
+        track_col = bpy.data.collections.new(f"{name} track")
+        root.children.link(track_col)
+        build_track(name, data.track, s, track_col)
     return data, root
 
 
@@ -363,6 +458,8 @@ def export_scene(root, out, base=None):
     bpy.context.view_layer.update()  # make matrix_world current after scripted moves
     s = root.get("mrwt_scale", 0.01)
     items, ground, objects, collision = {}, None, [], None
+    old = sc.load(base or root["mrwt_source"])
+    track = track_from_blender(root, s, old.track) if old.track else None
     for ob in root.all_objects:
         if "mrwt_object" in ob:
             matrix, t = object_placement(ob, s)
@@ -376,7 +473,7 @@ def export_scene(root, out, base=None):
             ground = mesh_item(me, s, ob.matrix_world)
         if me.get("mrwt_collision"):
             collision = collision_faces(ob, s)
-    return sc.save(base or root["mrwt_source"], out, items, ground, objects, collision)
+    return sc.save(base or root["mrwt_source"], out, items, ground, objects, collision, track)
 
 
 # --- operators ---------------------------------------------------------------

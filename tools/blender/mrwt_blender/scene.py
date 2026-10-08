@@ -11,6 +11,7 @@ Edits only touch what differs from `base`, so saving an unedited scene
 gives back the same bytes.
 """
 
+import math
 import struct
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -78,6 +79,7 @@ class Scene:
     objects: list = field(default_factory=list)
     roots: int = 0
     collision: list = None     # [CollisionFace], levels only
+    track: list = None         # [GateList], levels only
 
 
 def rgb(word):
@@ -180,7 +182,8 @@ def load(path):
     items = {i: read_item(sdf, i, item) for i, item in draw_items(sdf).items()}
     ground = read_ground(sdf) if len(sdf.roots) == 51 else None
     collision = read_collision(sdf) if len(sdf.roots) == 51 else None
-    return Scene(items, ground, read_objects(sdf), len(sdf.roots), collision)
+    track = read_track(sdf) if len(sdf.roots) == 51 else None
+    return Scene(items, ground, read_objects(sdf), len(sdf.roots), collision, track)
 
 
 # --- writing -----------------------------------------------------------------
@@ -285,7 +288,7 @@ def write_collision(sdf, old, new, tolerance=2.5):
     return changed
 
 
-def save(base, out, items=None, ground=None, objects=None, collision=None):
+def save(base, out, items=None, ground=None, objects=None, collision=None, track=None):
     """Write `base` with the given edits to `out`.
 
     items: {index: Item} (verts and faces in game units); ground: Item;
@@ -317,5 +320,127 @@ def save(base, out, items=None, ground=None, objects=None, collision=None):
         n = write_collision(sdf, old.collision, collision)
         if n:
             log.append(f"collision: {n} faces re-encoded")
+    if track is not None and old.track:
+        ng, nl = write_track(sdf, old.track, track)
+        if ng or nl:
+            log.append(f"track: {ng} gates, {nl} racing-line points changed")
     Path(out).write_bytes(serialize(sdf))
     return log
+
+
+# --- track gates and racing lines (root 28) ------------------------------------
+
+ROOT_GATES = 28
+GATE_SIZE = 20
+LINE_REC = 32
+WIDTH_UNIT = 8          # gate +0x12/+0x13: half-width in 8-unit steps
+LANE_UNIT = 16          # racing line +0x07: lateral offset in 16-unit steps
+
+
+@dataclass
+class Gate:
+    x: float            # game units (Y down)
+    y: float
+    z: float
+    dist: int           # distance along the list, 1/32 units
+    angle: int          # direction, 4096 = 360°: forward = (cos, sin) in x/z
+    width_pos: int      # +0x12: half-width towards perp = (sin a, -cos a)
+    width_neg: int      # +0x13: half-width the other way
+
+
+@dataclass
+class LinePoint:
+    steer: int          # +0x06 s8
+    lane: int           # +0x07 s8, lateral offset in LANE_UNIT steps along perp
+    speed: int          # +0x0E u8, target speed
+    flags: int          # +0x0F u8: bits 0-5 allowed lines, bit 7 clear = jump section
+
+
+@dataclass
+class GateList:
+    index: int
+    gates: list
+    lines: list         # [[LinePoint] per line]
+    rejoin: int
+
+
+def _s8(v):
+    return v - 256 if v > 127 else v
+
+
+def gate_frame(angle):
+    """(forward, perp) unit vectors in x/z for a gate direction."""
+    a = angle * 2 * math.pi / 4096
+    return (math.cos(a), math.sin(a)), (math.sin(a), -math.cos(a))
+
+
+def read_track(sdf):
+    r = sdf.roots[ROOT_GATES]
+    if r is None:
+        return []
+    n_lists, lists = sdf.u32(r + 0x24), sdf.u32(r + 0x28)
+    out = []
+    for k in range(n_lists):
+        L = lists + 20 * k
+        n, g = sdf.u32(L), sdf.u32(L + 4)
+        gates = []
+        for i in range(n):
+            x, y, z, dist, angle, w1, w2 = struct.unpack_from("<3iIHBB", sdf.data, g + GATE_SIZE * i)
+            gates.append(Gate(x / 32, y / 32, z / 32, dist, angle, w1, w2))
+        lines, p = [], sdf.u32(L + 8)
+        while p and sdf.u32(p):
+            base = sdf.u32(p)
+            pts = []
+            for i in range(n):
+                rec = base + LINE_REC * i
+                d = sdf.data
+                pts.append(LinePoint(_s8(d[rec + 6]), _s8(d[rec + 7]), d[rec + 0x0E], d[rec + 0x0F]))
+            lines.append(pts)
+            p += 4
+        out.append(GateList(k, gates, lines, struct.unpack_from("<i", sdf.data, L + 0x10)[0]))
+    return out
+
+
+def write_track(sdf, old, new):
+    """Write moved gates (position, direction, widths; distances recomputed
+    for lists with moved gates) and changed racing-line bytes. Gate and line
+    counts are fixed. Returns (gates changed, line points changed)."""
+    r = sdf.roots[ROOT_GATES]
+    lists = sdf.u32(r + 0x28)
+    data = bytearray(sdf.data)
+    ng = nl = 0
+    for o, nw in zip(old, new):
+        if len(o.gates) != len(nw.gates) or len(o.lines) != len(nw.lines):
+            raise ValueError(f"gate list {o.index}: gate and racing-line counts are fixed")
+        L = lists + 20 * o.index
+        g = sdf.u32(L + 4)
+        moved = [round(a.x * 32) != round(b.x * 32) or round(a.y * 32) != round(b.y * 32)
+                 or round(a.z * 32) != round(b.z * 32) for a, b in zip(o.gates, nw.gates)]
+        dists = [a.dist for a in o.gates]
+        if any(moved):
+            first = moved.index(True)
+            for i in range(max(1, first), len(nw.gates)):
+                a, b = nw.gates[i - 1], nw.gates[i]
+                step = math.dist((a.x, a.y, a.z), (b.x, b.y, b.z)) * 32
+                dists[i] = dists[i - 1] + round(step)
+        for i, (a, b) in enumerate(zip(o.gates, nw.gates)):
+            vals = (round(b.x * 32), round(b.y * 32), round(b.z * 32), dists[i] & 0xFFFFFFFF,
+                    b.angle & 0xFFFF, max(0, min(255, b.width_pos)), max(0, min(255, b.width_neg)))
+            if vals != (round(a.x * 32), round(a.y * 32), round(a.z * 32), a.dist, a.angle,
+                        a.width_pos, a.width_neg):
+                struct.pack_into("<3iIHBB", data, g + GATE_SIZE * i, *vals)
+                ng += 1
+        p = sdf.u32(L + 8)
+        for lo, ln in zip(o.lines, nw.lines):
+            base = sdf.u32(p)
+            for i, (a, b) in enumerate(zip(lo, ln)):
+                if (a.steer, a.lane, a.speed, a.flags) != (b.steer, b.lane, b.speed, b.flags):
+                    rec = base + LINE_REC * i
+                    data[rec + 6] = max(-128, min(127, b.steer)) & 0xFF
+                    data[rec + 7] = max(-128, min(127, b.lane)) & 0xFF
+                    data[rec + 0x0E] = max(0, min(255, b.speed))
+                    data[rec + 0x0F] = b.flags & 0xFF
+                    nl += 1
+            p += 4
+    sdf.data = bytes(data)
+    return ng, nl
