@@ -577,7 +577,7 @@ the same function, and plain addresses are globals in the game code.
 |------|--------------|-----------------------------------------------------------|
 |  0 | L+0x74       |  |
 |  1 | L+0x78       | draw-item table (see Draw items) |
-|  2 | L+0x70       |  |
+|  2 | L+0x70       | animation table `{Canim** table, u32 capacity (800), ptr, u32}`, as in menus: up to 3 `CanimMoveCamera` flights plus object animations (`CanimMove`, `CanimSide`) |
 |  3 | L+0x7C       |  |
 |  4 | L+0x80       |  |
 |  5 | L+0xC6C      |  |
@@ -643,7 +643,11 @@ table and count whose purpose isn't known yet.
   (see [../ghidra.md](../ghidra.md)).
 - World: the field at 0x4C; the grid cell size.
 - The flags-bit-1 mesh path (second dispatcher, table at 0x800C896C).
-- `CanimMoveCamera` (a `CanimMove` of kind 4 with one more field at 0x9C),
+- `CanimMoveCamera` (a `CanimMove` of kind 4 with one more field at 0x9C,
+  -1 in every file): levels hold about 3 of them (178 in 58 files) in the
+  root 2 animation table, each a camera path through the track (e.g. 5, 19
+  and 4 keys over ~3800 ticks in Suzuka), likely the pre-race shots; not
+  confirmed where the game plays them.
   `CobjetCameraMotion` (`Cobjet` + 3 fields: 0x54, 0x58, 0x5C), and
   `CobjetLightMotion`. In levels, root 36 points into a list that mixes the
   28 `cammotion (1)` cameras with the 237 `Cobjet2dVFonts` HUD texts and the
