@@ -123,8 +123,13 @@ The names come from format strings in the game code
 | `data\sounds\%s.snd`               | `menu traffic cross1 cross2 scross1 scross2 fstyle trial speed1 speed2 dragster` (+ older single banks `cross`, `speed`, `scross`) |
 | literal                            | `data\LANGIMG.DAT`, `data\cineendr.dxr`, `data\Final\fl256.bs`, `data\Final\fl512.bs` (512x512 generic "Loading"), `data\menu\banks\MMenuVrm.vrm`, `data\menu\sc_banks\MENDVRM.vrm` |
 
-In the level names, `B` is a variant of the same track (it has its own
-`B.Vrm`), `2` marks the two-player split-screen version (confirmed: its
+In the level names, `B` is the **500 cc** version of the same track: the
+name is built by 0x80049B9C from `Data\Final\%s%s%s_P%c.sdf` with the
+middle `%s` = `"b"` when the race class is 1 (500 cc; 0x800D5F34, set from
+the cup/championship class and forced to 0 on tracks 11–17, which have no
+`B` files) and `""` otherwise, and `%s%s.Vrm` the same way for the texture
+bank. Sachsenring vs SacB: identical except the bike model (draw item 92:
+different fairing, 133 vs 124 vertices) and re-skinned textures. `2` marks the two-player split-screen version (confirmed: its
 level root 15 mode word has a two-player bit, and riders use the low-poly
 second model), and `_PS` presumably stands
 for PlayStation. The 6 variants of `Menu_%d`, `EndM_%d` and `DB_D_%d` are

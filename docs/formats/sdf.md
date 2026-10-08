@@ -992,9 +992,10 @@ Track record (28 bytes), in the same order as the level code table
 copied to 0x800D5F4C and added to the difficulty's AI factor (root 28
 +0x174…+0x17C, minimum 0x199) when the AI bikes are set up; negative values
 make the AI weaker, approaching 0 on later and harder events. **Class** 1
-(probably 500 cc, cf. the menu variable `Valid500Speed`) switches the
-physics table (0x800C5E2C: 0x800C5F4C → 0x800C6440) and uses handling
-records 8–15 of level root 32; it is forced to 0 on tracks 11–17.
+is 500 cc: it uses handling records 8–15 of level root 32 and loads the
+track's `B` files (500 cc bike model and textures; 0x800C5E2C becomes
+`"b"`, the name part of `Data\Final\%s%s%s_P%c.sdf`); it is forced to 0
+on tracks 11–17.
 
 Team +0x04 (0xFFFFFF) is never read (both readers of the team table take the
 name only).
@@ -1210,5 +1211,5 @@ a flag bit: an 8-bit value, a 16-bit button mask (1 = accelerate), another
 ## Next steps
 
 - Root 9: what the 13 poses besides the riding pose are for (crashes,
-  blends?); root 15's other mode bits; what the level `B` variants are.
+  blends?); root 15's other mode bits.
 
