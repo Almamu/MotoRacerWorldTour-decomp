@@ -515,7 +515,10 @@ Track record (28 bytes), in the same order as the level code table
 | 0x14   | u32   | 1–7 (default lap count?)                                |
 | 0x18   | u32   | discipline: 1 motocross, 2 supercross, 3 speed (road and traffic), 5 trial, 6 freestyle, 7 dragster |
 
-Roots 2, 3, 4, 7 and 8 aren't decoded yet.
+Not decoded yet: root 3 (`u32 11`, then groups of 4 pointers + 2 u32s,
+perhaps championship definitions), roots 7/8 (they point into the string
+pool of nationalities and countries: `France`, `SP`, `D`, `AUS`, `USA`,
+`Japanese`, …), root 2 and root 4.
 
 ## Level roots
 
