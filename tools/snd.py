@@ -15,9 +15,11 @@ Layout (little-endian):
 
 usage: snd.py <file.snd> <out_dir>                export: names + vagNN.wav
        snd.py import <file.snd> <dir> <out.snd>  replace samples whose
-           vagNN.wav in <dir> was edited (16-bit mono; the rate isn't stored,
-           keep the exported one). Each new sample keeps the original's loop
-           structure (looping or one-shot) and trailing blocks.
+           vagNN.wav in <dir> was edited (16-bit mono; resampled to the
+           sample's rate if needed). Each new sample keeps the original's
+           loop structure (looping or one-shot) and trailing blocks.
+WAVs are written at each sample's real rate (VAB tone +0x0C, see
+docs/formats/snd.md), mostly 16000 Hz.
 """
 
 import struct
@@ -26,7 +28,8 @@ import wave
 from pathlib import Path
 
 ADPCM_FILTERS = [(0, 0), (60, 0), (115, -52), (98, -55), (122, -60)]
-SAMPLE_RATE = 44100  # SPU pitch 0x1000; actual playback depends on the tone's centre note
+SAMPLE_RATE = 16000  # fallback for samples whose tones carry no rate (most common rate)
+PLACEHOLDER_RATE = 0x0202  # tone +0x0C on placeholder tones (VAB default pitch-bend bytes)
 
 
 def decode_vag(data):
@@ -143,24 +146,49 @@ def rebuild(data, vags):
     return bytes(out) + body
 
 
-def read_wav(path):
+def vag_rates(data):
+    """Sample rate of each VAG (1-based): the game reads the tone attribute's
+    u16 at +0x0C (normally the pitch-bend range) as the sample rate in Hz and
+    sets the SPU pitch to rate / 44100 (play routine 0x80012504)."""
+    o_vh = struct.unpack_from("<I", data, 0x18)[0]
+    n_progs = struct.unpack_from("<H", data, o_vh + 0x12)[0]
+    rates = {}
+    for t in range(n_progs * 16):
+        a = o_vh + 32 + 128 * 16 + t * 32
+        rate = struct.unpack_from("<H", data, a + 0x0C)[0]
+        vag = struct.unpack_from("<h", data, a + 0x16)[0]
+        if vag > 0 and rate != PLACEHOLDER_RATE and rate:
+            rates.setdefault(vag, rate)
+    return rates
+
+
+def read_wav(path, rate=None):
+    """16-bit mono samples; resampled (linear) to `rate` if the file differs."""
     with wave.open(str(path), "rb") as w:
         if w.getnchannels() != 1 or w.getsampwidth() != 2:
             raise ValueError(f"{path}: needs 16-bit mono")
         frames = w.readframes(w.getnframes())
-    return struct.unpack(f"<{len(frames) // 2}h", frames)
+        src_rate = w.getframerate()
+    pcm = struct.unpack(f"<{len(frames) // 2}h", frames)
+    if rate and src_rate != rate and pcm:
+        import numpy as np
+        n = max(1, round(len(pcm) * rate / src_rate))
+        x = np.linspace(0, len(pcm) - 1, n)
+        pcm = tuple(int(v) for v in np.round(np.interp(x, np.arange(len(pcm)), pcm)))
+    return pcm
 
 
 def main():
     if len(sys.argv) == 5 and sys.argv[1] == "import":
         data = Path(sys.argv[2]).read_bytes()
         _, _, _, vags = parse(data)
+        rates = vag_rates(data)
         src = Path(sys.argv[3])
         new, changed = [], 0
         for i, vag in enumerate(vags, 1):
             wav = src / f"vag{i:02d}.wav"
             if wav.exists():
-                pcm = read_wav(wav)
+                pcm = read_wav(wav, rates.get(i, SAMPLE_RATE))
                 if struct.pack(f"<{len(pcm)}h", *pcm) != decode_vag(vag):
                     vag = encode_like(pcm, vag)
                     changed += 1
@@ -170,7 +198,9 @@ def main():
         return
     if len(sys.argv) != 3:
         sys.exit(__doc__)
-    names, groups, counts, vags = parse(Path(sys.argv[1]).read_bytes())
+    data = Path(sys.argv[1]).read_bytes()
+    names, groups, counts, vags = parse(data)
+    rates = vag_rates(data)
     out = Path(sys.argv[2])
     out.mkdir(parents=True, exist_ok=True)
     print(f"groups {groups}, programs/tones/vags {counts}")
@@ -179,7 +209,7 @@ def main():
         with wave.open(str(out / f"vag{i:02d}.wav"), "wb") as w:
             w.setnchannels(1)
             w.setsampwidth(2)
-            w.setframerate(SAMPLE_RATE)
+            w.setframerate(rates.get(i, SAMPLE_RATE))
             w.writeframes(decode_vag(vag))
 
 
