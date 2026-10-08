@@ -29,6 +29,7 @@ python3 tools/extract_dat.py extracted/disc/MR3.DAT extracted/mr3dat
 python3 tools/vrm.py extracted/mr3dat/data/final/Usa.Vrm extracted/vrm/Usa   # textures -> PNG
 python3 tools/bs.py extracted/mr3dat/data/final/*.bs extracted/bs            # loading screens -> PNG
 python3 tools/snd.py extracted/mr3dat/data/sounds/menu.snd extracted/snd/menu # sound bank -> WAV
+python3 tools/sdf.py extracted/mr3dat/data/final/Tri_PS.sdf                     # scene/level summary
 ```
 
 | Tool                   | Input             | Output                                        |
@@ -39,3 +40,4 @@ python3 tools/snd.py extracted/mr3dat/data/sounds/menu.snd extracted/snd/menu # 
 | `vrm.py`               | `.Vrm`            | `vram.png` + one PNG per texture               |
 | `bs.py`                | `.bs`             | PNG                                           |
 | `snd.py`               | `.snd`            | sound names + one WAV per sample               |
+| `sdf.py`               | `.sdf`            | link block, classes, roots (`--objects` lists objects) |

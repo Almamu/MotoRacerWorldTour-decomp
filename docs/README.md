@@ -18,11 +18,11 @@ in hex. "VRAM" means the PS1 GPU's 1024x512 16-bit frame buffer.
 | Format      | Status                                                        |
 |-------------|---------------------------------------------------------------|
 | Disc / ISO  | Done                                                          |
-| `MR3.DAT`   | Done; 144 of 150 file names recovered                         |
+| `MR3.DAT`   | Done (incl. per-entry CRC); 144 of 150 file names recovered   |
 | LZSS        | Done                                                          |
 | `.bs`       | Done                                                          |
 | `.Vrm`      | Textures done; `FNTS` chunks and one `DPAL` field unknown       |
 | `.snd`      | Names and samples done; one table and sample rates unknown     |
-| `.sdf`      | In progress                                                   |
+| `.sdf`      | Container done; plain meshes understood; models, ground and objects in progress |
 | `.dps`      | Not started (FMV)                                             |
 | `.dxr`      | Not started                                                   |
