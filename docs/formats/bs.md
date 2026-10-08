@@ -24,7 +24,7 @@ The column sizes add up exactly to the rest of the file.
 
 | Offset | Type | Meaning                                       |
 |--------|------|-----------------------------------------------|
-| 0x00   | u16  | size-related field, not needed for decoding     |
+| 0x00   | u16  | number of 32-bit MDEC words the column decodes to (one DC, run/level or EOB code per half-word), rounded up to a multiple of 32 |
 | 0x02   | u16  | 0x3800                                        |
 | 0x04   | u16  | quantisation scale                            |
 | 0x06   | u16  | version, 2                                    |
@@ -63,3 +63,16 @@ Each block:
 Then a regular 8x8 IDCT, +128 on luma, chroma upsampled 2x, and BT.601
 YCbCr → RGB (R = Y + 1.402 Cr, G = Y − 0.344 Cb − 0.714 Cr,
 B = Y + 1.772 Cb).
+
+Columns are padded to a multiple of 4 bytes.
+
+## Encoding
+
+`bs.py encode <image.png> <out.bs> [qscale | max=<bytes>]` writes a BSx0
+file: per 16x16 macroblock, BT.601 RGB → YCbCr with 2x2 chroma averaging,
+forward DCT, quantisation with the same matrix and qscale (the DC divided
+by 2 and clamped to 10 bits), zig-zag run/level coding with table B.14 (or
+the escape code), EOB. Re-encoding `Bar.bs` (34 KB): qscale 1 gives 62 KB
+at 49 dB PSNR, qscale 4 gives 33 KB at 41 dB. The game loads these into
+buffers sized for the originals, so `max=<original size>` is the safe
+choice.

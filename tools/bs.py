@@ -16,7 +16,14 @@ macroblock is six 8x8 blocks (Cr, Cb, Y0..Y3): a 10-bit signed DC, then
 MPEG-1 table B.14 run/level codes (escape: 6-bit run, 10-bit level) up to
 an EOB ("10").
 
-usage: bs.py <file.bs> [more.bs ...] <out_dir>
+usage: bs.py <file.bs> [more.bs ...] <out_dir>     decode to PNG
+       bs.py encode <image.png> <out.bs> [qscale | max=<bytes>]
+             encode (width/height multiples of 16); qscale 1 is the best
+             quality, max=<bytes> picks the lowest qscale that fits
+
+Each column header's first u16 is the number of 32-bit MDEC words the
+column decodes to (DC + run/level + EOB codes, two per word), rounded up to
+a multiple of 32; columns are padded to 4 bytes.
 """
 
 import struct
@@ -168,7 +175,107 @@ def decode_bsx0(data):
     return image
 
 
+# --- encoder -----------------------------------------------------------------
+
+CODES = {v: k for k, v in VLC.items() if isinstance(v, tuple)}
+
+
+class BitWriter:
+    def __init__(self):
+        self.bits = []
+
+    def write(self, value, n):
+        self.bits.extend((value >> (n - 1 - i)) & 1 for i in range(n))
+
+    def code(self, s):
+        self.bits.extend(int(c) for c in s)
+
+    def to_bytes(self):
+        bits = self.bits + [0] * (-len(self.bits) % 16)
+        words = [int("".join(map(str, bits[i:i + 16])), 2) for i in range(0, len(bits), 16)]
+        return struct.pack(f"<{len(words)}H", *words)
+
+
+def encode_block(bw, pixels, qscale):
+    """pixels: 8x8 (luma - 128, or chroma) -> bits; returns the number of MDEC codes."""
+    coeffs = (_C @ pixels @ _C.T).reshape(64)
+    dc = int(np.clip(np.rint(coeffs[0] / QUANT[0]), -512, 511))
+    bw.write(dc & 0x3FF, 10)
+    codes = 1
+    run = 0
+    for i in range(1, 64):
+        j = ZIGZAG[i]
+        level = int(np.rint(coeffs[j] * 8 / (qscale * QUANT[j])))
+        if level == 0:
+            run += 1
+            continue
+        level = max(-512, min(511, level))
+        code = CODES.get((run, abs(level)))
+        if code:
+            bw.code(code)
+            bw.write(1 if level < 0 else 0, 1)
+        else:
+            bw.code("000001")
+            bw.write(run, 6)
+            bw.write(level & 0x3FF, 10)
+        codes += 1
+        run = 0
+    bw.code("10")
+    return codes + 1
+
+
+def encode_frame(rgb, qscale):
+    """Encode an (h, w, 3) uint8 image (w, h multiples of 16) as one BS v2 frame."""
+    h, w = rgb.shape[:2]
+    img = rgb.astype(np.float64)
+    y = 0.299 * img[..., 0] + 0.587 * img[..., 1] + 0.114 * img[..., 2]
+    cb = (img[..., 2] - y) / 1.772
+    cr = (img[..., 0] - y) / 1.402
+    bw = BitWriter()
+    codes = 0
+    for mx in range(0, w, 16):
+        for my in range(0, h, 16):
+            sub = lambda c: c[my:my + 16, mx:mx + 16].reshape(8, 2, 8, 2).mean((1, 3))
+            codes += encode_block(bw, sub(cr), qscale)
+            codes += encode_block(bw, sub(cb), qscale)
+            for k in range(4):
+                oy, ox = my + (k >> 1) * 8, mx + (k & 1) * 8
+                codes += encode_block(bw, y[oy:oy + 8, ox:ox + 8] - 128, qscale)
+    mdec_words = -(-((codes + 1) // 2) // 32) * 32
+    body = struct.pack("<4H", mdec_words, 0x3800, qscale, 2) + bw.to_bytes()
+    return body + b"\0" * (-len(body) % 4)
+
+
+def encode_bsx0(rgb, qscale=1):
+    """Encode an RGB image (width a multiple of 16) as a BSx0 file."""
+    h, w = rgb.shape[:2]
+    if w % 16 or h % 16:
+        raise ValueError("width and height must be multiples of 16")
+    cols = [encode_frame(rgb[:, x:x + 16], qscale) for x in range(0, w, 16)]
+    body = b"MCOL" + struct.pack(f"<{len(cols)}I", *map(len, cols)) + b"".join(cols)
+    head = struct.pack("<HH", w, h)
+    return b"BSx0" + struct.pack("<I", len(head) + len(body)) + head + body
+
+
 def main():
+    if len(sys.argv) in (3, 4) and sys.argv[1] == "--encode" or (len(sys.argv) >= 2 and sys.argv[1] == "encode"):
+        args = sys.argv[2:]
+        opt = args[2] if len(args) > 2 else "1"
+        rgb = np.array(Image.open(args[0]).convert("RGB"))
+        if opt.startswith("max="):
+            limit = int(opt[4:], 0)
+            for qscale in range(1, 64):
+                data = encode_bsx0(rgb, qscale)
+                if len(data) <= limit:
+                    break
+            else:
+                sys.exit(f"can't fit in {limit} bytes")
+        else:
+            qscale = int(opt)
+            data = encode_bsx0(rgb, qscale)
+        Path(args[1]).write_bytes(data)
+        print(f"{args[0]} -> {args[1]} (qscale {qscale}, {len(data)} bytes)")
+        return
     if len(sys.argv) < 3:
         sys.exit(__doc__)
     out = Path(sys.argv[-1])
