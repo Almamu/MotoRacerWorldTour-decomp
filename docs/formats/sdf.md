@@ -72,6 +72,18 @@ at 0x800A5530 in `data\LANGIMG.DAT`:
 | 0x80047898 | menu / end scenes  | 15    | ?                |
 | 0x800A053C | `DB_D_*`           | 11    | ?                |
 
+### Writing
+
+`tools/sdf.py` has `serialize()`, the inverse of `parse()`; it reproduces
+all 76 files byte for byte. The safe way to change data is to **append**
+new bytes at the end of the data block and repoint a pointer to them
+(`Sdf.append`, `Sdf.set_pointer`): nothing else moves, and the relocation
+list makes the new pointer absolute on load. `tools/sdf_text.py` uses this
+to export every string to JSON and re-import edited ones (e.g. menu text,
+rider names in the DB). Inserting bytes in the middle would mean shifting
+every offset after them (relocations, objects, roots, exports and the
+pointer values), which the tools don't do.
+
 A few relocated pointers in the levels hold garbage from the exporter
 (`0xCDCDCD00`, or `0x00BCxxxx` addresses from the PC tool's heap). The game
 presumably never reads them.

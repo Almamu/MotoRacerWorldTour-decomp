@@ -59,7 +59,8 @@ python3 tools/sdf_mesh.py extracted/mr3dat/data/final/Usa_PS.sdf extracted/sdf/U
 | `vrm.py`               | `.Vrm`            | `vram.png` + one PNG per texture               |
 | `bs.py`                | `.bs`             | PNG                                           |
 | `snd.py`               | `.snd`            | sound names + one WAV per sample               |
-| `sdf.py`               | `.sdf`            | link block, classes, roots (`--objects` lists objects) |
+| `sdf.py`               | `.sdf`            | parse / serialize (byte-identical), summary     |
+| `sdf_text.py`          | `.sdf` ⇄ JSON     | export / re-import text strings (menus, DB)    |
 | `sdf_mesh.py`          | level `.sdf` (+`.Vrm`) | textured OBJ: ground, draw items, placed objects |
 | `dps.py`               | `.DPS`            | MP4 (via ffmpeg, correct frame rate)           |
 | `dxr.py`               | `.dxr`            | code relocated to a fixed base (for Ghidra)    |
