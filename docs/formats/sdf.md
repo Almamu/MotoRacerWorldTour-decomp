@@ -281,7 +281,10 @@ Offsets from the object start (vtable slot - 0x34):
 | 0x44   | VECTOR  | current position                                          |
 | 0x50   | VECTOR  | previous position                                         |
 | 0x74   | SVECTOR | current rotation (x, y, z; 4096 = 360°)                    |
+| 0x5C   | VECTOR  | runtime: position tangent at the current key (spline)      |
+| 0x68   | VECTOR  | runtime: position tangent at the next key (spline)         |
 | 0x7C   | SVECTOR | previous rotation                                         |
+| 0x84   | SVECTOR | runtime: rotation tangents at the current / next key (+0x8C) |
 | 0x94   | u32     | flags; byte 0 = 0 means the rotation is animated too       |
 
 ### Key (32 bytes)
@@ -300,7 +303,26 @@ Keys form a circular doubly linked list:
 | 0x1C   | u8        | interpolation to the next key: 0 = linear, 1 = spline    |
 
 Linear interpolation: `pos = cur + (next - cur) * blend >> 16`, the same per
-rotation axis. The result is then written into the target object's matrix
+rotation axis.
+
+Spline segments (0x80075BEC) are cubic Hermite curves with Catmull-Rom
+tangents. At the start of a segment the game computes (0x800758F4 for
+positions, 0x80075A1C for rotations):
+
+```
+m0 = (next - prev) / 2            # tangent at the current key
+m1 = (next_next - cur) / 2        # tangent at the next key
+```
+
+(stored at `CanimMove` + 0x5C / 0x68 for positions, + 0x84 / 0x8C for
+rotations), then for `t = blend` in 0..1:
+
+```
+p(t) = (2t³ - 3t² + 1)·cur + (3t² - 2t³)·next + (t³ - 2t² + t)·m0 + (t³ - t²)·m1
+```
+
+in fixed point. Keys have no tension/continuity/bias values, so it's plain
+Catmull-Rom. The result is then written into the target object's matrix
 (0x800168A8 / 0x80016268).
 
 In `Menu_0.Sdf` all 269 `CanimMove` key lists are consistent rings (694
@@ -602,4 +624,4 @@ table and count whose purpose isn't known yet.
   28 `cammotion (1)` cameras with the 237 `Cobjet2dVFonts` HUD texts and the
   light, so these cameras look like part of the HUD/overlay scene rather
   than race cameras (each sits 512 units back from the origin).
-- `CanimSide`, `CanimVertex`; spline interpolation; the other menu roots.
+- `CanimSide`, `CanimVertex`; the other menu roots.
