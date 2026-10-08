@@ -487,8 +487,11 @@ Partly decoded. An SDF with 11 roots and no C++ objects, loaded at
 (country, length such as "1.49 Miles", level directory `Data\Levels\…`),
 AI rider names (`ROBERTSON William`, `RODRIGUEZ Luis`, …), and default best
 times with three-letter initials (`VPG`, `CHV`, `TOM`, `RIC`, `OLD`, `LUD`).
-The six files are nearly the same size and all use miles; how they differ
-hasn't been looked at.
+The six files are the six languages (0 English, 1 French, 2 German,
+3 Spanish, 4 Italian, 5 Swedish): team names, countries, nationalities etc.
+are translated. The game loads it at 0x800A048C with root destinations
+0x800C9EE0, …E4, …E8, …EC, …F0, …F4, …F8, …FC, 0x800C8D8C, 0x800C6710 and
+0x800C9EDC (roots 0–10).
 
 | Root | Contents                                                          |
 |------|-------------------------------------------------------------------|

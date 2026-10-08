@@ -109,9 +109,12 @@ The names come from format strings in the game code
 
 In the level names, `B` is a variant of the same track (it has its own
 `B.Vrm`), `2` marks the two-player version, and `_PS` presumably stands
-for PlayStation. The 6 variants of the menu scenes probably match the 6
-languages listed in the game code (English, Français, Deutsch, Italiano,
-Español, Svenska).
+for PlayStation. The 6 variants of `Menu_%d`, `EndM_%d` and `DB_D_%d` are
+the languages, by index: 0 English, 1 French, 2 German, 3 Spanish,
+4 Italian, 5 Swedish (checked from their strings). The DB name is built from
+`Data\DB_X_X.sdf` by putting `D` at character 8 and `'0'` + the language
+index at character 10 (0x8009FFCC); the index comes from the boot
+executable through a block marked 0x12345670.
 
 ### Level codes
 
