@@ -35,13 +35,13 @@ section in all 14 banks):
 | Offset | Type     | Meaning                                                     |
 |--------|----------|-------------------------------------------------------------|
 | 0x00   | u8       | VAB program (= group)                                       |
-| 0x01   | u8       | ? (0–15)                                                    |
+| 0x01   | u8       | not read by the play path; 0–18, ≥ the tone index (probably the authoring tool's sample number) |
 | 0x02   | u8       | tone within the program                                     |
-| 0x03   | u8       | 0xFF, or another definition's index                         |
-| 0x04   | u16      | flags: 0x10 loop, 0x04 reverb, 0x400 uses a second voice; 0x01 ? |
+| 0x03   | u8       | next layer: relative index (+1 in practice) of a sound played together with this one; 0xFF = none |
+| 0x04   | u16      | flags: 0x01 has a layer (exactly the chain heads), 0x04 reverb, 0x10 loop, 0x100 double voice (second voice at 1.05× pitch, 0x8001295C), 0x200 no panning, 0x400 uses a second voice; 0x800 set at run time |
 | 0x06   | u16      | loop start, in 16-byte ADPCM blocks                          |
 | 0x08   | u16      | length in blocks (0 in some banks)                           |
-| 0x0A   | u16      | start offset in blocks (0; 0xFFFF = none)                    |
+| 0x0A   | u16      | start offset in blocks (0; 0xFFFF = none; overwritten by the caller at run time) |
 | 0x0C   | char[32] | name                                                        |
 
 ### Name table
@@ -110,4 +110,6 @@ much beyond the original sizes.
 
 ## Unknown
 
-- Definition bytes 0x01 and 0x03, and flag 0x01.
+- Definition byte 0x01 (not read). Layers: 0x80012D38 plays a definition,
+  then follows byte 3 until 0xFF; only five chain (`land1` → `land2` in
+  cross1, cross2, fstyle, scross1; `select2-E` → `select2b-E` in menu).

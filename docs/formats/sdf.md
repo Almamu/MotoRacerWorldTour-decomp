@@ -72,8 +72,8 @@ at 0x800A5530 in `data\LANGIMG.DAT`:
 | Caller     | File               | Roots | Registry entries |
 |------------|--------------------|-------|------------------|
 | 0x8004A71C | level (`*_PS.sdf`) | 51    | 11               |
-| 0x80047898 | menu / end scenes  | 15    | ?                |
-| 0x800A053C | `DB_D_*`           | 11    | ?                |
+| 0x80047898 | menu / end scenes  | 15    | 10               |
+| 0x800A053C | `DB_D_*`           | 11    | 0 (no classes)   |
 
 ### Writing
 
@@ -705,7 +705,7 @@ motocross, 2 supercross, 3 speed, as in the database's track table):
 |-------|--------|
 | 0x001 | halves the target speed (0x80065044) |
 | 0x400 | no throttle (0x80065300 area) |
-| 0x080 | stops a racing-line speed-control zone from making the bike back off (0x80065954) |
+| 0x080 | stops a supercross jump section from putting the AI in jump mode (0x80065954) |
 | 0x100 | turns off the racing line's steering contribution (0x800663AC) | In the emulator, with the throttle held, a
 Sachsenring run-off face (type 2) slows the bike from ~70 to ~35
 units/frame; patched to type 0 or 4 it doesn't, patched to 1 it does. So on
@@ -897,10 +897,10 @@ are translated. The game loads it at 0x800A048C with root destinations
 
 | Root | Contents                                                          |
 |------|-------------------------------------------------------------------|
-| 0    | riders: 20-byte entries `{char* name, char* first name, char tag[4], s32 index, u32 age}`: `Player 1`/`2` (tags `PL1`, `PL2`), `Player 1`/`2 shadow` (`SH1`, `SH2`), then the AI riders (`MAURICE Jean` = `MJ`, `MCINLAY Stephan` = `MS`, `BALMANN Klaus` = `BK`, `RODRIGUEZ Luis` = `RL`, …); `index` is -1 for players, else used as `index + 0xE` for a menu sprite; age below 2 marks a player |
+| 0    | riders: 20-byte entries `{char* name, char* first name, char tag[4], s32 index, u32 age}`: `Player 1`/`2` (tags `PL1`, `PL2`), `Player 1`/`2 shadow` (`SH1`, `SH2`), then the AI riders (`MAURICE Jean` = `MJ`, `MCINLAY Stephan` = `MS`, `BALMANN Klaus` = `BK`, `RODRIGUEZ Luis` = `RL`, …); `index` is the nationality: `index + 0xE` is the flag sprite shown on the `f_pays (1)` object (-1 for players); age is printed into `f_age (1)` (below 2: a banner instead) |
 | 1    | teams: 12-byte entries `{char* name ("TEAM 1" … "TEAM 8"), 0xFFFFFF (colour?), 0}` |
-| 2    | arcade cups (0x800C9EE8): three pointers, each to three 24-byte groups (one per difficulty) `{s32* offsets[3 per track], s32* tracks (3 track indices), u32 count (3/4/5, laps?), u32 flag}`; the per-track offsets are negative and shrink with difficulty (AI handicaps?). Accessors 0x800A14B8, 0x800A14CC |
-| 3    | championship (0x800C9EEC): `{u32 11, ptr}` → 32-byte rounds `{s32 ?, s32 track, s32 4, s32 0, s32 laps, s32 value[3]}` (`value[difficulty]`, difficulty index at 0x800D5F30); rounds: Sachsen 3 laps, Barcelon 6, Suzuka 3, Usa 3, Ile2Man3 4, StdFranc 4, Eastern 3, Regade 2, IleDeMan 3, Chicago 5, Ile2Man2 4. Read at 0x8004AFBC in game mode 4 |
+| 2    | arcade cups (0x800C9EE8): three pointers, each to three 24-byte groups (one per difficulty) `{s32* value[3] (per difficulty, one per track), s32* tracks (3 track indices), u32 count (3/4/5; not read in the cup set-up, laps?), u32 class (0, or 1 = 500 cc for the hardest groups)}`. Accessors 0x800A14B8, 0x800A14CC |
+| 3    | championship (0x800C9EEC): `{u32 11, ptr}` → 32-byte rounds `{s32 class (0), s32 track, s32 opponents (4 AI bikes), s32 bike (model within the class), s32 laps, s32 value[3]}` (`value[difficulty]`, difficulty index at 0x800D5F30); rounds: Sachsen 3 laps, Barcelon 6, Suzuka 3, Usa 3, Ile2Man3 4, StdFranc 4, Eastern 3, Regade 2, IleDeMan 3, Chicago 5, Ile2Man2 4. Read at 0x8004AFBC in game mode 4 |
 | 4    | 18 × 0xCDCDCDCD; filled at startup (0x8009FE70) with each track's discipline |
 | 5    | `300, 100, 60, 30, 0`                                              |
 | 6    | demo replays: `{char* path, 0}` × 4, `Data\DemoPsx1.rep` … `DemoPsx4.rep` (these files aren't in `MR3.DAT`; the PS1 demos are in level root 45) |
@@ -922,9 +922,16 @@ Track record (28 bytes), in the same order as the level code table
 | 0x14   | u32   | default lap count (matches the championship's)          |
 | 0x18   | u32   | discipline: 1 motocross, 2 supercross, 3 speed (road and traffic), 5 trial, 6 freestyle, 7 dragster |
 
-Not decoded yet: the championship round's +0x00 and +0x08, the meaning of
-the cups' negative per-difficulty values, and which sprite a rider's index
-selects.
+`value[d]` in cups and championship rounds is an **AI strength offset**:
+copied to 0x800D5F4C and added to the difficulty's AI factor (root 28
++0x174…+0x17C, minimum 0x199) when the AI bikes are set up; negative values
+make the AI weaker, approaching 0 on later and harder events. **Class** 1
+(probably 500 cc, cf. the menu variable `Valid500Speed`) switches the
+physics table (0x800C5E2C: 0x800C5F4C → 0x800C6440) and uses handling
+records 8–15 of level root 32; it is forced to 0 on tracks 11–17.
+
+Not decoded yet: team +0x04 (0xFFFFFF everywhere, no reader found) and the
+cups' count field.
 
 ## Level roots
 
@@ -1013,8 +1020,14 @@ of list 0 where this list rejoins it (-1 for list 0)}`), +0x34 enabled. List 0 i
 others are branches (Barcelona's start straight rejoins at gate 13).
 
 Gate (20 bytes): `s32 x, y, z` (1/32 units), `u32` distance along the list
-(1/32 units), `u16` direction (4096 = 360°), two equal bytes (43–255; no
-reader found, possibly the track width). Sachsenring has 550
+(1/32 units), `u16` direction (4096 = 360°), `u8` +0x12 / `u8` +0x13 the
+**track half-widths** on either side, in 8-unit steps (`byte × 256` in 1/32
+units; equal on every gate, 255 on wide tracks and the dragster strip). The
+AI steering (0x80065954) uses them as soft walls: inside the width it adds
+`0x1388000 / (lat − b12·0x100) + 0x1388000 / (lat + b13·0x100)` to the
+steering, pushing AI bikes away from both edges. Measured perpendicular to
+the gates, the collision-surface width is `byte × 16` game units (Usa, Tfc,
+Bar: correlation 1.00; on Sachsenring it follows the asphalt + kerbs). Sachsenring has 550
 gates; the last distance, 14 055 359 (= 439 230 game units for a circuit of
 about 3.7 km, so **a game unit is about a centimetre**), matches the summed
 gate-to-gate lengths. Plotted over the collision surface the gates follow
@@ -1030,7 +1043,7 @@ which the game reads four bytes (the rest look like exporter leftovers):
 | 0x06   | s8   | steering/lean contribution (`bike+0x2A0`, 0x800663AC; off while bike flag 0x100 is set) |
 | 0x07   | s8   | lane offset: `value << 9` (1/32 units) along the gate's perpendicular; used by the AI (0x800650F8, 0x80068900) and the traffic (0x80073E54) |
 | 0x0E   | u8   | target speed × 0x800 at this gate (57–157 on Sachsenring, 15–40 in supercross); the AI throttles from the change between the current and next gate (0x800650F8, 0x800678C8, 0x80065044); halved by the off-track flag, doubled for dragsters |
-| 0x0F   | u8   | bits 0–5: lines a bike may switch to here (Sac 0x82 / 0x81: each may take the other; Chicago 0x8E: lines 1–3); non-zero allows the AI's lane-change / overtake mode (0x800692A8). Bit 7 clear marks a speed-control zone (many on motocross/supercross tracks, none on Sachsenring): entering it faster than its target speed makes the bike back off (0x80065954) — probably jumps |
+| 0x0F   | u8   | bits 0–5: lines a bike may switch to here (Sac 0x82 / 0x81: each may take the other; Chicago 0x8E: lines 1–3); non-zero allows the AI's lane-change / overtake mode (0x800692A8). Bit 7 clear marks a **jump section** (read only for discipline 2, supercross; present but inert elsewhere): entering one at ≥ 0.78 × the target speed puts the AI in jump mode (0x80065954): it aims at the first gate past the section (the landing), looks 3 gates ahead, and disables the surface bumps. The terrain inside is 3–4× steeper than the rest of the lap (Barcelona 31 % vs 8 % height change per gate distance) |
 
 Checked in the emulator with every Sachsenring line record patched at the
 race start: target speeds set to 0x40 leave the four AI bikes 13 606 units
@@ -1110,6 +1123,4 @@ a flag bit: an 8-bit value, a 16-bit button mask (1 = accelerate), another
   suit; root 10's dashboard struct.
 - Menu: item types 5/8, event types 1–4, widget display states and flags,
   how the C page handlers pick the next page from `nBP*`.
-- Gate +0x12/+0x13; what the racing lines' speed-control zones stand for
-  on the track.
 

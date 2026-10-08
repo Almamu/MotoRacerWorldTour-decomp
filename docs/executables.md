@@ -43,7 +43,7 @@ string: `Beta V 0.50e`, `Aug 25 2000-17:01:47`.
 | 0x00   | u32  | 0x800A7084 | entry point                 |
 | 0x04   | u32  | 0x80011800 | address of offset 0x10      |
 | 0x08   | u32  | 0xB8800    | size of code + data         |
-| 0x0C   | u32  | 0x9F720    | unknown (bss size?)         |
+| 0x0C   | u32  | 0x9F720    | unknown (not the bss: the entry point clears 0x800C9F48–0x800DE7B0; the heap starts at 0x800DE7B4) |
 
 It's loaded at 0x800117F0, so **file offset X = address 0x800117F0 + X**.
 
