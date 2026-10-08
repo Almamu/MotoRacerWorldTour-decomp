@@ -13,6 +13,19 @@ are ignored).
 See [`docs/`](docs/README.md) for the disc layout, the executables and every
 file format worked out so far.
 
+## Rebuilding
+
+```sh
+python3 tools/mr3dat.py extract extracted/disc/MR3.DAT extracted/mr3dat
+# ...edit files under extracted/mr3dat...
+python3 tools/mr3dat.py pack extracted/mr3dat build/MR3.DAT extracted/disc/MR3.DAT
+python3 tools/disc.py replace "iso/<track 01>.bin" "build/<track 01>.bin" MR3.DAT build/MR3.DAT
+# copy the .cue and the audio tracks next to it; the other tracks are unchanged
+```
+
+A rebuild without edits reproduces both `MR3.DAT` and the data track byte
+for byte.
+
 ## Tools
 
 All tools are Python 3 scripts (`numpy`, `pillow`; `capstone` for
@@ -40,6 +53,7 @@ python3 tools/sdf_mesh.py extracted/mr3dat/data/final/Usa_PS.sdf extracted/sdf/U
 | Tool                   | Input             | Output                                        |
 |------------------------|-------------------|-----------------------------------------------|
 | `extract_iso.py`       | data track (.bin) | disc files + `files.txt`                       |
+| `disc.py`              | data track (.bin) | replace files (in place or moved to the end), EDC/ECC regenerated; `verify` |
 | `mr3dat.py`            | `MR3.DAT` ⇄ dir   | extract (+ `manifest.json`) / pack (LZSS encoder, CRCs, hash table) |
 | `mr3dat_names.txt`     | —                 | recovered `MR3.DAT` file names                 |
 | `vrm.py`               | `.Vrm`            | `vram.png` + one PNG per texture               |

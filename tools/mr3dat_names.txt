@@ -1,5 +1,5 @@
 # Known MR3.DAT entry names (the archive only stores CRC-32 hashes of them).
-# One path per line, as the game passes it to the loader; see extract_dat.py.
+# One path per line, as the game passes it to the loader; see mr3dat.py.
 data\cineendr.dxr
 Data\DB_D_0.sdf
 Data\DB_D_1.sdf
