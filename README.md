@@ -58,7 +58,7 @@ python3 tools/sdf_mesh.py extracted/mr3dat/data/final/Usa_PS.sdf extracted/sdf/U
 | `mr3dat_names.txt`     | —                 | recovered `MR3.DAT` file names                 |
 | `vrm.py`               | `.Vrm` ⇄ PNG      | export textures/fonts; import edited PNGs (palette-mapped) |
 | `bs.py`                | `.bs` ⇄ PNG       | decode; `encode` (BS v2, qscale or size target) |
-| `snd.py`               | `.snd`            | sound names + one WAV per sample               |
+| `snd.py`               | `.snd` ⇄ WAV      | export names + samples; `import` edited WAVs (ADPCM encoder) |
 | `sdf.py`               | `.sdf`            | parse / serialize (byte-identical), summary     |
 | `sdf_text.py`          | `.sdf` ⇄ JSON     | export / re-import text strings (menus, DB)    |
 | `sdf_mesh.py`          | level `.sdf` (+`.Vrm`) | textured OBJ: ground, draw items, placed objects |

@@ -58,6 +58,28 @@ seems to use tones as sample slots and set the pitch itself. The real sample
 rates aren't known yet; `snd.py` writes 44.1 kHz WAVs, which may play too
 fast.
 
+### VAB size fields and sample flags
+
+The VAB header's u32 at 0x0C is the VAB size (header + sample data). Sample
+data is in 16-byte ADPCM blocks whose second byte holds flags:
+
+- one-shot samples: 0 in every block, 1 on the last one, sometimes followed
+  by a trailing silent block flagged 7 (or 0);
+- looping samples (engine sounds): 0 on the first block, 2 on the others,
+  6 on the loop-start block, 3 (loop end + repeat) on the last one.
+
+## Writing
+
+`snd.py import <file.snd> <dir> <out.snd>` replaces every sample whose
+`vagNN.wav` (16-bit mono, as exported) was edited: it encodes PS-ADPCM
+(per 28-sample block, the filter/shift pair with the smallest error, mirroring
+the decoder), keeps the original sample's loop layout (looping samples loop
+from the second block) and its trailing blocks, then rewrites the VAB size
+table and size field. An unedited export imports back byte-identical; a
+test tone replacing a menu sample decodes at about 58 dB SNR. The samples go
+to the SPU's 512 KB of sound RAM when the bank is loaded, so banks can't grow
+much beyond the original sizes.
+
 ## Unknown
 
 - Header field 0x02 and the table at header offset 0x0C (616 bytes in
