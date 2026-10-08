@@ -1,7 +1,8 @@
 # MR3.DAT (main archive)
 
 A flat archive of 150 files. It stores CRC-32 hashes of the file names
-instead of the names themselves. Tool: `tools/extract_dat.py`.
+instead of the names themselves. Tool: `tools/mr3dat.py` (extract and
+rebuild; a rebuild without changes is byte-identical).
 
 ## Header
 
@@ -69,8 +70,23 @@ bits consumed least-significant first.
   `distance = w & 0xFFF` bytes back in the **output** (it may overlap, as
   usual for LZ77).
 
-Decoding stops once the decompressed size has been produced. The stored
-size includes 2–3 trailing padding bytes.
+The stream ends with a reference word of 0x0000 (distance 0), in the last
+flag group or in a new one (flag byte 0x00), which is why streams end with
+`00 00` or `00 00 00`.
+
+### In-place decompression
+
+The loader (0x80135610) decompresses in place: it copies the packed entry
+to `dest + unpacked - packed + 0x1400` and decompresses from there into
+`dest`, so the write position must never reach the read position. All
+original streams keep at least 5115 bytes of distance. `mr3dat.py pack`
+checks this for anything it compresses and stores an entry uncompressed
+(which the loader accepts as well) when compression doesn't help or isn't
+safe. Destination buffers are sized by the game, so a file that grows a
+lot may not fit where the game loads it.
+
+The encoder in `tools/mr3dat.py` (greedy, hash chains) produces streams
+about 0.5% larger than the originals.
 
 ```python
 def lzss_decompress(src, size):

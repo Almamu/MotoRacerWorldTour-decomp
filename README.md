@@ -22,8 +22,10 @@ disassembly helpers). Run them from the repository root:
 # 1. Filesystem of the data track (raw MODE2/2352 .bin)
 python3 tools/extract_iso.py "iso/<track 01>.bin" extracted/disc
 
-# 2. The main archive (decompresses LZSS entries, applies known names)
-python3 tools/extract_dat.py extracted/disc/MR3.DAT extracted/mr3dat
+# 2. The main archive (decompresses LZSS entries, applies known names, writes manifest.json)
+python3 tools/mr3dat.py extract extracted/disc/MR3.DAT extracted/mr3dat
+#    ...edit files under extracted/mr3dat, then rebuild (unchanged entries are copied as-is)
+python3 tools/mr3dat.py pack extracted/mr3dat build/MR3.DAT extracted/disc/MR3.DAT
 
 # 3. Individual formats
 python3 tools/vrm.py extracted/mr3dat/data/final/Usa.Vrm extracted/vrm/Usa   # textures -> PNG
@@ -38,7 +40,7 @@ python3 tools/sdf_mesh.py extracted/mr3dat/data/final/Usa_PS.sdf extracted/sdf/U
 | Tool                   | Input             | Output                                        |
 |------------------------|-------------------|-----------------------------------------------|
 | `extract_iso.py`       | data track (.bin) | disc files + `files.txt`                       |
-| `extract_dat.py`       | `MR3.DAT`         | named entries + `index.txt`                    |
+| `mr3dat.py`            | `MR3.DAT` ⇄ dir   | extract (+ `manifest.json`) / pack (LZSS encoder, CRCs, hash table) |
 | `mr3dat_names.txt`     | —                 | recovered `MR3.DAT` file names                 |
 | `vrm.py`               | `.Vrm`            | `vram.png` + one PNG per texture               |
 | `bs.py`                | `.bs`             | PNG                                           |
