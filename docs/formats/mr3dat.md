@@ -94,7 +94,7 @@ def lzss_decompress(src, size):
 ## File names
 
 The names come from format strings in the game code
-([../executables.md](../executables.md)); 144 of 150 are recovered in
+([../executables.md](../executables.md)); 146 of 150 are recovered in
 `tools/mr3dat_names.txt`. Case doesn't matter to the game.
 
 | Template                          | Files                                                    |
@@ -104,8 +104,8 @@ The names come from format strings in the game code
 | `Data\Final\<code>.bs`             | level loading screens (+ `Tr2P.bs`)                       |
 | `data\final\Menu_%d.Sdf`, `EndM_%d.Sdf` | menu and end scenes, 0–5                            |
 | `Data\DB_X_X.sdf`                  | `Data\DB_D_0.sdf` … `DB_D_5.sdf`                          |
-| `data\sounds\%s.snd`               | `menu traffic cross1 cross2 scross1 scross2 fstyle trial speed1 speed2 dragster` (+ `cross`, `speed`) |
-| literal                            | `data\LANGIMG.DAT`, `data\cineendr.dxr`, `data\Final\fl256.bs`, `data\menu\banks\MMenuVrm.vrm`, `data\menu\sc_banks\MENDVRM.vrm` |
+| `data\sounds\%s.snd`               | `menu traffic cross1 cross2 scross1 scross2 fstyle trial speed1 speed2 dragster` (+ older single banks `cross`, `speed`, `scross`) |
+| literal                            | `data\LANGIMG.DAT`, `data\cineendr.dxr`, `data\Final\fl256.bs`, `data\Final\fl512.bs` (512x512 generic "Loading"), `data\menu\banks\MMenuVrm.vrm`, `data\menu\sc_banks\MENDVRM.vrm` |
 
 In the level names, `B` is a variant of the same track (it has its own
 `B.Vrm`), `2` marks the two-player version, and `_PS` presumably stands
@@ -145,13 +145,18 @@ is also still open.
 
 ### Still unnamed
 
-| Hash     | Contents                                                      |
-|----------|---------------------------------------------------------------|
-| 22bea37f | BSx0, 512x512 "Loading" screen with the game logo              |
-| 1c136175, 4645261e | sound banks, same names and size as `cross1.snd`     |
-| bf45e7dc | sound bank, same names and size as `cross2.snd`                |
-| 7275ff12 | sound bank, same names and size as `traffic.snd`               |
-| 6ae3c6e1 | sound bank (`moto`, `ambiance`, `voice`; Bercy/Ola crowd)      |
+Four sound banks that are variants of named ones: same size and sound
+names, with a few samples (or one VAB tone byte) different. The game's bank
+table (0x8006C85C) only lists the 11 `%s.snd` names above, so they're
+probably unused leftovers; their names weren't found with track-code or
+short-suffix guesses.
+
+| Hash     | Same as        | Difference                         |
+|----------|----------------|------------------------------------|
+| 1c136175 | `cross1.snd`   | 18457 bytes of sample data          |
+| 4645261e | `cross1.snd`   | 18458 bytes of sample data          |
+| bf45e7dc | `cross2.snd`   | 1 byte in the VAB tone attributes   |
+| 7275ff12 | `traffic.snd`  | 1664 bytes of sample data           |
 
 ## Contents by type
 

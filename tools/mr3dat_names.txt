@@ -45,6 +45,7 @@ data\final\EndM_3.Sdf
 data\final\EndM_4.Sdf
 data\final\EndM_5.Sdf
 data\Final\fl256.bs
+data\Final\fl512.bs
 Data\Final\FSt.bs
 Data\Final\FSt.Vrm
 Data\Final\FSt2_PS.sdf
@@ -137,6 +138,7 @@ data\sounds\cross2.snd
 data\sounds\dragster.snd
 data\sounds\fstyle.snd
 data\sounds\menu.snd
+data\sounds\scross.snd
 data\sounds\scross1.snd
 data\sounds\scross2.snd
 data\sounds\speed.snd
