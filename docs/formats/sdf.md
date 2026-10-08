@@ -191,13 +191,14 @@ bottom-left, bottom-right), so the outline is 0-1-3-2.
 placed with its matrix, to OBJ. The meshes look right (grandstands, riders
 on bikes, signs). The placed objects are only props, and whether the
 translations use the same units as the vertices isn't confirmed yet. Most of
-each level is the track-ground ("world") geometry, below.
+each level is other geometry that hasn't been found yet.
 
-**Track ground.** The big ground mesh has flags 9, ~1400 vertices and no
-polygon pointer. Its vertices are the level's exported vertex pool (see
-Level roots). Its polygons hang off the 48-byte block at 0x28, which points
-to compact 12-byte records (`u16, u16 base, u8 i0..i3, ptr` to four colour
-words) and more data. Not decoded yet.
+**Flag-9 mesh.** Each level also has one large mesh with flags 9 (~1400
+vertices in `Tri_PS`), no polygon pointer, and a vertex pointer into the
+exported block (see Level roots). Its polygons hang off the 48-byte block at
+0x28, which points to compact 12-byte records (`u16, u16, u8 i0..i3, ptr` to
+four colour words) and more data. It isn't in the draw-item table. What it
+is (track ground, skid-mark template, …) is still open.
 
 ## Level roots
 
@@ -219,7 +220,7 @@ the same function, and plain addresses are globals in the game code.
 |  9 | L+0x3E4      |  |
 | 10 | L+0x3E8      |  |
 | 11 | 0x800C5E0C   |  |
-| 12 | 0x800C5E10   | working copy of the ground vertices is made at the address stored here |
+| 12 | 0x800C5E10   | an object handled by 0x80020200–0x80020AB0: 200-entry ring buffer of 24-byte entries plus up to 1600 56-byte records in a buffer it's given (skid marks / decals?) |
 | 13 | 0x800C7F28   |  |
 | 14 | 0x800C9F30   | texture hash list |
 | 15 | L+0x378      |  |
@@ -254,14 +255,16 @@ the same function, and plain addresses are globals in the game code.
 | 44 | L+0xB0       |  |
 | 45 | L+0xB4       |  |
 | 46 | L+0x2FC      |  |
-| 47 | 0x800C5F28   | ground header: +4 = size of the vertex working buffer in vertices (0x1400 in most levels) |
+| 47 | 0x800C5F28   | +4 = buffer size for the root-12 object, in 8-byte units (0x1400 in most levels) |
 | 48 | 0x800CAB68   |  |
 | 49 | L+0x3B8      |  |
 | 50 | L+0xAC       |  |
 
 The level's single export goes to `L+0x47C` (pointer) and `L+0x480`
-(value): it is the **ground vertex pool** (an `SVECTOR` array) and its size
-in bytes. Checked on all 58 level files.
+(value: a byte size). During level setup (0x8005CDA4) the game hands this
+block to the root-12 object as its record buffer, with a size of
+`root47[+4] * 8` bytes (0x1400 * 8 in most levels). The flag-9 mesh's vertex
+pointer points at the start of the same block.
 
 Root 1 is described under Draw items; its third/fourth words are another
 table and count whose purpose isn't known yet.
