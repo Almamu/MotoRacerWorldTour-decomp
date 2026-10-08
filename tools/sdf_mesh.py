@@ -5,7 +5,8 @@ Writes:
   <out>/ground.obj           the track ground (world mesh), assembled from its
                              blocks and sectors, in world coordinates
   <out>/items/item_NNN.obj   every draw item's mesh, in its own coordinates
-  <out>/scene.obj            every Cobjet placed with its matrix (LOD 0)
+  <out>/scene.obj            every Cobjet placed with its matrix (LOD 0), in
+                             the same coordinates as ground.obj
 
 With --vrm <level.Vrm>, textured polygons get UVs and materials, and every
 texture page they use is written to <out>/textures/ (one PNG per
@@ -28,6 +29,7 @@ ROOT_DRAW_ITEMS = 1  # root 1: {DrawItem** items, u32 count, ...}
 ROOT_WORLD = 6       # root 6: world struct (grid, sectors, blocks, ground mesh)
 COBJET = "Cobjet"
 BLOCK_SCALE = 128    # block origin units -> vertex units
+TRANSLATION_SCALE = 32  # object translations are in 1/32 vertex units
 
 # Draw-item polygon group types that carry inline UV/CLUT/tpage.
 TEXTURED_TYPES = {13, 15, 21, 23}
@@ -115,7 +117,8 @@ def placed_objects(sdf):
 
 def transform(m, t, v):
     x, y, z = v
-    return tuple((m[r * 3] * x + m[r * 3 + 1] * y + m[r * 3 + 2] * z) / 4096 + t[r] for r in range(3))
+    return tuple((m[r * 3] * x + m[r * 3 + 1] * y + m[r * 3 + 2] * z) / 4096 + t[r] / TRANSLATION_SCALE
+                 for r in range(3))
 
 
 # --- ground ---------------------------------------------------------------

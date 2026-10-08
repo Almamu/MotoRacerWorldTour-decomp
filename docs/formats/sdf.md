@@ -189,9 +189,11 @@ bottom-left, bottom-right), so the outline is 0-1-3-2.
 
 `tools/sdf_mesh.py` exports every draw item's mesh, and every `Cobjet`
 placed with its matrix, to OBJ. The meshes look right (grandstands, riders
-on bikes, signs). The placed objects are only props, and whether the
-translations use the same units as the vertices isn't confirmed yet. Most of
-each level is the world geometry, below.
+on bikes, signs). Object translations (`MATRIX.t`) are in 1/32 vertex units:
+dividing them by 32 puts the objects exactly in place on the world geometry
+(e.g. the Night Show grandstand ring around the arena floor). The sky
+(`b_sky`) sits at the origin. Most of each level is the world geometry,
+below.
 
 ## World (track ground)
 
@@ -394,5 +396,4 @@ table and count whose purpose isn't known yet.
   object lists relate to `Cobjet`s.
 - Read the remaining polygon routines (types 14, 16, 21, 23) and the
   flags-bit-1 path.
-- Confirm the units of object translations; decode the camera/light motion
-  classes.
+- Decode the camera/light motion classes.
