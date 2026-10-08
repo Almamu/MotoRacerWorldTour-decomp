@@ -585,13 +585,13 @@ under its centre and wheels (0x800634BC, bike + 0x220…0x230).
 | Offset | Type  | Meaning                                                  |
 |--------|-------|----------------------------------------------------------|
 | 0x00   | s16   | face count                                               |
-| 0x02   | s16   | ? (usually the number of quads, not always)               |
+| 0x02   | s16   | not read by the lookup; equals the quad count in 15 of 20 levels (off by 1–115 in the rest): probably the source mesh's quad count |
 | 0x04   | Face* | faces                                                    |
 | 0x08   | u32[4]| 0 (runtime)                                              |
 | 0x18   | s32   | grid width                                               |
 | 0x1C   | s32   | grid height                                              |
 | 0x20   | s32   | grid cell size, in units of `position >> 12` (128 game units): 16 = 2048 units, 8 in the trial levels |
-| 0x24   | ptr   | grid of `{s16 first, s16 last}` face ranges, cell = `(z>>12)/size * width + (x>>12)/size`; null in most levels; where present the file holds `(n, -1)` entries (rebuilt at load?) |
+| 0x24   | ptr   | lookup grid, or null (all speed levels): `width × height` entries `{s16 first, s16 last}`, an inclusive face index range; cell = `(z>>12)/size * width + (x>>12)/size` (x, z in 1/32 units, grid origin at 0, 0). Empty cells have last = -1 (first is then arbitrary). Every face lies in the range of the cells it covers (checked on all five levels that have one); the original ranges are loose (they span faces far from the cell) |
 
 ### Face (56 bytes)
 
@@ -623,12 +623,57 @@ Positions relative to the face are taken in game units:
   (integer division). Vertical planes (ny = 0) occur in the trial levels.
 
 With these rules neighbouring faces meet within a unit at shared corners on
-every level. Surface types are level specific; on Sachsenring 0 = track, 1 =
-grass, 2 = run-off, 4 = thin strips along the track edges (kerbs?).
-Values seen across the levels: 0–7 and 31. What the physics does with each
-isn't decoded yet.
+every level.
 
-Sachsenring: 1347 faces (94 triangles, 1002 split), grid 41 × 57.
+### Walls
+
+Neighbour k belongs to edge k. Moving the bike (0x8001B350) walks from its
+current face towards the new position, crossing into the neighbour behind
+the most negative edge (up to 10 steps). An edge **without a neighbour is a
+wall**: the position is clamped onto the edge line (0x8001AE40) and the edge
+is returned, and the bike code (0x80068B60) bounces off it using the edge's
+direction. So the outline of the collision surface is the set of walls
+(e.g. the concrete wall right of Sachsenring's start straight, where the
+bike crashes when steered into it).
+
+### Surface types
+
+The low byte of the y word. Its low 3 bits pick a **bump map** through
+root 25 (`L+0xC64`):
+
+| Offset | Type     | Meaning                                         |
+|--------|----------|-------------------------------------------------|
+| 0x00   | ptr[8]   | 64 × 64 byte height maps (4 KB each), or null    |
+| 0x20   | u8[8]    | surface type → map index (low 3 bits)            |
+
+The byte under the bike, `map[((z >> 3) & 0xFC0) + ((x >> 9) & 0x3F)]`
+(x, z in 1/32 units, so each texel is 16 units and the map repeats every
+1024), gives `(byte - 0x80) × 4` (1/32 units) added to the bike's height:
+the roughness of grass and kerbs. Every road level uses the table
+`0, 1, 1, 1, 2, 0`: type 0 smooth, types 1–3 one rough map, type 4 (kerbs)
+its own map. The off-road levels have four maps but 0xCD in the table.
+
+The bike also stores the type (bike + 0x42C) and sets state flags
+(bike + 0x494) by discipline (`+0x52C` of the root-15 bike setup: 1
+motocross, 2 supercross, 3 speed, as in the database's track table):
+
+| Discipline | Surface types        | Flags   |
+|------------|----------------------|---------|
+| 3 (speed)  | not 0, 4, 6, 7       | 0x401   |
+| 1          | not 0, 6, 7          | 0x001   |
+| 2          | 4                    | 0x180   |
+| 2          | 2, 3, 5              | 0x001   |
+
+Flag 0x001 halves the bike's target speed (0x80065044); 0x400 skips the
+throttle (0x80065300 area). In the emulator, with the throttle held, a
+Sachsenring run-off face (type 2) slows the bike from ~70 to ~35
+units/frame; patched to type 0 or 4 it doesn't, patched to 1 it does. So on
+road tracks 0 = tarmac, 4 = kerb (rough but full grip), 1–3 = grass /
+gravel / run-off (off track), 6 and 7 count as track. Values seen: 0–7 and
+31.
+
+Sachsenring: 1347 faces (94 triangles, 1002 split), no lookup grid
+(41 × 57 cells declared).
 
 ### Writing
 
@@ -639,6 +684,9 @@ gaps), one plane through the corners, or for a split quad the same
 diagonal with a plane per triangle, the origin height on the first plane
 (w = 0) and the second plane's w solved to pass through its corners. The
 origin X/Z, neighbours and surface type are kept, so the topology is fixed.
+In levels with a lookup grid, `rebuild_grid` then recomputes every cell as
+the range of faces overlapping it (tighter than the original ranges; not
+yet tried in the game, as those are off-road levels).
 Re-encoding every face of every level from its own corners reproduces the
 heights within 1.5 units (p99).
 
@@ -728,7 +776,7 @@ the same function, and plain addresses are globals in the game code.
 | 12 | 0x800C5E10   | an object handled by 0x80020200–0x80020AB0: 200-entry ring buffer of 24-byte entries plus up to 1600 56-byte records in a buffer it's given (skid marks / decals?) |
 | 13 | 0x800C7F28   |  |
 | 14 | 0x800C9F30   | texture hash list |
-| 15 | L+0x378      |  |
+| 15 | L+0x378      | bike setup: starts with the `Data\Bikes\…` path; +0x10 → struct whose +0x52C is the level's discipline: 1 motocross (Rey, Usa), 2 supercross (Bar, Chi, Sdf), 3 speed (Eas, IM2, IM3, IdM, Sac, Suz, Tf2), 5 trial (Tri, Tr2), 6 freestyle (FSt), 7 dragster (Dr1, Dr2), 8 traffic (Tfc) |
 | 16 | L+0x458      |  |
 | 17 | L+0x45C      |  |
 | 18 | L+0x84       |  |
@@ -738,7 +786,7 @@ the same function, and plain addresses are globals in the game code.
 | 22 | 0x800CBD50   |  |
 | 23 | 0x800C89FC   |  |
 | 24 | 0x800C8A00   |  |
-| 25 | L+0xC64      |  |
+| 25 | L+0xC64      | surface bump maps (see Collision / Surface types) |
 | 26 | L+0x498      |  |
 | 27 | L+0xC60      |  |
 | 28 | L+0x3EC      |  |
@@ -780,9 +828,8 @@ table and count whose purpose isn't known yet.
   the model/part layout and the mesh flags, instead of inferring them
   (see [../ghidra.md](../ghidra.md)).
 - World: the field at 0x4C; the grid cell size.
-- Collision: what the surface types do, header field 0x02, the in-file
-  grids, and how walls / track limits are handled (bikes leaving the
-  collision surface).
+- Collision: surface types 5–7 and 31, and how the off-road levels use their
+  four bump maps.
 - The flags-bit-1 mesh path (second dispatcher, table at 0x800C896C).
 - `CanimMoveCamera` (a `CanimMove` of kind 4 with one more field at 0x9C,
   -1 in every file): levels hold about 3 of them (178 in 58 files) in the

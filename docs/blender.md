@@ -74,7 +74,10 @@ byte-identical (checked on all 70 levels and menu/end scenes).
 | Move ground vertices | written in place (block-relative); topology is fixed |
 | Move collision vertices | the faces using them are re-encoded (edges, planes, height); moves under 2.5 units are ignored |
 
-**The bikes ride on the collision surface, not on the ground mesh.** After
+**The bikes ride on the collision surface, not on the ground mesh.** Its
+outline edges are the walls, and the colours are the surface types
+(on road tracks 0 = tarmac, 4 = kerb, 1–3 = grass / run-off, which slow the
+bike), see [formats/sdf.md](formats/sdf.md). After
 reshaping the ground, run Object > Moto Racer WT: Snap Collision to Ground
 (with the level selected): every collision vertex within *Max distance*
 (default 1 m) above or below the ground is moved onto it. Use *Selected

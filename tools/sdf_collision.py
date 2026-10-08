@@ -247,6 +247,35 @@ def encode_face(trig, face, world):
     return out + struct.pack("<I4h", split, p2.nx, p2.ny, p2.nz, p2.w)
 
 
+def rebuild_grid(sdf, trig):
+    """Recompute the lookup grid (header +0x24) from the faces' extents: each
+    cell gets the [first, last] index range of the faces overlapping it (a
+    superset is fine: the game tests every face in the range). Empty cells
+    get (0, -1). Returns False if the level has no grid."""
+    h = header(sdf)
+    if not h["grid"]:
+        return False
+    w, hgt, size = h["grid_w"], h["grid_h"], h["cell"]
+    ranges = [[None, None] for _ in range(w * hgt)]
+    for f in read(sdf):
+        poly = world_polygon(trig, f)
+        if not poly:
+            continue
+        # cell = (pos >> 12) // size with pos in 1/32 units, i.e. game units / 128
+        xs = [int(x * 32) >> 12 for x, _, _ in poly]
+        zs = [int(z * 32) >> 12 for _, _, z in poly]
+        for cz in range(max(0, min(zs) // size), min(hgt - 1, max(zs) // size) + 1):
+            for cx in range(max(0, min(xs) // size), min(w - 1, max(xs) // size) + 1):
+                r = ranges[cz * w + cx]
+                r[0] = f.index if r[0] is None else min(r[0], f.index)
+                r[1] = f.index if r[1] is None else max(r[1], f.index)
+    data = bytearray(sdf.data)
+    for k, (a, b) in enumerate(ranges):
+        struct.pack_into("<hh", data, h["grid"] + 4 * k, *((0, -1) if a is None else (a, b)))
+    sdf.data = bytes(data)
+    return True
+
+
 def export_obj(sdf, out, langimg=None):
     trig = Trig(langimg)
     faces = read(sdf)

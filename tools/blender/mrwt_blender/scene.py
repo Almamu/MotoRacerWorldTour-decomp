@@ -280,6 +280,8 @@ def write_collision(sdf, old, new, tolerance=2.5):
         data[at:at + len(rec)] = rec
         changed += 1
     sdf.data = bytes(data)
+    if changed:
+        sdf_collision.rebuild_grid(sdf, trig())  # levels with a lookup grid
     return changed
 
 
