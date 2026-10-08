@@ -79,6 +79,7 @@ Useful addresses on that path (European version, Sachsenring):
 | Address      | What |
 |--------------|------|
 | 0x800F7200   | the level's SDF data block (`Sac_PS.sdf` offset 0) |
+| (button)     | Triangle cycles the race camera (chase / close chase / …) |
 | 0x8017D288   | player bike object (AI bikes follow every 0x580 bytes): +0x64 position x, y, z (s32, 1/32 units, Y down), +0x220…+0x230 collision face records (body, wheels), +0x42C surface type, +0x494 state flags, +0x5A0 handling record |
 | 0x8017D300   | a second position (camera/body follower, 1/32 units) with four contact points at 0x8017D324 |
 

@@ -1212,5 +1212,9 @@ a flag bit: an 8-bit value, a 16-bit button mask (1 = accelerate), another
 
 ## Next steps
 
-- Root 9: which motion each blended pose stands for (lean, crash, …).
+- Root 9: which motion each blended pose stands for. Copying pose k over
+  pose 8 in RAM (the riding pose applied every frame) shows, from the chase
+  camera, poses 1–5 sitting upright and 6–15 tucked; a side view needs the
+  rig hierarchy (0x8008E658: which of the 31 model parts each of the 21
+  pose joints drives, and their parents), not decoded yet.
 
