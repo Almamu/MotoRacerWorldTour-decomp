@@ -19,9 +19,14 @@ Chunk tags:
   BLKS  texture: GPU POLY_FT4-style uv0, clut, uv1, tpage, uv2, uv3, then
         u16 n and n clut ids (palette variants; the first equals `clut`)
 
-usage: vrm.py <file.vrm> <out_dir>
+usage: vrm.py export <file.vrm> <out_dir>   (or just vrm.py <file.vrm> <out_dir>)
   writes vram.png (16-bit view of the whole block), blks/<hash>.png and
   fonts/<hash>.png + fonts/<hash>.json (glyph strip and metrics)
+       vrm.py import <file.vrm> <dir> <out.vrm>
+  writes edited blks/*.png and fonts/*.png from <dir> back into VRAM: colours
+  are mapped to each texture's own palette (nearest colour; alpha 0 =
+  transparent index); unchanged pixels keep their index, so an unedited
+  export imports back byte-identical. Palettes and sizes don't change.
 """
 
 import json
@@ -42,44 +47,113 @@ def rgb555_to_rgba(words):
     return np.stack([r, g, b, a], axis=-1).astype(np.uint8)
 
 
+def rgba_to_rgb555(rgba):
+    rgba = np.asarray(rgba, np.uint16)
+    w = (rgba[..., 0] >> 3) | (rgba[..., 1] >> 3) << 5 | (rgba[..., 2] >> 3) << 10
+    # Opaque black needs the STP bit, or it would turn transparent.
+    w = np.where((w == 0) & (rgba[..., 3] >= 128), 0x8000, w)
+    return np.where(rgba[..., 3] < 128, 0, w).astype(np.uint16)
+
+
 class Vrm:
     def __init__(self, data):
+        self.raw = bytes(data)
         count, desc_size = struct.unpack_from("<2I", data, 0)
         table = [struct.unpack_from("<I4sI", data, 8 + i * 12) for i in range(count)]
         base = 8 + count * 12
         ends = [t[0] for t in table[1:]] + [desc_size]
         self.chunks = [(tag.decode(), h, data[base + off:base + end])
                        for (off, tag, h), end in zip(table, ends)]
-        pix = base + desc_size
-        self.x, self.y, self.width, self.height = struct.unpack_from("<4H", data, pix)
+        self.pix = base + desc_size
+        self.x, self.y, self.width, self.height = struct.unpack_from("<4H", data, self.pix)
         self.vram = np.frombuffer(data, dtype="<u2", count=self.width * self.height,
-                                  offset=pix + 8).reshape(self.height, self.width)
+                                  offset=self.pix + 8).reshape(self.height, self.width).copy()
+        self.original = self.vram.copy()
+
+    def to_bytes(self):
+        return self.raw[:self.pix + 8] + self.vram.astype("<u2").tobytes() + self.raw[self.pix + 8 + self.vram.size * 2:]
 
     def clut(self, clut_id, colours):
         x = (clut_id & 0x3F) * 16 - self.x
         y = (clut_id >> 6) - self.y
         return self.vram[y, x:x + colours]
 
-    def texture(self, uvs, clut_id, tpage):
-        """Return an RGBA array for the quad's bounding box in its texture page."""
+    def _region(self, uvs, tpage):
         page_x = (tpage & 0xF) * 64 - self.x
         page_y = ((tpage >> 4) & 1) * 256 - self.y
         mode = (tpage >> 7) & 3
         us = [u for u, _ in uvs]
         vs = [v for _, v in uvs]
-        u0, u1, v0, v1 = min(us), max(us), min(vs), max(vs)
-        rows = self.vram[page_y + v0:page_y + v1 + 1]
+        return page_x, page_y, mode, min(us), max(us), min(vs), max(vs)
+
+    def indices(self, uvs, tpage, vram=None):
+        """Texel values (palette indices, or 15-bit colours) of the quad's bounding box."""
+        page_x, page_y, mode, u0, u1, v0, v1 = self._region(uvs, tpage)
+        rows = (self.vram if vram is None else vram)[page_y + v0:page_y + v1 + 1]
         if mode == 0:  # 4 bpp
             words = rows[:, page_x:page_x + 64]
             idx = np.stack([(words >> s) & 15 for s in (0, 4, 8, 12)], axis=-1).reshape(len(rows), 256)
-            pal = self.clut(clut_id, 16)
         elif mode == 1:  # 8 bpp
             words = rows[:, page_x:page_x + 128]
             idx = np.stack([words & 255, words >> 8], axis=-1).reshape(len(rows), 256)
-            pal = self.clut(clut_id, 256)
         else:  # 15 bpp direct
-            return rgb555_to_rgba(rows[:, page_x + u0:page_x + u1 + 1])
-        return rgb555_to_rgba(pal[idx[:, u0:u1 + 1]])
+            return rows[:, page_x + u0:page_x + u1 + 1].copy()
+        return idx[:, u0:u1 + 1].copy()
+
+    def put_indices(self, uvs, tpage, idx, write=None):
+        page_x, page_y, mode, u0, u1, v0, v1 = self._region(uvs, tpage)
+        idx = np.asarray(idx, np.uint16)
+        for row, y in enumerate(range(page_y + v0, page_y + v1 + 1)):
+            for col, u in enumerate(range(u0, u1 + 1)):
+                if write is not None and not write[row, col]:
+                    continue
+                if mode == 0:
+                    x, shift, mask = page_x + u // 4, (u % 4) * 4, 0xF
+                elif mode == 1:
+                    x, shift, mask = page_x + u // 2, (u % 2) * 8, 0xFF
+                else:
+                    self.vram[y, page_x + u] = idx[row, col]
+                    continue
+                w = int(self.vram[y, x])
+                self.vram[y, x] = (w & ~(mask << shift)) | ((int(idx[row, col]) & mask) << shift)
+
+    def texture(self, uvs, clut_id, tpage, vram=None):
+        """Return an RGBA array for the quad's bounding box in its texture page."""
+        mode = (tpage >> 7) & 3
+        idx = self.indices(uvs, tpage, vram)
+        if mode >= 2:
+            return rgb555_to_rgba(idx)
+        pal_vram = self.vram if vram is None else vram
+        x = (clut_id & 0x3F) * 16 - self.x
+        y = (clut_id >> 6) - self.y
+        pal = pal_vram[y, x:x + (16 if mode == 0 else 256)]
+        return rgb555_to_rgba(pal[idx])
+
+    def put_texture(self, uvs, clut_id, tpage, rgba):
+        """Write an RGBA image back, mapping colours to the texture's palette.
+
+        Only pixels that differ from the texture as it was in the original
+        bank are written, so unedited images (including textures that
+        overlap an edited one) change nothing. Returns the pixel count."""
+        mode = (tpage >> 7) & 3
+        rgba = np.asarray(rgba, np.uint8)
+        orig = self.texture(uvs, clut_id, tpage, self.original)
+        if rgba.shape[:2] != orig.shape[:2]:
+            raise ValueError(f"image is {rgba.shape[1]}x{rgba.shape[0]}, expected {orig.shape[1]}x{orig.shape[0]}")
+        changed = ~(rgba == orig).all(-1)
+        if not changed.any():
+            return 0
+        if mode >= 2:
+            new = rgba_to_rgb555(rgba)
+        else:
+            pal = rgb555_to_rgba(self.clut(clut_id, 16 if mode == 0 else 256)).astype(np.int32)
+            px = rgba.astype(np.int32).reshape(-1, 1, 4)
+            d = ((px[..., :3] - pal[None, :, :3]) ** 2).sum(-1)
+            # transparency must match exactly (alpha 0 <-> colour 0x0000)
+            d += np.where((px[..., 3] < 128) != (pal[None, :, 3] < 128), 1 << 30, 0)
+            new = d.argmin(1).reshape(changed.shape)
+        self.put_indices(uvs, tpage, new, changed)
+        return int(changed.sum())
 
 
 def parse_blks(blob):
@@ -117,11 +191,7 @@ def font_strip(vrm, font):
     return strip
 
 
-def main():
-    if len(sys.argv) != 3:
-        sys.exit(__doc__)
-    vrm = Vrm(Path(sys.argv[1]).read_bytes())
-    out = Path(sys.argv[2])
+def export(vrm, out):
     (out / "blks").mkdir(parents=True, exist_ok=True)
     (out / "fonts").mkdir(parents=True, exist_ok=True)
     Image.fromarray(rgb555_to_rgba(vrm.vram)).save(out / "vram.png")
@@ -138,6 +208,48 @@ def main():
                   f"from {font['first']} clut {font['clut']:04x} tpage {font['tpage']:04x}")
         else:
             print(f"{tag} {h:08x} {len(blob)} bytes")
+
+
+def import_(vrm, src):
+    """Write edited blks/<hash>.png and fonts/<hash>.png back into VRAM."""
+    changed = 0
+    for tag, h, blob in vrm.chunks:
+        if tag == "BLKS":
+            png = src / "blks" / f"{h:08x}.png"
+            if png.exists():
+                uvs, clut, tpage, _ = parse_blks(blob)
+                n = vrm.put_texture(uvs, clut, tpage, np.array(Image.open(png).convert("RGBA")))
+                if n:
+                    print(f"BLKS {h:08x}: {n} pixels changed")
+                changed += n
+        elif tag == "FNTS":
+            png = src / "fonts" / f"{h:08x}.png"
+            if png.exists():
+                font = parse_font(blob)
+                strip = np.array(Image.open(png).convert("RGBA"))
+                x = 1
+                for g in font["glyphs"]:
+                    if g["width"]:
+                        uvs = [(g["u"], g["v"]), (g["u"] + g["width"] - 1, g["v"] + font["height"] - 1)]
+                        n = vrm.put_texture(uvs, font["clut"], font["tpage"], strip[:, x:x + g["width"]])
+                        changed += n
+                    x += g["width"] + 1
+    return changed
+
+
+def main():
+    a = sys.argv[1:]
+    if len(a) == 2:
+        a = ["export"] + a
+    if len(a) == 3 and a[0] == "export":
+        export(Vrm(Path(a[1]).read_bytes()), Path(a[2]))
+    elif len(a) == 4 and a[0] == "import":
+        vrm = Vrm(Path(a[1]).read_bytes())
+        n = import_(vrm, Path(a[2]))
+        Path(a[3]).write_bytes(vrm.to_bytes())
+        print(f"{n} pixels changed -> {a[3]}")
+    else:
+        sys.exit(__doc__)
 
 
 if __name__ == "__main__":

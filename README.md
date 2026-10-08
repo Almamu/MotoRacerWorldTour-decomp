@@ -56,7 +56,7 @@ python3 tools/sdf_mesh.py extracted/mr3dat/data/final/Usa_PS.sdf extracted/sdf/U
 | `disc.py`              | data track (.bin) | replace files (in place or moved to the end), EDC/ECC regenerated; `verify` |
 | `mr3dat.py`            | `MR3.DAT` ⇄ dir   | extract (+ `manifest.json`) / pack (LZSS encoder, CRCs, hash table) |
 | `mr3dat_names.txt`     | —                 | recovered `MR3.DAT` file names                 |
-| `vrm.py`               | `.Vrm`            | `vram.png` + one PNG per texture               |
+| `vrm.py`               | `.Vrm` ⇄ PNG      | export textures/fonts; import edited PNGs (palette-mapped) |
 | `bs.py`                | `.bs`             | PNG                                           |
 | `snd.py`               | `.snd`            | sound names + one WAV per sample               |
 | `sdf.py`               | `.sdf`            | parse / serialize (byte-identical), summary     |

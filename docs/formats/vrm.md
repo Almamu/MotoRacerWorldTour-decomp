@@ -97,3 +97,20 @@ The HUD sprite table: level root 14 is a list of 163 chunk hashes (fonts at
 indices 16–20). At load the game resolves it into descriptor pointers at
 0x800CC030 (0x800A1B54), which the HUD code and the 0x02 escape use.
 `tools/vrm.py` writes each font as a glyph strip plus JSON metrics.
+
+## Writing
+
+`vrm.py import <bank.Vrm> <dir> <out.Vrm>` writes edited `blks/*.png` and
+`fonts/*.png` (as produced by `vrm.py export`) back into the VRAM block:
+
+- Each texture keeps its size, position, bit depth and palette; edited
+  colours are mapped to the nearest colour of the texture's own CLUT
+  (alpha < 128 maps to the transparent colour 0x0000). 15-bit textures take
+  the colour directly (opaque black gets the STP bit so it doesn't turn
+  transparent).
+- Only pixels that differ from the original bank are written. Textures can
+  overlap in VRAM, so an unedited PNG of an overlapping texture must not
+  write its old pixels back over an edited one.
+- An unedited export imports back byte-identical.
+
+Palettes themselves aren't editable through the tool yet.
