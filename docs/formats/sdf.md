@@ -42,7 +42,7 @@ All fields are u32 unless stated otherwise, in this order:
 | `n_classes`               |                                                           |
 | `n_roots`                 | must equal the count the caller asks for                  |
 | `relocs[n_relocs]`        | offsets of u32 pointers in the data; each gets `+= data`   |
-| `objects[n_objects]`      | offsets of C++ objects. Each object's first u32 is a class index |
+| `objects[n_objects]`      | offsets of each C++ object's **vtable pointer** (not the object start, see Classes). The u32 there is a class index |
 | `classes[n_classes]`      | `char[32]` class names                                     |
 | `roots[n_roots]`          | offsets of the root structures, or 0xFFFFFFFF for null     |
 
@@ -60,7 +60,7 @@ at 0x800A5530 in `data\LANGIMG.DAT`:
    two pointers).
 3. Check `n_roots` against the expected count; abort on mismatch.
 4. Relocate every pointer in `relocs` (0x800A54F8).
-5. For each object: read the class index from its first u32, find the
+5. For each object: read the class index from its vtable slot, find the
    class name in the caller's registry (36-byte entries: `char name[32]`,
    vtable pointer), and store the vtable pointer in the object's first u32.
 6. `root_out[i] = data + roots[i]` (or NULL).
@@ -78,27 +78,53 @@ presumably never reads them.
 
 ## Classes
 
-Class names seen (all files): `Cobjet`, `CobjetCameraMotion`,
-`CobjetLightMotion`, `CanimMoveCamera`, `Cobjet2dVFonts`, `CanimMove`,
-`CanimSide`, `CobjetEnvMap`, `CobjetVFonts`, `CobjetInterface`. Levels use
-`Cobjet`, `Cobjet2dVFonts`, `CobjetCameraMotion`, `CobjetLightMotion` (and
-`CanimMoveCamera`).
+The object list points at each object's vtable pointer, which this compiler
+places after the base class's fields rather than at the start. To get the
+object start, subtract the class's vtable offset. The sizes and offsets come
+from the constructors the level and menu loaders run to build their class
+registries (0x80049C14, 0x80046F2C):
+
+| Class                | Size  | vtable at | Used in        |
+|----------------------|-------|-----------|----------------|
+| `CanimVertex`        | 0x4C  | 0x34      | registries only |
+| `CanimSide`          | 0x48  | 0x34      | menus          |
+| `CanimMove`          | 0x9C  | 0x34      | menus          |
+| `CanimMoveCamera`    | 0xA0  | 0x34      | levels         |
+| `Cobjet`             | 0x54  | 0x50      | all            |
+| `CobjetHud`          | 0x64  | 0x50      | registries only |
+| `CobjetCameraMotion` | 0x60  | 0x50      | all            |
+| `CobjetMotoHumain`   | 0x5D4 | 0x50      | registries only |
+| `CobjetVFonts`       | 0x5C  | 0x50      | menus          |
+| `CobjetLightMotion`  | 0x58  | 0x50      | all            |
+| `CobjetEnvMap`       | 0x58  | 0x50      | menus          |
+| `CobjetInterface`    | 0x74  | 0x50      | menus          |
+| `Cobjet2dVFonts`     | 0x14  | 0x08      | levels         |
+
+Objects of a class are stored back to back, so the distance between
+consecutive vtable slots equals the class size. The `Cobjet*` classes share
+the `Cobjet` layout for their first 0x50 bytes.
+
+The vtables use the old (cfront / GCC 2) layout: 8-byte entries of
+`s16 this_delta, s16 0, void *fn`; entry 1 (vtable+8) is the destructor,
+called with 3 to also free the object.
 
 ### Cobjet
 
-Offsets from the start of the object. Confirmed by the draw code
-(0x80016A8C, which receives the object + 4):
+Offsets from the start of the object (vtable slot - 0x50), as used by the
+draw code (0x80016A8C):
 
 | Offset | Type      | Meaning                                              |
 |--------|-----------|------------------------------------------------------|
-| 0x00   | vtable    | (class index in the file)                            |
-| 0x04   | char*     | instance name, LightWave style (e.g. `"d_c011 (1)"`)  |
-| 0x18   | MATRIX    | GTE matrix: `s16 m[3][3]` (4.12 fixed point), padding, `s32 t[3]` at 0x2C |
-| 0x38   | MATRIX*   | the matrix used for drawing (normally this object's own, 0x18) |
-| 0x3C   | s16*      | draw-item index per LOD                              |
-| 0x40   | u8        | LOD count (0 = not drawn this way)                   |
-| 0x41   | u8        | LOD currently selected (written at runtime)          |
-| 0x4C   | u32       | colour (0x808080 = neutral)                          |
+| 0x00   | char*     | instance name, LightWave style (e.g. `"d_c011 (1)"`)  |
+| 0x04   | u32       | flags (bit 4 set while visible, see Cell)             |
+| 0x14   | MATRIX    | GTE matrix: `s16 m[3][3]` (4.12 fixed point), padding, `s32 t[3]` at 0x28 |
+| 0x34   | MATRIX*   | the matrix used for drawing (normally this object's own, 0x14) |
+| 0x38   | s16*      | draw-item index per LOD                              |
+| 0x3C   | u8        | LOD count (0 = not drawn this way)                   |
+| 0x3D   | u8        | LOD currently selected (written at runtime)          |
+| 0x47   | u8        | palette offset added to textured polygons' CLUT       |
+| 0x48   | u32       | colour (0x808080 = neutral)                          |
+| 0x50   | vtable*   | (class index in the file)                            |
 
 The game picks a LOD from the distance to the camera, then draws
 `draw_items[lod_index[lod]]` (see below) with the object's matrix.
@@ -282,12 +308,12 @@ size) and the cells it covers are collected into the visible lists.
 
 | Offset | Type   | Meaning                                                      |
 |--------|--------|--------------------------------------------------------------|
-| 0x04   | ptr*   | objects in this cell: pointers to `Cobjet` + 4 (34510 of 35100 references across the levels; the rest point at similar structs outside the object list) |
+| 0x04   | ptr*   | objects in this cell: pointers to `Cobjet` starts (all 35100 references across the levels) |
 | 0x08   | u16    | object count; bit 15 is a runtime "already visited" flag      |
 | 0x0A   | s16    | sector index, or -1                                          |
 
-When a cell is visible, its objects get bit 0x10 set in the word at
-`Cobjet + 8` and its sector is queued for drawing. In every level the
+When a cell is visible, its objects get bit 0x10 set in their flags
+(`Cobjet` + 4) and its sector is queued for drawing. In every level the
 cells together reference every sector.
 
 ### Sector (16 bytes)

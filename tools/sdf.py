@@ -6,8 +6,10 @@ Layout (little-endian), see docs/formats/sdf.md:
     u32 n_exports, u32 export_offset[n_exports], u32 export_value[n_exports]
     u32 n_relocs, u32 n_objects, u32 n_classes, u32 n_roots
     u32 relocs[n_relocs]        offsets of pointers inside data (made absolute)
-    u32 objects[n_objects]      offsets of objects; their first u32 is a class
-                                index, replaced by the class's vtable on load
+    u32 objects[n_objects]      offsets of each object's vtable pointer; the u32
+                                there holds a class index, replaced by the
+                                class's vtable on load. The vtable pointer isn't
+                                at the start of the object: see CLASSES.
     char classes[n_classes][32] class names
     u32 roots[n_roots]          offsets of the root objects, or -1
 
@@ -19,6 +21,26 @@ import sys
 from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
+
+
+# Class name -> (object size, offset of the vtable pointer inside the object),
+# from the constructors the level and menu loaders run to build their class
+# registries (0x80049C14, 0x80046F2C).
+CLASSES = {
+    "CanimVertex": (0x4C, 0x34),
+    "CanimSide": (0x48, 0x34),
+    "CanimMove": (0x9C, 0x34),
+    "CanimMoveCamera": (0xA0, 0x34),
+    "Cobjet": (0x54, 0x50),
+    "CobjetHud": (0x64, 0x50),
+    "CobjetCameraMotion": (0x60, 0x50),
+    "CobjetMotoHumain": (0x5D4, 0x50),
+    "CobjetVFonts": (0x5C, 0x50),
+    "CobjetLightMotion": (0x58, 0x50),
+    "CobjetEnvMap": (0x58, 0x50),
+    "CobjetInterface": (0x74, 0x50),
+    "Cobjet2dVFonts": (0x14, 0x08),
+}
 
 
 @dataclass
@@ -34,7 +56,13 @@ class Sdf:
         return struct.unpack_from("<I", self.data, off)[0]
 
     def class_of(self, obj_off):
+        """Class of the object whose vtable pointer is at obj_off."""
         return self.classes[self.u32(obj_off)]
+
+    def instances(self, class_name):
+        """Start offsets of every object of the given class."""
+        vptr = CLASSES[class_name][1]
+        return [o - vptr for o in self.sorted_objects if self.class_of(o) == class_name]
 
     def object_size(self, obj_off):
         """Distance to the next object (an upper bound on the object's size)."""

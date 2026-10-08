@@ -103,16 +103,16 @@ def draw_items(sdf):
 
 
 def placed_objects(sdf):
-    """Yield (object offset, name, matrix, translation, draw item index) for each Cobjet."""
+    """Yield (object start, name, matrix, translation, draw item index) for each Cobjet."""
     relocs = set(sdf.relocs)
-    for obj in sdf.sorted_objects:
-        if sdf.class_of(obj) != COBJET or sdf.data[obj + 0x40] == 0 or (obj + 0x3C) not in relocs:
+    for obj in sdf.instances(COBJET):
+        if sdf.data[obj + 0x3C] == 0 or (obj + 0x38) not in relocs:
             continue
-        mat = sdf.u32(obj + 0x38)
+        mat = sdf.u32(obj + 0x34)
         m = struct.unpack_from("<9h", sdf.data, mat)
         t = struct.unpack_from("<3i", sdf.data, mat + 0x14)
-        lod0 = struct.unpack_from("<h", sdf.data, sdf.u32(obj + 0x3C))[0]
-        name_ptr = sdf.u32(obj + 4)
+        lod0 = struct.unpack_from("<h", sdf.data, sdf.u32(obj + 0x38))[0]
+        name_ptr = sdf.u32(obj)
         name = sdf.data[name_ptr:sdf.data.index(b"\0", name_ptr)].decode("latin-1") if name_ptr else ""
         yield obj, name, m, t, lod0
 
