@@ -64,6 +64,9 @@ def write_obj(path, vertices, faces):
     vt = 1
     current = None
     for n, (idx, mat, uv) in enumerate(faces):
+        if len(idx) == 2:  # line primitive (group type 2)
+            out.append(f"l {idx[0] + 1} {idx[1] + 1}")
+            continue
         order = [0, 1, 2] if len(idx) == 3 else [0, 1, 3, 2]
         if mat != current:
             out.append(f"usemtl {mat}")
@@ -91,6 +94,8 @@ def read_obj(path):
             uvs.append((float(p[1]), float(p[2])))
         elif p[0] == "usemtl":
             mat = p[1]
+        elif p[0] == "l":
+            faces.append(([int(t.split("/")[0]) - 1 for t in p[1:3]], mat, None))
         elif p[0] == "f":
             idx, uv = [], []
             for tok in p[1:]:
@@ -192,6 +197,10 @@ def cobjets(sdf):
 def export(sdf_path, out):
     sdf = parse(Path(sdf_path).read_bytes())
     out.mkdir(parents=True, exist_ok=True)
+    if len(sdf.roots) not in (15, 51):  # levels and menu/end scenes only (not the DB)
+        (out / "geometry.json").write_text("{}")
+        print(f"{sdf_path}: no geometry")
+        return
     for i, item in draw_items(sdf).items():
         mesh = read_item_mesh(sdf, item)
         write_obj(out / f"item_{i:03d}.obj", mesh.vertices, item_faces(sdf, item, mesh))
@@ -275,6 +284,8 @@ def replace_item(sdf, item, verts, faces):
     old_verts = read_item_mesh(sdf, item).vertices
     groups = {}
     for idx, mat, uv in faces:
+        if len(idx) < 3:
+            continue  # lines aren't drawn by the game; not carried into new meshes
         textured = bool(mat and mat.startswith("page_") and uv)
         n = len(idx)
         gtype = (13 if n == 3 else 15) if textured else (5 if n == 3 else 9)
@@ -310,7 +321,7 @@ def replace_item(sdf, item, verts, faces):
     sdf.set_pointer(mesh + 0x18, vert_at)
     sdf.set_pointer(mesh + 0x1C, poly_at)
     data = bytearray(sdf.data)
-    struct.pack_into("<H", data, mesh, len(faces))
+    struct.pack_into("<H", data, mesh, len(polys) // 28)
     struct.pack_into("<H", data, mesh + 4, len(verts))
     data[mesh + 6] = 1  # plain mesh: drop the extra lighting / env blocks
     head = struct.pack(f"<{len(headers)}H", *headers) + b"\0\0"
