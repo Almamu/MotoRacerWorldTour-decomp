@@ -1138,14 +1138,16 @@ bytes) +0x5C.
 
 | Offset | Meaning |
 |--------|---------|
-| +0x04  | 14 part records of 0x1C bytes (record 0 is a template slot) |
+| +0x04  | 16 pose records of 0x1C bytes (record 0 is a template slot without data) |
 | +0x1C4 | animation count (26 road, 33 Rey/Usa, 36 Bar, 50 FSt), then pointers into root 11's animation records; the rider state machine picks from them (0x80060980) |
 | +0x290 | 2 rider models; the rider draw (0x800618BC) uses entry 1 in mode 2, else entry 0 |
 | +0x298 | 2 × 2 texture-atlas records (16 bytes each), one pair per mode |
 
-Part records are **static poses** of the 21-joint skeleton; the base
-riding pose (record 8) is applied every frame by 0x80060980 →
-0x8008E1F8:
+Pose records are **keyframe poses** of the 21-joint skeleton. The base
+riding pose (record 8) is applied every frame by 0x80060980 → 0x8008E1F8;
+the rider animation code blends the others on top (0x80021154, 0x80022454,
+0x80022A68 → blend helpers 0x800916B0, 0x80091FB4, 0x80091544): records 1,
+2, 3 or 5 (picked by a side flag: left/right), 7, 11–15:
 
 | Offset | Type | Meaning |
 |--------|------|---------|
@@ -1210,6 +1212,5 @@ a flag bit: an 8-bit value, a 16-bit button mask (1 = accelerate), another
 
 ## Next steps
 
-- Root 9: what the 13 poses besides the riding pose are for (crashes,
-  blends?).
+- Root 9: which motion each blended pose stands for (lean, crash, …).
 
