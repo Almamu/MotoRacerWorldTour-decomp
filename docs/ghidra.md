@@ -26,6 +26,7 @@ ghidra-analyzeHeadless extracted/ghidra mrwt -process LANGIMG.DAT \
 
 ```sh
 tools/ghidra/decomp.sh out.c 0x800a5530 0x800a54f8
+tools/ghidra/decomp.sh all.c all          # every function (takes a while)
 ```
 
 This writes Ghidra's C for each function containing the given addresses.

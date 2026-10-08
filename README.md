@@ -43,9 +43,10 @@ What can be edited:
 | Sound banks (`.snd`) | WAV (16-bit mono) | ADPCM-encoded; loop layout kept; SPU RAM is 512 KB |
 | Text in scenes/database (`.sdf`) | JSON | new strings appended, pointers redirected |
 | Meshes, ground, object placements (`.sdf`) | Blender (`tools/blender`, recommended) or OBJ / JSON | same topology: positions and UVs in place; draw items can get a new mesh (textured or flat tris/quads) |
+| Collision surface (`.sdf`) | Blender | corner moves re-encode the faces; "Snap Collision to Ground" after ground edits |
 | Anything else in `MR3.DAT` | raw file | replace it under `ws/mr3dat` |
 
-Not supported yet: animation edits, new ground topology, new textures/palettes (only existing ones can be changed), movies (`.DPS`). None of this has been tested in an emulator or on hardware yet.
+Not supported yet: animation edits, new ground or collision topology, new textures/palettes (only existing ones can be changed), movies (`.DPS`). None of this has been tested in an emulator or on hardware yet.
 
 ## Tools
 
@@ -89,6 +90,8 @@ python3 tools/sdf_mesh.py extracted/mr3dat/data/final/Usa_PS.sdf extracted/sdf/U
 | `dxr.py`               | `.dxr`            | code relocated to a fixed base (for Ghidra)    |
 | `ghidra/`              | `LANGIMG.DAT`     | headless decompilation, see `docs/ghidra.md`   |
 | `blender/`             | `.sdf` ⇄ Blender  | add-on: import levels/scenes with textures, export edits; see `docs/blender.md` |
+| `sdf_collision.py`     | level `.sdf`      | collision surface (root 5): decode, export OBJ, re-encode faces |
+| `psxrun.py`            | cue + BIOS        | deterministic libretro runner: frame-exact input, RAM, save states (experiments) |
 | `emutest.py`           | data track + cue  | boots it in Mednafen headless, presses buttons, saves frames; see `docs/testing.md` |
 
 ## License

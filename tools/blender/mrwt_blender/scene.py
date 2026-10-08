@@ -15,6 +15,7 @@ import struct
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import sdf_collision
 from sdf import parse, serialize
 from sdf_mesh import TEXTURED_TYPES, draw_items, read_item_mesh
 from sdf_geom import (TRANSLATION_SCALE, bounds_update, cobjets, ground_layout,
@@ -64,11 +65,19 @@ class Placed:
 
 
 @dataclass
+class CollisionFace:
+    index: int
+    corners: list              # [(x, y, z)] game units, Y down, edge order
+    surface: int
+
+
+@dataclass
 class Scene:
     items: dict
     ground: Item = None
     objects: list = field(default_factory=list)
     roots: int = 0
+    collision: list = None     # [CollisionFace], levels only
 
 
 def rgb(word):
@@ -137,13 +146,41 @@ def read_objects(sdf):
     return out
 
 
+_TRIG = None
+
+
+def trig():
+    """The game's sin/cos table, from LANGIMG.DAT next to data/final (falls
+    back to computed values, which differ by at most 1/4096)."""
+    global _TRIG
+    if _TRIG is None:
+        _TRIG = sdf_collision.Trig(LANGIMG)
+    return _TRIG
+
+
+LANGIMG = None
+
+
+def read_collision(sdf):
+    out = []
+    for f in sdf_collision.read(sdf):
+        poly = sdf_collision.world_polygon(trig(), f)
+        if poly:
+            out.append(CollisionFace(f.index, poly, f.surface))
+    return out
+
+
 def load(path):
+    global LANGIMG
+    if LANGIMG is None:
+        LANGIMG = Path(path).resolve().parents[1] / "LANGIMG.DAT"
     sdf = parse(Path(path).read_bytes())
     if not has_geometry(sdf):
         raise ValueError(f"{path}: not a level or menu scene (no draw items)")
     items = {i: read_item(sdf, i, item) for i, item in draw_items(sdf).items()}
     ground = read_ground(sdf) if len(sdf.roots) == 51 else None
-    return Scene(items, ground, read_objects(sdf), len(sdf.roots))
+    collision = read_collision(sdf) if len(sdf.roots) == 51 else None
+    return Scene(items, ground, read_objects(sdf), len(sdf.roots), collision)
 
 
 # --- writing -----------------------------------------------------------------
@@ -223,11 +260,35 @@ def write_objects(sdf, old, new):
     return changed
 
 
-def save(base, out, items=None, ground=None, objects=None):
+def write_collision(sdf, old, new, tolerance=2.5):
+    """Re-encode the collision faces whose corners moved by more than
+    `tolerance` game units (Blender welds corners within 1-2 units, so
+    smaller moves are noise); returns the count."""
+    faces = {f.index: f for f in sdf_collision.read(sdf)}
+    before = {c.index: c for c in old}
+    base = sdf.u32(sdf.roots[sdf_collision.ROOT_COLLISION] + 4)
+    data = bytearray(sdf.data)
+    changed = 0
+    for c in new:
+        o = before[c.index]
+        if len(c.corners) != len(o.corners):
+            raise ValueError(f"collision face {c.index}: corner count changed")
+        if all(abs(a - b) <= tolerance for p, q in zip(c.corners, o.corners) for a, b in zip(p, q)):
+            continue
+        rec = sdf_collision.encode_face(trig(), faces[c.index], c.corners)
+        at = base + c.index * sdf_collision.FACE_SIZE
+        data[at:at + len(rec)] = rec
+        changed += 1
+    sdf.data = bytes(data)
+    return changed
+
+
+def save(base, out, items=None, ground=None, objects=None, collision=None):
     """Write `base` with the given edits to `out`.
 
     items: {index: Item} (verts and faces in game units); ground: Item;
-    objects: [Placed]. Anything identical to `base` is left alone."""
+    objects: [Placed]; collision: [CollisionFace]. Anything identical to
+    `base` is left alone."""
     sdf = parse(Path(base).read_bytes())
     old = load(base)
     table = draw_items(sdf)
@@ -250,5 +311,9 @@ def save(base, out, items=None, ground=None, objects=None):
         n = write_objects(sdf, old.objects, objects)
         if n:
             log.append(f"objects: {n} placements changed")
+    if collision is not None and old.collision is not None:
+        n = write_collision(sdf, old.collision, collision)
+        if n:
+            log.append(f"collision: {n} faces re-encoded")
     Path(out).write_bytes(serialize(sdf))
     return log

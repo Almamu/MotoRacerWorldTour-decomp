@@ -4,6 +4,8 @@ File > Import > Moto Racer WT scene (.sdf) builds, under one collection:
   Items/    one object per draw item (hidden; the mesh data is shared)
   Objects/  every placed Cobjet, using its item's mesh, with its matrix
   Ground    the track ground (levels only)
+  collision the collision surface (levels only, wireframe; corners shared
+            between faces are welded)
 Textured faces get a material per texture page + palette, rendered from the
 level's .Vrm bank. Per-face attributes keep the game's polygon data:
 psx_poly (record index + 1; 0 = new face), psx_type (group type); the Col
@@ -16,6 +18,8 @@ starting from the file it was imported from:
     materials stay textured, anything else becomes flat-coloured)
   - Ground: vertex positions (topology is fixed)
   - Objects: position / rotation / scale
+  - collision: corner positions (faces are re-encoded: edges, planes);
+    Object > Moto Racer WT: Snap Collision to Ground fits it to the ground
 Unedited scenes export byte-identical. See docs/blender.md.
 """
 
@@ -43,7 +47,7 @@ import bpy  # noqa: E402
 import numpy as np  # noqa: E402
 from bpy.props import BoolProperty, FloatProperty, StringProperty  # noqa: E402
 from bpy_extras.io_utils import ExportHelper, ImportHelper  # noqa: E402
-from mathutils import Matrix  # noqa: E402
+from mathutils import Matrix, Vector  # noqa: E402
 
 from . import scene as sc  # noqa: E402
 
@@ -186,6 +190,60 @@ def object_matrix(p, s):
     return out
 
 
+SURFACE_COLOURS = [(0.8, 0.2, 0.2, 1), (0.2, 0.7, 0.2, 1), (0.2, 0.4, 0.9, 1), (0.6, 0.3, 0.8, 1),
+                   (0.9, 0.8, 0.1, 1), (0.9, 0.5, 0.1, 1), (0.5, 0.5, 0.5, 1), (0.1, 0.8, 0.8, 1)]
+
+
+def build_collision(name, faces, s):
+    """Collision faces as one mesh; corners within 1 unit (x, z) and 2 units
+    (y) of each other are welded so neighbouring faces move together."""
+    verts, index, polys = [], {}, []
+    for f in faces:
+        loop = []
+        for x, y, z in f.corners:
+            key = (round(x), round(z))
+            hit = None
+            for k in index.get(key, ()):
+                if abs(verts[k][1] - y) <= 2:
+                    hit = k
+                    break
+            if hit is None:
+                hit = len(verts)
+                verts.append((x, y, z))
+                index.setdefault(key, []).append(hit)
+            loop.append(hit)
+        polys.append(loop)
+    me = bpy.data.meshes.new(name)
+    me.from_pydata([to_blender(v, s) for v in verts], [], polys)
+    surfaces = sorted({f.surface for f in faces})
+    for t in surfaces:
+        mat = bpy.data.materials.new(f"{name}_surface_{t}")
+        mat.diffuse_color = SURFACE_COLOURS[t % len(SURFACE_COLOURS)]
+        me.materials.append(mat)
+    me.polygons.foreach_set("material_index", [surfaces.index(f.surface) for f in faces])
+    for attr, values in (("psx_coll", [f.index + 1 for f in faces]), ("psx_surface", [f.surface for f in faces])):
+        a = me.attributes.new(attr, "INT", "FACE")
+        a.data.foreach_set("value", values)
+    me["mrwt_collision"] = True
+    me.update()
+    return me
+
+
+def collision_faces(ob, s):
+    """Blender collision object -> [scene.CollisionFace] in game units."""
+    me = ob.data
+    idx = [0] * len(me.polygons)
+    me.attributes["psx_coll"].data.foreach_get("value", idx)
+    out = []
+    for k, p in enumerate(me.polygons):
+        if idx[k] <= 0:
+            raise ValueError("collision: faces can't be added (only moved)")
+        corners = [to_game_float(ob.matrix_world @ me.vertices[me.loops[l].vertex_index].co, s)
+                   for l in p.loop_indices]
+        out.append(sc.CollisionFace(idx[k] - 1, corners, 0))
+    return out
+
+
 def import_scene(context, path, vrm_path, s):
     data = sc.load(path)
     name = Path(path).stem
@@ -219,6 +277,11 @@ def import_scene(context, path, vrm_path, s):
         me = build_mesh(f"{name}_ground", data.ground, s, textures)
         me["mrwt_ground"] = True
         ob = bpy.data.objects.new(f"{name} ground", me)
+        root.objects.link(ob)
+    if data.collision:
+        ob = bpy.data.objects.new(f"{name} collision", build_collision(f"{name}_collision", data.collision, s))
+        ob.display_type = "WIRE"
+        ob.hide_render = True
         root.objects.link(ob)
     return data, root
 
@@ -299,7 +362,7 @@ def find_root(context):
 def export_scene(root, out, base=None):
     bpy.context.view_layer.update()  # make matrix_world current after scripted moves
     s = root.get("mrwt_scale", 0.01)
-    items, ground, objects = {}, None, []
+    items, ground, objects, collision = {}, None, [], None
     for ob in root.all_objects:
         if "mrwt_object" in ob:
             matrix, t = object_placement(ob, s)
@@ -311,7 +374,9 @@ def export_scene(root, out, base=None):
             items[me["mrwt_item"]] = mesh_item(me, s)
         if me.get("mrwt_ground"):
             ground = mesh_item(me, s, ob.matrix_world)
-    return sc.save(base or root["mrwt_source"], out, items, ground, objects)
+        if me.get("mrwt_collision"):
+            collision = collision_faces(ob, s)
+    return sc.save(base or root["mrwt_source"], out, items, ground, objects, collision)
 
 
 # --- operators ---------------------------------------------------------------
@@ -371,6 +436,60 @@ class MRWT_OT_export(bpy.types.Operator, ExportHelper):
         return {"FINISHED"}
 
 
+class MRWT_OT_snap_collision(bpy.types.Operator):
+    """Move the collision vertices up or down onto the scene's ground mesh"""
+    bl_idname = "object.mrwt_snap_collision"
+    bl_label = "Snap Collision to Ground"
+    bl_options = {"REGISTER", "UNDO"}
+
+    selected_only: BoolProperty(name="Selected vertices only", default=False)
+    max_distance: FloatProperty(name="Max distance", description="Leave vertices farther than this from the ground",
+                                default=1.0, min=0.0)
+
+    def execute(self, context):
+        from mathutils.bvhtree import BVHTree
+        root = find_root(context)
+        obs = list(root.all_objects) if root else []
+        coll = next((o for o in obs if o.type == "MESH" and o.data.get("mrwt_collision")), None)
+        ground = next((o for o in obs if o.type == "MESH" and o.data.get("mrwt_ground")), None)
+        if coll is None or ground is None:
+            self.report({"ERROR"}, "select an object of an imported level (needs ground and collision)")
+            return {"CANCELLED"}
+        if coll.mode == "EDIT":
+            bpy.ops.object.mode_set(mode="OBJECT")
+            back_to_edit = True
+        else:
+            back_to_edit = False
+        deps = context.evaluated_depsgraph_get()
+        tree = BVHTree.FromObject(ground, deps)  # ground-object space
+        g_inv = ground.matrix_world.inverted()
+        to_world, to_local = coll.matrix_world, coll.matrix_world.inverted()
+        moved = 0
+        for v in coll.data.vertices:
+            if self.selected_only and not v.select:
+                continue
+            w = to_world @ v.co
+            best = None
+            for direction in ((0, 0, -1), (0, 0, 1)):
+                origin = g_inv @ w
+                d = (g_inv.to_3x3() @ Vector(direction)).normalized()
+                hit, _, _, dist = tree.ray_cast(origin, d, self.max_distance)
+                if hit is not None and (best is None or dist < best[1]):
+                    best = (ground.matrix_world @ hit, dist)
+            if best is not None:
+                v.co = to_local @ Vector((w.x, w.y, best[0].z))
+                moved += 1
+        coll.data.update()
+        if back_to_edit:
+            bpy.ops.object.mode_set(mode="EDIT")
+        self.report({"INFO"}, f"{moved} collision vertices snapped")
+        return {"FINISHED"}
+
+
+def menu_object(self, context):
+    self.layout.operator(MRWT_OT_snap_collision.bl_idname, text="Moto Racer WT: Snap Collision to Ground")
+
+
 def menu_import(self, context):
     self.layout.operator(MRWT_OT_import.bl_idname, text="Moto Racer WT scene (.sdf)")
 
@@ -382,6 +501,8 @@ def menu_export(self, context):
 def register():
     bpy.utils.register_class(MRWT_OT_import)
     bpy.utils.register_class(MRWT_OT_export)
+    bpy.utils.register_class(MRWT_OT_snap_collision)
+    bpy.types.VIEW3D_MT_object.append(menu_object)
     bpy.types.TOPBAR_MT_file_import.append(menu_import)
     bpy.types.TOPBAR_MT_file_export.append(menu_export)
 
@@ -389,5 +510,7 @@ def register():
 def unregister():
     bpy.types.TOPBAR_MT_file_export.remove(menu_export)
     bpy.types.TOPBAR_MT_file_import.remove(menu_import)
+    bpy.types.VIEW3D_MT_object.remove(menu_object)
+    bpy.utils.unregister_class(MRWT_OT_snap_collision)
     bpy.utils.unregister_class(MRWT_OT_export)
     bpy.utils.unregister_class(MRWT_OT_import)

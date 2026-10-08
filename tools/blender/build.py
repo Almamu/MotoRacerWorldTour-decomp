@@ -4,7 +4,7 @@
   build.py [out.zip]     (default: build/mrwt_blender.zip)
 
 The zip holds mrwt_blender/ plus copies of the tool modules it uses
-(sdf, sdf_mesh, sdf_geom, vrm) under mrwt_blender/lib/. Install it with
+(sdf, sdf_mesh, sdf_geom, sdf_collision, vrm) under mrwt_blender/lib/. Install it with
 Blender's Preferences > Get Extensions (or Add-ons) > Install from
 Disk; it is an extension (blender_manifest.toml), Blender 4.2 or later. Inside the repo the
 add-on also runs straight from tools/blender (it finds tools/ itself).
@@ -16,7 +16,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 TOOLS = HERE.parent
-LIBS = ["sdf.py", "sdf_mesh.py", "sdf_geom.py", "vrm.py"]
+LIBS = ["sdf.py", "sdf_mesh.py", "sdf_geom.py", "sdf_collision.py", "vrm.py"]
 
 
 def main():

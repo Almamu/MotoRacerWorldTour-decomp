@@ -16,7 +16,8 @@ Blender (4.2 or later): Edit > Preferences > Get Extensions > (menu)
 Install from Disk, pick the zip. It is a regular extension
 (`blender_manifest.toml`, GPL-3.0-or-later) and loads as
 `bl_ext.user_default.mrwt_blender`. The zip carries its own copies
-of `sdf.py`, `sdf_mesh.py`, `sdf_geom.py` and `vrm.py`; rebuild it after
+of `sdf.py`, `sdf_mesh.py`, `sdf_geom.py`, `sdf_collision.py` and `vrm.py`;
+rebuild it after
 changing those. (From a checkout, `tools/blender` can also be put on
 Blender's script path; the add-on then uses the repo's `tools/` directly.)
 
@@ -39,6 +40,7 @@ Game coordinates (Y down) become Blender's Z up: game (x, y, z) → Blender
 | `<name> items` (hidden) | one object per draw item; mesh `<name>_item_NNN` |
 | `<name> objects` | every placed `Cobjet` (game name), using its LOD 0 item's mesh, with its matrix |
 | `<name> ground` | levels: the track ground, one vertex per stored vertex |
+| `<name> collision` | levels: the collision surface the bikes ride on (wireframe, coloured by surface type; corners shared by faces are welded) |
 
 Objects whose matrix is still the 0xCDCD fill (placed at run time, e.g. the
 traffic cones in `Tfc`/`Tf2`) are skipped.
@@ -70,6 +72,15 @@ byte-identical (checked on all 70 levels and menu/end scenes).
 | Change a mesh's topology (add/delete faces or vertices) | the item gets a new mesh appended to the file: faces with a `page_*` material become textured (types 13/15), others flat (5/9) using `Col` (or the material's viewport colour); tris and quads only, ≤ 13 polygon groups of ≤ 1023 |
 | Move / rotate / scale a placed object | its matrix and translation are rewritten |
 | Move ground vertices | written in place (block-relative); topology is fixed |
+| Move collision vertices | the faces using them are re-encoded (edges, planes, height); moves under 2.5 units are ignored |
+
+**The bikes ride on the collision surface, not on the ground mesh.** After
+reshaping the ground, run Object > Moto Racer WT: Snap Collision to Ground
+(with the level selected): every collision vertex within *Max distance*
+(default 1 m) above or below the ground is moved onto it. Use *Selected
+vertices only* to limit it to the area you changed. Collision faces can't
+be added or removed, and their corners are shared with neighbours, so
+large moves stretch the faces around them.
 
 Not supported: new objects or duplicated placements, changing which mesh
 an object uses, new textures or palettes (paint them in the workspace PNGs

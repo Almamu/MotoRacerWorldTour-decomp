@@ -47,7 +47,42 @@ harmless. A real SCPH-7502/SCPH-1002 avoids both.
 | Loading screen (`Sac.bs` re-encoded)           | shown, race loads |
 | Palettes (`Sac.Vrm` CLUTs)                     | track and rider colours change |
 | Meshes (`Sac_PS.sdf`, all trackside items ×2 tall) | rendered, race runs |
+| Ground + collision raised 4 m at the start (Blender, snap) | bikes ride on the raised track |
 
 Bugs these runs caught (now fixed): BS columns without the end-of-frame
 marker hang the loading screen; an SDF data block that isn't 4-byte aligned
 hangs the menu.
+
+## Deterministic runs and RAM access (`tools/psxrun.py`)
+
+For experiments, `psxrun.py` loads the Beetle PSX (Mednafen) libretro core
+directly (ctypes, no window): frame-exact input, main RAM as a numpy array,
+save/load states and screenshots. Two runs with the same input give the
+same frames, so a data change can be measured exactly. One `Psx` per
+process (the core keeps global state); compare variants by patching RAM
+after `load_state()`, or run each disc in its own process.
+
+```python
+from psxrun import Psx
+psx = Psx(cue, bios)                 # BIOS copied as scph5502.bin etc.
+for frames, button in [(900, None), (10, "start"), (250, None), (10, "start"),
+                       (250, None), (10, "start"), (250, None), (10, "cross"),
+                       (250, None), (10, "cross"), (250, None), (10, "cross"),
+                       (250, None), (10, "cross"), (400, None)]:
+    psx.run(frames, [button] if button else [])
+# frame 2970: Sachsenring race loaded (arcade, default options)
+state = psx.save_state()
+```
+
+Useful addresses on that path (European version, Sachsenring):
+
+| Address      | What |
+|--------------|------|
+| 0x800F7200   | the level's SDF data block (`Sac_PS.sdf` offset 0) |
+| 0x8017D300   | player bike: position x, y, z (s32, 1/32 units, Y down), then velocity |
+| 0x8017D324   | four contact points (x, y, z) |
+
+Experiments done this way: raising the visible ground (root 6 vertices)
+doesn't move the bike; raising collision faces (root 5) lifts it by the same
+amount; a disc whose ground and collision were both raised in Blender has
+the bikes riding on the raised track.

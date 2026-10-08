@@ -424,6 +424,8 @@ list at 0x38 and deletes the animation at 0x4C.
 ## World (track ground)
 
 Most of a level is its ground ("world") geometry: one large mesh (flags 9)
+(only drawn: the bikes ride on the separate collision surface, see
+Collision)
 split into **blocks** (vertex sets with an origin) and **sectors** (small
 polygon batches), organised in a 2D **grid of cells** for visibility. Root 6
 points to the world struct.
@@ -563,6 +565,83 @@ Texture entry: `u8 u0, v0; u16 clut; u8 u1, v1; u16 tpage; u8 u2, v2;
 u8 u3, v3` (12 bytes), in format 2 followed by 4 colour words (flat
 polygons use the first, Gouraud ones the first 3 or 4).
 
+## Collision (root 5)
+
+The bikes don't ride on the visible ground: the physics uses a separate,
+coarser **collision surface**. Raising the visible ground in RAM changes the
+picture but not the bike's height; raising the collision faces lifts the bike
+by exactly the same amount (checked in the emulator, see
+[../testing.md](../testing.md)). In the original levels the collision
+surface lies within about a unit of the visible ground (median 0.3 units on
+Sachsenring). Tool: `tools/sdf_collision.py` (and the Blender add-on).
+
+Code: face lookup 0x8001A6AC (grid, then neighbours of the previous face,
+then a full scan), inside test 0x8001A664 → 0x8001AF3C (local point) +
+0x8001ABBC (edges, on the GTE), height 0x8001AFF4. The bike keeps the face
+under its centre and wheels (0x800634BC, bike + 0x220…0x230).
+
+### Header (40 bytes, right after the faces)
+
+| Offset | Type  | Meaning                                                  |
+|--------|-------|----------------------------------------------------------|
+| 0x00   | s16   | face count                                               |
+| 0x02   | s16   | ? (usually the number of quads, not always)               |
+| 0x04   | Face* | faces                                                    |
+| 0x08   | u32[4]| 0 (runtime)                                              |
+| 0x18   | s32   | grid width                                               |
+| 0x1C   | s32   | grid height                                              |
+| 0x20   | s32   | grid cell size, in units of `position >> 12` (128 game units): 16 = 2048 units, 8 in the trial levels |
+| 0x24   | ptr   | grid of `{s16 first, s16 last}` face ranges, cell = `(z>>12)/size * width + (x>>12)/size`; null in most levels; where present the file holds `(n, -1)` entries (rebuilt at load?) |
+
+### Face (56 bytes)
+
+| Offset | Type   | Meaning                                                  |
+|--------|--------|----------------------------------------------------------|
+| 0x00   | s32    | origin X (1/32 units)                                    |
+| 0x04   | u32    | origin Y (1/32 units, Y down) << 8 \| **surface type** (low byte) |
+| 0x08   | s32    | origin Z (1/32 units)                                    |
+| 0x0C   | s16[4] | neighbours, as face index offsets relative to this face; -0x7FFF = none |
+| 0x14   | s16[3] | plane normal (nx, ny, nz), unit length × 16384, ny > 0 for floors (Y down) |
+| 0x1A   | s16    | plane offset w                                           |
+| 0x1C   | u32[4] | edges: `distance << 16 \| angle` (angle: 12 bits, 4096 = 360°); the 4th has bit 15 set for a triangle |
+| 0x2C   | u32    | split edge (same encoding), or 0xFFFF for a single plane  |
+| 0x30   | s16[4] | second plane (nx, ny, nz, w), zero when not split        |
+
+Positions relative to the face are taken in game units:
+`dx = (x - origin_x) >> 5`, `dz = (z - origin_z) >> 5`. With
+`(cos a, sin a)` from the game's table at 0x800BF3A0 (4096 entries of
+`cos << 16 | sin`, 4096 = 1.0):
+
+- **Inside**: every edge gives `distance + ((cos·dx + sin·dz) >> 12) >= 0`.
+  Faces are convex triangles or quads in the XZ plane; corner k is where
+  edge k meets edge k+1.
+- **Plane**: if the split edge gives a value `> 0` the second plane is
+  used, otherwise the first. Splits run along a quad's diagonal: a folded
+  quad is two triangles.
+- **Height** (1/32 units, Y down):
+  `origin_y - 32 * (((w + ((nx·dx + nz·dz) >> 12)) << 12) / ny)`
+  (integer division). Vertical planes (ny = 0) occur in the trial levels.
+
+With these rules neighbouring faces meet within a unit at shared corners on
+every level. Surface types are level specific; on Sachsenring 0 = track, 1 =
+grass, 2 = run-off, 4 = thin strips along the track edges (kerbs?).
+Values seen across the levels: 0–7 and 31. What the physics does with each
+isn't decoded yet.
+
+Sachsenring: 1347 faces (94 triangles, 1002 split), grid 41 × 57.
+
+### Writing
+
+`sdf_collision.encode_face` rebuilds a face from new corner positions:
+edges from consecutive corners (normals pointing inwards; distances rounded
+outwards so the corners stay inside, giving small overlaps rather than
+gaps), one plane through the corners, or for a split quad the same
+diagonal with a plane per triangle, the origin height on the first plane
+(w = 0) and the second plane's w solved to pass through its corners. The
+origin X/Z, neighbours and surface type are kept, so the topology is fixed.
+Re-encoding every face of every level from its own corners reproduces the
+heights within 1.5 units (p99).
+
 ## Menu and end scene roots
 
 Menu/end scenes have 15 roots, loaded at 0x80046F2C (menu module `M`). The
@@ -639,7 +718,7 @@ the same function, and plain addresses are globals in the game code.
 |  2 | L+0x70       | animation table `{Canim** table, u32 capacity (800), ptr, u32}`, as in menus: up to 3 `CanimMoveCamera` flights plus object animations (`CanimMove`, `CanimSide`) |
 |  3 | L+0x7C       |  |
 |  4 | L+0x80       |  |
-|  5 | L+0xC6C      |  |
+|  5 | L+0xC6C      | collision surface (see Collision) |
 |  6 | L+0xC70      | world struct (see World) |
 |  7 | L+0x6C       |  |
 |  8 | L+0x3E0      |  |
@@ -701,6 +780,9 @@ table and count whose purpose isn't known yet.
   the model/part layout and the mesh flags, instead of inferring them
   (see [../ghidra.md](../ghidra.md)).
 - World: the field at 0x4C; the grid cell size.
+- Collision: what the surface types do, header field 0x02, the in-file
+  grids, and how walls / track limits are handled (bikes leaving the
+  collision surface).
 - The flags-bit-1 mesh path (second dispatcher, table at 0x800C896C).
 - `CanimMoveCamera` (a `CanimMove` of kind 4 with one more field at 0x9C,
   -1 in every file): levels hold about 3 of them (178 in 58 files) in the
