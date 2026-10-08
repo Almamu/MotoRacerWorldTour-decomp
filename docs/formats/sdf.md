@@ -191,20 +191,130 @@ bottom-left, bottom-right), so the outline is 0-1-3-2.
 placed with its matrix, to OBJ. The meshes look right (grandstands, riders
 on bikes, signs). The placed objects are only props, and whether the
 translations use the same units as the vertices isn't confirmed yet. Most of
-each level is other geometry that hasn't been found yet.
+each level is the world geometry, below.
 
-**Flag-9 mesh.** Each level also has one large mesh with flags 9 (~1400
-vertices in `Tri_PS`), no polygon pointer, and a vertex pointer into the
-exported block (see Level roots). Its polygons hang off the 48-byte block at
-0x28, which points to compact 12-byte records (`u16, u16, u8 i0..i3, ptr` to
-four colour words) and more data. It isn't in the draw-item table: its
-draw item sits inside the struct that root 6 points to (stored at
-`L+0xC70`), whose group list accounts for all of the mesh's polygons (in
-`Tri_PS`: types 13/14/15/16, 65 + 66 + 304 + 744 = 1179). That struct also
-points to a 598-pointer table and several raw arrays, and the level setup
-(0x8005CDA4) allocates runtime buffers into its fields 0x28, 0x2C and 0x30.
-This looks like the level's world geometry, with polygons assembled at
-runtime from sector data. Not decoded yet.
+## World (track ground)
+
+Most of a level is its ground ("world") geometry: one large mesh (flags 9)
+split into **blocks** (vertex sets with an origin) and **sectors** (small
+polygon batches), organised in a 2D **grid of cells** for visibility. Root 6
+points to the world struct.
+
+Confirmed from the code (visibility at 0x8001E240, per-frame world drawing
+at 0x80053F54, sector setup at 0x8008A70C, polygon sorting at 0x8008A91C)
+and by exporting the ground of several levels, which assembles into the
+recognisable tracks with correct textures (`tools/sdf_mesh.py`).
+
+### World struct (root 6)
+
+| Offset | Type      | Meaning                                                    |
+|--------|-----------|------------------------------------------------------------|
+| 0x04   | ptr       | grid data (not decoded)                                     |
+| 0x08   | u32       | 29 in `Tri_PS` (grid width?)                                |
+| 0x10   | u32       | 21 in `Tri_PS` (grid height?)                               |
+| 0x14   | u32       | number of cells in the cell table                           |
+| 0x18   | u32       | runtime: entries in visible list C                           |
+| 0x1C   | u32       | runtime: entries in visible list B                           |
+| 0x20   | u32       | runtime: entries in visible list A                           |
+| 0x24   | Cell**    | cell table                                                 |
+| 0x28   | ptr       | runtime: visible list C (allocated by the level setup)      |
+| 0x2C   | ptr       | runtime: visible list B                                     |
+| 0x30   | ptr       | runtime: visible list A                                     |
+| 0x40   | u32       | length of the vertex-index list (u16 entries)               |
+| 0x44   | u32       | block count                                                |
+| 0x48   | u32       | sector count                                               |
+| 0x4C   | ptr       | ? (an array of identical pointers in `Tri_PS`)              |
+| 0x50   | Sector*   | sector table                                               |
+| 0x54   | Block*    | block table                                                |
+| 0x58   | u16*      | vertex-index list                                          |
+| 0x5C   | DrawItem  | draw item (44 bytes, inline) of the ground mesh: its group list covers all ground polygons |
+
+The PC exporter's leftover heap pointers sit in the runtime fields
+0x28–0x30 in the file; the game overwrites them.
+
+### Cell
+
+| Offset | Type   | Meaning                                                      |
+|--------|--------|--------------------------------------------------------------|
+| 0x04   | ptr*   | list of objects in this cell (marked visible with bit 0x10 at object+4) |
+| 0x08   | s16    | object count; bit 15 is a runtime "already visited" flag      |
+| 0x0A   | s16    | sector index, or -1                                          |
+
+Each frame the camera's view frustum is projected onto the grid (coordinates
+divided by the cell size) to find the visible cells.
+
+### Sector (16 bytes)
+
+| Offset | Type | Meaning                                                    |
+|--------|------|------------------------------------------------------------|
+| 0x00   | s16  | first ground polygon                                       |
+| 0x02   | s16  | block index                                                |
+| 0x04   | u8   | polygon count                                              |
+| 0x05   | u8   | vertex count                                               |
+| 0x06   | s16  | first entry in the vertex-index list                        |
+| 0x08   | ptr[2] | runtime, one per player view                             |
+
+Sectors are stored back to back: each one's first polygon and list start
+follow on from the previous one, and the last ones end exactly at the
+ground mesh's polygon count and at world+0x40.
+
+### Block (12 bytes)
+
+| Offset | Type | Meaning                                                    |
+|--------|------|------------------------------------------------------------|
+| 0x00   | s16  | origin X                                                   |
+| 0x02   | s16  | origin Z                                                   |
+| 0x04   | s16  | vertex count                                               |
+| 0x06   | s16  | first vertex in the ground mesh's vertex array              |
+| 0x08   | s16  | -1 in the file (runtime cache slot)                         |
+| 0x0A   | s16  | 0                                                          |
+
+The block vertex counts add up to the ground mesh's vertex count. Vertices
+are relative to their block: **world = vertex + origin × 128** on X and Z
+(the code keeps origins as `origin << 12`, i.e. in 1/32 vertex units). This
+scale was found by rendering: ×128 gives seamless ground, other factors
+don't.
+
+A ground vertex is found as:
+`mesh.vertices[block.first_vertex + index_list[sector.list_start + local_index]]`.
+
+### Ground mesh
+
+The mesh header is the usual one (flags 9, polygon pointer null, vertex
+pointer = all block vertices). Its 48-byte block at 0x28 holds:
+
+| Offset | Type | Meaning                                                    |
+|--------|------|------------------------------------------------------------|
+| 0x14   | u16  | number of texture entries                                  |
+| 0x16   | u8   | record format: 1 = 12-byte polygons and 12-byte texture entries; 2 = 8-byte polygons and 28-byte texture entries |
+| 0x18   | ptr  | ground polygons                                            |
+| 0x1C   | ptr  | texture entries                                            |
+
+Ground polygon (8 or 12 bytes):
+
+| Offset | Type   | Meaning                                                   |
+|--------|--------|-----------------------------------------------------------|
+| 0x00   | u16    | flags (below)                                              |
+| 0x02   | u16    | byte offset of its texture entry                          |
+| 0x04   | u8[4]  | local vertex indices (into the sector's slice of the index list), **outline order**; 0xFF for the 4th of a triangle |
+| 0x08   | u32    | 12-byte form only: flat colour (RGB), or for Gouraud polygons a pointer to 3 or 4 colour words |
+
+Flags:
+
+| Bits | Meaning                                                     |
+|------|-------------------------------------------------------------|
+| 2–3  | both set = quad, otherwise triangle                          |
+| 4    | Gouraud shaded                                               |
+| 6    | semi-transparent                                             |
+| 0–1, 7, 8 | rendering flags passed on to the drawing code (not decoded) |
+
+So the GPU primitives are `0x24` (textured triangle), `0x2C` (textured
+quad), `0x34` (textured Gouraud triangle) and `0x3C` (textured Gouraud
+quad), +2 when semi-transparent.
+
+Texture entry: `u8 u0, v0; u16 clut; u8 u1, v1; u16 tpage; u8 u2, v2;
+u8 u3, v3` (12 bytes), in format 2 followed by 4 colour words (flat
+polygons use the first, Gouraud ones the first 3 or 4).
 
 ## Level roots
 
@@ -220,7 +330,7 @@ the same function, and plain addresses are globals in the game code.
 |  3 | L+0x7C       |  |
 |  4 | L+0x80       |  |
 |  5 | L+0xC6C      |  |
-|  6 | L+0xC70      | world struct: holds the flag-9 mesh's draw item and sector data |
+|  6 | L+0xC70      | world struct (see World) |
 |  7 | L+0x6C       |  |
 |  8 | L+0x3E0      |  |
 |  9 | L+0x3E4      |  |
@@ -280,7 +390,8 @@ table and count whose purpose isn't known yet.
 - Read the level-setup and drawing code to pin down the root structures,
   the model/part layout and the mesh flags, instead of inferring them
   (see [../ghidra.md](../ghidra.md)).
-- Decode the track-ground geometry (the bulk of each level).
+- World: the grid data at world+0x04, the field at 0x4C, and how cell
+  object lists relate to `Cobjet`s.
 - Read the remaining polygon routines (types 14, 16, 21, 23) and the
   flags-bit-1 path.
 - Confirm the units of object translations; decode the camera/light motion

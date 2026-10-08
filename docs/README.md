@@ -24,6 +24,6 @@ in hex. "VRAM" means the PS1 GPU's 1024x512 16-bit frame buffer.
 | `.bs`       | Done                                                          |
 | `.Vrm`      | Textures done; `FNTS` chunks and one `DPAL` field unknown       |
 | `.snd`      | Names and samples done; one table and sample rates unknown     |
-| `.sdf`      | Container done; plain meshes understood; models, ground and objects in progress |
+| `.sdf`      | Container, draw items, meshes and track ground done (exports textured OBJ); some object/world fields open |
 | `.dps`      | Not started (FMV)                                             |
 | `.dxr`      | Not started                                                   |
