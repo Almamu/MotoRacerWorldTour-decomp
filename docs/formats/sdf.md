@@ -651,7 +651,10 @@ The byte under the bike, `map[((z >> 3) & 0xFC0) + ((x >> 9) & 0x3F)]`
 1024), gives `(byte - 0x80) × 4` (1/32 units) added to the bike's height:
 the roughness of grass and kerbs. Every road level uses the table
 `0, 1, 1, 1, 2, 0`: type 0 smooth, types 1–3 one rough map, type 4 (kerbs)
-its own map. The off-road levels have four maps but 0xCD in the table.
+its own map. The off-road levels have four maps but 0xCD fill in the table,
+so every type selects entry `0xCD & 7 = 5`, which is null: their maps are
+never used. The same lookup is applied to the bike body and to each wheel
+(0x8005E3A4).
 
 The bike also stores the type (bike + 0x42C) and sets state flags
 (bike + 0x494) by discipline (`+0x52C` of the root-15 bike setup: 1
@@ -828,8 +831,8 @@ table and count whose purpose isn't known yet.
   the model/part layout and the mesh flags, instead of inferring them
   (see [../ghidra.md](../ghidra.md)).
 - World: the field at 0x4C; the grid cell size.
-- Collision: surface types 5–7 and 31, and how the off-road levels use their
-  four bump maps.
+- Collision: what surface types 5–7 and 31 mean in the off-road levels
+  (they only matter for the discipline flags).
 - The flags-bit-1 mesh path (second dispatcher, table at 0x800C896C).
 - `CanimMoveCamera` (a `CanimMove` of kind 4 with one more field at 0x9C,
   -1 in every file): levels hold about 3 of them (178 in 58 files) in the
