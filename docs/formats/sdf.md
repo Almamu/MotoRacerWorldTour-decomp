@@ -1032,7 +1032,7 @@ level: `PAUSEWITHRESTART` `PAUSEWITHOUTRESTART` `PAUSERETIRE`
 | 12 | 0x800C5E10   | an object handled by 0x80020200–0x80020AB0: 200-entry ring buffer of 24-byte entries plus up to 1600 56-byte records in a buffer it's given (skid marks / decals?) |
 | 13 | 0x800C7F28   | sound state (runtime): 0x988 bytes of channel slots (0x40 each), then +0x988 → s16[112] sound → slot map; reset 0x8006CA50, play 0x8006CA84, update 0x8006DF68. Zeroed in RAM, the race freezes at the countdown |
 | 14 | 0x800C9F30   | HUD sprite hash list |
-| 15 | L+0x378      | race setup: +0x00 mode word (0x40 one player; 0x80 / 0x20 / 0x08 = two players in the road+dirt / freestyle / trial `…2_PS` files; `& 0xA8` is tested as "two players"), +0x04 lap count (filled at run time), +0x08 discipline in the game's own numbering (1 motocross, 2 supercross, 3 trial, 4 freestyle, 5 speed incl. traffic, 6 dragster), the `Data\Bikes\…` path, +0x10 → struct whose +0x52C is the database discipline (1 motocross: Rey, Usa; 2 supercross: Bar, Chi, Sdf; 3 speed: Eas, IM2, IM3, IdM, Sac, Suz, Tf2; 5 trial: Tri, Tr2; 6 freestyle: FSt; 7 dragster: Dr1, Dr2; 8 traffic: Tfc), +0x2E8 five bike slots of 0x568 bytes |
+| 15 | L+0x378      | race setup: +0x00 mode word, taken from the file as is (still 0x40 in RAM during a Sachsenring arcade race): 0x40 one player, 0x80 / 0x20 / 0x08 two players in the race / freestyle / trial `…2_PS` files. The code tests `& 0xA8` "two players" (38 places), `& 0x54` "one player" (end-of-race page, demo), `& 0x3C` / `& 0x3D` "stunt modes" (skips ranking and championship points), `& 0x102` (extra game-state processing); 0x04 / 0x10 (presumably one-player trial / freestyle) and 0x01, 0x02, 0x100 never occur in the files, +0x04 lap count (filled at run time), +0x08 discipline in the game's own numbering (1 motocross, 2 supercross, 3 trial, 4 freestyle, 5 speed incl. traffic, 6 dragster), the `Data\Bikes\…` path, +0x10 → struct whose +0x52C is the database discipline (1 motocross: Rey, Usa; 2 supercross: Bar, Chi, Sdf; 3 speed: Eas, IM2, IM3, IdM, Sac, Suz, Tf2; 5 trial: Tri, Tr2; 6 freestyle: FSt; 7 dragster: Dr1, Dr2; 8 traffic: Tfc), +0x2E8 five bike slots of 0x568 bytes |
 | 16 | L+0x458      | trackside (replay/TV) cameras, see below |
 | 17 | L+0x45C      | null in the files; the current trackside camera at run time |
 | 18 | L+0x84       | u32[4], all equal: how many of root 0's objects are processed per frame |
@@ -1211,5 +1211,5 @@ a flag bit: an 8-bit value, a 16-bit button mask (1 = accelerate), another
 ## Next steps
 
 - Root 9: what the 13 poses besides the riding pose are for (crashes,
-  blends?); root 15's other mode bits.
+  blends?).
 
