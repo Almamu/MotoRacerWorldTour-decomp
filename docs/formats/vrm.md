@@ -67,8 +67,20 @@ Every level bank has exactly these two (`0002 0010 0020 0135` and
 `0002 0010 0021 0135`); the two menu banks have none. Possibly palettes
 the game rewrites at runtime.
 
-## FNTS — font / sprite sheet
+## FNTS — font
 
-Not decoded yet. Level banks have 5, menu banks 4. A chunk starts like this (u16s):
-`<uv> <clut> 0301 0005 0000 ffff 4da7 0000 00a2 05f6 <id> 0018`, followed by
-pairs of u16s that look like per-glyph entries.
+Not decoded yet. Level banks have 5, menu banks 4. Each starts with a
+12-u16 header that is the same in every font except for a few fields, e.g.
+in `Usa.Vrm`:
+
+```
+9111 0120 0301 0005 0000 ffff 4da7 0000 00a2 05f6 0022 0018
+```
+
+Word 1 (0x0120) and word 9 (0x05F6 / 0x05FA) are valid CLUT ids inside the
+bank, and word 10 differs per font (0x22, 0x23, 0x60, 0x61, 0x62). Then
+come u16 pairs, one per character (27 to 224 of them). Reading a pair as
+(u, v) + (width, height) does **not** line up with the glyphs in the bank's
+font page (tpage 0x18), and in some fonts the first values climb in steps of
+6, so they're more likely offsets into glyph data. The text classes
+(`CobjetVFonts`, `Cobjet2dVFonts`) need to be read to finish this.
