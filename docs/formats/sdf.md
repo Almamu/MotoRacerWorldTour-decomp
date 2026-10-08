@@ -492,7 +492,7 @@ hasn't been looked at.
 
 | Root | Contents                                                          |
 |------|-------------------------------------------------------------------|
-| 0    | players: 20-byte entries `{char* name ("Player 1", "Player 2", "Player 1 shadow", …), 0, u32 (0x314C50…), -1, 0}` |
+| 0    | riders: 20-byte entries `{char* name, ?, char tag[4], s32, u32}`: `Player 1`/`2` (tags `PL1`, `PL2`), `Player 1`/`2 shadow` (`SH1`, `SH2`), then the AI riders (`MAURICE Jean` = `MJ`, `MCINLAY Stephan` = `MS`, `BALMANN Klaus` = `BK`, `RODRIGUEZ Luis` = `RL`, …) |
 | 1    | teams: 12-byte entries `{char* name ("TEAM 1" … "TEAM 8"), 0xFFFFFF, 0}` |
 | 5    | `300, 100, 60, 30, 0`                                              |
 | 6    | demo replays: `{char* path, 0}` × 4, `Data\DemoPsx1.rep` … `DemoPsx4.rep` (these files aren't in `MR3.DAT`) |
