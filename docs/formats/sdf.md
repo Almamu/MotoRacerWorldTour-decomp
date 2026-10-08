@@ -198,7 +198,7 @@ add up exactly to the mesh's polygon count.
 | Offset | Type  | Meaning                                              |
 |--------|-------|------------------------------------------------------|
 | 0x00   | u16   | polygon count                                        |
-| 0x02   | u16   | ? (0 on most meshes; no reader found)                 |
+| 0x02   | u16   | never read (exporter value; changing it on every Sachsenring mesh in RAM changes nothing) |
 | 0x04   | u16   | vertex count                                         |
 | 0x06   | u8    | flags: bit 0 always set; bit 1 = depth-bucketed, sphere-culled mesh (block at 0x28, see below); bit 2 = extra lighting pass (0x8007ED28, uses block+0x20). Draw-item meshes only use 1, 3, 5; the track-ground mesh is 9 |
 | 0x07   | u8    | padding (0xCD)                                       |
@@ -898,7 +898,7 @@ plus the action's argument:
 | Offset | Meaning |
 |--------|---------|
 | +0x00  | s16 action on press (0x8003CDEC) |
-| +0x02  | flags (low 4 bits = 1: selectable) |
+| +0x02  | flags: only `& 0xF` is read (non-zero = focusable, by the focus movement 0x8003907C / 0x800394D8); the higher bits (0xC000, 0x40, …) are never read |
 | +0x04  | button index |
 | +0x08  | `char name[32]`, also looked up in the action-callback registry (`PIGNON`, …) |
 | +0x28  | → scene object |
@@ -915,7 +915,7 @@ plus the action's argument:
 | 1 | set widget group `+0x48`'s value to `+0x4C` |
 | 2 | go back `+0x48` pages through the page history (UI +0xA88, depth +0xA8C) |
 | 3 | leave the menu |
-| 4 | nothing (no press sound either) |
+| 4 | value stepper (0x800386B4, run when focus moves onto it): `int*` variable at +0x48, min +0x4C, max +0x50, step +0x54, sound +0x3C, callback `char[32]` at +0x78 called with (UI, 3, widget); past the end the group's wrap mode applies. The options settings: `Vib1`/`Vib2` 0–1, `Joy1`/`Joy2` 0–7, `SndCD`/`SndSfx`/`SndVoice`/`SndAmbience` 0–100, `SpeedUnit`, `Is4_3`, `Split_Mode` |
 
 `Menu_0` has 45 direct page links (action 0), 29 "back" buttons and 11
 "leave" buttons; most navigation is these links, `ChangePage` scripts and
@@ -929,7 +929,11 @@ else 0x808080), 2 attach a cursor object (`controlnull`), 3 list selector
 value selector (left/right steps a page widget group between min and max,
 initial value from a script), 5 forward to another widget. Page widget
 groups (page +0x4C) are 12-byte `{s32 value, u32 count, Entry*}`, three
-per player view.
+per player view; the first word doubles as the wrap mode for focus
+movement and steppers (0 wraps, 1 and 2 stop at the end, −1 none). List
+selectors (control type 3): +0x2C index, +0x2D previous, +0x2E scroll,
++0x2F wrap (0 wraps, 1 clamps silently, 2 clamps and still raises the
+event), +0x30 non-zero = index taken from the widget group's value.
 
 The `nBP<page>` variables are never read by the game code: buttons set
 them and a page's value-selector initial script reads them back
@@ -961,7 +965,7 @@ are translated. The game loads it at 0x800A048C with root destinations
 |------|-------------------------------------------------------------------|
 | 0    | riders: 20-byte entries `{char* name, char* first name, char tag[4], s32 index, u32 age}`: `Player 1`/`2` (tags `PL1`, `PL2`), `Player 1`/`2 shadow` (`SH1`, `SH2`), then the AI riders (`MAURICE Jean` = `MJ`, `MCINLAY Stephan` = `MS`, `BALMANN Klaus` = `BK`, `RODRIGUEZ Luis` = `RL`, …); `index` is the nationality: `index + 0xE` is the flag sprite shown on the `f_pays (1)` object (-1 for players); age is printed into `f_age (1)` (below 2: a banner instead) |
 | 1    | teams: 12-byte entries `{char* name ("TEAM 1" … "TEAM 8"), 0xFFFFFF (colour?), 0}` |
-| 2    | arcade cups (0x800C9EE8): three pointers, each to three 24-byte groups (one per difficulty) `{s32* value[3] (per difficulty, one per track), s32* tracks (3 track indices), u32 count (3/4/5; not read in the cup set-up, laps?), u32 class (0, or 1 = 500 cc for the hardest groups)}`. Accessors 0x800A14B8, 0x800A14CC |
+| 2    | arcade cups (0x800C9EE8): three pointers, each to three 24-byte groups (one per difficulty) `{s32* value[3] (per difficulty, one per race), s32* tracks, u32 count = number of races (3/4/5; shown as "race n/count", the cup ends after the last), u32 class (0, or 1 = 500 cc)}`; e.g. cup 0: Sachsen, Suzuka, Ile2Man3 (+ Eastern, + IleDeMan). Accessors 0x800A14B8, 0x800A14CC |
 | 3    | championship (0x800C9EEC): `{u32 11, ptr}` → 32-byte rounds `{s32 class (0), s32 track, s32 opponents (4 AI bikes), s32 bike (model within the class), s32 laps, s32 value[3]}` (`value[difficulty]`, difficulty index at 0x800D5F30); rounds: Sachsen 3 laps, Barcelon 6, Suzuka 3, Usa 3, Ile2Man3 4, StdFranc 4, Eastern 3, Regade 2, IleDeMan 3, Chicago 5, Ile2Man2 4. Read at 0x8004AFBC in game mode 4 |
 | 4    | 18 × 0xCDCDCDCD; filled at startup (0x8009FE70) with each track's discipline |
 | 5    | `300, 100, 60, 30, 0`                                              |
@@ -992,8 +996,8 @@ make the AI weaker, approaching 0 on later and harder events. **Class** 1
 physics table (0x800C5E2C: 0x800C5F4C → 0x800C6440) and uses handling
 records 8–15 of level root 32; it is forced to 0 on tracks 11–17.
 
-Not decoded yet: team +0x04 (0xFFFFFF everywhere, no reader found) and the
-cups' count field.
+Team +0x04 (0xFFFFFF) is never read (both readers of the team table take the
+name only).
 
 ## Level roots
 
@@ -1207,5 +1211,4 @@ a flag bit: an 8-bit value, a 16-bit button mask (1 = accelerate), another
 
 - Root 9: what the 13 poses besides the riding pose are for (crashes,
   blends?); root 15's other mode bits; what the level `B` variants are.
-- Menu: widget flag bits beyond "selectable", list-selector wrap modes.
 

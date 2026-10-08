@@ -171,8 +171,14 @@ class Menu:
                 press = f"open page {self.str(w + 0x48)!r}"
             elif action == 2:
                 press = f"go back {self.sdf.u32(w + 0x48)}"
+            elif action == 4:
+                var = self.sdf.u32(w + 0x48)
+                i = (var - self.values) // 4
+                vname = self.vars[i] if 0 <= i < len(self.vars) else f"&{var:#x}"
+                lo, hi, step = struct.unpack_from("<iii", self.sdf.data, w + 0x4C)
+                press = f"step {vname} {lo}..{hi} by {step}"
             else:
-                press = {-1: "", 1: "set group value", 3: "leave menu", 4: "no action"}.get(action, f"action {action}")
+                press = {-1: "", 1: "set group value", 3: "leave menu"}.get(action, f"action {action}")
             if not (scripts or press):
                 continue
             obj = self.ptr(w + 0x28)
