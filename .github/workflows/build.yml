@@ -1,0 +1,146 @@
+# Verification for every push to main and every pull request.
+#
+# - check: needs no game files. The tree's bookkeeping (tools/chunks.py
+#   check) and every source file compiled, as written and with
+#   NON_MATCHING=1.
+# - build: the real check. The original executables come from a private
+#   archive (tools/baserom.sh pack) whose location is in the repository
+#   secrets BASEROM_URL (and BASEROM_USERNAME/BASEROM_PASSWORD if it needs
+#   them); they are never part of the repository. `make compare` rebuilds
+#   both executables and checks them byte for byte, then the NON_MATCHING
+#   build has to link and `make sdk` (Sony's own library objects) has to
+#   match too. Pull requests from forks get no secrets: fork-rom-check.yml
+#   runs this for them after a maintainer approves it.
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    name: Compile (no game files)
+    env:
+      CROSS: mipsel-linux-gnu-
+    steps:
+    - uses: actions/checkout@v5
+      with:
+        submodules: true
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get -o Acquire::Retries=5 update
+        sudo apt-get -o Acquire::Retries=5 install -y --no-install-recommends binutils-mipsel-linux-gnu
+
+    - uses: actions/setup-python@v6
+      with:
+        python-version: "3.12"
+        cache: pip
+
+    - name: Install Python packages
+      run: pip install -r requirements.txt
+
+    - name: Cache the compilers
+      uses: actions/cache@v4
+      with:
+        path: tools/gcc-*
+        key: compilers-${{ hashFiles('tools/compilers.sha256') }}
+
+    - name: Fetch the compilers
+      run: make setup
+
+    - name: Check the bookkeeping
+      run: python3 tools/chunks.py check
+
+    - name: Compile
+      run: make -j"$(nproc)" objects
+
+    - name: Compile with NON_MATCHING=1
+      run: make -j"$(nproc)" NON_MATCHING=1 objects
+
+  build:
+    # Forks get no secrets; fork-rom-check.yml covers them.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    name: Build and compare
+    env:
+      CROSS: mipsel-linux-gnu-
+      BASEROM_URL: ${{ secrets.BASEROM_URL }}
+    steps:
+    - uses: actions/checkout@v5
+      with:
+        submodules: true
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get -o Acquire::Retries=5 update
+        sudo apt-get -o Acquire::Retries=5 install -y --no-install-recommends binutils-mipsel-linux-gnu 7zip
+
+    - uses: actions/setup-python@v6
+      with:
+        python-version: "3.12"
+        cache: pip
+
+    - name: Install Python packages
+      run: pip install -r requirements.txt
+
+    - name: Cache the compilers
+      uses: actions/cache@v4
+      with:
+        path: tools/gcc-*
+        key: compilers-${{ hashFiles('tools/compilers.sha256') }}
+
+    - name: Fetch the compilers
+      run: make setup
+
+    - name: No game files configured
+      if: env.BASEROM_URL == ''
+      run: echo "::warning::The BASEROM_URL secret isn't set, so the executables weren't built or compared (CONTRIBUTING.md, \"Continuous integration\")."
+
+    - name: Fetch the original executables
+      if: env.BASEROM_URL != ''
+      env:
+        BASEROM_USERNAME: ${{ secrets.BASEROM_USERNAME }}
+        BASEROM_PASSWORD: ${{ secrets.BASEROM_PASSWORD }}
+      run: |
+        auth=()
+        if [ -n "$BASEROM_USERNAME" ]; then auth=(-u "$BASEROM_USERNAME:$BASEROM_PASSWORD"); fi
+        curl -fsSL "${auth[@]}" -o "$RUNNER_TEMP/baserom.tar.gz" "$BASEROM_URL"
+        tools/baserom.sh unpack "$RUNNER_TEMP/baserom.tar.gz"
+
+    # Splits with splat, builds, and checks config/checksums.sha1.
+    - name: Build and compare
+      if: env.BASEROM_URL != ''
+      run: make -j"$(nproc)" compare
+
+    # The parked functions' C has to keep building and linking.
+    - name: Build with NON_MATCHING=1
+      if: env.BASEROM_URL != ''
+      run: make -j"$(nproc)" NON_MATCHING=1 build
+
+    - name: Cache Sony's libraries
+      if: env.BASEROM_URL != ''
+      uses: actions/cache@v4
+      with:
+        path: tools/psyq
+        key: psyq-${{ hashFiles('tools/psyq.sha256') }}
+
+    # Sony's own PsyQ objects linked in place of the library asm they
+    # match (docs/decomp.md, "Libraries").
+    - name: Build with Sony's objects
+      if: env.BASEROM_URL != ''
+      run: |
+        tools/fetch_psyq.sh
+        make -j"$(nproc)" sdk
+
+    - name: Progress
+      if: env.BASEROM_URL != ''
+      run: |
+        {
+          echo '```'
+          python3 tools/chunks.py status
+          echo '```'
+        } >> "$GITHUB_STEP_SUMMARY"

@@ -72,16 +72,48 @@ short:
 
 ### Verification
 
-Before every PR, from clean:
+Work on a branch and open a PR; nothing goes to `main` directly. Before
+every PR, from clean:
 
 ```sh
 make clean && make
+make NON_MATCHING=1 build    # parked C has to keep building and linking
+tools/chunks.py check        # every INCLUDE_ASM has its .s, no stale .s
 tools/chunks.py status
 ```
 
 `make` must end with `build/langimg.bin: OK` and `build/sces.bin: OK`
 (`sha1sum` translates the "OK" in other locales). `status` should show
-your functions as done.
+your functions as done. If you touched the library code or its names,
+`make sdk` too (after `tools/fetch_psyq.sh`).
+
+### Continuous integration
+
+CI (`.github/workflows/`) runs the same checks on every PR and on `main`:
+
+- **Compile (no game files)**, on every PR, forks included:
+  `tools/chunks.py check`, then `make objects` (every source file, no
+  linking) as written and with `NON_MATCHING=1`.
+- **Build and compare**: splits, builds and compares both executables,
+  builds with `NON_MATCHING=1`, `make sdk`, and puts `tools/chunks.py
+  status` in the run summary. It needs the original executables, which
+  come from a private archive named by repository secrets (never the
+  repository). Without the secrets it warns and skips those steps.
+- **Fork PRs** get no secrets, so `fork-rom-check.yml` runs the build
+  for them in the `fork-pr-rom` environment, after a maintainer
+  approves it. It compares against `main`'s checksums, so a PR can't
+  change them to pass. Review a fork's changes to the Makefile and
+  `tools/` before approving: that code runs with the game files.
+
+A red check blocks the merge. Maintainers set it up once:
+
+```sh
+tools/baserom.sh pack                       # build/baserom.tar.gz: SCES_030.37 + LANGIMG.DAT
+# upload it somewhere private, then:
+gh secret set BASEROM_URL                   # where CI downloads it from
+gh secret set BASEROM_USERNAME              # only if the URL needs basic auth
+gh secret set BASEROM_PASSWORD
+```
 
 If your change makes something in [docs/decomp.md](docs/decomp.md) out of
 date (a compiler finding, a data section, a new convention), update it in
@@ -90,7 +122,7 @@ the same PR.
 ## Opening the PR
 
 Say which functions you decompiled, which you parked and why, and which
-you left alone, and that `make` passed from clean. Reference the issue
+you left alone, and that `make` passed from clean. Wait for CI to pass. Reference the issue
 with `Refs #N`. Use `Closes #N` only in the PR that decompiles every
 function of the chunk; parked functions keep the issue open.
 

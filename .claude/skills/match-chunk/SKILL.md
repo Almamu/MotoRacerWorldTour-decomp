@@ -68,15 +68,19 @@ A placeholder is better than a guess.
 ## 4. Verify
 
 ```sh
-make clean && make          # both lines must say OK
-tools/chunks.py status      # your functions show as done
+make clean && make               # both lines must say OK
+make NON_MATCHING=1 build        # parked C still builds and links
+tools/chunks.py check            # INCLUDE_ASMs and .s files agree
+tools/chunks.py status           # your functions show as done
 ```
 
-Only a clean `make` with both `OK` counts.
+Only a clean `make` with both `OK` counts. CI runs the same checks on the
+PR (CONTRIBUTING.md, "Continuous integration"); wait for them to pass.
 
 ## 5. Commit and open the PR
 
-Commit on a branch (new commits, no amend, no force-push), then:
+Work on a branch from the start (never commit to `main`); new commits, no
+amend, no force-push. Then:
 
 ```sh
 gh pr create --title "Decompile <target> <chunk>: <what>" --body "..."

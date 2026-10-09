@@ -160,6 +160,12 @@ make NON_MATCHING=1 build   # use the C of parked functions instead of their asm
 tools/fetch_psyq.sh && make sdk   # optional: Sony's own library objects, see "Libraries"
 ```
 
+`make objects` only compiles `src/`, which needs neither the game files
+nor splat (CI runs it on every PR, see CONTRIBUTING.md, "Continuous
+integration"). Without the Nix devshell, `pip install -r requirements.txt`
+gives the Python tools, and the Makefile also finds Debian/Ubuntu's
+`binutils-mipsel-linux-gnu` (or set `CROSS`).
+
 `make` reruns splat when `config/*.yaml` or `config/*/symbol_addrs.txt`
 change. Objects are rebuilt when their source, a header, an included `.s`
 file or the compile flags change.

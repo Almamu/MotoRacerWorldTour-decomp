@@ -1,0 +1,5 @@
+# Python packages for the build (CI; locally the Nix devshell provides them).
+splat64[mips]==0.50.0
+spimdisasm==1.42.4
+rabbitizer==1.16.2
+pyyaml
