@@ -6,6 +6,8 @@ without building or linking anything else.
   tools/try_func.py NAME FILE              another source (a scratch copy of the chunk)
   tools/try_func.py NAME -D NON_MATCHING   with extra defines: try parked C
   tools/try_func.py NAME -v                every instruction, not just the differences
+  tools/try_func.py NAME --gcc 2.91.66     another compiler (tools/gcc-VERSION-psx)
+  tools/try_func.py NAME --cflags='-fX'    extra compiler flags
 
 NAME is the function as its .s file is named (asm/<target>/nonmatchings/
 <chunk>/NAME.s), so this is for functions not matched yet. The source is
@@ -56,7 +58,7 @@ def target_words(path):
     return out
 
 
-def compile_cmd(target, src, out, defines):
+def compile_cmd(target, src, out, defines, gcc=None, cflags=""):
     """The Makefile's command for this chunk, pointed at src and out."""
     rel = src.relative_to(ROOT) if src.is_relative_to(ROOT) else src
     chunk_src = None
@@ -73,6 +75,11 @@ def compile_cmd(target, src, out, defines):
         sys.exit(f"make -n {obj} printed no compile command")
     line = re.sub(r"-MD \S+", "", line)
     line = line.replace(f" {chunk_src} ", f" {shlex.quote(str(rel))} " + " ".join(f"-D{d}" for d in defines) + " ", 1)
+    if gcc:
+        line = re.sub(r"tools/gcc-[0-9.]+-psx", f"tools/gcc-{gcc}-psx", line)
+        line = re.sub(r"-D__GNUC_MINOR__=\d+", f"-D__GNUC_MINOR__={gcc.split('.')[1]}", line)
+    if cflags:
+        line = re.sub(r"(/cc1(?:plus)?) ", rf"\1 {cflags} ", line, count=1)
     return re.sub(r"-o \S+$", f"-o {shlex.quote(str(out))}", line)
 
 
@@ -141,6 +148,8 @@ def main():
     ap.add_argument("source", nargs="?")
     ap.add_argument("-D", dest="defines", action="append", default=[])
     ap.add_argument("-v", action="store_true")
+    ap.add_argument("--gcc", help="compiler version, e.g. 2.91.66")
+    ap.add_argument("--cflags", default="", help="extra compiler flags")
     args = ap.parse_args()
 
     asm, target, chunk = find_asm(args.name)
@@ -151,7 +160,7 @@ def main():
     want = target_words(asm)
     with tempfile.TemporaryDirectory() as d:
         obj = Path(d) / "out.o"
-        cmd = compile_cmd(target, src, obj, args.defines)
+        cmd = compile_cmd(target, src, obj, args.defines, args.gcc, args.cflags)
         r = subprocess.run(cmd, shell=True, cwd=ROOT, capture_output=True, text=True)
         errors = [l for l in r.stderr.splitlines() if "warning" not in l]
         if r.returncode or not obj.exists():

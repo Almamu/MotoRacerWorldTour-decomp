@@ -29,6 +29,7 @@ SPLAT    := $(PYTHON) -m splat split
 langimg_GCC := 2.95.2-psx
 sces_GCC    := 2.91.66-psx
 gcc_dir      = tools/gcc-$(1)
+comma       := ,
 
 # Small data in $gp-relative sections: up to 8 bytes in the game, none in
 # the boot executable (it never uses $gp).
@@ -39,6 +40,12 @@ sces_G      := 0
 # char (the MIPS default); decompals' builds default to unsigned.
 langimg_CFLAGS := -mno-split-addresses
 sces_CFLAGS    := -fsigned-char
+
+# Sources built with another compiler or flags than the rest of their
+# target, as source:compiler:flags (flags with commas for spaces). The
+# game's sound code is GCC 2.91.66's (docs/matching_techniques.md,
+# "Compilers per file").
+OBJ_OVERRIDES := src/langimg/chunk_00.cpp:2.91.66-psx:-mno-split-addresses
 
 # -O2; the C++ has no exceptions and no RTTI.
 CC1FLAGS    := -O2 -quiet
@@ -80,7 +87,7 @@ ld_objects = $(shell grep -o 'build/[A-Za-z0-9_/.-]*\.o' $(1) 2>/dev/null | sort
 
 # Objects are rebuilt when the compile flags change (NON_MATCHING=1 and back).
 FLAGS_STAMP := $(BUILD)/flags.txt
-FLAGS_NOW   := $(CPPFLAGS) $(CC1FLAGS) $(CXXFLAGS) $(MASPSXFLAGS) $(langimg_G) $(sces_G) $(langimg_CFLAGS) $(sces_CFLAGS)
+FLAGS_NOW   := $(CPPFLAGS) $(CC1FLAGS) $(CXXFLAGS) $(MASPSXFLAGS) $(langimg_G) $(sces_G) $(langimg_CFLAGS) $(sces_CFLAGS) $(OBJ_OVERRIDES)
 $(shell mkdir -p $(BUILD); echo '$(FLAGS_NOW)' | cmp -s - $(FLAGS_STAMP) || echo '$(FLAGS_NOW)' > $(FLAGS_STAMP))
 
 #### Rules ####
@@ -156,10 +163,15 @@ $(BUILD)/sces.bin: $(BUILD)/sces.elf
 	$(OBJCOPY) -O binary $< $@
 
 # __GNUC_MINOR__ of a target's compiler (95, 91).
-gcc_minor = -D__GNUC_MINOR__=$(word 2,$(subst ., ,$($(1)_GCC)))
+gcc_minor = -D__GNUC_MINOR__=$(word 2,$(subst ., ,$(1)))
 
 # Objects of each target live under build/<target>/ (splat's build_path).
+# OBJ_GCC and OBJ_CFLAGS are each object's compiler and flags: its target's,
+# unless OBJ_OVERRIDES names it.
 define target_rules
+$(BUILD)/$(1)/%.o: OBJ_GCC = $($(1)_GCC)
+$(BUILD)/$(1)/%.o: OBJ_CFLAGS = $($(1)_CFLAGS)
+
 # Binary pieces splat extracted to assets/ (the header).
 $(BUILD)/$(1)/%.o: %.bin
 	@mkdir -p $$(dir $$@)
@@ -175,16 +187,19 @@ $(BUILD)/$(1)/%.o: %.s
 # splat writes the INCLUDE_ASM ones (<object>.asmproc.d).
 $(BUILD)/$(1)/%.o: %.cpp $(call gcc_dir,$($(1)_GCC))/cc1 $(FLAGS_STAMP)
 	@mkdir -p $$(dir $$@)
-	$(call gcc_dir,$($(1)_GCC))/cpp $(CPPFLAGS) $(call gcc_minor,$(1)) -MD $$(@:.o=.d) -lang-c++ -D__cplusplus -D__GNUG__=2 -D_LANGUAGE_C_PLUS_PLUS $$< | $(call gcc_dir,$($(1)_GCC))/cc1plus $(CC1FLAGS) -G$($(1)_G) $($(1)_CFLAGS) $(CXXFLAGS) | $(MASPSX) $(MASPSXFLAGS) -G$($(1)_G) | $(AS) $(ASFLAGS) -o $$@
+	$$(call gcc_dir,$$(OBJ_GCC))/cpp $(CPPFLAGS) $$(call gcc_minor,$$(OBJ_GCC)) -MD $$(@:.o=.d) -lang-c++ -D__cplusplus -D__GNUG__=2 -D_LANGUAGE_C_PLUS_PLUS $$< | $$(call gcc_dir,$$(OBJ_GCC))/cc1plus $(CC1FLAGS) -G$($(1)_G) $$(OBJ_CFLAGS) $(CXXFLAGS) | $(MASPSX) $(MASPSXFLAGS) -G$($(1)_G) | $(AS) $(ASFLAGS) -o $$@
 	$(ALIGN4) $$@
 	@sed -i 's|^[^:]*:|$$@:|' $$(@:.o=.d)
 
 $(BUILD)/$(1)/%.o: %.c $(call gcc_dir,$($(1)_GCC))/cc1 $(FLAGS_STAMP)
 	@mkdir -p $$(dir $$@)
-	$(call gcc_dir,$($(1)_GCC))/cpp $(CPPFLAGS) $(call gcc_minor,$(1)) -MD $$(@:.o=.d) $$< | $(call gcc_dir,$($(1)_GCC))/cc1 $(CC1FLAGS) -G$($(1)_G) $($(1)_CFLAGS) | $(MASPSX) $(MASPSXFLAGS) -G$($(1)_G) | $(AS) $(ASFLAGS) -o $$@
+	$$(call gcc_dir,$$(OBJ_GCC))/cpp $(CPPFLAGS) $$(call gcc_minor,$$(OBJ_GCC)) -MD $$(@:.o=.d) $$< | $$(call gcc_dir,$$(OBJ_GCC))/cc1 $(CC1FLAGS) -G$($(1)_G) $$(OBJ_CFLAGS) | $(MASPSX) $(MASPSXFLAGS) -G$($(1)_G) | $(AS) $(ASFLAGS) -o $$@
 	$(ALIGN4) $$@
 	@sed -i 's|^[^:]*:|$$@:|' $$(@:.o=.d)
 endef
 $(foreach t,$(TARGETS),$(eval $(call target_rules,$(t))))
+override_obj = $(BUILD)/$(word 2,$(subst /, ,$(1)))/$(basename $(1)).o
+$(foreach o,$(OBJ_OVERRIDES),$(eval $(call override_obj,$(word 1,$(subst :, ,$(o)))): OBJ_GCC = $(word 2,$(subst :, ,$(o)))) \
+  $(eval $(call override_obj,$(word 1,$(subst :, ,$(o)))): OBJ_CFLAGS = $(subst $(comma), ,$(word 3,$(subst :, ,$(o))))))
 
 -include $(shell find $(BUILD) -name '*.d' 2>/dev/null)

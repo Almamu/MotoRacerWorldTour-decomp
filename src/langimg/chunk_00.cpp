@@ -86,7 +86,16 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_80011C5C);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_80011D10);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_80011DA8);
+/* Turns the reverb on: type, and depth from -128 to 127. */
+void func_80011DA8(int type, int depth) {
+    SpuClearReverbWorkArea(type);
+    SpuSetReverbModeType(type);
+    SpuSetReverbModeDepth(depth << 8, depth << 8);
+    SpuSetReverb(1);
+    D_800C473D = 0;
+    D_800C473E = 0;
+    D_800C4740 = 0;
+}
 
 /* Shuts the SPU down. */
 int func_80011E08(void) {
@@ -100,7 +109,15 @@ int func_80011E08(void) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_80011E44);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_80011F84);
+int func_80011F84(void) {
+    func_80012F7C();
+    D_800C46FC &= ~6;
+    if (D_800C46F0) {
+        free(D_800C46F0);
+        D_800C46F0 = 0;
+    }
+    return 1;
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_80011FCC);
 
@@ -123,11 +140,37 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_80012504);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_8001280C);
 
+#ifdef NON_MATCHING
+/* Equivalent; the clamping comes out in another order */
+/* The volume at a distance: full up to D_800C470C, none from D_800C4710. */
+u8 func_800128E8(int dist) {
+    int range = D_800C4710 - D_800C470C;
+    int v = 0;
+
+    if (range) {
+        if (dist > D_800C470C) {
+            v = (dist - D_800C470C) * 127 / range;
+        }
+        if (v < 0) {
+            v = 0;
+        } else if (v > 127) {
+            v = 127;
+        }
+    }
+    return D_800C4850[127 - v];
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_800128E8);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_8001295C);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_80012A88);
+/* Plays with a volume and a pan (0 left, 127 right). */
+void func_80012A88(int a, int vol, int pan, int c, int d) {
+    int v = vol * D_800C4708;
+
+    func_80012504(d, a, c, v * D_800C46F4[127 - pan], v * D_800C46F4[pan]);
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_80012AF0);
 
@@ -137,9 +180,9 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_80012D38);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_80012E58);
 
-int func_80012F40(void) {
+int func_80012F40(u32 handle) {
     int r = 0;
-    SoundUnk *p = func_80013348();
+    SoundSlot *p = func_80013348(handle);
 
     if (p) {
         func_80012E58(p);
@@ -148,21 +191,38 @@ int func_80012F40(void) {
     return r;
 }
 
+#ifdef NON_MATCHING
+/* Equivalent; the original keeps ~1 in a register and loads each field's
+ * address on its own, this build derives them from one */
+/* Frees every sound slot. */
+int func_80012F7C(void) {
+    int i;
+
+    func_80011960();
+    for (i = 0; i < 30; i++) {
+        D_800CA0F8[i].unk4 = 0;
+        D_800CA0F8[i].unk0 = -1;
+        D_800CA0F8[i].unk6 &= ~1;
+    }
+    return 1;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_80012F7C);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_80012FEC);
 
-void func_80013098(void) {
-    SoundUnk *p = func_80013348();
+void func_80013098(u32 handle) {
+    SoundSlot *p = func_80013348(handle);
 
     if (p) {
         D_800C4724 = p->unkA;
     }
 }
 
-int func_800130CC(void) {
+int func_800130CC(u32 handle) {
     int r = 0;
-    SoundUnk *p = func_80013348();
+    SoundSlot *p = func_80013348(handle);
 
     if (p) {
         r = p->unk4 != 0;
@@ -174,7 +234,19 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_80013108);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_800131D0);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_80013348);
+/* The slot of a sound handle, or 0 if the sound is gone. */
+SoundSlot *func_80013348(u32 handle) {
+    SoundSlot *r = 0;
+    SoundSlot *slot;
+
+    if (handle != (u32)-1) {
+        slot = &D_800CA0F8[handle & 0x1F];
+        if (slot->unk2 == handle >> 16 && slot->unk0 != -1) {
+            r = slot;
+        }
+    }
+    return r;
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_800133A0);
 
