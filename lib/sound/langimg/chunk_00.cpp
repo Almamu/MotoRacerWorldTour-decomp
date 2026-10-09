@@ -51,7 +51,7 @@ void func_800118C4(int reserved) {
         D_800C9F70[i].unk0 = 0;
         D_800C9F70[i].unk4 = 0;
         D_800C9F70[i].unkA = 0;
-        D_800C9F70[i].unkC = 0;
+        D_800C9F70[i].owner = 0;
     }
 }
 #else
@@ -70,11 +70,100 @@ int func_80011924(int voice) {
     return r;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_80011960);
+/* Stops every voice not reserved and forgets which sounds had them. */
+int func_80011960(void) {
+    int mask = 0;
+    int i;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_80011A68);
+    for (i = D_800C4748; i < 24; i++) {
+        int bit = 1 << i;
+        s8 none = -1; /* set in the loop, so GCC hoists it before the addresses */
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_80011BA4);
+        VOICE(i)->unk0 = 0;
+        mask |= bit;
+        if (VOICE(i)->owner) {
+            VOICE(i)->owner->voice = none;
+            VOICE(i)->owner = 0;
+        }
+        if (VOICE(i)->unkA & 1) {
+            VOICE(i)->unkA &= ~1;
+            SpuSetPitchLFOVoice(0, bit);
+        }
+    }
+    SpuSetKey(0, mask);
+    SpuSetReverbVoice(0, mask);
+    D_800C9F54 = 0;
+    D_800C9F48 = 0;
+    D_800C473C = 0;
+    D_800C4738 = 0;
+    return 1;
+}
+
+/* Once a frame: frees the voices that stopped by themselves, then keys
+ * off the ones marked. */
+void func_80011A68(void) {
+    int i;
+
+    for (i = D_800C4748; i < 24; i++) {
+        s8 none = -1; /* set in the loop, so GCC hoists it before the addresses */
+        int bit = 1;  /* likewise */
+
+        if (!((D_800C9F48 >> i) & 1) && !((D_800C4738 >> i) & 1) && VOICE(i)->unk0) {
+            VOICE(i)->unk0 = 0;
+            if (VOICE(i)->owner) {
+                VOICE(i)->owner->voice = none;
+                VOICE(i)->owner = 0;
+            }
+            if (VOICE(i)->unkA & 1) {
+                VOICE(i)->unkA &= ~1;
+                SpuSetPitchLFOVoice(0, bit << i);
+            }
+        }
+    }
+    func_800131D0(D_800C9F48);
+    func_80011BA4();
+    if (D_800C9F54) {
+        SpuSetKey(0, D_800C9F54);
+        SpuSetReverbVoice(0, D_800C9F54);
+        D_800C9F54 = 0;
+    }
+}
+
+/* Reads every voice's key status: returns the voices playing (a bit
+ * each), and marks the ones that have just been released to be keyed
+ * off. */
+int func_80011BA4(void) {
+    s8 status[24];
+    int mask;
+    int count;
+    int i;
+
+    SpuGetAllKeysStatus((char *)status);
+    mask = 0;
+    count = 0;
+    for (i = 0; i < 24; i++) {
+        int s = status[i];
+        int fresh = 0;
+
+        if (s == 3) {
+            fresh = D_800C9F58[i] == 0;
+        }
+        if ((u32)(s - 1) < 2 || fresh) {
+            mask |= 1 << i;
+            count++;
+            if (fresh) {
+                continue;
+            }
+        }
+        if (s == 3) {
+            D_800C9F54 |= 1 << i;
+        }
+        D_800C9F58[i] = s;
+    }
+    D_800C9F48 = mask;
+    D_800CA0F0 = count;
+    return mask;
+}
 
 /* Sets the SPU up: reverb off, full master and CD volume, the volume curve
  * (full up to nearDist, none from farDist) and the voices to leave alone. */
@@ -230,7 +319,32 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_800121F4);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_80012504);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_8001280C);
+/* Where a sound at b is heard from a listener at a facing angle: out[1]
+ * the distance, out[0] the angle to it on the ground (0 when it's nearly
+ * overhead). */
+void func_8001280C(SndVector *a, SndVector *b, int angle, int *out) {
+    SndVector d;
+    SndVector *p = &d; /* the original keeps &d in a register */
+    int dx, dz;
+    int len;
+
+    p->vx = dx = b->vx - a->vx;
+    p->vy = b->vy - a->vy;
+    p->vz = dz = b->vz - a->vz;
+    out[1] = func_8009923C(p);
+    d.vy = 0;
+    len = func_8009923C(p);
+    if (len >= 0x334) {
+        int x;
+
+        len >>= 4;
+        /* x first, then z; the angle's offset subtracted after the call */
+        x = (dx << 8) / len;
+        out[0] = -(angle + 0x400) + ratan2((dz << 8) / len, x);
+    } else {
+        out[0] = 0;
+    }
+}
 
 #ifdef NON_MATCHING
 /* Equivalent; GCC reads the table as D_800C4850(v), the original forms its
@@ -409,7 +523,50 @@ int func_80013108(int unused) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_80013108);
 #endif
 
+#ifdef NON_MATCHING
+/* Equivalent; the original loads each of the slot's field pointers with
+ * its own la (as func_800118C4 and func_80012F7C do), this build derives
+ * them from one, and it keeps ~1 in a register */
+/* Frees the voices that stopped (not in playing), and the sounds left
+ * with none. */
+void func_800131D0(int playing) {
+    int i;
+
+    for (i = 0; i < 30; i++) {
+        SoundSlot *slot = &D_800CA0F8[i];
+        int all = -1;
+
+        if (slot->unk4 != 0) {
+            int j;
+
+            for (j = 0; j < slot->unk4; j++) {
+                int v = slot->voices[j].voice;
+                int bit = 1;
+
+                if (v != -1 && !((playing >> v) & 1)) {
+                    VOICE(v)->unk0 = 0;
+                    if (VOICE(v)->owner) {
+                        VOICE(v)->owner->voice = -1;
+                        VOICE(v)->owner = 0;
+                    }
+                    if (VOICE(v)->unkA & 1) {
+                        VOICE(v)->unkA &= ~1;
+                        SpuSetPitchLFOVoice(0, bit << v);
+                    }
+                }
+                all &= slot->voices[j].voice;
+            }
+        }
+        if (all == -1) {
+            slot->unk4 = 0;
+            slot->unk0 = all;
+            slot->unk6 &= ~1;
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_800131D0);
+#endif
 
 /* The slot of a sound handle, or 0 if the sound is gone. */
 SoundSlot *func_80013348(u32 handle) {
@@ -460,10 +617,6 @@ void func_80013440(void) {
 void func_80013448(void) {
 }
 
-#ifdef NON_MATCHING
-/* Equivalent; the original copies each vector through its own register
- * set and a computed destination, and keeps c->vx and c->vz in saved
- * registers */
 /* Places the listener; its angle is the facing direction's (c) on the
  * ground. */
 void func_80013450(SndListener *l, SndVector *a, SndVector *b, SndVector *c, SndVector *d) {
@@ -471,25 +624,60 @@ void func_80013450(SndListener *l, SndVector *a, SndVector *b, SndVector *c, Snd
     int z;
     int len;
 
-    l->unk8 = *a;
-    l->unk14 = *b;
-    l->unk20 = *c;
-    l->unk2C = *d;
+    CopyVector(&l->unk8, a);
+    CopyVector(&l->unk14, b);
+    CopyVector(&l->unk20, c);
+    CopyVector(&l->unk2C, d);
     x = c->vx;
     z = c->vz;
     len = func_80097AC8(x * x + z * z);
     if (len == 0) {
         len = 1;
     }
-    l->angle = ratan2((z << 12) / len, (x << 12) / len) - 0x400;
+    /* x is divided first, back into x */
+    x = (x << 12) / len;
+    l->angle = ratan2((z << 12) / len, x) - 0x400;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_80013450);
-#endif
 
 void func_80013554(void) {
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_8001355C);
+/* An emitter's volume by where the listener faces and where the emitter
+ * points: 0x1000 straight on. */
+void func_8001355C(SndEmitter *e, SndVector *pos, SndVector *dir) {
+    SndVector v;
+    SndVector *facing;
+    int a, b;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_8001363C);
+    func_800998D0(&v, &e->listener->unk8, pos);
+    facing = &e->listener->unk14;
+    func_80098E9C(&v);
+    a = func_80099B88(dir, &v);
+    b = func_80099B88(facing, &v);
+    e->volume = ((a / 360 + 0x1000) * (0x1000 - b / 360)) / 0x1000;
+}
+
+/* Where an emitter is and which way its sound goes; a moving one's
+ * direction is its velocity over dt. */
+void func_8001363C(SndEmitter *e, SndVector *pos, SndVector *dir, int dt) {
+    SndVector t;
+    SndVector v;
+    SndVector d;
+
+    if (e->flags & 0x400) {
+        CopyVector(pos, e->unk3C);
+        CopyVector(dir, e->unk40);
+    } else if (e->flags & 0x200) {
+        SndVector *pv; /* &v, taken before the first call */
+
+        CopyVector(pos, e->unk3C);
+        pv = &v;
+        func_800998D0(&d, pos, &e->unk44);
+        func_80099718(pv, &d, dt >> 6);
+        func_80099DCC(&t, pv, 6);
+        CopyVector(dir, &t);
+    } else {
+        CopyVector(pos, &e->unk50);
+        CopyVector(dir, &e->unk5C);
+    }
+}
