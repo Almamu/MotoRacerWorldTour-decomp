@@ -88,7 +88,7 @@ settings
 | `lib/sound` chunk_01 | GCC 2.91.66 | 0 | `-mno-split-addresses` | `--expand-div --div-no-checks` |
 | `lib/cdaudio` chunk_01b | GCC 2.91.66 | 0 | (split addresses) | `--expand-div` |
 | `src/langimg` chunk_02, chunk_03 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --small-externs=...` |
-| `src/langimg` chunk_04 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=` |
+| `src/langimg` chunk_04, chunk_05 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=` |
 | `src/langimg` chunk_02b (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `SCES_030.37` (`src/sces`) | GCC 2.91.66 | 0 | `-fsigned-char` | `--expand-div` |
 
@@ -336,6 +336,11 @@ globals), a script that tries every order is quicker than guessing:
   if (o->m_page) page = o->m_page ? o->m_page : prim[1];` and the calls
   taking `o->m_prim` again, not `prim` (found by the permuter; each half
   alone doesn't). The same brought `func_80016C3C` from 94 to 42.
+- **An inline is inlined only after its definition.** Used before it's
+  defined, GCC calls it (`VecZero`, `func_8001B84C`): define inlines at
+  the top of the file.
+- **Chained assignments store the innermost first.** `a = b = -1` stores
+  `b`, then `a` (`func_8001D108`).
 - **Through an inline function.** A value returned by an inline function
   can survive where the same constant written inline is folded: in
   `func_80012F7C`, `ClearFlags(&f, 1)` keeps `~1` in a register as the
