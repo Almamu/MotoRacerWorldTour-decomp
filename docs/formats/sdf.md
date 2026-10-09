@@ -739,6 +739,31 @@ yet tried in the game, as those are off-road levels).
 Re-encoding every face of every level from its own corners reproduces the
 heights within 1.5 units (p99).
 
+**T-junctions.** A face may have two consecutive edges on the same line
+(e.g. Sachsenring face 907: edges 1 and 2 are identical), each with its
+own neighbour: that is how one side borders two faces. The corner between
+them isn't defined by the edges; `world_polygon(..., faces)` puts it where
+the neighbours along that line meet.
+
+**New topology** (`build_surface` + `replace_surface`): faces are given as
+corner lists with a surface type. Corners are put in the game's order
+(clockwise seen from above: negative signed area in x/z), straight
+corners are kept up to 4 per face (the T-junction encoding) and dropped
+beyond that, concave quads are cut at the reflex corner and convex n-gons
+fanned. Neighbours come from the edges: the face with an edge on the same
+line running the other way that overlaps most (tolerance 3 units plus
+0.25° for long edges, as angles are 12-bit), else a wall. A quad bent by
+more than half a unit gets two planes along a diagonal (its original one
+when known, else the shorter). Origins are the corner centroids; a
+triangle's unused 4th edge word is 0xFFFF. Faces whose corners didn't move
+keep their record and their links to other unchanged faces (walls
+included), so rebuilding an unedited surface reproduces all 58 levels'
+records byte for byte. The array and header are appended to the file and
+root 5 repointed (nothing else refers to them); a lookup grid keeps its
+place and is recomputed. In the emulator: Sachsenring with the start
+straight's face cut 3 x 3 and its middle raised 150 units (the bike rides
+above the visible road) completes a lap.
+
 ## Menu and end scene roots
 
 Menu/end scenes have 15 roots, loaded at 0x80046F2C (menu module `M`). The

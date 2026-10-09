@@ -48,7 +48,7 @@ What can be edited:
 | Collision surface (`.sdf`) | Blender | corner moves re-encode the faces; "Snap Collision to Ground" after ground edits |
 | Anything else in `MR3.DAT` | raw file | replace it under `ws/mr3dat` |
 
-Not supported yet: new ground or collision topology, new sprites (HUD `BLKS`), movies (`.DPS`). Edits are tested in an emulator (`docs/testing.md`: Mednafen, a deterministic libretro runner and a regression suite); not yet on hardware.
+Not supported yet: new ground topology, new sprites the game would have to be told to draw, movies (`.DPS`). Edits are tested in an emulator (`docs/testing.md`: Mednafen, a deterministic libretro runner and a regression suite); not yet on hardware.
 
 ## Tools
 

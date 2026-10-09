@@ -125,21 +125,31 @@ def header(sdf):
     return {"faces": count, "field_02": second, "grid_w": gw, "grid_h": gh, "cell": cell, "grid": grid}
 
 
-def corners(trig, face):
+def corners(trig, face, between=None):
     """Corners in game units relative to the face origin (x, z), in edge order:
-    corner k is where edge k meets edge k+1."""
+    corner k is where edge k meets edge k+1. Two consecutive edges on the same
+    line (how the game gives one side two neighbours, a T-junction) leave
+    that corner open: `between(k, a, b)` may return a point on the segment
+    a-b (local units) for it, else it goes in the middle."""
     lines = []
     for w in face.edges:
         c, s = trig.cos_sin(w)
         lines.append((c / 4096, s / 4096, _s16(w >> 16)))
-    out = []
-    for k in range(len(lines)):
+    n = len(lines)
+    out = [None] * n
+    for k in range(n):
         a1, b1, d1 = lines[k]
-        a2, b2, d2 = lines[(k + 1) % len(lines)]
+        a2, b2, d2 = lines[(k + 1) % n]
         det = a1 * b2 - a2 * b1
-        if abs(det) < 1e-9:
-            return None
-        out.append(((-d1 * b2 + d2 * b1) / det, (-a1 * d2 + a2 * d1) / det))
+        if abs(det) >= 1e-9:
+            out[k] = ((-d1 * b2 + d2 * b1) / det, (-a1 * d2 + a2 * d1) / det)
+    for k in range(n):
+        if out[k] is None:
+            a, b = out[k - 1], out[(k + 1) % n]
+            if a is None or b is None:
+                return None
+            p = between(k, a, b) if between else None
+            out[k] = p if p is not None else ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)
     return out
 
 
@@ -150,9 +160,29 @@ def face_plane_at(trig, face, dx, dz):
     return face.plane
 
 
-def world_polygon(trig, face):
-    """Corners as world (x, y, z) game units (Y down)."""
-    pts = corners(trig, face)
+def world_polygon(trig, face, faces=None):
+    """Corners as world (x, y, z) game units (Y down). With `faces` (all of
+    the level's), an open T-junction corner is put where the neighbouring
+    faces along that line meet."""
+    between = None
+    if faces is not None:
+        def between(k, a, b):
+            ox, oz = face.x / 32, face.z / 32
+            ax, az, bx, bz = a[0] + ox, a[1] + oz, b[0] + ox, b[1] + oz
+            L = math.hypot(bx - ax, bz - az) or 1
+            best = None
+            for j in (face.neighbours[k], face.neighbours[(k + 1) % len(face.edges)]):
+                if j is None or not 0 <= j < len(faces):
+                    continue
+                q = corners(trig, faces[j])
+                for qx, qz in q or ():
+                    px, pz = qx + faces[j].x / 32, qz + faces[j].z / 32
+                    t = ((px - ax) * (bx - ax) + (pz - az) * (bz - az)) / (L * L)
+                    off = abs((px - ax) * (bz - az) - (pz - az) * (bx - ax)) / L
+                    if 0.01 < t < 0.99 and off < 4 and (best is None or off < best[0]):
+                        best = (off, (px - ox, pz - oz))
+            return best[1] if best else None
+    pts = corners(trig, face, between)
     if pts is None:
         return None
     out = []
@@ -206,7 +236,7 @@ def _plane(points, w):
     return Plane(round(nx / length * 16384), round(ny / length * 16384), round(nz / length * 16384), w)
 
 
-def encode_face(trig, face, world):
+def encode_face(trig, face, world, split_diag=None):
     """New 56-byte record for `face` with corners `world` [(x, y, z)] in game
     units (Y down, same order as corners()). Origin (x, z), neighbours and
     surface type are kept; edges, planes and the origin height are rebuilt.
@@ -220,8 +250,12 @@ def encode_face(trig, face, world):
     # corner k is where edge k meets edge k+1, so edge k runs corner k-1 -> corner k
     edges = [_edge_word(trig, local[k - 1], local[k], centre) for k in range(n)]
     split = None
-    if face.split is not None and n == 4:
-        on, pos = split_corners(trig, face)
+    if n == 4 and (split_diag is not None or face.split is not None):
+        if split_diag is not None:
+            on = list(split_diag)
+            pos = [k for k in range(4) if k not in on][:1]
+        else:
+            on, pos = split_corners(trig, face)
         neg = [k for k in range(4) if k not in on and k not in pos]
         p1 = _plane([pts3[k] for k in sorted(on + neg)], 0)
         p2 = _plane([pts3[k] for k in sorted(on + pos)], 0)
@@ -235,7 +269,7 @@ def encode_face(trig, face, world):
     if p1.ny:
         y0 = q1[1] + (p1.nx * q1[0] + p1.nz * q1[2]) / p1.ny
     else:
-        y0 = face.y / 32
+        y0 = face.y / 32 if face.raw else sum(p[1] for p in pts3) / len(pts3)
     if p2 is not None and p2.ny:
         p2.w = round(((y0 - q2[1]) * p2.ny - (p2.nx * q2[0] + p2.nz * q2[2])) / 4096)
     yw = (round(y0 * 32) & 0xFFFFFF) << 8 | face.surface
@@ -257,8 +291,9 @@ def rebuild_grid(sdf, trig):
         return False
     w, hgt, size = h["grid_w"], h["grid_h"], h["cell"]
     ranges = [[None, None] for _ in range(w * hgt)]
-    for f in read(sdf):
-        poly = world_polygon(trig, f)
+    all_faces = read(sdf)
+    for f in all_faces:
+        poly = world_polygon(trig, f, all_faces)
         if not poly:
             continue
         # cell = (pos >> 12) // size with pos in 1/32 units, i.e. game units / 128
@@ -281,7 +316,7 @@ def export_obj(sdf, out, langimg=None):
     faces = read(sdf)
     groups = {}
     for f in faces:
-        poly = world_polygon(trig, f)
+        poly = world_polygon(trig, f, faces)
         if poly:
             groups.setdefault(f.surface, []).append(poly)
     lines, v = [], 1
@@ -313,3 +348,218 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# --- building a new collision surface ------------------------------------------
+
+def find_neighbours(polys, tol=3.0):
+    """Neighbour per edge for faces given as corner lists [(x, z)] (game
+    units, edge order: edge k runs corner k-1 -> corner k): the face with
+    an edge along the same line in the opposite direction that overlaps it
+    most (so T-junctions, where a long edge meets several short ones, get a
+    neighbour too), or None for a wall."""
+    import collections
+    cell = 256.0
+    grid = collections.defaultdict(list)
+    edges = []
+    for i, p in enumerate(polys):
+        for k in range(len(p)):
+            a, b = p[k - 1], p[k]
+            edges.append((i, k, a, b))
+            for cx in range(int(min(a[0], b[0]) // cell), int(max(a[0], b[0]) // cell) + 1):
+                for cz in range(int(min(a[1], b[1]) // cell), int(max(a[1], b[1]) // cell) + 1):
+                    grid[(cx, cz)].append(len(edges) - 1)
+    out = [[None] * len(p) for p in polys]
+    for i, k, a, b in edges:
+        dx, dz = b[0] - a[0], b[1] - a[1]
+        length = math.hypot(dx, dz)
+        if length < 1e-6:
+            continue
+        ux, uz = dx / length, dz / length
+        best, best_overlap = None, tol
+        seen = set()
+        for cx in range(int(min(a[0], b[0]) // cell), int(max(a[0], b[0]) // cell) + 1):
+            for cz in range(int(min(a[1], b[1]) // cell), int(max(a[1], b[1]) // cell) + 1):
+                for e in grid[(cx, cz)]:
+                    j, _, c, d = edges[e]
+                    if j == i or e in seen:
+                        continue
+                    seen.add(e)
+                    # on the same line (perpendicular distance; angles are stored in
+                    # 12 bits, so long edges drift: allow ~0.25 degrees) and running
+                    # the other way
+                    slack = tol + 0.0045 * max(length, math.hypot(d[0] - c[0], d[1] - c[1]))
+                    if abs((c[0] - a[0]) * uz - (c[1] - a[1]) * ux) > slack or \
+                            abs((d[0] - a[0]) * uz - (d[1] - a[1]) * ux) > slack:
+                        continue
+                    tc = (c[0] - a[0]) * ux + (c[1] - a[1]) * uz
+                    td = (d[0] - a[0]) * ux + (d[1] - a[1]) * uz
+                    if td >= tc:
+                        continue
+                    overlap = min(length, tc) - max(0.0, td)
+                    if overlap > best_overlap:
+                        best, best_overlap = j, overlap
+        out[i][k] = best
+    return out
+
+
+def is_convex(xz, tol=1.0):
+    """Convex in XZ with the game's winding; a corner may bulge out by up to
+    `tol` units (straight T-junction corners decode slightly off the line)."""
+    n = len(xz)
+    for k in range(n):
+        a, b, c = xz[k - 1], xz[k], xz[(k + 1) % n]
+        cross = (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0])
+        if cross > tol * (math.hypot(c[0] - a[0], c[1] - a[1]) or 1):
+            return False
+    return True
+
+
+def winding(xz):
+    """Signed area term: negative for the game's corner order."""
+    return sum(xz[k - 1][0] * xz[k][1] - xz[k][0] * xz[k - 1][1] for k in range(len(xz)))
+
+
+def _triangulate(world):
+    """Convex pieces (triangles / quads) of a polygon in game order: convex
+    polygons of up to 4 corners stay, a concave quad is cut at its reflex
+    corner, a convex n-gon becomes a fan; anything else is an error."""
+    xz = [(x, z) for x, _, z in world]
+    n = len(world)
+    if is_convex(xz) and n <= 4:
+        return [world]
+    if n == 4:
+        for r in range(4):
+            a, b, c = xz[r - 1], xz[r], xz[(r + 1) % 4]
+            if (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0]) > 0:   # reflex
+                o = (r + 2) % 4
+                return [[world[r], world[(r + 1) % 4], world[o]], [world[o], world[(o + 1) % 4], world[r]]]
+    if is_convex(xz):
+        return [[world[0], world[k], world[k + 1]] for k in range(1, n - 1)]
+    raise ValueError(f"collision: a concave {n}-sided face (use triangles / convex quads)")
+
+
+def _drop_straight(world, tol=1.0, keep=4):
+    """Remove corners lying on the straight line between their neighbours
+    (e.g. where a neighbouring face's edge was subdivided) while the face
+    has more than `keep`: up to 4 the game encodes them itself (two edges
+    on one line, each with its own neighbour); beyond that the face keeps
+    its shape and the T-junction gets one neighbour from the edge search."""
+    pts = list(world)
+    changed = True
+    while changed and len(pts) > keep:
+        changed = False
+        for k in range(len(pts)):
+            a, b, c = pts[k - 1], pts[k], pts[(k + 1) % len(pts)]
+            u = [c[i] - a[i] for i in range(3)]
+            w = [b[i] - a[i] for i in range(3)]
+            ln = math.sqrt(sum(x * x for x in u)) or 1
+            cr = [u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2], u[0] * w[1] - u[1] * w[0]]
+            t = sum(u[i] * w[i] for i in range(3)) / (ln * ln)
+            if 0 < t < 1 and math.sqrt(sum(x * x for x in cr)) / ln < tol:
+                del pts[k]
+                changed = True
+                break
+    return pts
+
+
+def _flatness(world):
+    """Largest distance (game units) of a corner from the plane through the others."""
+    if len(world) < 4:
+        return 0.0
+    worst = 0.0
+    for k in range(4):
+        a, b, c = [world[j] for j in range(4) if j != k]
+        u = [b[i] - a[i] for i in range(3)]
+        v = [c[i] - a[i] for i in range(3)]
+        nrm = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]]
+        ln = math.sqrt(sum(x * x for x in nrm)) or 1
+        worst = max(worst, abs(sum((world[k][i] - a[i]) * nrm[i] for i in range(3))) / ln)
+    return worst
+
+
+def build_surface(trig, polys, flat=0.5):
+    """Encode a whole collision surface from [(corners [(x, y, z)] game units
+    Y down, surface type, split[, raw, links])] where split is the diagonal
+    (two corner indices) a bent quad folds along, or None to pick the
+    shorter one, raw an original record to keep as it is (corners in its
+    own order, unchanged; only its neighbours and surface type are
+    rewritten) and links its neighbours to keep, per edge, as positions in
+    `polys` (-1: keep a wall; None: found from the edges);
+    corners are put in the game's order, concave
+    quads / n-gons cut into convex pieces, neighbours found from the edges
+    (no neighbour = wall), quads bent by more than `flat` units split along
+    a diagonal (two planes). Origins are the corner centroids. Returns
+    (records, quad count)."""
+    faces, first, links = [], [], []
+    for world, surface, *rest in polys:
+        world = [tuple(p) for p in world]
+        diag = rest[0] if rest else None
+        raw = rest[1] if len(rest) > 1 else None
+        first.append(len(faces))
+        if raw is not None:
+            faces.append((world, surface, raw))
+            links.append((len(faces) - 1, rest[2] if len(rest) > 2 else None))
+            continue
+        if winding([(x, z) for x, _, z in world]) > 0:
+            world = world[::-1]
+            if diag is not None:
+                diag = tuple(len(world) - 1 - k for k in diag)
+        world = _drop_straight(world)
+        pieces = _triangulate(world)
+        for piece in pieces:
+            faces.append((piece, surface, diag if len(pieces) == 1 else None))
+    nbs = find_neighbours([[(x, z) for x, _, z in w] for w, _, _ in faces])
+    for i, keep in links:
+        for k, pos in enumerate(keep or ()):
+            if pos is not None and k < len(nbs[i]):
+                nbs[i][k] = None if pos == -1 else first[pos]
+    out, quads = [], 0
+    for i, ((world, surface, diag), nb) in enumerate(zip(faces, nbs)):
+        if isinstance(diag, (bytes, bytearray)):
+            rec = bytearray(diag)
+            old_nb = struct.unpack_from("<4h", rec, 0x0C)
+            full = list(nb) + [None] * (4 - len(nb))
+            vals = [-0x7FFF if v is None else v - i for v in full]
+            if len(nb) == 3:
+                vals[3] = old_nb[3]          # triangles: the unused 4th stays as it was
+            struct.pack_into("<4h", rec, 0x0C, *vals)
+            rec[4] = surface & 0xFF
+            out.append(bytes(rec))
+            quads += len(world) == 4
+            continue
+        cx = sum(p[0] for p in world) / len(world)
+        cz = sum(p[2] for p in world) / len(world)
+        f = Face(i, round(cx * 32), 0, surface, round(cz * 32), list(nb) + [None] * (4 - len(nb)),
+                 None, [], None, None, NO_SPLIT)
+        split = None
+        if len(world) == 4 and _flatness(world) > flat:
+            if diag is None:
+                d02 = math.dist(world[0], world[2])
+                d13 = math.dist(world[1], world[3])
+                diag = (0, 2) if d02 <= d13 else (1, 3)
+            split = tuple(sorted(diag))
+        out.append(encode_face(trig, f, world, split))
+        quads += len(world) == 4
+    return out, quads
+
+
+def replace_surface(sdf, trig, records, quads):
+    """Write a new face array + header at the end of the file and point root
+    5 at it (nothing else refers to the collision data); the lookup grid,
+    if the level has one, keeps its place and is recomputed."""
+    old = sdf.roots[ROOT_COLLISION]
+    head = bytearray(sdf.data[old:old + 0x28])
+    struct.pack_into("<hh", head, 0, len(records), quads)
+    struct.pack_into("<4I", head, 8, 0, 0, 0, 0)
+    blob = b"".join(records)
+    faces_at = sdf.append(blob + bytes(head))
+    hdr = faces_at + len(blob)
+    sdf.set_pointer(hdr + 4, faces_at)
+    grid = struct.unpack_from("<I", sdf.data, old + 0x24)[0]
+    if grid:
+        sdf.set_pointer(hdr + 0x24, grid)
+    sdf.roots[ROOT_COLLISION] = hdr
+    if grid:
+        rebuild_grid(sdf, trig)
+    return hdr

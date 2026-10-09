@@ -217,17 +217,30 @@ def build_collision(name, faces, s):
 
 
 def collision_faces(ob, s):
-    """Blender collision object -> [scene.CollisionFace] in game units."""
+    """Blender collision object -> [scene.CollisionFace] in game units. Faces
+    without an original index (added, or a copy of one made by extruding /
+    duplicating: Blender copies face attributes) get index None; the surface
+    type comes from the face's material (..._surface_N), else psx_surface."""
+    import re
     me = ob.data
-    idx = [0] * len(me.polygons)
+    n = len(me.polygons)
+    idx, surf = [0] * n, [0] * n
     me.attributes["psx_coll"].data.foreach_get("value", idx)
+    if "psx_surface" in me.attributes:
+        me.attributes["psx_surface"].data.foreach_get("value", surf)
+    mat_surface = {}
+    for k, m in enumerate(me.materials):
+        hit = re.search(r"_surface_(\d+)$", m.name) if m else None
+        if hit:
+            mat_surface[k] = int(hit.group(1))
+    seen = set()
     out = []
     for k, p in enumerate(me.polygons):
-        if idx[k] <= 0:
-            raise ValueError("collision: faces can't be added (only moved)")
         corners = [to_game_float(ob.matrix_world @ me.vertices[me.loops[l].vertex_index].co, s)
                    for l in p.loop_indices]
-        out.append(sc.CollisionFace(idx[k] - 1, corners, 0))
+        index = idx[k] - 1 if idx[k] > 0 and idx[k] not in seen else None
+        seen.add(idx[k])
+        out.append(sc.CollisionFace(index, corners, mat_surface.get(p.material_index, surf[k])))
     return out
 
 

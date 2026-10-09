@@ -165,8 +165,9 @@ LANGIMG = None
 
 def read_collision(sdf):
     out = []
-    for f in sdf_collision.read(sdf):
-        poly = sdf_collision.world_polygon(trig(), f)
+    faces = sdf_collision.read(sdf)
+    for f in faces:
+        poly = sdf_collision.world_polygon(trig(), f, faces)
         if poly:
             out.append(CollisionFace(f.index, poly, f.surface))
     return out
@@ -270,16 +271,20 @@ def write_objects(sdf, old, new):
 def write_collision(sdf, old, new, tolerance=2.5):
     """Re-encode the collision faces whose corners moved by more than
     `tolerance` game units (Blender welds corners within 1-2 units, so
-    smaller moves are noise); returns the count."""
+    smaller moves are noise); returns the count. If faces were added or
+    removed, or one changed its corner count or surface type, the whole
+    surface is rebuilt instead (see rebuild_collision)."""
     faces = {f.index: f for f in sdf_collision.read(sdf)}
     before = {c.index: c for c in old}
+    if (len(new) != len(old) or any(c.index not in before for c in new)
+            or any(len(c.corners) != len(before[c.index].corners) or c.surface != before[c.index].surface
+                   for c in new)):
+        return rebuild_collision(sdf, faces, new)
     base = sdf.u32(sdf.roots[sdf_collision.ROOT_COLLISION] + 4)
     data = bytearray(sdf.data)
     changed = 0
     for c in new:
         o = before[c.index]
-        if len(c.corners) != len(o.corners):
-            raise ValueError(f"collision face {c.index}: corner count changed")
         if all(abs(a - b) <= tolerance for p, q in zip(c.corners, o.corners) for a, b in zip(p, q)):
             continue
         rec = sdf_collision.encode_face(trig(), faces[c.index], c.corners)
@@ -290,6 +295,35 @@ def write_collision(sdf, old, new, tolerance=2.5):
     if changed:
         sdf_collision.rebuild_grid(sdf, trig())  # levels with a lookup grid
     return changed
+
+
+def rebuild_collision(sdf, faces, new):
+    """New collision surface from [CollisionFace] (index None = new face):
+    neighbours / walls from the edges, kept faces fold along their original
+    diagonal; written at the end of the file (sdf_collision.replace_surface).
+    Returns the face count, negative to tell it apart from a re-encode."""
+    before = {c.index: c for c in read_collision(sdf)}
+    unchanged = {}
+    for pos, c in enumerate(new):
+        o = before.get(c.index)
+        if c.index in faces and o is not None and len(o.corners) == len(c.corners) and \
+                all(abs(a - b) <= 2.5 for p, q in zip(c.corners, o.corners) for a, b in zip(p, q)):
+            unchanged[c.index] = pos
+    polys = []
+    for c in new:
+        f = faces.get(c.index)
+        if c.index in unchanged:
+            # unchanged: keep its record and its links to other unchanged faces
+            keep = [-1 if j is None else unchanged.get(j) for j in f.neighbours[:len(f.edges)]]
+            polys.append((before[c.index].corners, c.surface, None, f.raw, keep))
+            continue
+        diag = None
+        if f is not None and f.split is not None and len(c.corners) == 4 and not f.is_triangle:
+            diag = tuple(sdf_collision.split_corners(trig(), f)[0])
+        polys.append((c.corners, c.surface, diag))
+    records, quads = sdf_collision.build_surface(trig(), polys)
+    sdf_collision.replace_surface(sdf, trig(), records, quads)
+    return -len(records)
 
 
 def save(base, out, items=None, ground=None, objects=None, collision=None, track=None, rider=None):
@@ -322,7 +356,9 @@ def save(base, out, items=None, ground=None, objects=None, collision=None, track
             log.append(f"objects: {n} placements changed")
     if collision is not None and old.collision is not None:
         n = write_collision(sdf, old.collision, collision)
-        if n:
+        if n < 0:
+            log.append(f"collision: new surface, {-n} faces (was {len(old.collision)})")
+        elif n:
             log.append(f"collision: {n} faces re-encoded")
     if rider:
         import sdf_rig
@@ -613,7 +649,8 @@ def variant_edits(old_base, old_v, items, ground, objects, collision, track):
         same = [c.corners for c in old_v.collision] == [c.corners for c in old_base.collision]
         if same:
             v_collision = collision
-        elif any(n.corners != o.corners for n, o in zip(collision, old_base.collision)):
+        elif len(collision) != len(old_base.collision) or \
+                any(n.corners != o.corners for n, o in zip(collision, old_base.collision)):
             skipped.append("collision")
     v_track = None
     if track is not None and old_v.track is not None:
