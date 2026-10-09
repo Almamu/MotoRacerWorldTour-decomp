@@ -402,7 +402,7 @@ int func_80013764(SndEmitter *e, int dt);
 int func_800A60AC(const char *a, const char *b); /* strcmp */
 extern char D_800C48E0[];                        /* "Unknow Id" */
 extern char D_800C48EC[];                        /* "Null Id" */
-void func_8001355C(SndEmitter *e, SndVector *pos, SndVector *dir);
+int func_8001355C(SndEmitter *e, SndVector *pos, SndVector *dir);
 void func_8001363C(SndEmitter *e, SndVector *pos, SndVector *dir, int dt);
 
 #ifdef __cplusplus

@@ -1025,8 +1025,9 @@ void func_80013554(SndListener *l) {
 }
 
 /* An emitter's volume by where the listener faces and where the emitter
- * points: 0x1000 straight on. */
-void func_8001355C(SndEmitter *e, SndVector *pos, SndVector *dir) {
+ * points: 0x1000 straight on. It has no return statement: callers read
+ * the volume it leaves in $v0 (func_80013764). */
+int func_8001355C(SndEmitter *e, SndVector *pos, SndVector *dir) {
     SndVector v;
     SndVector *facing;
     int a, b;

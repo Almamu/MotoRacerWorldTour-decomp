@@ -2,7 +2,124 @@
 #include "psyq.h"
 #include "sound.h"
 
+#ifdef NON_MATCHING
+/* Equivalent; registers only: the original forms the note's address in
+ * $v0 when clearing its 0xC00 flags */
+/* An emitter's frame: (re)starts its sound, places it, and returns 1
+ * once it's done. */
+int func_80013764(SndEmitter *e, int dt) {
+    int done = 0;
+    u32 flags = e->flags;
+    int unkA = e->unk28;
+
+    if ((flags & 0x1040) == 0x40) {
+        e->unk0 = func_800133A0(e->unkE);
+    }
+    if ((flags & 0x400004) == 0x400004) {
+        u32 h = e->unk0;
+
+        if (!(flags & 2)) {
+            if (!func_80013348(h)) {
+                h = -1;
+            }
+            if (h == -1) {
+                h = func_800133A0(e->unkE);
+                if (h == -1) {
+                    goto store;
+                }
+            }
+            flags |= 0x100;
+            unkA = *(u16 *)(D_800C4744 + e->unkE * 44 + 6);
+        store:
+            e->unk0 = h;
+        }
+    }
+    if (!(flags & 0x40) && (flags & 0x104) != 0x104) {
+        goto tail;
+    }
+    if (flags & 0x10000) {
+        *(u16 *)(D_800C4744 + e->unkE * 44 + 4) |= 0x400;
+    }
+    if (flags & 0x20000) {
+        *(u16 *)(D_800C4744 + e->unkE * 44 + 4) |= 0x800;
+        func_80013098(e->link->unk0);
+    }
+    D_800C473E = (flags >> 19) & 1;
+    D_800C473D = (flags >> 20) & 1;
+    if (flags & 8) {
+        if (!(flags & 0x1000)) {
+            SndVector pos;
+            SndVector dir;
+            int pitch = e->unk24;
+            int flag;
+            int pan;
+
+            func_8001363C(e, &pos, &dir, dt);
+            flag = 0;
+            pitch = func_8001355C(e, &pos, &dir) * pitch >> 12;
+            pan = e->unk16;
+            D_800C471C = pan != 0x40;
+            D_800C4720 = pan;
+            if (flags & 0x8000) {
+                int near = e->unk34;
+                int far = e->unk38;
+
+                D_800C470C = near;
+                D_800C4710 = far;
+            }
+            if (flags & 0x200000) {
+                flag = 0x200;
+            }
+            func_80012C18(e->unk0, e->unk1A, pitch, &e->listener->unk8, &pos, e->listener->angle,
+                          unkA, flag);
+            flags &= ~0x40;
+            D_800C470C = D_800C4714;
+            D_800C4710 = D_800C4718;
+            e->unk28 = -1;
+            if (!(flags & 0x800)) {
+                flags &= ~0x100;
+            }
+        }
+        if (flags & 0x800) {
+            CopyVector(&e->unk44, e->unk3C);
+        }
+    } else {
+        func_80012D38(e->unk0, e->unk1A, e->unk16, e->unk24, unkA);
+        flags &= ~0x140;
+        e->unk28 = -1;
+    }
+    flags |= 4;
+    if (flags & 0x30000) {
+        u16 *nf = (u16 *)(D_800C4744 + e->unkE * 44 + 4);
+        u16 f = *nf;
+
+        D_800C4724 = -1;
+        *nf = f & ~0xC00;
+    }
+    e->unk1A += (e->unk14 - e->unk1A) / 2;
+tail:
+    if (func_800130CC(e->unk0) || (flags & 0x1000)) {
+        flags |= 2;
+    } else {
+        flags &= ~2;
+    }
+    if (flags & 0x80) {
+        flags |= 0x2000;
+        func_80012F40(e->unk0);
+        flags &= ~0x400080;
+    }
+    if (!(flags & 0x400002)) {
+        flags &= ~0x2184;
+        e->unk0 = -1;
+        done = 1;
+    }
+    flags &= ~0x1000;
+    e->flags = flags;
+    return done;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_01", func_80013764);
+#endif
 
 void func_80013BA0(SndEmitter *e, int v) {
     if (e->flags & 0x4000) {
