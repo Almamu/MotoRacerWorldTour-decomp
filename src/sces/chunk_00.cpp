@@ -6,9 +6,82 @@ INCLUDE_ASM("asm/sces/nonmatchings/chunk_00", func_80133334);
 
 INCLUDE_ASM("asm/sces/nonmatchings/chunk_00", func_80133AE4);
 
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_00", func_80133CCC);
+/* DecDCTout's callback: sends the decoded slice to VRAM and starts the next
+ * one, or flips the frame buffers when the frame is done. */
+void strCallback(void) {
+    if (D_801C646C) {
+        StCdInterrupt();
+        D_801C646C = 0;
+    }
+    DrawSync(0);
+    LoadImage(&D_8014D22C.slice, (u_long *)D_8014D22C.imgbuf);
+    DrawSync(0);
+    D_8014D22C.slice.x += D_8014D22C.slice.w;
+    if (D_8014D22C.slice.x < D_8014D22C.rect[D_8014D22C.rectid].x + D_8014D22C.rect[D_8014D22C.rectid].w) {
+        DecDCTout((u_long *)D_8014D22C.imgbuf, D_8014D22C.slice.w * D_8014D22C.slice.h / 2);
+    } else {
+        D_8014D22C.isdone = 1;
+        D_8014D22C.rectid ^= 1;
+        D_8014D22C.slice.x = D_8014D22C.rect[D_8014D22C.rectid].x;
+        D_8014D22C.slice.y = D_8014D22C.rect[D_8014D22C.rectid].y;
+    }
+}
 
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_00", func_80133DD0);
+/* The next frame from the ring buffer, or 0. Also tracks the frame number,
+ * flags the end of the movie, fades the CD audio out near it, and centres
+ * the picture when its size changes. */
+u_long *strNext(DECENV *dec) {
+    u_long *addr;
+    StHEADER *sector;
+    int cnt = 100000;
+    u_long max;
+
+    while (StGetNext(&addr, (u_long **)&sector)) {
+        if (--cnt == 0) {
+            return 0;
+        }
+    }
+    max = D_8014D0E4;
+    if (max < sector->frameCount) {
+        max = sector->frameCount;
+    }
+    D_8014D0E4 = max;
+    D_8014D0D4 = sector->frameCount;
+    if (D_8014D350[D_8014D358].unk10 == 1) {
+        if (sector->frameCount >= D_8014D354 - 5) {
+            D_8014D340 = 1;
+        }
+    } else {
+        if (sector->frameCount >= D_8014D354 - 5) {
+            D_8014D340 = 1;
+        }
+        if (sector->frameCount >= D_8014D354 - 11) {
+            D_8014D34C -= 0xCC000;
+            SsSetSerialVol(0, (D_8014D34C * 2) >> 16, (D_8014D34C * 2) >> 16);
+        }
+    }
+    if (sector->type != 0x8001) {
+        printf("Not Str Header %04x %04x\n", sector->id, sector->type);
+        StFreeRing(addr);
+        return 0;
+    }
+    if (addr[0] != sector->headm || addr[1] != sector->headv) {
+        printf("header is wrong!\n");
+        return 0;
+    }
+    if (D_8014D0C8 != sector->width || D_8014D0CC != sector->height) {
+        D_8014D0C8 = sector->width;
+        D_8014D0CC = sector->height;
+        dec->rect[0].x = D_8014D288[0].ofs[0] + (D_8014D288[0].clip.w * 3 / 2 >> 1) - (D_8014D0C8 * 3 / 2 >> 1);
+        dec->rect[0].y = D_8014D288[0].ofs[1] + (D_8014D288[0].clip.h >> 1) - (D_8014D0CC >> 1);
+        dec->rect[1].x = D_8014D288[1].ofs[0] + (D_8014D288[1].clip.w * 3 / 2 >> 1) - (D_8014D0C8 * 3 / 2 >> 1);
+        dec->rect[1].y = D_8014D288[1].ofs[1] + (D_8014D288[1].clip.h >> 1) - (D_8014D0CC >> 1);
+    }
+    dec->rect[0].w = dec->rect[1].w = D_8014D0C8 * 3 / 2;
+    dec->rect[0].h = dec->rect[1].h = D_8014D0CC;
+    dec->slice.h = D_8014D0CC;
+    return addr;
+}
 
 /* Starts streaming: XA filter on file 1 channel 1, seek, then read at
  * double speed (mode 1: 0x168) or with the ADPCM bit too (0x1E8). */
@@ -51,7 +124,7 @@ int strNextVlc(DECENV *dec) {
     int cnt = 100000;
     u_long *next;
 
-    while ((next = func_80133DD0(dec)) == 0) {
+    while ((next = strNext(dec)) == 0) {
         if (--cnt == 0) {
             return -1;
         }
@@ -107,9 +180,17 @@ void func_801343A0(int id) {
     PutDrawEnv(&D_8014D288[id ^ 1]);
 }
 
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_00", func_80134404);
+void func_80134404(int *key) {
+    if (*key == 0xFF) {
+        D_8014D0F4 = 1;
+    }
+}
 
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_00", func_80134424);
+void func_80134424(int *key) {
+    if (*key == 0xFF) {
+        D_8014D0F0 = 1;
+    }
+}
 
 INCLUDE_ASM("asm/sces/nonmatchings/chunk_00", func_80134444);
 

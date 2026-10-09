@@ -322,7 +322,7 @@ glabel func_80133334
     /* B18 8013364C C9D0040C */  jal        strSetDefDecEnv
     /* B1C 80133650 1800A2AF */   sw        $v0, 0x18($sp)
     /* B20 80133654 21202002 */  addu       $a0, $s1, $zero
-    /* B24 80133658 1380063C */  lui        $a2, %hi(func_80133CCC)
+    /* B24 80133658 1380063C */  lui        $a2, %hi(strCallback)
     /* B28 8013365C 54D3E58E */  lw         $a1, %lo(D_8014D354)($s7)
     /* B2C 80133660 F008AB8F */  lw         $t3, 0x8F0($sp)
     /* B30 80133664 50D3C28E */  lw         $v0, %lo(D_8014D350)($s6)
@@ -331,7 +331,7 @@ glabel func_80133334
     /* B3C 80133670 21104202 */  addu       $v0, $s2, $v0
     /* B40 80133674 1000478C */  lw         $a3, 0x10($v0)
     /* B44 80133678 A6D0040C */  jal        strInit
-    /* B48 8013367C CC3CC624 */   addiu     $a2, $a2, %lo(func_80133CCC)
+    /* B48 8013367C CC3CC624 */   addiu     $a2, $a2, %lo(strCallback)
     /* B4C 80133680 21206002 */  addu       $a0, $s3, $zero
     /* B50 80133684 15800B3C */  lui        $t3, %hi(D_8014D0D4)
     /* B54 80133688 D0D0C0AF */  sw         $zero, %lo(D_8014D0D0)($fp)

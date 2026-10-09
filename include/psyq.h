@@ -71,6 +71,8 @@ int CdRead2(long mode);
 CdlFILE *CdSearchFile(CdlFILE *fp, char *name);
 int CdPosToInt(CdlLOC *p);
 CdlLOC *CdIntToPos(int i, CdlLOC *p);
+void StCdInterrupt(void);
+int StGetNext(u_long **addr, u_long **header);
 
 /* libcd streaming */
 void StSetRing(u_long *ring_addr, u_long ring_size);
@@ -85,6 +87,7 @@ int DrawSync(int mode);
 int DrawSyncCallback(void (*f)());
 int ClearImage(RECT *rect, u_char r, u_char g, u_char b);
 int MoveImage(RECT *rect, int x, int y);
+int LoadImage(RECT *rect, u_long *p);
 
 /* libsnd */
 short SsUtKeyOn(short vabId, short prog, short tone, short note, short fine,
@@ -93,6 +96,7 @@ void SsSetMVol(short voll, short volr);
 void SsVabClose(short vab_id);
 void SsEnd(void);
 void SsQuit(void);
+void SsSetSerialVol(short s_num, short voll, short volr);
 void SsUtReverbOn(void);
 void SsUtReverbOff(void);
 void SsUtSetReverbType(short type);
@@ -105,6 +109,7 @@ long SpuClearReverbWorkArea(long rev_mode);
 
 /* libpress */
 void DecDCToutCallback(void (*func)());
+void DecDCTout(u_long *buf, int size);
 
 #ifdef __cplusplus
 }
