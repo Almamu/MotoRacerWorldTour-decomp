@@ -41,7 +41,8 @@ langimg_CFLAGS := -mno-split-addresses
 sces_CFLAGS    := -fsigned-char
 
 # Libraries (lib/<name>/<target>/, docs/libraries.md) built with another
-# compiler or flags than the rest of their target: LIB_<name>_GCC and
+# compiler or flags than the rest of their target (a setting that's set,
+# even to nothing, replaces the target's): LIB_<name>_GCC and
 # LIB_<name>_CFLAGS, and maspsx's flags from LIB_<name>_MASPSXFLAGS. The
 # game's sound engine is GCC 2.91.66's, its divisions without checks.
 LIBS             := $(notdir $(wildcard lib/*))
@@ -202,8 +203,8 @@ $(BUILD)/$(1)/%.o: %.c $(call gcc_dir,$($(1)_GCC))/cc1 $(FLAGS_STAMP)
 endef
 $(foreach t,$(TARGETS),$(eval $(call target_rules,$(t))))
 $(foreach t,$(TARGETS),$(foreach l,$(LIBS),\
-  $(if $(LIB_$(l)_GCC),$(eval $(BUILD)/$(t)/lib/$(l)/%.o: OBJ_GCC = $(LIB_$(l)_GCC)))\
-  $(if $(LIB_$(l)_CFLAGS),$(eval $(BUILD)/$(t)/lib/$(l)/%.o: OBJ_CFLAGS = $(LIB_$(l)_CFLAGS)))\
-  $(if $(LIB_$(l)_MASPSXFLAGS),$(eval $(BUILD)/$(t)/lib/$(l)/%.o: OBJ_MASPSXFLAGS = $(LIB_$(l)_MASPSXFLAGS)))))
+  $(if $(filter-out undefined,$(origin LIB_$(l)_GCC)),$(eval $(BUILD)/$(t)/lib/$(l)/%.o: OBJ_GCC = $(LIB_$(l)_GCC)))\
+  $(if $(filter-out undefined,$(origin LIB_$(l)_CFLAGS)),$(eval $(BUILD)/$(t)/lib/$(l)/%.o: OBJ_CFLAGS = $(LIB_$(l)_CFLAGS)))\
+  $(if $(filter-out undefined,$(origin LIB_$(l)_MASPSXFLAGS)),$(eval $(BUILD)/$(t)/lib/$(l)/%.o: OBJ_MASPSXFLAGS = $(LIB_$(l)_MASPSXFLAGS)))))
 
 -include $(shell find $(BUILD) -name '*.d' 2>/dev/null)

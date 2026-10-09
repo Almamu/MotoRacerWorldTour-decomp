@@ -16,7 +16,9 @@ Takes maspsx's arguments, and these:
 - --div-no-checks: a division GCC leaves to the assembler (`div $d,$a,$b`,
   also divu, rem and remu) becomes the bare instruction and a move from
   LO (or HI), without the divide-by-zero and overflow checks ASPSX 2.79
-  adds (what --expand-div emulates). The game's sound engine was
+  adds (what --expand-div emulates), and a nop before the next
+  instruction that reads the result, even past a label: that assembler
+  gave mflo a delay slot like a load's. The game's sound engine was
   assembled that way (docs/libraries.md).
 
 docs/matching_techniques.md, "Small globals" and "Divisions".
@@ -68,12 +70,41 @@ def div_no_checks(line):
         return line
     ind, op, d, a, b = m.groups()
     move = "mfhi" if op.startswith("rem") else "mflo"
-    return f"{ind}{op.replace('rem', 'div')}\t$0,{a},{b}\n{ind}{move}\t{d}\n"
+    return f"{ind}{op.replace('rem', 'div')}\t$0,{a},{b}\n{ind}{move}\t{d}\t# DIV_NO_CHECKS\n"
+
+
+def reads(line, reg):
+    """Whether an instruction line reads reg (any operand but the first,
+    or a branch's or store's first)."""
+    parts = line.split(None, 1)
+    if len(parts) < 2:
+        return False
+    op, args = parts[0], [a.strip() for a in parts[1].split("#")[0].split(",")]
+    sources = args if op.startswith(("b", "s", "j")) else args[1:]
+    return any(re.search(rf"(^|[(,]){re.escape(reg)}($|[),])", a) for a in sources)
+
+
+def mflo_delay(lines):
+    """A nop before the first instruction after an inserted mflo/mfhi that
+    reads its register, labels and directives in between notwithstanding."""
+    out, pending = [], None
+    for line in lines:
+        st = line.strip()
+        if pending and st and not st.endswith(":") and not st.startswith((".", "#")):
+            if reads(st, pending):
+                out.append("\tnop\n")
+            pending = None
+        out.append(line)
+        m = re.match(r"\s*(mflo|mfhi)\t(\$\w+)\s*# DIV_NO_CHECKS", line)
+        if m:
+            pending = m.group(2)
+    return out
 
 
 if "--div-no-checks" in sys.argv:
     sys.argv.remove("--div-no-checks")
-    sys.stdin = io.StringIO("".join(div_no_checks(l) for l in sys.stdin))
+    text = "".join(div_no_checks(l) for l in sys.stdin)
+    sys.stdin = io.StringIO("".join(mflo_delay(text.splitlines(keepends=True))))
 
 sys.argv[0] = str(Path(__file__).resolve().parent / "maspsx" / "maspsx.py")
 runpy.run_path(sys.argv[0], run_name="__main__")

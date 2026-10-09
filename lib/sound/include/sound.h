@@ -36,6 +36,33 @@ typedef struct {
     u8 unkB[9];
 } SoundSlot;
 
+/* The sound bank's directory (D_800C472C) */
+typedef struct {
+    char name[0x20];
+    int value;
+} DirEntry;
+
+typedef struct {
+    int name; /* 4 letters, upper case */
+    u8 unk4[0x1C];
+} DirName;
+
+typedef struct {
+    u8 unk0;
+    s8 unk1;
+    u8 unk2[0xE];
+} DirRecord;
+
+typedef struct {
+    int unk0;
+    u32 count; /* entries */
+    int nNames;
+    int unkC;
+    DirEntry *entries;
+    DirName *names;
+    u8 *records; /* a header, then a DirRecord per name */
+} Dir;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -48,6 +75,11 @@ void SpuSetReverbModeDepth(short depth_left, short depth_right);
 long SpuClearReverbWorkArea(long mode);
 void SpuGetAllKeysStatus(char *status);
 void SpuQuit(void);
+void SpuInit(void);
+void SpuSetCommonMasterVolume(short left, short right);
+void SpuSetCommonCDMix(long cd_mix);
+void *memset(void *p, int c, size_t n);
+char *strncpy(char *dst, const char *src, size_t n);
 int VSync(int mode);
 void free(void *p);
 
@@ -66,13 +98,21 @@ extern void *D_800C46F0; /* a block to free at shutdown */
 extern s8 D_800C473D;
 extern s8 D_800C473E;
 extern int D_800C4740;
-extern int D_800C470C;     /* distance where the volume starts to fall */
-extern int D_800C4710;     /* and where it reaches 0 */
-extern u8 D_800C4850[128]; /* volume by distance */
-extern int D_800C4708;     /* the master volume */
-extern s8 D_800C9F58[24];  /* each voice's last key status */
-extern int D_800CA0F0;     /* voices playing */
+extern int D_800C470C;    /* distance where the volume starts to fall */
+extern int D_800C4710;    /* and where it reaches 0 */
+extern u8 D_800C4850[];   /* volume by distance (128) */
+extern int D_800C4708;    /* the master volume */
+extern s8 D_800C9F58[24]; /* each voice's last key status */
+extern int D_800CA0F0;    /* voices playing */
 extern SoundSlot D_800CA0F8[30];
+extern int D_800C9F50; /* voices reserved (func_800118C4) */
+extern int D_800C9F4C; /* the next sound's serial number */
+extern int D_800C4714;
+extern int D_800C4718;
+extern int D_800C471C;
+extern int D_800C4720;
+extern Dir *D_800C472C; /* the sound bank's directory */
+extern u8 *D_800C4744;  /* the bank's note records, 44 bytes each */
 extern Voice D_800C9F70[24];
 
 void func_80011820(int unused, s8 left, s8 right);
@@ -85,6 +125,15 @@ int func_80011E08(void);
 int func_80011F84(void);
 void func_80011960(void);
 void func_80011DA8(int type, int depth);
+int func_80011C5C(int nearDist, int farDist, int reserved);
+void func_80011D10(void);
+int func_80011FCC(const char *name, DirEntry *entry);
+int func_80012080(const char *name);
+void func_80012120(const char *name, int value);
+u32 func_80012FEC(int first);
+int func_80013108(int a);
+int func_800133A0(int id);
+void func_800A638C(char *s);
 u8 func_800128E8(int dist);
 void func_80012504(int a, int b, int c, int left, int right);
 void func_80012A88(int a, int vol, int pan, int c, int d);
