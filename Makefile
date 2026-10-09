@@ -67,7 +67,10 @@ langimg.chunk_02b_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=D
 langimg.chunk_03_GCC  := 2.91.66-psx
 langimg.chunk_03_CFLAGS :=
 langimg.chunk_03_MASPSXFLAGS = $(MASPSXFLAGS) --small-externs=D_800C4988,D_800CA778
-CHUNK_SETTINGS := langimg.chunk_01 langimg.chunk_02 langimg.chunk_02b langimg.chunk_03
+langimg.chunk_04_GCC  := 2.91.66-psx
+langimg.chunk_04_CFLAGS :=
+langimg.chunk_04_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=
+CHUNK_SETTINGS := langimg.chunk_01 langimg.chunk_02 langimg.chunk_02b langimg.chunk_03 langimg.chunk_04
 
 # -O2; the C++ has no exceptions and no RTTI.
 CC1FLAGS    := -O2 -quiet
