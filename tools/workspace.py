@@ -19,12 +19,15 @@ unpack creates:
       <entry>.menu.json for menu / end scenes and levels (in-game menu):
                     variable defaults, page lists, scripts, page links
                                                     (tools/menu_script.py)
+      cine/<NAME>.mp4  the movies (CINE/*.DPS); replace with any video
+                    ffmpeg reads (scaled and resampled to the original's
+                    size and rate, any length)       (tools/dps.py)
   <ws>/workspace.json  checksums of everything above
 
 repack converts every asset that was edited back into its MR3.DAT entry
 (textures and fonts are palette-mapped, loading screens re-encoded no
 larger than the original, samples ADPCM-encoded, strings appended, meshes
-and placements written back or replaced), packs
+and placements written back or replaced, movies MDEC/XA-encoded), packs
 MR3.DAT (unchanged entries are copied byte for byte) and writes a new data
 track. Entries under <ws>/mr3dat can also be replaced directly. With no edits
 the output track is identical to the input.
@@ -93,6 +96,9 @@ def unpack(track, ws):
             if not e["file"].lower().split("/")[-1].startswith("db_"):
                 run("menu_script.py", "export", src, Path(str(dst) + ".menu.json"))
     share_sprites(assets)
+    for movie in movies(ws):
+        (assets / "cine").mkdir(exist_ok=True)
+        run("dps.py", movie, assets / "cine" / f"{movie.stem}.mp4")
     state = {"assets": tree_hashes(assets), "mr3dat": tree_hashes(ws / "mr3dat")}
     (ws / "workspace.json").write_text(json.dumps(state, indent=1))
     print(f"unpacked into {ws}")
@@ -152,6 +158,10 @@ def unshare_sprites(assets, now, before):
     return touched
 
 
+def movies(ws):
+    return sorted((ws / "disc" / "CINE").glob("*.DPS"))
+
+
 def changed_under(prefix, now, before):
     return any(k.startswith(prefix) and before.get(k) != v for k, v in now.items())
 
@@ -192,8 +202,16 @@ def repack(ws, out_track):
         print(f"rebuilt {e['file']}")
     build = ws / "build"
     build.mkdir(exist_ok=True)
+    replace = ["MR3.DAT", build / "MR3.DAT"]
+    for movie in movies(ws):
+        key = f"cine/{movie.stem}.mp4"
+        if now.get(key) != state["assets"].get(key):
+            run("dps.py", "encode", assets / key, movie, build / movie.name)
+            replace += [f"CINE/{movie.name}", build / movie.name]
+            rebuilt += 1
+            print(f"rebuilt CINE/{movie.name}")
     run("mr3dat.py", "pack", ws / "mr3dat", build / "MR3.DAT", ws / "disc" / "MR3.DAT")
-    run("disc.py", "replace", ws / "original_track01.bin", out_track, "MR3.DAT", build / "MR3.DAT")
+    run("disc.py", "replace", ws / "original_track01.bin", out_track, *replace)
     print(f"{rebuilt} assets converted -> {out_track}")
 
 

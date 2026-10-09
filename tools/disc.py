@@ -2,15 +2,18 @@
 """Patch files in the raw MODE2/2352 data track of the disc.
 
   disc.py replace <track01.bin> <out.bin> <ISO path> <file> [<ISO path> <file> ...]
-      replace Form 1 files (e.g. MR3.DAT). A file that still fits in its
-      sectors is written in place; a bigger one is moved to the end of the
-      track (the directory record and the volume size are updated).
+      replace files (e.g. MR3.DAT). A file that still fits in its sectors
+      is written in place; a bigger one is moved to the end of the track
+      (the directory record and the volume size are updated). Files with
+      Form 2 / interleaved XA attributes (movies) are given as raw
+      2352-byte sectors, like tools/extract_iso.py writes them: their
+      subheaders are kept, the sectors re-addressed and EDC/ECC recomputed.
   disc.py verify <track01.bin>
       recompute EDC/ECC of every Form 1 sector and compare.
 
 Written sectors get a proper header (MSF address, mode 2), the XA subheader
 of a data sector (submode 0x08, 0x89 on the last sector of a file) and
-freshly computed EDC/ECC. Form 2 files (XA movies) are left untouched.
+freshly computed EDC/ECC.
 
 The other tracks are separate BIN files and don't move, so the CUE sheet
 stays valid when the data track grows.
@@ -96,6 +99,20 @@ def header(lba):
     return SYNC + bytes([bcd(a // 4500), bcd(a // 75 % 60), bcd(a % 75), 2])
 
 
+def raw_sectors(data, lba):
+    """Raw 2352-byte sectors (any mode 2 form) re-addressed to start at
+    `lba`, with EDC/ECC recomputed (Form 2: EDC over subheader and data)."""
+    buf = np.frombuffer(bytes(data), np.uint8).reshape(-1, SECTOR).copy()
+    for i in range(len(buf)):
+        buf[i, :16] = np.frombuffer(header(lba + i), np.uint8)
+    form2 = (buf[:, 18] & 0x20) != 0
+    if (~form2).any():
+        buf[~form2] = fix_form1(buf[~form2])
+    if form2.any():
+        buf[form2, 2348:2352] = edc(buf[form2, 16:2348]).view(np.uint8).reshape(-1, 4)
+    return buf
+
+
 def form1_sectors(data, lba):
     count = max(1, -(-len(data) // USER))
     buf = np.zeros((count, SECTOR), np.uint8)
@@ -179,12 +196,23 @@ class Track:
         sec[24:24 + USER] = np.frombuffer(bytes(user), np.uint8)
         self.write_sectors(lba, fix_form1(sec[None, :]))
 
+    def is_raw(self, rec_lba, rec_off):
+        """XA attributes say Form 2 or interleaved (stored as raw sectors)."""
+        rec = self.user(rec_lba)[rec_off:]
+        su = rec[33 + rec[32] + (rec[32] + 1) % 2:rec[0]]
+        return len(su) >= 14 and su[6:8] == b"XA" and bool(struct.unpack_from(">H", su, 4)[0] & 0x3000)
+
     def replace(self, path, data):
         name, rec_lba, rec_off, ext, size, is_dir = self.find(path)
         if is_dir:
             raise ValueError(f"{path} is a directory")
+        raw = self.is_raw(rec_lba, rec_off)
+        if raw and len(data) % SECTOR:
+            raise ValueError(f"{path} is an XA file: give it as raw {SECTOR}-byte sectors")
+        to_sectors = raw_sectors if raw else form1_sectors
         old_sectors = -(-size // USER)
-        new_sectors = -(-len(data) // USER)
+        new_sectors = len(data) // SECTOR if raw else -(-len(data) // USER)
+        length = new_sectors * USER if raw else len(data)  # raw: 2048 per sector
         if new_sectors <= old_sectors:
             lba = ext
         else:
@@ -194,20 +222,20 @@ class Track:
             lba = last
             gap = np.frombuffer(bytes(self.data[last * SECTOR:]), np.uint8).reshape(-1, SECTOR).copy()
             self.data = self.data[:last * SECTOR]
-            self.write_sectors(lba, form1_sectors(data, lba))
+            self.write_sectors(lba, to_sectors(data, lba))
             end = lba + new_sectors
             for i in range(tail):  # re-address the gap sectors after the file
                 gap[i, :16] = np.frombuffer(header(end + i), np.uint8)
             self.write_sectors(end, fix_form1(gap) if tail else gap)
             self.set_volume_size(self.sectors)
         if lba == ext:
-            self.write_sectors(lba, form1_sectors(data, lba))
+            self.write_sectors(lba, to_sectors(data, lba))
 
         def patch(user):
             struct.pack_into("<I", user, rec_off + 2, lba)
             struct.pack_into(">I", user, rec_off + 6, lba)
-            struct.pack_into("<I", user, rec_off + 10, len(data))
-            struct.pack_into(">I", user, rec_off + 14, len(data))
+            struct.pack_into("<I", user, rec_off + 10, length)
+            struct.pack_into(">I", user, rec_off + 14, length)
         self.rewrite_user(rec_lba, patch)
         return name, lba, new_sectors, lba != ext
 

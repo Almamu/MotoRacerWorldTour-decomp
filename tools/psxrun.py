@@ -139,8 +139,14 @@ class Psx:
                 return self._buttons
             return 1 if self._buttons >> ident & 1 else 0
 
+        def audio_batch(data, frames):
+            if self.audio is not None:
+                self.audio.append(C.string_at(data, frames * 4))
+            return frames
+
+        self.audio = None  # set to [] to collect the output (stereo s16 chunks; audio_samples())
         self._cbs = [ENV_CB(env), VIDEO_CB(video), AUDIO_CB(lambda l, r: None),
-                     AUDIO_BATCH_CB(lambda d, n: n), POLL_CB(lambda: None), INPUT_CB(input_state)]
+                     AUDIO_BATCH_CB(audio_batch), POLL_CB(lambda: None), INPUT_CB(input_state)]
         lib = self.lib
         lib.retro_set_environment(self._cbs[0])
         lib.retro_init()
@@ -171,6 +177,10 @@ class Psx:
             self.lib.retro_run()
             self.frame_count += 1
         self._buttons = 0
+
+    def audio_samples(self):
+        """Audio collected since `audio` was set to [] as (n, 2) int16 (44.1 kHz)."""
+        return np.frombuffer(b"".join(self.audio or []), "<i2").reshape(-1, 2)
 
     def save_state(self):
         n = self.lib.retro_serialize_size()

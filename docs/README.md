@@ -29,5 +29,5 @@ in hex. "VRAM" means the PS1 GPU's 1024x512 16-bit frame buffer.
 | `.Vrm`      | Textures and fonts done; one `DPAL` field unknown             |
 | `.snd`      | Done: names, sound definitions, samples, real sample rates; two definition bytes unknown |
 | `.sdf`      | Container, draw items, meshes, ground, collision, track gates, intro, demo, HUD, menu pages and the database decoded; a few roots open (see its Next steps) |
-| `.dps`      | Done (STR + header sector; converts with ffmpeg)              |
+| `.dps`      | Done (STR + header sector; MP4 export, MDEC v3 + XA encoder)  |
 | `.dxr`      | Done (relocatable module: the end-credits player)             |

@@ -46,9 +46,10 @@ What can be edited:
 | Menus (`Menu_N`, `EndM_N`, levels' in-game menu) | `<entry>.menu.json` | variable defaults (e.g. `Valid*` unlocks), `PAGELIST` page names, button page links, item/event/button scripts as expressions (recompiled; grown scripts are appended) |
 | Track gates, AI racing lines (`.sdf`) | Blender | gate position/direction/width; racing-line lane offsets, target speeds, flags |
 | Collision surface (`.sdf`) | Blender | corner moves re-encode the faces; "Snap Collision to Ground" after ground edits |
+| Movies (`CINE/*.DPS`) | MP4 (`assets/cine`) | any video ffmpeg reads: scaled to the original size and frame rate, MDEC and XA ADPCM encoded, any length (a longer one moves to the end of the track) |
 | Anything else in `MR3.DAT` | raw file | replace it under `ws/mr3dat` |
 
-Not supported yet: new draw items or objects, new sprites the game would have to be told to draw, movies (`.DPS`). Edits are tested in an emulator (`docs/testing.md`: Mednafen, a deterministic libretro runner and a regression suite); not yet on hardware.
+Not supported yet: new draw items or objects, new sprites the game would have to be told to draw. Edits are tested in an emulator (`docs/testing.md`: Mednafen, a deterministic libretro runner and a regression suite); not yet on hardware.
 
 ## Tools
 
@@ -70,6 +71,7 @@ python3 tools/bs.py extracted/mr3dat/data/final/*.bs extracted/bs            # l
 python3 tools/snd.py extracted/mr3dat/data/sounds/menu.snd extracted/snd/menu # sound bank -> WAV
 python3 tools/sdf.py extracted/mr3dat/data/final/Tri_PS.sdf                     # scene/level summary
 python3 tools/dps.py extracted/disc/CINE/INTRO.DPS extracted/cine/INTRO.mp4      # movie -> MP4
+python3 tools/dps.py encode my.mp4 extracted/disc/CINE/INTRO.DPS build/INTRO.DPS # video -> movie
 python3 tools/sdf_mesh.py extracted/mr3dat/data/final/Usa_PS.sdf extracted/sdf/Usa \
     --vrm extracted/mr3dat/data/final/Usa.Vrm                                  # level -> textured OBJ
 ```
@@ -90,7 +92,7 @@ python3 tools/sdf_mesh.py extracted/mr3dat/data/final/Usa_PS.sdf extracted/sdf/U
 | `sdf_rig.py`           | level `.sdf`      | rider rig (root 9): skeleton, posed OBJ export, vertex/pose write-back |
 | `menu_script.py`       | menu / level `.sdf` | pages, page lists and decompiled widget scripts (menu flow, unlocks) |
 | `sdf_mesh.py`          | level `.sdf` (+`.Vrm`) | textured OBJ: ground, draw items, placed objects |
-| `dps.py`               | `.DPS`            | MP4 (via ffmpeg, correct frame rate)           |
+| `dps.py`               | `.DPS` ⇄ video    | MP4 (via ffmpeg, correct frame rate); encode any video back |
 | `dxr.py`               | `.dxr`            | code relocated to a fixed base (for Ghidra)    |
 | `ghidra/`              | `LANGIMG.DAT`     | headless decompilation, see `docs/ghidra.md`   |
 | `blender/`             | `.sdf` ⇄ Blender  | add-on: import levels/scenes with textures, export edits; see `docs/blender.md` |

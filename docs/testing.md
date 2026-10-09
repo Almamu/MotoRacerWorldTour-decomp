@@ -72,6 +72,9 @@ for frames, button in [(900, None), (10, "start"), (250, None), (10, "start"),
     psx.run(frames, [button] if button else [])
 # frame 2970: Sachsenring race loaded (arcade, default options)
 state = psx.save_state()
+psx.audio = []                       # collect the sound output from here on
+psx.run(400)
+pcm = psx.audio_samples()            # (n, 2) int16, 44.1 kHz
 ```
 
 Useful addresses on that path (European version, Sachsenring):
