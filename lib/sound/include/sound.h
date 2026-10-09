@@ -25,9 +25,25 @@ typedef struct {
 /* A tone of a VAB (Sony's VagAtr, 32 bytes): the tones follow the VAB's
  * header and its 128 programs, 16 to a program */
 typedef struct {
-    u8 unk0[0xC];
-    u16 unkC;
-    u8 unkE[0x12];
+    u8 prior;
+    u8 mode; /* 4: reverb */
+    u8 vol;
+    u8 pan;
+    u8 center;
+    u8 shift; /* fine tune */
+    u8 min;
+    u8 max;
+    u8 vibW;
+    u8 vibT;
+    u8 porW;
+    u8 porT;
+    u16 unkC; /* the sample rate, in Sony's pbmin and pbmax */
+    u8 unkE[2];
+    u16 adsr1;
+    u16 adsr2;
+    short prog;
+    short vag;
+    short reserved[4];
 } VagAtr;
 
 /* A playing sound (D_800CA0F8, 30 of them, 20 bytes each). A handle is
@@ -116,6 +132,44 @@ typedef struct {
 extern "C" {
 #endif
 
+/* libspu's */
+typedef struct {
+    short left;
+    short right;
+} SpuVolume;
+
+typedef struct {
+    unsigned long voice;
+    unsigned long mask;
+    SpuVolume volume;
+    SpuVolume volmode;
+    SpuVolume volumex;
+    unsigned short pitch;
+    unsigned short note;
+    unsigned short sample_note;
+    short envx;
+    unsigned long addr;
+    unsigned long loop_addr;
+    long a_mode;
+    long s_mode;
+    long r_mode;
+    unsigned short ar;
+    unsigned short dr;
+    unsigned short sr;
+    unsigned short rr;
+    unsigned short sl;
+    unsigned short adsr1;
+    unsigned short adsr2;
+} SpuVoiceAttr;
+
+#define SPU_VOICE_VOLL (1 << 0)
+#define SPU_VOICE_VOLR (1 << 1)
+#define SPU_VOICE_PITCH (1 << 4)
+#define SPU_VOICE_WDSA (1 << 7)
+#define SPU_VOICE_LSAX (1 << 16)
+#define SPU_VOICE_ADSR_ADSR1 (1 << 17)
+#define SPU_VOICE_ADSR_ADSR2 (1 << 18)
+
 /* libspu, libetc, libc */
 void SpuSetCommonCDVolume(short left, short right);
 long SpuSetReverb(long on_off);
@@ -124,6 +178,7 @@ void SpuSetReverbModeDepth(short depth_left, short depth_right);
 long SpuClearReverbWorkArea(long mode);
 void SpuGetAllKeysStatus(char *status);
 void SpuQuit(void);
+void SpuNSetVoiceAttr(int vNum, SpuVoiceAttr *arg);
 long SpuSetTransferMode(long mode);
 unsigned long SpuSetTransferStartAddr(unsigned long addr);
 unsigned long SpuRead(unsigned char *addr, unsigned long size);
@@ -194,6 +249,9 @@ extern Voice D_800C9F70[24];
  * them (func_80011A68). */
 #define VOICE(i) (&D_800C9F70[i])
 
+/* |x| without a branch, as the sound engine computes it */
+#define ABS(x) (((x) ^ ((x) >> 31)) - ((x) >> 31))
+
 void func_80011820(int unused, s8 left, s8 right);
 void func_8001184C(void);
 u16 func_80011898(u8 *note);
@@ -212,6 +270,7 @@ void func_80011D10(void);
 int func_80011FCC(const char *name, DirEntry *entry);
 int func_80012080(const char *name);
 void func_80012120(const char *name, int value);
+int func_800121F4(u8 *note, int level);
 u32 func_80012FEC(int first);
 int func_80013108(int a);
 int func_800133A0(int id);
@@ -220,12 +279,12 @@ void func_8001280C(SndVector *a, SndVector *b, int angle, int *out);
 void func_80013450(SndListener *l, SndVector *a, SndVector *b, SndVector *c, SndVector *d);
 u8 func_800128E8(int dist);
 /* Starts a voice for a note; its number goes in sv->voice */
-s8 func_80012504(SlotVoice *sv, int a, int pitch, int left, int right);
-int func_8001295C(int a, int vol, int pitch, SlotVoice *sv);
+s8 func_80012504(SlotVoice *sv, u8 *note, int pitch, int left, int right);
+int func_8001295C(u8 *note, int vol, int pitch, SlotVoice *sv);
 int func_80012AF0(u8 *note, int vol, int pitch, int *place, SlotVoice *sv);
 int func_80012C18(u32 handle, int vol, int pitch, SndVector *from, SndVector *at, int angle,
                   int unkA, int flag);
-int func_80012A88(int a, int vol, int pan, int c, SlotVoice *d);
+int func_80012A88(u8 *note, int vol, int pan, int c, SlotVoice *d);
 int func_80012D38(u32 handle, int vol, int pan, int pitch, int unkA);
 int func_80012F7C(void);
 void func_800121C0(int mode);

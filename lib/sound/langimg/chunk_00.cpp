@@ -232,11 +232,6 @@ int func_80011E08(void) {
     return 1;
 }
 
-#ifdef NON_MATCHING
-/* Equivalent; the original reads the four offsets before storing any and
- * sets its constants before storing D_800C46FC: scheduling only */
-/* Loads the sound bank: relocates its directory, numbers the VAB's
- * samples in SPU memory, sends them there and frees them. */
 /* Loads the sound bank: relocates its directory, numbers the VAB's
  * samples in SPU memory, sends them there and frees them. */
 /* Loads the sound bank: relocates its directory, numbers the VAB's
@@ -250,17 +245,13 @@ int func_80011E44(const char *name) {
     int size;
     int off;
 
-    if (dir->flags & 0x80) {
-        D_800C46FC |= 4;
-    } else {
-        D_800C46FC |= 2;
-    }
+    D_800C46FC |= (dir->flags & 0x80) ? 4 : 2;
     dir->notes += (u32)dir;
     dir->entries = (DirEntry *)((u8 *)dir->entries + (u32)dir);
     dir->names = (DirName *)((u8 *)dir->names + (u32)dir);
     dir->records += (u32)dir;
-    D_800C4734 = vab = dir->records;
     dir->samples += (u32)dir;
+    D_800C4734 = vab = dir->records;
     n = *(u16 *)(vab + 0x16);
     off = *(u16 *)(vab + 0x12) * 0x200 + 0x820;
     size = *(int *)(vab + 0xC) - off - 0x200;
@@ -278,14 +269,11 @@ int func_80011E44(const char *name) {
     SpuIsTransferCompleted(1);
     dir = func_800B5730(dir, dir->samples - (u8 *)dir);
     D_800C46F0 = dir;
-    D_800C472C = dir;
     D_800C4744 = dir->notes;
     D_800C4728 = dir->notes;
+    D_800C472C = dir;
     return 1;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_80011E44);
-#endif
 
 int func_80011F84(void) {
     func_80012F7C();
@@ -370,7 +358,115 @@ void func_800121C0(int mode) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_800121F4);
 
+#ifdef NON_MATCHING
+/* Equivalent; the original forms the voice's addresses with la + addu
+ * (D_800C9F7C, the owner field, kept in $fp for both uses), as split
+ * addresses give; with -mno-split-addresses GCC folds them into the
+ * stores. Also registers. */
+/* Starts a voice for a note of the bank (sv->voice gets it, -1 when none
+ * was free): its volume, pitch, reverb, sample and envelope. Returns 1
+ * when it started one. */
+s8 func_80012504(SlotVoice *sv, u8 *note, int pitch, int left, int right) {
+    u8 *vab = D_800C4734;
+    u8 *prog = vab + note[0] * 16;
+    VagAtr *t = (VagAtr *)(vab + (note[0] * 0x200 + 0x820)) + note[2];
+    int level = t->vol * prog[0x21] >> 7;
+    SpuVoiceAttr attr;
+    int r;
+    int voice;
+    int again;
+    u16 flags;
+    u32 addr;
+    int bit;
+    int p;
+    u16 rev;
+    u32 mask;
+    int on;
+
+    left = left * level >> 14;
+    r = 0;
+    voice = sv->voice;
+    right = right * level >> 14;
+    addr = ((u16 *)*(u8 **)(vab + 0x1C))[t->vag] << 3;
+    attr.volume.left = left;
+    attr.volume.right = right;
+    level = (ABS(left) + ABS(right)) >> 1;
+    again = sv->unk1;
+    flags = *(u16 *)(note + 4);
+    if (!again) {
+        voice = func_800121F4(note, level);
+    }
+    sv->voice = voice;
+    if (voice == -1) {
+        if (flags & 0x400) {
+            sv[1].voice = voice;
+        }
+        return r;
+    }
+    {
+        SlotVoice **owner = &VOICE(voice)->owner;
+
+        *owner = sv;
+    }
+    VOICE(voice)->unk8 = level;
+    if (pitch < 0) {
+        p = -pitch;
+    } else {
+        p = pitch * t->unkC / 44100;
+    }
+    if (t->shift) {
+        p = (t->shift + 30) * p >> 6;
+    }
+    attr.pitch = p;
+    rev = VOICE(voice)->unkA;
+    on = 0;
+    bit = 1 << voice;
+    if ((t->mode & 4) || (D_800C473D && ((flags & 4) || D_800C473E))) {
+        on = 1;
+        rev |= 4;
+    } else {
+        rev &= ~4;
+    }
+    VOICE(voice)->unkA = rev;
+    SpuSetReverbVoice(on, bit);
+    mask = SPU_VOICE_VOLL | SPU_VOICE_VOLR | SPU_VOICE_PITCH;
+    if (!again) {
+        u16 start = *(u16 *)(note + 0xA);
+
+        if (start != 0xFFFF) {
+            if (flags & 0x10) {
+                mask = SPU_VOICE_VOLL | SPU_VOICE_VOLR | SPU_VOICE_PITCH | SPU_VOICE_LSAX;
+                attr.loop_addr = (addr + *(u16 *)(note + 6)) << 4;
+            }
+            addr += start << 4;
+        }
+        attr.addr = addr;
+        mask |= SPU_VOICE_WDSA | SPU_VOICE_ADSR_ADSR1 | SPU_VOICE_ADSR_ADSR2;
+        attr.adsr1 = t->adsr1;
+        attr.adsr2 = t->adsr2;
+        if (flags & 0x400) {
+            SpuSetPitchLFOVoice(1, bit);
+            sv[1].voice = voice - 1;
+            {
+                SlotVoice **owner = &VOICE(voice - 1)->owner;
+
+                *owner = &sv[1];
+            }
+        }
+    }
+    attr.mask = mask;
+    attr.voice = bit;
+    SpuNSetVoiceAttr(voice, &attr);
+    r = 1;
+    if (!again) {
+        SpuSetKey(1, bit);
+    }
+    D_800C9F54 &= ~bit;
+    return r;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_80012504);
+#endif
 
 /* Where a sound at b is heard from a listener at a facing angle: out[1]
  * the distance, out[0] the angle to it on the ground (0 when it's nearly
@@ -428,25 +524,25 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_800128E8);
 
 /* Plays a note on two voices, panned left and right, the second a little
  * higher; returns the voices started. Only in stereo. */
-int func_8001295C(int a, int vol, int pitch, SlotVoice *sv) {
+int func_8001295C(u8 *note, int vol, int pitch, SlotVoice *sv) {
     int r = 0;
 
     if (D_800C4700 == 1) {
         u8 *pan = D_800C46F4;
         int v = vol * D_800C4708 * D_800C4704 >> 7;
 
-        r = func_80012504(sv, a, pitch, v * pan[127 - 87], v * pan[87]);
+        r = func_80012504(sv, note, pitch, v * pan[127 - 87], v * pan[87]);
         r += (sv[1].voice =
-                  func_80012504(&sv[1], a, pitch * 1050 / 1000, v * pan[127 - 17], v * pan[17]));
+                  func_80012504(&sv[1], note, pitch * 1050 / 1000, v * pan[127 - 17], v * pan[17]));
     }
     return r;
 }
 
 /* Plays with a volume and a pan (0 left, 127 right). */
-int func_80012A88(int a, int vol, int pan, int c, SlotVoice *d) {
+int func_80012A88(u8 *note, int vol, int pan, int c, SlotVoice *d) {
     int v = vol * D_800C4708;
 
-    return func_80012504(d, a, c, v * D_800C46F4[127 - pan], v * D_800C46F4[pan]);
+    return func_80012504(d, note, c, v * D_800C46F4[127 - pan], v * D_800C46F4[pan]);
 }
 
 #ifdef NON_MATCHING
@@ -477,7 +573,7 @@ int func_80012AF0(u8 *note, int vol, int pitch, int *place, SlotVoice *sv) {
         int right = pans[127 - pan] * v * D_800C4708;
         int left = pans[pan] * v * D_800C4708;
 
-        return func_80012504(sv, (int)note, pitch, left, right);
+        return func_80012504(sv, note, pitch, left, right);
     }
 }
 #else
@@ -540,10 +636,10 @@ int func_80012D38(u32 handle, int vol, int pan, int pitch, int unkA) {
             *(short *)(note + 0xA) = unkA;
             if (*(u16 *)(note + 4) & 0x100) {
                 if (!again) {
-                    n += func_8001295C((int)note, vol, pitch, sv);
+                    n += func_8001295C(note, vol, pitch, sv);
                 }
             } else {
-                n += func_80012A88((int)note, vol, pan, pitch, sv);
+                n += func_80012A88(note, vol, pan, pitch, sv);
             }
             i = note[3];
             if (i == end) {
