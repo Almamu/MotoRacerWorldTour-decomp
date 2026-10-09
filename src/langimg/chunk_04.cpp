@@ -76,6 +76,41 @@ int func_8001AD78(void *self, int a, int b);
 int func_8001AF3C(Grid *g, Vector3 *v, SVECTOR *c);
 void func_8001AFB0(Grid *g, SVECTOR *c, Vector3 *v);
 int func_8001B76C(Grid *g);
+void func_8001AD9C(void *self, int t, SVECTOR *a, SVECTOR *b, SVECTOR *out);
+void func_8001ACE4(void *self, int *plane, SVECTOR *a, SVECTOR *b, long *d);
+int func_8001AE40(void *self, int *plane, SVECTOR *a, SVECTOR *b, SVECTOR *out);
+
+// A race entry (0x568 bytes; Race::m_entries)
+struct RaceEntryX {
+    u8 m_00[0x474];
+    int m_474; // its kind's index
+};
+struct RaceEntry {
+    int m_flags; // & 0x7E: its kind
+    u8 m_04[0x2C];
+    RaceEntryX *m_30;
+    u8 m_34[0x534];
+};
+struct Race {
+    u8 m_00[0x2E8];
+    RaceEntry m_entries[5];
+};
+struct RaceWorld {
+    u8 m_00[0x378];
+    Race *m_race;
+};
+// The race's entries of kind 0x44 sorted by their m_474, 5 per kind
+struct RaceSort {
+    int m_00;
+    u8 m_04[0x8C];
+    int m_count[7];         // 0x90
+    RaceEntryX *m_by[7][5]; // 0xAC
+};
+void func_8001B6B4(RaceSort *t, RaceWorld *w);
+
+static inline RaceEntry *RaceGetEntry(Race *r, int i) {
+    return i < 0 ? 0 : &r->m_entries[i];
+}
 }
 
 #ifdef NON_MATCHING
@@ -449,9 +484,31 @@ int func_8001AD78(void *self, int a, int b) {
     return (a << 12) / (a - b);
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_8001AD9C);
+/* From a towards b by t (4.12). */
+void func_8001AD9C(void *self, int t, SVECTOR *a, SVECTOR *b, SVECTOR *out) {
+    out->vx = a->vx + (b->vx - a->vx) * t / 4096;
+    out->vy = a->vy + (b->vy - a->vy) * t / 4096;
+    out->vz = a->vz + (b->vz - a->vz) * t / 4096;
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_8001AE40);
+/* Where a to b crosses the plane: a moved along it when a is behind, the
+ * interpolation otherwise. The plane's angle is taken from the pointer
+ * itself, as the original does. */
+int func_8001AE40(void *self, int *plane, SVECTOR *a, SVECTOR *b, SVECTOR *out) {
+    long d[2];
+
+    func_8001ACE4(self, plane, a, b, d);
+    if (d[0] < 0) {
+        int sc = *(int *)D_800BF3A0[(int)plane & 0xFFF];
+
+        out->vx = a->vx - ((d[0] * (sc >> 16)) >> 12);
+        out->vy = a->vy;
+        out->vz = a->vz - ((d[0] * (short)sc) >> 12);
+    } else {
+        func_8001AD9C(self, func_8001AD78(self, d[0], d[1]), a, b, out);
+    }
+    return 1;
+}
 
 /* A position's cell in the grid; 0 if out of range. */
 int func_8001AF3C(Grid *g, Vector3 *v, SVECTOR *c) {
@@ -487,7 +544,29 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_8001B15C);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_8001B350);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_8001B6B4);
+/* Sorts the race's entries of kind 0x44 by their m_474. */
+void func_8001B6B4(RaceSort *t, RaceWorld *w) {
+    Race *r;
+    int i;
+    int j;
+
+    t->m_00 = 0;
+    for (i = 0; i < 7; i++) {
+        t->m_count[i] = 0;
+    }
+    r = w->m_race;
+    for (j = 0; j < 5; j++) {
+        RaceEntry *e = RaceGetEntry(r, j);
+
+        if ((e->m_flags & 0x7E) == 0x44) {
+            RaceEntryX *x = e->m_30;
+            int k = x->m_474;
+
+            t->m_by[k][t->m_count[k]] = x;
+            t->m_count[k]++;
+        }
+    }
+}
 
 int func_8001B76C(Grid *g) {
     return g->m_28 != 0;
