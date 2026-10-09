@@ -27,6 +27,7 @@ SECTIONS
         build/langimg/lib/sound/langimg/chunk_01.o(.text);
         build/langimg/lib/cdaudio/langimg/chunk_01b.o(.text);
         build/langimg/src/langimg/chunk_02.o(.text);
+        build/langimg/src/langimg/chunk_02b.o(.text);
         build/langimg/src/langimg/chunk_03.o(.text);
         build/langimg/src/langimg/chunk_04.o(.text);
         build/langimg/src/langimg/chunk_05.o(.text);
@@ -116,6 +117,7 @@ SECTIONS
         build/langimg/asm/langimg/data/ctors.rodata.o(.rodata);
         build/langimg/lib/cdaudio/langimg/chunk_01b.o(.rodata);
         build/langimg/src/langimg/chunk_02.o(.rodata);
+        build/langimg/src/langimg/chunk_02b.o(.rodata);
         build/langimg/src/langimg/chunk_03.o(.rodata);
         build/langimg/src/langimg/chunk_04.o(.rodata);
         build/langimg/src/langimg/chunk_05.o(.rodata);
@@ -204,6 +206,7 @@ SECTIONS
         build/langimg/lib/sound/langimg/chunk_01.o(.data);
         build/langimg/lib/cdaudio/langimg/chunk_01b.o(.data);
         build/langimg/src/langimg/chunk_02.o(.data);
+        build/langimg/src/langimg/chunk_02b.o(.data);
         build/langimg/src/langimg/chunk_03.o(.data);
         build/langimg/src/langimg/chunk_04.o(.data);
         build/langimg/src/langimg/chunk_05.o(.data);
@@ -299,6 +302,7 @@ SECTIONS
         build/langimg/lib/sound/langimg/chunk_01.o(.bss);
         build/langimg/lib/cdaudio/langimg/chunk_01b.o(.bss);
         build/langimg/src/langimg/chunk_02.o(.bss);
+        build/langimg/src/langimg/chunk_02b.o(.bss);
         build/langimg/src/langimg/chunk_03.o(.bss);
         build/langimg/src/langimg/chunk_04.o(.bss);
         build/langimg/src/langimg/chunk_05.o(.bss);

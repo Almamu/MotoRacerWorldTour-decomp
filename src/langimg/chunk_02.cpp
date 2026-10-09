@@ -59,48 +59,50 @@ Cobjet::~Cobjet() {
     }
 }
 
+#ifdef NON_MATCHING
+/* Equivalent; the original sets the matrix row by row (the diagonal, the
+ * translation, then the rest) and stores m_38 and m_3C twice, where GCC
+ * drops the first pair */
+static inline void ClearVector(Vector3 *v) {
+    v->vx = 0;
+    v->vy = 0;
+    v->vz = 0;
+}
+
+static inline void Identity(MATRIX *m) {
+    m->m[0][0] = 0x1000;
+    m->t[0] = 0;
+    m->m[0][1] = m->m[0][2] = 0;
+    m->m[1][1] = 0x1000;
+    m->t[1] = 0;
+    m->m[1][2] = m->m[1][0] = 0;
+    m->m[2][2] = 0x1000;
+    m->t[2] = 0;
+    m->m[2][1] = m->m[2][0] = 0;
+}
+
+static inline void ClearParts(Cobjet *o) {
+    o->m_38 = 0;
+    o->m_3C = 0;
+}
+
+void Cobjet::Init() {
+    ClearVector(&m_pos);
+    m_matp = 0;
+    Identity(&m_mat);
+    ClearParts(this);
+    m_3D = -1;
+    m_3F = -1;
+    m_3E = -1;
+    m_links = 0;
+    m_45 = 0;
+    m_46 = 0;
+    m_44 = 0;
+    ClearParts(this);
+    m_47 = 0;
+    m_color = 0x808080;
+    m_40 = 0;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02", Init__6Cobjet);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02", func_80016144);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02", func_80016234);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02", func_80016268);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02", func_80016434);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02", func_80016600);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02", func_80016798);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02", func_800167B8);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02", func_800167F8);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02", func_8001687C);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02", func_800168A8);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02", func_80016914);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02", func_80016998);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02", func_800169A0);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02", func_800169A8);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02", func_800169B0);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02", func_800169B8);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02", func_80016A38);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02", func_80016A8C);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02", func_80016C3C);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02", func_80016E34);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02", func_80017574);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02", func_80017730);
+#endif

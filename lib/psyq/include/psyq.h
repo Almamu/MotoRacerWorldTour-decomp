@@ -21,6 +21,16 @@ typedef struct {
     u_char minute, second, sector, track;
 } CdlLOC;
 
+/* libgte's */
+typedef struct {
+    short vx, vy, vz, pad;
+} SVECTOR;
+
+typedef struct {
+    short m[3][3]; /* 3x3 rotation, 1.0 = 0x1000 */
+    long t[3];     /* translation */
+} MATRIX;
+
 typedef struct {
     u_char val0, val1, val2, val3; /* CD L to SPU L, L to R, R to R, R to L */
 } CdlATV;
