@@ -222,8 +222,8 @@ u8 *LoadFile(const char *name, u8 *dest, u32 *sizeOut) {
             n = size;
             s = dest + size;
             unpacked = ((u32 *)dest)[1];
-            /* The packed data goes 0x1400 bytes short of where the unpacked
-             * data will end, so decompressing never overtakes it */
+            /* The packed data is moved to end 0x1400 bytes past where the
+             * unpacked data will, so decompressing never overtakes it */
             {
                 u32 margin = size - 0x1400;
                 d = dest + ((unpacked - margin) & ~3);
