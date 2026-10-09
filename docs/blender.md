@@ -32,8 +32,13 @@ File > Import > Moto Racer WT scene (.sdf), e.g.
   `data/menu/sc_banks/MENDVRM.vrm`.
 - **Scale**: Blender units per game unit (default 0.01).
 
-Game coordinates (Y down) become Blender's Z up: game (x, y, z) → Blender
-(x, z, −y) × scale. The import creates a collection named after the file:
+Game coordinates are Y up (the camera and the bikes have a larger y than
+the road; an object's +y vertices are drawn upwards), and become Blender's
+Z up: game (x, y, z) → Blender (x, z, y) × scale. The game's world is
+left-handed, so this mapping is a mirror; with it, a render from the game
+camera's position matches the game's picture. (Before October 2026 the
+add-on assumed Y down and showed levels upside down; re-import scenes saved
+with an older version.) The import creates a collection named after the file:
 
 | Collection / object | What it is |
 |---|---|
@@ -53,6 +58,10 @@ page rendered with that palette, nearest filtering, palette entry 0x0000
 transparent), and `<name>_flat` for untextured faces, which shows the `Col`
 colour attribute. Each material's `mrwt_material` custom property holds its
 key (`page_TTTT_CCCC` or `flat`); that is what the exporter reads.
+
+Faces keep the game's corner order reversed (the mapping above is a
+mirror), so normals point the way the game's faces do: ground and
+collision up, models outwards.
 
 Mesh attributes: `UVMap` (texel / 256), `Col` (polygon colours: flat
 colour, or per-vertex for Gouraud types; 0x808080 = neutral on textured
@@ -74,6 +83,8 @@ byte-identical (checked on all 70 levels and menu/end scenes).
 | Move vertices / UVs, recolour `Col` of a mesh without changing its topology | written in place (bounds raised if the mesh grew) |
 | Change a mesh's topology (add/delete faces or vertices) | the item gets a new mesh appended to the file: faces with a `page_*` material become textured (types 13/15), others flat (5/9) using `Col` (or the material's viewport colour); tris and quads only, ≤ 13 polygon groups of ≤ 1023 |
 | Move / rotate / scale a placed object | its matrix and translation are rewritten |
+| Delete a placed object | hidden (flag 0x2000000, as the game's own invisible markers); the record stays. Objects parented under it in the game's hierarchy (a few, e.g. Sachsenring's `o_eol1`) still show |
+| **Add objects** (levels): put a mesh object in `<name> objects`, or duplicate a placed one (Alt+D / Shift+D) | a new top-level `Cobjet` is appended (see `docs/formats/sdf.md`, "Drawing objects"): sphere-tested against the view on its own, so it shows wherever it's placed. Its model is the mesh's draw item when the mesh is an item's own mesh or an unchanged copy of it; any other mesh (a new one, or a copy you edited) becomes a new draw item (textured or flat faces, as for new meshes above; faces modelled with outward normals face the right way). The first object by name keeps a duplicated placement. Also added to the level variants (with their own item numbering). Checked in the emulator: Blender-made red cubes, a moved lamp copy and a stretched lamp beside Sachsenring's start straight, lap completed |
 | Move ground vertices | written in place (block-relative); topology is fixed |
 | Move gate vertices / edit widths | position and widths rewritten; a moved gate's direction comes from its neighbours; distances recomputed from the first moved gate on |
 | **Add or remove gates** (subdivide, extrude, delete; the path must stay one unbranched line from gate 0) | new gate and racing-line arrays are appended to the file: kept gates keep their records, new ones get interpolated racing-line records (lane, target speed), distances are recomputed, and gate indices stored elsewhere are remapped (track-section visibility, root 48; branch lists' rejoin gate). Checked in the emulator: Sachsenring with its 550 gates subdivided to 1099 still counts the lap, the AI races on the resampled lines, and the regression `lap` scenario finishes |
@@ -93,9 +104,8 @@ bike), see [formats/sdf.md](formats/sdf.md). After
 reshaping the ground, run Object > Moto Racer WT: Snap Collision to Ground
 (with the level selected): every collision vertex within *Max distance*
 (default 1 m) above or below the ground is moved onto it. Use *Selected
-vertices only* to limit it to the area you changed. Collision faces can't
-be added or removed, and their corners are shared with neighbours, so
-large moves stretch the faces around them.
+vertices only* to limit it to the area you changed. Corners are shared
+with neighbours, so large moves stretch the faces around them.
 
 After reshaping a track, move the gates and racing lines with it: the
 gates count laps and race positions (a bike must pass every gate plane in

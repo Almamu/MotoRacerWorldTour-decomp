@@ -52,19 +52,23 @@ from mathutils import Matrix, Vector  # noqa: E402
 
 from . import scene as sc  # noqa: E402
 
-# game (x, y down, z) -> Blender (x, z, -y): Z up, still right-handed
-C = Matrix(((1, 0, 0), (0, 0, 1), (0, -1, 0)))
+# game (x, y up, z) -> Blender (x, z, y): Z up. The game world is Y up (the
+# camera and bikes have larger y than the road, objects' +y vertices are
+# drawn upwards) and left-handed, so this is a mirror: a render from the
+# game camera's position matches the game's picture (signs read the right
+# way round). Object rotations stay rotations (C m C).
+C = Matrix(((1, 0, 0), (0, 0, 1), (0, 1, 0)))
 CT = C.transposed()
 
 
 def to_blender(v, s):
     x, y, z = v
-    return (x * s, z * s, -y * s)
+    return (x * s, z * s, y * s)
 
 
 def to_game(v, s):
     x, y, z = v
-    return (round(x / s), round(-z / s), round(y / s))
+    return (round(x / s), round(z / s), round(y / s))
 
 
 # --- textures ----------------------------------------------------------------
@@ -136,10 +140,25 @@ def outline(seq):
     return [seq[0], seq[1], seq[3], seq[2]] if len(seq) == 4 else list(seq)
 
 
+# The axis mapping is a mirror, so a face's game order runs the other way
+# round in Blender: reversed, Blender's normals point the way the game's
+# faces do (ground up, models out), and faces modelled in Blender come out
+# with the game's winding.
+
+def to_loop(seq):
+    """Game corner order (GPU order for quads) -> Blender loop order."""
+    return outline(seq)[::-1]
+
+
+def from_loop(seq):
+    """Blender loop order -> game corner order (inverse of to_loop)."""
+    return outline(list(seq)[::-1])
+
+
 def build_mesh(name, item, s, textures):
     me = bpy.data.meshes.new(name)
     verts = [to_blender(v, s) for v in item.verts]
-    faces = [outline(f.idx) for f in item.faces]
+    faces = [to_loop(f.idx) for f in item.faces]
     me.from_pydata(verts, list(item.lines), faces)
     keys = []
     for f in item.faces:
@@ -152,13 +171,13 @@ def build_mesh(name, item, s, textures):
     uv = me.uv_layers.new(name="UVMap")
     uvs = []
     for f in item.faces:
-        for u, v in outline(f.uv) if f.textured else [(0, 0)] * len(f.idx):
+        for u, v in to_loop(f.uv) if f.textured else [(0, 0)] * len(f.idx):
             uvs += [u / 256, 1 - v / 256]
     uv.data.foreach_set("uv", uvs)
     col = me.color_attributes.new("Col", "BYTE_COLOR", "CORNER")
     cols = []
     for f in item.faces:
-        for r, g, b in outline(f.colors):
+        for r, g, b in to_loop(f.colors):
             cols += [r / 255, g / 255, b / 255, 1.0]
     col.data.foreach_set("color_srgb", cols)
     for attr, values in (("psx_poly", [f.poly + 1 for f in item.faces]),
@@ -205,7 +224,7 @@ def build_collision(name, faces, s):
                 verts.append((x, y, z))
                 index.setdefault(key, []).append(hit)
             loop.append(hit)
-        polys.append(loop)
+        polys.append(loop[::-1])   # see to_loop
     me = bpy.data.meshes.new(name)
     me.from_pydata([to_blender(v, s) for v in verts], [], polys)
     surfaces = sorted({f.surface for f in faces})
@@ -243,7 +262,7 @@ def collision_faces(ob, s):
     out = []
     for k, p in enumerate(me.polygons):
         corners = [to_game_float(ob.matrix_world @ me.vertices[me.loops[l].vertex_index].co, s)
-                   for l in p.loop_indices]
+                   for l in p.loop_indices][::-1]   # see to_loop
         index = idx[k] - 1 if idx[k] > 0 and idx[k] not in seen else None
         seen.add(idx[k])
         out.append(sc.CollisionFace(index, corners, mat_surface.get(p.material_index, surf[k])))
@@ -594,6 +613,7 @@ def import_scene(context, path, vrm_path, s):
     for i, item in data.items.items():
         me = build_mesh(f"{name}_item_{i:03d}", item, s, textures)
         me["mrwt_item"] = i
+        me["mrwt_mesh"] = me.name   # copies (Shift+D) get another name: not the item's own mesh
         meshes[i] = me
         ob = bpy.data.objects.new(f"item_{i:03d}", me)
         items_col.objects.link(ob)
@@ -669,8 +689,8 @@ def mesh_item(me, s, matrix=None):
             _, tp, cl = key.split("_")
             tpage, clut = int(tp, 16), int(cl, 16)
         idx = [me.loops[l].vertex_index for l in loops]
-        face = sc.Face(outline(idx), ptype[k], outline(uvs) if uvs else None, tpage, clut,
-                       outline(colors), poly[k] - 1)
+        face = sc.Face(from_loop(idx), ptype[k], from_loop(uvs) if uvs else None, tpage, clut,
+                       from_loop(colors), poly[k] - 1)
         if key.startswith("new:"):
             face.new_texture = key[4:]
         faces.append(face)
@@ -714,7 +734,7 @@ def object_placement(ob, s):
 
 def to_game_float(v, s):
     x, y, z = v
-    return (x / s, -z / s, y / s)
+    return (x / s, z / s, y / s)
 
 
 def material_image(mat):
@@ -835,6 +855,44 @@ def rider_for_variant(rider, base_path, variant_path):
     return out, same
 
 
+def own_item_mesh(me):
+    """The draw item's own mesh (not a copy made by duplicating an object)."""
+    return me.get("mrwt_mesh", me.name) == me.name
+
+
+def new_objects(root, s, old, items, placed):
+    """New objects: meshes in the `<name> objects` collection that aren't a
+    placed object of the file (added, or duplicates of one: the first by
+    name keeps the original). Each uses its mesh's draw item when the mesh
+    is that item's own or an unchanged copy; any other mesh becomes a new
+    draw item (added to `items`, numbered from the file's table size)."""
+    if old.roots != 51:
+        return []
+    col = next((c for c in root.children if c.name.endswith(" objects")), None)
+    if col is None:
+        return []
+    out, new_item = [], {}
+    for ob in sorted(col.all_objects, key=lambda o: o.name):
+        if ob.type != "MESH" or placed.get(ob.get("mrwt_object")) is ob:
+            continue
+        me = ob.data
+        i = me.get("mrwt_item")
+        if i is not None and i in old.items and not own_item_mesh(me):
+            item = mesh_item(me, s)
+            if sc._item_sig(item) != sc._item_sig(items.get(i, old.items[i])):
+                i = None   # a copy that was edited: a draw item of its own
+        if i is None or i not in old.items:
+            if me.name not in new_item:
+                item = mesh_item(me, s)
+                item.index = old.item_slots + len(new_item)
+                new_item[me.name] = item.index
+                items[item.index] = item
+            i = new_item[me.name]
+        matrix, t = object_placement(ob, s)
+        out.append(sc.Placed(None, ob.name, i, matrix, t))
+    return out
+
+
 def find_root(context):
     roots = [c for c in bpy.data.collections if "mrwt_source" in c]
     ob = context.active_object
@@ -860,19 +918,25 @@ def export_scene(root, out, base=None, variants=True, everywhere=False):
     items, ground, objects, collision = {}, None, [], None
     old = sc.load(source)
     track = track_from_blender(root, s, old.track) if old.track else None
-    for ob in root.all_objects:
-        if "mrwt_object" in ob:
+    placed = {}
+    for ob in sorted(root.all_objects, key=lambda o: o.name):
+        if "mrwt_object" in ob and ob["mrwt_object"] not in placed:
+            placed[ob["mrwt_object"]] = ob
             matrix, t = object_placement(ob, s)
             objects.append(sc.Placed(ob["mrwt_object"], ob.name, -1, matrix, t))
         if ob.type != "MESH":
             continue
         me = ob.data
-        if "mrwt_item" in me and me["mrwt_item"] not in items:
+        if "mrwt_item" in me and me["mrwt_item"] not in items and own_item_mesh(me):
             items[me["mrwt_item"]] = mesh_item(me, s)
         if me.get("mrwt_ground"):
             ground = mesh_item(me, s, ob.matrix_world)
         if me.get("mrwt_collision"):
             collision = collision_faces(ob, s)
+    objects += new_objects(root, s, old, items, placed)
+    # placed objects deleted in Blender (only when the objects collection is there)
+    has_objects = any(c.name.endswith(" objects") for c in root.children)
+    removed = [p.object for p in old.objects if p.object not in placed] if has_objects else []
     rider = rider_from_blender(bpy.context, root, source)
     others = sc.variant_files(source) if variants else []
     tracks = []
@@ -881,16 +945,17 @@ def export_scene(root, out, base=None, variants=True, everywhere=False):
         tracks = [f for f in sorted(source.parent.iterdir())
                   if f.name.lower().endswith("_ps.sdf") and f.resolve() not in known]
     log = []
-    edited = {i: it for i, it in items.items()}
+    edited = {i: it for i, it in items.items() if i in old.items}
     allocate_textures(root, items, out, log, [source] + others + tracks)
-    log += sc.save(source, out, items, ground, objects, collision, track, rider)
+    log += sc.save(source, out, items, ground, objects, collision, track, rider, removed)
     for v in others:
         old_v = sc.load(v)
         v_items, v_ground, v_objects, v_collision, v_track, skipped = sc.variant_edits(
             old, old_v, items, ground, objects, collision, track)
         v_rider, _ = rider_for_variant(rider, source, v)
         dest = Path(out).parent / v.name
-        v_log = sc.save(v, dest, v_items, v_ground, v_objects, v_collision, v_track, v_rider)
+        v_log = sc.save(v, dest, v_items, v_ground, v_objects, v_collision, v_track, v_rider,
+                        sc.variant_removed(old, old_v, removed))
         if dest.read_bytes() == v.read_bytes():
             dest.unlink()
         log += [f"{v.name}: {line}" for line in v_log]

@@ -39,7 +39,7 @@ class Plane:
     w: int  # +0x1A / +0x36: plane offset (4096 * w / ny game units)
 
     def height(self, y0, dx, dz):
-        """Plane height (1/32 units, Y down) at (dx, dz) game units from the
+        """Plane height (1/32 units, Y up) at (dx, dz) game units from the
         face origin, as the game computes it (FUN_8001AFF4). Vertical planes
         (ny = 0, walls in the trial levels) give y0."""
         if self.ny == 0:
@@ -53,7 +53,7 @@ class Plane:
 class Face:
     index: int
     x: int            # origin, 1/32 units
-    y: int            # (word >> 8): origin height, 1/32 units, Y down
+    y: int            # (word >> 8): origin height, 1/32 units, Y up
     surface: int      # word & 0xFF
     z: int
     neighbours: list  # 4 relative face indices, None = no neighbour
@@ -161,7 +161,7 @@ def face_plane_at(trig, face, dx, dz):
 
 
 def world_polygon(trig, face, faces=None):
-    """Corners as world (x, y, z) game units (Y down). With `faces` (all of
+    """Corners as world (x, y, z) game units (Y up). With `faces` (all of
     the level's), an open T-junction corner is put where the neighbouring
     faces along that line meet."""
     between = None
@@ -222,7 +222,7 @@ def _edge_word(trig, a, b, centre):
 
 def _plane(points, w):
     """Plane through 3+ points (x, y, z) in game units: unit normal x 16384,
-    oriented like the game's (ny > 0 for a floor, with Y down)."""
+    oriented like the game's (ny > 0 for a floor)."""
     nx = ny = nz = 0.0
     for k in range(len(points)):
         x1, y1, z1 = points[k]
@@ -238,7 +238,7 @@ def _plane(points, w):
 
 def encode_face(trig, face, world, split_diag=None):
     """New 56-byte record for `face` with corners `world` [(x, y, z)] in game
-    units (Y down, same order as corners()). Origin (x, z), neighbours and
+    units (Y up, same order as corners()). Origin (x, z), neighbours and
     surface type are kept; edges, planes and the origin height are rebuilt.
     A split quad keeps its diagonal: the first plane covers the triangle on
     the split edge's negative side, the second the positive side."""
@@ -480,7 +480,7 @@ def _flatness(world):
 
 def build_surface(trig, polys, flat=0.5):
     """Encode a whole collision surface from [(corners [(x, y, z)] game units
-    Y down, surface type, split[, raw, links])] where split is the diagonal
+    Y up, surface type, split[, raw, links])] where split is the diagonal
     (two corner indices) a bent quad folds along, or None to pick the
     shorter one, raw an original record to keep as it is (corners in its
     own order, unchanged; only its neighbours and surface type are

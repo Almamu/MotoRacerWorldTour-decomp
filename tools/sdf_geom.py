@@ -116,7 +116,10 @@ def read_obj(path):
 def material(poly_word2, textured, tpage, clut):
     if textured:
         return f"page_{tpage:04x}_{clut:04x}"
-    return f"color_{poly_word2 & 0xFFFFFF:06x}" if poly_word2 & 0xFF000000 else "color_808080"
+    if not poly_word2 & 0xFF000000:
+        return "color_808080"
+    r, g, b = poly_word2 & 0xFF, poly_word2 >> 8 & 0xFF, poly_word2 >> 16 & 0xFF
+    return f"color_{r:02x}{g:02x}{b:02x}"  # the GPU word is 0xBBGGRR
 
 
 # --- export ------------------------------------------------------------------
@@ -307,7 +310,10 @@ def replace_item(sdf, item, verts, faces):
                     struct.pack_into("<6H", rec, 12, words[0], int(clut, 16), words[1], int(tpage, 16),
                                      words[2], words[3])
                 else:
-                    rgb = int(mat[6:], 16) if mat and mat.startswith("color_") else 0x808080
+                    rgb = 0x808080
+                    if mat and mat.startswith("color_"):  # color_RRGGBB; the GPU word is 0xBBGGRR
+                        r, g, b = bytes.fromhex(mat[6:12])
+                        rgb = r | g << 8 | b << 16
                     struct.pack_into("<I", rec, 8, FLAT[gtype][1] << 24 | rgb)
                 default = 0x18000000 if len(idx) == 4 else 0x10000000
                 struct.pack_into("<I", rec, 24, templates.get(gtype, default))

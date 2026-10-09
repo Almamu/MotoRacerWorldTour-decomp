@@ -1,6 +1,6 @@
 """Read an SDF scene into plain data and write edits back (no bpy here).
 
-Everything is in game units: PS1 coordinates (Y down), integer vertex
+Everything is in game units: PS1 coordinates (Y up), integer vertex
 positions, UVs in texels. The Blender side (__init__.py) only converts
 between these and Blender objects.
 
@@ -18,8 +18,8 @@ from pathlib import Path
 
 import sdf_collision
 from sdf import parse, serialize
-from sdf_mesh import TEXTURED_TYPES, draw_items, read_item_mesh
-from sdf_geom import (TRANSLATION_SCALE, bounds_update, cobjets, ground_layout,
+from sdf_mesh import ROOT_DRAW_ITEMS, TEXTURED_TYPES, draw_items, read_item_mesh
+from sdf_geom import (MAX_GROUPS, TRANSLATION_SCALE, bounds_update, cobjets, ground_layout,
                       block_of_vertex, replace_item, s16, u16, BLOCK_SCALE)
 
 # Group types whose word at +0x08 points to per-vertex colours (Gouraud).
@@ -61,7 +61,7 @@ class Item:
 
 @dataclass
 class Placed:
-    object: int                # offset of the Cobjet
+    object: int                # offset of the Cobjet (None: a new object)
     name: str
     item: int                  # LOD 0 draw item
     matrix: tuple              # 9 x s16 (4096 = 1.0), row major
@@ -71,7 +71,7 @@ class Placed:
 @dataclass
 class CollisionFace:
     index: int
-    corners: list              # [(x, y, z)] game units, Y down, edge order
+    corners: list              # [(x, y, z)] game units, Y up, edge order
     surface: int
 
 
@@ -83,6 +83,7 @@ class Scene:
     roots: int = 0
     collision: list = None     # [CollisionFace], levels only
     track: list = None         # [GateList], levels only
+    item_slots: int = 0        # size of the draw-item table: new items get indices from here
 
 
 def rgb(word):
@@ -236,7 +237,8 @@ def load(path):
     ground = read_ground(sdf) if len(sdf.roots) == 51 else None
     collision = read_collision(sdf) if len(sdf.roots) == 51 else None
     track = read_track(sdf) if len(sdf.roots) == 51 else None
-    return Scene(items, ground, read_objects(sdf), len(sdf.roots), collision, track)
+    slots = sdf.u32(sdf.roots[ROOT_DRAW_ITEMS] + 4)
+    return Scene(items, ground, read_objects(sdf), len(sdf.roots), collision, track, slots)
 
 
 # --- writing -----------------------------------------------------------------
@@ -553,6 +555,114 @@ def write_objects(sdf, old, new):
     return changed
 
 
+# --- new draw items and objects ------------------------------------------------
+
+ROOT_OBJECTS = 0       # {Cobjet** objects, ptr, u32 count}: top-level objects
+ROOT_OBJECTS_DRAWN = 18  # u32[4]: how many of them are drawn (the rest are bike slots)
+OBJECT_SIZE = 0x54
+OBJECT_VTABLE = 0x50
+ITEM_SIZE = 0x10 + 2 * (MAX_GROUPS + 1)
+
+
+def add_item(sdf, index, item):
+    """Append a draw item with a new plain mesh as entry `index` (= the
+    table's size: the table is copied with one more slot). Item and mesh
+    headers are copied from an existing plain item (setup word, ZSF3/4)."""
+    root = sdf.roots[ROOT_DRAW_ITEMS]
+    table, count = sdf.u32(root), sdf.u32(root + 4)
+    if index != count:
+        raise ValueError(f"new draw item {index}: the table has {count} entries")
+    items = draw_items(sdf)
+    tmpl = next(off for i, off in sorted(items.items()) if sdf.data[sdf.u32(off + 4) + 6] == 1)
+    mesh_t = sdf.u32(tmpl + 4)
+    head = bytearray(sdf.data[mesh_t:mesh_t + 0x2C])
+    struct.pack_into("<HHH", head, 0, 0, 0, 0)
+    head[0x08:0x2C] = bytes(0x24)  # bounds (raised by replace_item), pointers
+    head[6] = 1
+    mesh = sdf.append(bytes(head))
+    rec = bytearray(ITEM_SIZE)
+    rec[:0x10] = sdf.data[tmpl:tmpl + 0x10]
+    struct.pack_into("<H", rec, 0, index)
+    at = sdf.append(bytes(rec))
+    sdf.set_pointer(at + 4, mesh)
+    relocs = set(sdf.relocs)
+    new_table = sdf.append(bytes(4 * (count + 1)))
+    data = bytearray(sdf.data)
+    data[new_table:new_table + 4 * count] = sdf.data[table:table + 4 * count]
+    sdf.data = bytes(data)
+    for i in range(count):
+        if table + 4 * i in relocs:
+            sdf.set_pointer(new_table + 4 * i, sdf.u32(table + 4 * i))
+    sdf.set_pointer(new_table + 4 * count, at)
+    sdf.set_pointer(root, new_table)
+    data = bytearray(sdf.data)
+    struct.pack_into("<I", data, root + 4, count + 1)
+    sdf.data = bytes(data)
+    replace_item(sdf, at, item.verts, [(f.idx, f.material, f.uv) for f in item.faces])
+    return at
+
+
+HIDDEN = 0x2000000     # Cobjet flags: never drawn (the game's own invisible markers carry it)
+
+
+def hide_objects(sdf, offsets):
+    """Hide placed objects (flag 0x2000000: 0x80016E34 skips the draw). The
+    records stay, so nothing else moves; their children (+0x40) still draw."""
+    data = bytearray(sdf.data)
+    for o in offsets:
+        struct.pack_into("<I", data, o + 4, sdf.u32(o + 4) | HIDDEN)
+    sdf.data = bytes(data)
+
+
+def add_objects(sdf, placed):
+    """Append new top-level Cobjets (name, LOD 0 draw item, matrix, t) and
+    list them in root 0 before the bike slots, raising the drawn count
+    (root 18). They get flags 0x2: each one is sphere-tested against the
+    view on its own (mesh radius, world+0x38 distance), so they don't need
+    to be listed in the visibility grid's cells."""
+    if len(sdf.roots) != 51:
+        raise ValueError("new objects are only supported in levels")
+    r0, r18 = sdf.roots[ROOT_OBJECTS], sdf.roots[ROOT_OBJECTS_DRAWN]
+    arr, count = sdf.u32(r0), sdf.u32(r0 + 8)
+    drawn = sdf.u32(r18)
+    cls = sdf.classes.index("Cobjet")
+    relocs = set(sdf.relocs)
+    slots = [(sdf.u32(arr + 4 * i), arr + 4 * i in relocs) for i in range(count)]
+    new_slots = []
+    for p in placed:
+        name_at = sdf.append(p.name.encode("latin-1", "replace") + b"\0")
+        lod_at = sdf.append(struct.pack("<hH", p.item, 0xCDCD))
+        rec = bytearray(OBJECT_SIZE)
+        struct.pack_into("<I", rec, 0x04, 0x2)
+        struct.pack_into("<3i", rec, 0x08, *map(int, p.t))
+        struct.pack_into("<9hH3i", rec, 0x14, *map(s16, p.matrix), 0xCCCC, *map(int, p.t))
+        rec[0x3C:0x40] = bytes([1, 0, 0xFF, 0xFF])   # one LOD, selected 0
+        rec[0x44] = 1
+        struct.pack_into("<I", rec, 0x48, 0x808080)
+        struct.pack_into("<I", rec, OBJECT_VTABLE, cls)
+        obj = sdf.append(bytes(rec))
+        sdf.set_pointer(obj, name_at)
+        sdf.set_pointer(obj + 0x34, obj + 0x14)
+        sdf.set_pointer(obj + 0x38, lod_at)
+        sdf.objects = sdf.objects + [obj + OBJECT_VTABLE]
+        new_slots.append((obj, True))
+    slots = slots[:drawn] + new_slots + slots[drawn:]
+    new_arr = sdf.append(bytes(4 * len(slots)))
+    for i, (v, is_ptr) in enumerate(slots):
+        if is_ptr:
+            sdf.set_pointer(new_arr + 4 * i, v)
+        else:
+            data = bytearray(sdf.data)
+            struct.pack_into("<I", data, new_arr + 4 * i, v)
+            sdf.data = bytes(data)
+    sdf.set_pointer(r0, new_arr)
+    data = bytearray(sdf.data)
+    struct.pack_into("<I", data, r0 + 8, len(slots))
+    for k in range(4):
+        struct.pack_into("<I", data, r18 + 4 * k, sdf.u32(r18 + 4 * k) + len(placed))
+    sdf.data = bytes(data)
+
+
 def write_collision(sdf, old, new, tolerance=2.5):
     """Re-encode the collision faces whose corners moved by more than
     `tolerance` game units (Blender welds corners within 1-2 units, so
@@ -611,17 +721,23 @@ def rebuild_collision(sdf, faces, new):
     return -len(records)
 
 
-def save(base, out, items=None, ground=None, objects=None, collision=None, track=None, rider=None):
+def save(base, out, items=None, ground=None, objects=None, collision=None, track=None, rider=None,
+         removed=None):
     """Write `base` with the given edits to `out`.
 
     items: {index: Item} (verts and faces in game units); ground: Item;
-    objects: [Placed]; collision: [CollisionFace]. Anything identical to
+    objects: [Placed] (object None = new); removed: offsets of placed
+    objects to hide; collision: [CollisionFace]. Anything identical to
     `base` is left alone."""
     sdf = parse(Path(base).read_bytes())
     old = load(base)
     table = draw_items(sdf)
     log = []
     for i, new in sorted((items or {}).items()):
+        if i not in old.items:
+            add_item(sdf, i, new)
+            log.append(f"item {i}: new draw item ({len(new.verts)} vertices, {len(new.faces)} faces)")
+            continue
         before = old.items[i]
         if same_topology(before, new):
             n = update_item(sdf, table[i], before, new)
@@ -639,9 +755,17 @@ def save(base, out, items=None, ground=None, objects=None, collision=None, track
         elif n:
             log.append(f"ground: {n} vertices moved")
     if objects:
-        n = write_objects(sdf, old.objects, objects)
+        n = write_objects(sdf, old.objects, [o for o in objects if o.object is not None])
         if n:
             log.append(f"objects: {n} placements changed")
+        new = [o for o in objects if o.object is None]
+        if new:
+            add_objects(sdf, new)
+            log.append(f"objects: {len(new)} new ({', '.join(o.name for o in new)})")
+    if removed:
+        hide_objects(sdf, removed)
+        names = {o.object: o.name for o in old.objects}
+        log.append(f"objects: {len(removed)} hidden ({', '.join(names.get(o, hex(o)) for o in removed)})")
     if collision is not None and old.collision is not None:
         n = write_collision(sdf, old.collision, collision)
         if n < 0:
@@ -672,7 +796,7 @@ LANE_UNIT = 16          # racing line +0x07: lateral offset in 16-unit steps
 
 @dataclass
 class Gate:
-    x: float            # game units (Y down)
+    x: float            # game units (Y up)
     y: float
     z: float
     dist: int           # distance along the list, 1/32 units
@@ -902,14 +1026,35 @@ def _item_sig(item):
             tuple(item.lines))
 
 
+def variant_removed(old_base, old_v, removed):
+    """The variant's objects matching removed base objects (same name and placement)."""
+    base_key = {p.object: (p.name, tuple(p.matrix), tuple(p.t)) for p in old_base.objects}
+    by_key = {}
+    for p in old_v.objects:
+        by_key.setdefault((p.name, tuple(p.matrix), tuple(p.t)), []).append(p.object)
+    out = []
+    for o in removed or ():
+        cands = by_key.get(base_key.get(o))
+        if cands:
+            out.append(cands.pop(0))
+    return out
+
+
 def variant_edits(old_base, old_v, items, ground, objects, collision, track):
     """The part of an edit (new states relative to `old_base`) that applies
     to a variant: only structures that were identical in both files.
     Returns (items, ground, objects, collision, track, skipped) where
     skipped lists what was left out."""
+    import copy
     skipped = []
     v_items = {}
-    for i, new in (items or {}).items():
+    remap = {}   # new draw items: index in the base -> index in the variant
+    for i, new in sorted((items or {}).items()):
+        if i not in old_base.items:
+            remap[i] = old_v.item_slots + len(remap)
+            v_items[remap[i]] = copy.copy(new)
+            v_items[remap[i]].index = remap[i]
+            continue
         if i in old_v.items and _item_sig(old_v.items[i]) == _item_sig(old_base.items[i]):
             v_items[i] = new
         elif _item_sig(new) != _item_sig(old_base.items[i]):
@@ -927,6 +1072,14 @@ def variant_edits(old_base, old_v, items, ground, objects, collision, track):
             by_key.setdefault((p.name, tuple(p.matrix), tuple(p.t)), []).append(p.object)
         base_key = {p.object: (p.name, tuple(p.matrix), tuple(p.t)) for p in old_base.objects}
         for o in objects:
+            if o.object is None:   # new object: its draw item must exist in the variant
+                i = remap.get(o.item, o.item)
+                if o.item in remap or (i in old_v.items and o.item in old_base.items
+                                       and _item_sig(old_v.items[i]) == _item_sig(old_base.items[i])):
+                    v_objects.append(Placed(None, o.name, i, o.matrix, o.t))
+                else:
+                    skipped.append(f"object {o.name}")
+                continue
             cands = by_key.get(base_key.get(o.object))
             if cands:
                 v_objects.append(Placed(cands.pop(0), o.name, o.item, o.matrix, o.t))
@@ -942,7 +1095,6 @@ def variant_edits(old_base, old_v, items, ground, objects, collision, track):
             skipped.append("collision")
     v_track = None
     if track is not None and old_v.track is not None:
-        import copy
         if [gl.gates for gl in old_v.track] == [gl.gates for gl in old_base.track]:
             v_track = copy.deepcopy(track)
             for nl, ob, ov in zip(v_track, old_base.track, old_v.track):

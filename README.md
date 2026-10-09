@@ -42,14 +42,14 @@ What can be edited:
 | Loading screens (`.bs`) | PNG | re-encoded no larger than the original |
 | Sound banks (`.snd`) | WAV (16-bit mono) | ADPCM-encoded; loop layout kept; SPU RAM is 512 KB |
 | Text in scenes/database (`.sdf`) | JSON | new strings appended, pointers redirected |
-| Meshes, ground, object placements (`.sdf`) | Blender (`tools/blender`, recommended) or OBJ / JSON | same topology: positions and UVs in place; draw items can get a new mesh (textured or flat tris/quads) |
+| Meshes, ground, object placements (`.sdf`) | Blender (`tools/blender`, recommended) or OBJ / JSON | same topology: positions and UVs in place; draw items can get a new mesh (textured or flat tris/quads); in Blender, new objects (new or existing models) can be added to levels |
 | Menus (`Menu_N`, `EndM_N`, levels' in-game menu) | `<entry>.menu.json` | variable defaults (e.g. `Valid*` unlocks), `PAGELIST` page names, button page links, item/event/button scripts as expressions (recompiled; grown scripts are appended) |
 | Track gates, AI racing lines (`.sdf`) | Blender | gate position/direction/width; racing-line lane offsets, target speeds, flags |
 | Collision surface (`.sdf`) | Blender | corner moves re-encode the faces; "Snap Collision to Ground" after ground edits |
 | Movies (`CINE/*.DPS`) | MP4 (`assets/cine`) | any video ffmpeg reads: scaled to the original size and frame rate, MDEC and XA ADPCM encoded, any length (a longer one moves to the end of the track) |
 | Anything else in `MR3.DAT` | raw file | replace it under `ws/mr3dat` |
 
-Not supported yet: new draw items or objects, new sprites the game would have to be told to draw. Edits are tested in an emulator (`docs/testing.md`: Mednafen, a deterministic libretro runner and a regression suite); not yet on hardware.
+Not supported yet: new sprites the game would have to be told to draw. Edits are tested in an emulator (`docs/testing.md`: Mednafen, a deterministic libretro runner and a regression suite); not yet on hardware.
 
 ## Tools
 

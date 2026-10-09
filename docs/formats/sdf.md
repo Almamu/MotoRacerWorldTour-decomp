@@ -165,6 +165,53 @@ draw code (0x80016A8C):
 The game picks a LOD from the distance to the camera, then draws
 `draw_items[lod_index[lod]]` (see below) with the object's matrix.
 
+Coordinates are **Y up** (larger y is higher: the camera and the bikes have
+a larger y than the road under them) in a left-handed frame; objects'
+vertices too (a lamp's model runs from y 0 at its base to +1501 at the
+top). Older notes in this file said "Y down"; the formulas are unchanged.
+
+### Drawing objects
+
+Each frame (level loop, 0x8005241C) the game calls 0x800177E8 on root 0's
+object list with a count of `root18[0]`: every top-level object with
+`+0x44 != 0` and flags bit 0 clear is drawn by 0x80016E34, which recurses
+into the hierarchy at `+0x40` (`{first child, next sibling}`). An object is
+drawn when `(flags & 0x12) == 0x12` (or flag 0x10000000): bit 0x10 is the
+"visible this frame" bit, set by
+
+- the grid: 0x80053BF8 walks the visible cells (lists A–C, see Cell) and
+  sets it on every object in their lists (cells hidden by the track-section
+  test, root 48, are skipped); or
+- 0x80053D4C: each object of root 0 with `(flags & 0xE) == 2` is
+  sphere-tested on its own (its LOD draw item's mesh radius, mesh + 0x14,
+  around its position at +0x08, within world + 0x38) — e.g. `o_fly (1)`,
+  `cammotion (1)`.
+
+Most level objects have flags 6 and rely on the grid. Root 0 holds
+`root18[0]` objects followed by 6 null slots, which the game fills with the
+bikes (`Moto 1`…`Moto 5`, `Moto X`) at run time; they're drawn separately.
+The draw-item table (root 1) also has null slots the game fills at run time
+(bike and rider parts: 37 of Sachsenring's 63 nulls), so its entries can't
+be reused.
+
+**Adding objects** (`add_objects` / `add_item` in
+`tools/blender/mrwt_blender/scene.py`): a new 0x54-byte `Cobjet` (name,
+flags 2, position, inline matrix with +0x34 pointing to it, a one-entry LOD
+list, +0x3C = 1, +0x44 = 1, colour 0x808080, class index at +0x50, added to
+the link block's object list) is appended, root 0's array is copied with the
+new objects inserted before the bike slots, and the four root 18 counts are
+raised. With flags 2 the object is sphere-tested itself, so no grid cell has
+to list it. A new model is a new draw item appended to a copy of the
+draw-item table (one more entry), with a plain mesh (flags 1) built like the
+replaced meshes. Checked in the emulator on Sachsenring: new objects using
+an existing lamp model and new flat-coloured meshes show up in place, and a
+lap completes.
+
+**Hiding objects**: flag 0x2000000 makes 0x80016E34 skip the draw (the
+levels' own invisible markers, e.g. `son_foule*` sound emitters, carry
+it); their children are still processed. Checked: Sachsenring's start
+gantry disappears.
+
 ## Draw items
 
 Root 1 of a level points to `{DrawItem** items, u32 count, ...}`: a table of
@@ -671,10 +718,10 @@ under its centre and wheels (0x800634BC, bike + 0x220…0x230).
 | Offset | Type   | Meaning                                                  |
 |--------|--------|----------------------------------------------------------|
 | 0x00   | s32    | origin X (1/32 units)                                    |
-| 0x04   | u32    | origin Y (1/32 units, Y down) << 8 \| **surface type** (low byte) |
+| 0x04   | u32    | origin Y (1/32 units, Y up) << 8 \| **surface type** (low byte) |
 | 0x08   | s32    | origin Z (1/32 units)                                    |
 | 0x0C   | s16[4] | neighbours, as face index offsets relative to this face; -0x7FFF = none |
-| 0x14   | s16[3] | plane normal (nx, ny, nz), unit length × 16384, ny > 0 for floors (Y down) |
+| 0x14   | s16[3] | plane normal (nx, ny, nz), unit length × 16384, ny > 0 for floors (Y up) |
 | 0x1A   | s16    | plane offset w                                           |
 | 0x1C   | u32[4] | edges: `distance << 16 \| angle` (angle: 12 bits, 4096 = 360°); the 4th has bit 15 set for a triangle |
 | 0x2C   | u32    | split edge (same encoding), or 0xFFFF for a single plane  |
@@ -691,7 +738,7 @@ Positions relative to the face are taken in game units:
 - **Plane**: if the split edge gives a value `> 0` the second plane is
   used, otherwise the first. Splits run along a quad's diagonal: a folded
   quad is two triangles.
-- **Height** (1/32 units, Y down):
+- **Height** (1/32 units, Y up):
   `origin_y - 32 * (((w + ((nx·dx + nz·dz) >> 12)) << 12) / ny)`
   (integer division). Vertical planes (ny = 0) occur in the trial levels.
 
