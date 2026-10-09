@@ -78,6 +78,7 @@ int bcmp(const void *a, const void *b, int n);
 /* libapi */
 void EnterCriticalSection(void);
 void ExitCriticalSection(void);
+void *InterruptCallback(int irq, void (*f)());
 
 /* libetc */
 int VSync(int mode);
