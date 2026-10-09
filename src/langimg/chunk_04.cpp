@@ -1,6 +1,7 @@
 #include "common.h"
 #include "langimg/seq.h"
 #include "langimg/ui.h"
+#include "gte.h"
 
 /* The game's code built with GCC 2.91.66, -G8, split addresses
  * (docs/matching/issue-5-langimg-chunk04.md). */
@@ -70,14 +71,27 @@ struct GridPair {
 GridPair *func_8001A62C(GridPair *p);
 void func_8001A63C(GridPair *p, int flags);
 int func_8001A664(Grid *g, Vector3 *v);
-int func_8001A7F4(Grid *g, Vector3 *v, int n);
+int func_8001A7F4(Grid *g, Vector3 *v, int n, int a);
+
+// A set of grids, with a coarse index of them
+struct GridSet {
+    short m_count;
+    Grid *m_grids;
+    u8 m_08[0x10];
+    int m_w; // 0x18: the index's size
+    int m_d;
+    int m_cell;          // 0x20: an index cell's size
+    short (*m_index)[2]; // 0x24: each index cell's first and last grid
+};
+int func_8001A6AC(GridSet *gs, Vector3 *v, int a, int exact);
+int func_8001A86C(Grid *g, Vector3 *v, int n, int a);
 int func_8001ABBC(Grid *g, SVECTOR *c, int a);
 int func_8001AD78(void *self, int a, int b);
 int func_8001AF3C(Grid *g, Vector3 *v, SVECTOR *c);
 void func_8001AFB0(Grid *g, SVECTOR *c, Vector3 *v);
 int func_8001B76C(Grid *g);
 void func_8001AD9C(void *self, int t, SVECTOR *a, SVECTOR *b, SVECTOR *out);
-void func_8001ACE4(void *self, int *plane, SVECTOR *a, SVECTOR *b, long *d);
+int func_8001ACE4(void *self, int *plane, SVECTOR *a, SVECTOR *b, long *d);
 int func_8001AE40(void *self, int *plane, SVECTOR *a, SVECTOR *b, SVECTOR *out);
 
 // A race entry (0x568 bytes; Race::m_entries)
@@ -447,13 +461,45 @@ int func_8001A664(Grid *g, Vector3 *v) {
     return func_8001ABBC(g, &c, 0);
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_8001A6AC);
+/* The set's grid a position is in: func_8001A86C's, else (unless exact)
+ * the first through the index, or -1. */
+int func_8001A6AC(GridSet *gs, Vector3 *v, int a, int exact) {
+    int r = func_8001A86C(gs->m_grids, v, gs->m_count, a);
+    int x;
+    int z;
+    int i;
+
+    if (r >= 0) {
+        return r;
+    }
+    if (exact) {
+        return -1;
+    }
+    x = (v->vx >> 12) / gs->m_cell;
+    z = (v->vz >> 12) / gs->m_cell;
+    i = z * gs->m_w + x;
+    if (gs->m_index && i >= 0 && i < gs->m_w * gs->m_d) {
+        short *c = gs->m_index[i];
+        int n = c[1] - c[0] + 1;
+
+        if (n <= 0) {
+            return -1;
+        }
+        r = func_8001A7F4(gs->m_grids + c[0], v, n, a);
+        if (r >= 0) {
+            r += c[0];
+        }
+    } else {
+        r = func_8001A7F4(gs->m_grids, v, gs->m_count, a);
+    }
+    return r;
+}
 
 #ifdef NON_MATCHING
 /* Scheduling (7 off): the original sets i first and tests n again after
  * the loop */
 /* The first of n grids a position is in, or -1. */
-int func_8001A7F4(Grid *g, Vector3 *v, int n) {
+int func_8001A7F4(Grid *g, Vector3 *v, int n, int a) {
     int i = 0;
     int r;
 
@@ -474,7 +520,34 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_8001A86C);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_8001ABBC);
 
+#ifdef NON_MATCHING
+/* Scheduling and registers (28 off): the operands loaded in another order
+ * and d stored after the result */
+/* The distances of a and b from a plane (its angle in the low 12 bits,
+ * its distance in the high 16), through the GTE; whether they're on
+ * either side. */
+int func_8001ACE4(void *self, int *plane, SVECTOR *a, SVECTOR *b, long *d) {
+    int p = *plane;
+    int sc = *(int *)D_800BF3A0[p & 0xFFF];
+    int dist = p >> 16;
+    int zero = 0;
+    int da;
+    int db;
+    int r;
+
+    GTE_SET_V0((u32)sc >> 16, sc);
+    GTE_SET_BK(dist, zero, dist);
+    GTE_SET_LIGHT(*(int *)a, (u16)a->vz, zero, *(int *)b, (int)b->vz);
+    GTE_MVMVA_LV0TR();
+    GTE_GET_MAC13(da, db);
+    r = (u32)(da ^ db) >> 31;
+    d[0] = da;
+    d[1] = db;
+    return r;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_8001ACE4);
+#endif
 
 /* a over a - b, 4.12; 0 if they're equal. */
 int func_8001AD78(void *self, int a, int b) {
