@@ -1,108 +1,82 @@
 #include "common.h"
 #include "langimg/cobjet.h"
-#include "langimg/strutil.h"
+
+/* C, GCC 2.91.66 with -G0 (docs/matching/issue-3-langimg-chunk02.md). */
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02", func_80015798);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02", func_80015CF4);
+extern "C" {
+extern u8 D_800B8868;
+extern int D_800C4900[];
+extern u8 *D_800CC030[];
+extern int D_800CBE84;
+void *func_80096240(int id);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02", func_80015E04);
+struct Res15CF4 {
+    int type; /* 2: to resolve */
+    u8 unk4[0xA];
+    short done;
+    int id;
+};
 
-CName::CName() {
-    m_str = 0;
-}
+struct ResList {
+    Res15CF4 **items;
+    u8 unk4[8];
+    int count;
+};
 
-CName::~CName() {
-    if (m_str) {
-        delete m_str;
-        m_str = 0;
-    }
-}
+/* Resolves the type-2 entries of a list once: an id whose block is a
+ * "BLKS" becomes an address. */
+void func_80015CF4(ResList *l) {
+    int i;
 
-void CName::Set(const char *str) {
-    if (str) {
-        if (m_str) {
-            delete m_str;
-            m_str = 0;
+    for (i = 0; i < l->count; i++) {
+        int two = 2;
+        int magic = 0x534B4C42;
+        int one = 1;
+        Res15CF4 *r = l->items[i];
+
+        if (r->type == two && !r->done) {
+            int *b = (int *)func_80096240(r->id);
+
+            if (b && b[1] == magic) {
+                r->id = D_800CBE84 + b[0];
+            }
+            l->items[i]->done = one;
         }
-        int len = strlen(str) + 1;
-        m_str = new char[len];
-        strncpy(m_str, str, len);
-        m_str[len - 1] = 0;
     }
 }
 
-char *CName::Get() {
-    return m_str;
-}
-
-int CName::Equals(const char *str) {
-    return func_800A6100(str, m_str) == 0;
-}
-
-CNamed::CNamed() {
-    m_04 = 0;
-}
-
-Cobjet::Cobjet() {
-    Init();
-}
-
-Cobjet::~Cobjet() {
-    if (m_38) {
-        delete[] m_38;
-        m_38 = 0;
-    }
-    if (m_links) {
-        delete m_links;
-        m_links = 0;
-    }
-}
+struct Thing15E04 {
+    u8 unk0[0x12];
+    u16 unk12;
+    u8 unk14[4];
+    int unk18;
+};
 
 #ifdef NON_MATCHING
-/* Equivalent; the original sets the matrix row by row (the diagonal, the
- * translation, then the rest) and stores m_38 and m_3C twice, where GCC
- * drops the first pair */
-static inline void ClearVector(Vector3 *v) {
-    v->vx = 0;
-    v->vy = 0;
-    v->vz = 0;
-}
+/* Equivalent; the original forms the tables' addresses with la + addu,
+ * moves p to $a2, and keeps the 0x40 case's value in $v0 */
+void func_80015E04(Thing15E04 *p) {
+    u16 v = p->unk12;
+    int f = p->unk18;
 
-static inline void Identity(MATRIX *m) {
-    m->m[0][0] = 0x1000;
-    m->t[0] = 0;
-    m->m[0][1] = m->m[0][2] = 0;
-    m->m[1][1] = 0x1000;
-    m->t[1] = 0;
-    m->m[1][2] = m->m[1][0] = 0;
-    m->m[2][2] = 0x1000;
-    m->t[2] = 0;
-    m->m[2][1] = m->m[2][0] = 0;
-}
+    if (v == 0xFFFF) {
+        return;
+    }
+    if (v == 0x40) {
+        int t = (s8)(D_800B8868 ^ 1) << 8;
 
-static inline void ClearParts(Cobjet *o) {
-    o->m_38 = 0;
-    o->m_3C = 0;
-}
+        p->unk12 = ((t & 0x100) >> 4) | 0x102 | ((t & 0x200) << 2);
+    } else if (v < 14) {
+        u8 *e = D_800CC030[D_800C4900[v]];
 
-void Cobjet::Init() {
-    ClearVector(&m_pos);
-    m_matp = 0;
-    Identity(&m_mat);
-    ClearParts(this);
-    m_3D = -1;
-    m_3F = -1;
-    m_3E = -1;
-    m_links = 0;
-    m_45 = 0;
-    m_46 = 0;
-    m_44 = 0;
-    ClearParts(this);
-    m_47 = 0;
-    m_color = 0x808080;
-    m_40 = 0;
+        if (e) {
+            p->unk12 = *(u16 *)(e + 6) + (f & 0x60);
+        }
+    }
 }
 #else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02", Init__6Cobjet);
+INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02", func_80015E04);
 #endif
+}

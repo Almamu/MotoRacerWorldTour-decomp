@@ -59,8 +59,10 @@ LIB_cdaudio_G      := 0
 # its library's or target's, the same way.
 langimg.chunk_01_G := 0
 # The game's C, GCC 2.91.66 (its C++ is 2.95.2's).
+langimg.chunk_02_GCC  := 2.91.66-psx
+langimg.chunk_02_G    := 0
 langimg.chunk_02b_GCC := 2.91.66-psx
-CHUNK_SETTINGS := langimg.chunk_01 langimg.chunk_02b
+CHUNK_SETTINGS := langimg.chunk_01 langimg.chunk_02 langimg.chunk_02b
 
 # -O2; the C++ has no exceptions and no RTTI.
 CC1FLAGS    := -O2 -quiet
