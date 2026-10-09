@@ -3,7 +3,7 @@
 #   make setup    fetch the compilers (GCC 2.95.2 and 2.91.66 for the PlayStation) and maspsx
 #   make split    re-run splat after config changes (needs the originals in extracted/)
 #   make          build and compare against the originals
-#   make objects  just compile src/ (needs neither the game files nor splat)
+#   make objects  just compile src/ and lib/ (no linking)
 #   make sdk      also link Sony's PsyQ objects in place of the library asm they
 #                 match, and compare that (needs tools/fetch_psyq.sh first)
 
@@ -29,7 +29,6 @@ SPLAT    := $(PYTHON) -m splat split
 langimg_GCC := 2.95.2-psx
 sces_GCC    := 2.91.66-psx
 gcc_dir      = tools/gcc-$(1)
-comma       := ,
 
 # Small data in $gp-relative sections: up to 8 bytes in the game, none in
 # the boot executable (it never uses $gp).
@@ -41,16 +40,17 @@ sces_G      := 0
 langimg_CFLAGS := -mno-split-addresses
 sces_CFLAGS    := -fsigned-char
 
-# Sources built with another compiler or flags than the rest of their
-# target, as source:compiler:flags (flags with commas for spaces). The
-# game's sound code is GCC 2.91.66's (docs/matching_techniques.md,
-# "Compilers per file").
-OBJ_OVERRIDES := src/langimg/chunk_00.cpp:2.91.66-psx:-mno-split-addresses
+# Libraries (lib/<name>/<target>/, docs/libraries.md) built with another
+# compiler or flags than the rest of their target: LIB_<name>_GCC and
+# LIB_<name>_CFLAGS. The game's sound engine is GCC 2.91.66's.
+LIBS             := $(notdir $(wildcard lib/*))
+LIB_sound_GCC    := 2.91.66-psx
+LIB_sound_CFLAGS := -mno-split-addresses
 
 # -O2; the C++ has no exceptions and no RTTI.
 CC1FLAGS    := -O2 -quiet
 CXXFLAGS    := -fno-exceptions -fno-rtti
-CPPFLAGS    := -nostdinc -D__GNUC__=2 -Dmips -D__mips__ -I include -I src
+CPPFLAGS    := -nostdinc -D__GNUC__=2 -Dmips -D__mips__ -I include -I src $(patsubst %,-I %,$(wildcard lib/*/include))
 ifeq ($(NON_MATCHING),1)
 CPPFLAGS    += -DNON_MATCHING
 endif
@@ -82,12 +82,12 @@ $(1)_BIN      := $(BUILD)/$(1).bin
 endef
 $(foreach t,$(TARGETS),$(eval $(call target_vars,$(t))))
 
-# Every object the linker script names (asm/, src/ and assets).
+# Every object the linker script names (asm/, src/, lib/ and assets).
 ld_objects = $(shell grep -o 'build/[A-Za-z0-9_/.-]*\.o' $(1) 2>/dev/null | sort -u)
 
 # Objects are rebuilt when the compile flags change (NON_MATCHING=1 and back).
 FLAGS_STAMP := $(BUILD)/flags.txt
-FLAGS_NOW   := $(CPPFLAGS) $(CC1FLAGS) $(CXXFLAGS) $(MASPSXFLAGS) $(langimg_G) $(sces_G) $(langimg_CFLAGS) $(sces_CFLAGS) $(OBJ_OVERRIDES)
+FLAGS_NOW   := $(CPPFLAGS) $(CC1FLAGS) $(CXXFLAGS) $(MASPSXFLAGS) $(langimg_G) $(sces_G) $(langimg_CFLAGS) $(sces_CFLAGS) $(foreach l,$(LIBS),$(l):$(LIB_$(l)_GCC):$(LIB_$(l)_CFLAGS))
 $(shell mkdir -p $(BUILD); echo '$(FLAGS_NOW)' | cmp -s - $(FLAGS_STAMP) || echo '$(FLAGS_NOW)' > $(FLAGS_STAMP))
 
 #### Rules ####
@@ -129,7 +129,7 @@ build: $(foreach t,$(TARGETS),$($(t)_BIN))
 
 # Every source file compiled, without linking: what CI checks when it has
 # no copy of the game.
-SRC_OBJECTS := $(foreach t,$(TARGETS),$(patsubst %,$(BUILD)/$(t)/%.o,$(basename $(wildcard src/$(t)/*.c src/$(t)/*.cpp))))
+SRC_OBJECTS := $(foreach t,$(TARGETS),$(patsubst %,$(BUILD)/$(t)/%.o,$(basename $(wildcard src/$(t)/*.c src/$(t)/*.cpp lib/*/$(t)/*.c lib/*/$(t)/*.cpp))))
 objects: $(SRC_OBJECTS)
 
 # The library code with Sony's own objects linked in where they match
@@ -167,7 +167,7 @@ gcc_minor = -D__GNUC_MINOR__=$(word 2,$(subst ., ,$(1)))
 
 # Objects of each target live under build/<target>/ (splat's build_path).
 # OBJ_GCC and OBJ_CFLAGS are each object's compiler and flags: its target's,
-# unless OBJ_OVERRIDES names it.
+# or its library's (LIB_<name>_GCC, LIB_<name>_CFLAGS).
 define target_rules
 $(BUILD)/$(1)/%.o: OBJ_GCC = $($(1)_GCC)
 $(BUILD)/$(1)/%.o: OBJ_CFLAGS = $($(1)_CFLAGS)
@@ -198,8 +198,8 @@ $(BUILD)/$(1)/%.o: %.c $(call gcc_dir,$($(1)_GCC))/cc1 $(FLAGS_STAMP)
 	@sed -i 's|^[^:]*:|$$@:|' $$(@:.o=.d)
 endef
 $(foreach t,$(TARGETS),$(eval $(call target_rules,$(t))))
-override_obj = $(BUILD)/$(word 2,$(subst /, ,$(1)))/$(basename $(1)).o
-$(foreach o,$(OBJ_OVERRIDES),$(eval $(call override_obj,$(word 1,$(subst :, ,$(o)))): OBJ_GCC = $(word 2,$(subst :, ,$(o)))) \
-  $(eval $(call override_obj,$(word 1,$(subst :, ,$(o)))): OBJ_CFLAGS = $(subst $(comma), ,$(word 3,$(subst :, ,$(o))))))
+$(foreach t,$(TARGETS),$(foreach l,$(LIBS),\
+  $(if $(LIB_$(l)_GCC),$(eval $(BUILD)/$(t)/lib/$(l)/%.o: OBJ_GCC = $(LIB_$(l)_GCC)))\
+  $(if $(LIB_$(l)_CFLAGS),$(eval $(BUILD)/$(t)/lib/$(l)/%.o: OBJ_CFLAGS = $(LIB_$(l)_CFLAGS)))))
 
 -include $(shell find $(BUILD) -name '*.d' 2>/dev/null)

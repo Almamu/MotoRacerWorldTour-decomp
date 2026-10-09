@@ -3,7 +3,7 @@
 
   tools/psyq_link.py TARGET MATCH_JSON OUTDIR
 
-The normal build assembles the library chunks (src/<target>/lib_NN.c) from
+The normal build assembles the library chunks (lib/psyq/<target>/lib_NN.c) from
 the tracked asm. This writes an alternative build of them: every function
 of a lib chunk becomes its own small asm object, except the runs of
 functions that an SDK object found by tools/psyq_match.py covers exactly,
@@ -25,6 +25,8 @@ import re
 import struct
 import subprocess
 import sys
+
+import paths
 from collections import defaultdict
 from pathlib import Path
 
@@ -98,7 +100,7 @@ def resolve_externals(obj, base, original, delta):
 
 def chunk_entries(target, chunk):
     """[(kind, folder, name)] of a lib chunk's source, in order."""
-    src = (ROOT / "src" / target / f"{chunk}.c").read_text()
+    src = paths.chunk_source(target, chunk).read_text()
     return [(m.group(1), m.group(2), m.group(3)) for m in ASM_RE.finditer(src)]
 
 
@@ -128,7 +130,7 @@ def main():
         sdk[o["address"]] = dict(o, path=obj)
 
     ld = (ROOT / "linker" / f"{target}.ld").read_text()
-    chunks = sorted(set(re.findall(rf"build/{target}/src/{target}/(lib_\d+)\.o\(\.text\)", ld)))
+    chunks = sorted(set(re.findall(rf"build/{target}/\S*/(lib_\d+)\.o\(\.text\)", ld)))
     wrap = outdir / "wrap"
     entries = {c: chunk_entries(target, c) for c in chunks}
     # Every function start, over all lib chunks (an object can straddle two).
@@ -178,7 +180,7 @@ def main():
     # Rewrite the linker script: each lib chunk's .text and .rodata become
     # its pieces; its (empty) .data and .bss go.
     for chunk in chunks:
-        base = f"build/{target}/src/{target}/{chunk}.o"
+        base = paths.chunk_object(target, chunk)
         ld = ld.replace(f"        {base}(.text);", "\n".join(text_lines[chunk]))
         ld = ld.replace(f"        {base}(.rodata);", "\n".join(rodata_lines[chunk]))
         ld = re.sub(rf"\n\s*{re.escape(base)}\((\.data|\.bss)\);", "", ld)

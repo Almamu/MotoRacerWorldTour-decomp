@@ -1,5 +1,5 @@
 #include "common.h"
-#include "langimg/sound.h"
+#include "sound.h"
 
 /* Sets the CD audio volume, each side from -128 to 127. */
 void func_80011820(int unused, s8 left, s8 right) {

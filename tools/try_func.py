@@ -33,6 +33,8 @@ from pathlib import Path
 
 import rabbitizer
 
+import paths
+
 ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -61,13 +63,11 @@ def target_words(path):
 def compile_cmd(target, src, out, defines, gcc=None, cflags=""):
     """The Makefile's command for this chunk, pointed at src and out."""
     rel = src.relative_to(ROOT) if src.is_relative_to(ROOT) else src
-    chunk_src = None
-    for ext in (".cpp", ".c"):
-        if (ROOT / "src" / target / (src.stem + ext)).exists():
-            chunk_src = Path("src") / target / (src.stem + ext)
-    obj = f"build/{target}/src/{target}/{src.stem}.o"
-    if chunk_src is None:
+    chunk_src = paths.chunk_source(target, src.stem)
+    if not chunk_src.exists():
         sys.exit(f"{src}: name it after a chunk of {target} (it picks the chunk's compile command)")
+    chunk_src = chunk_src.relative_to(ROOT)
+    obj = paths.chunk_object(target, src.stem)
     cmd = subprocess.run(["make", "-n", "-B", obj], cwd=ROOT, capture_output=True,
                          text=True).stdout
     line = next((l for l in cmd.splitlines() if "cc1" in l), None)
@@ -156,7 +156,7 @@ def main():
     if args.source:
         src = Path(args.source).resolve()
     else:
-        src = next(p for p in (ROOT / "src" / target / f"{chunk}{e}" for e in (".cpp", ".c")) if p.exists())
+        src = paths.chunk_source(target, chunk)
     want = target_words(asm)
     with tempfile.TemporaryDirectory() as d:
         obj = Path(d) / "out.o"
