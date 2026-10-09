@@ -42,7 +42,7 @@ glabel __SN_ENTRY_POINT
     /* 40A8 80136BDC 1C801F3C */  lui        $ra, %hi(D_801C0A58)
     /* 40AC 80136BE0 580AFF8F */  lw         $ra, %lo(D_801C0A58)($ra)
     /* 40B0 80136BE4 00000000 */  nop
-    /* 40B4 80136BE8 8AD4040C */  jal        func_80135228
+    /* 40B4 80136BE8 8AD4040C */  jal        main
     /* 40B8 80136BEC 00000000 */   nop
     /* 40BC 80136BF0 4D000000 */  break      0, 1
 endlabel __SN_ENTRY_POINT

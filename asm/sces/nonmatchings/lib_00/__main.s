@@ -1,6 +1,6 @@
-nonmatching func_80136BF4, 0x70
+nonmatching __main, 0x70
 
-glabel func_80136BF4
+glabel __main
     /* 40C0 80136BF4 1C80083C */  lui        $t0, %hi(D_801BD884)
     /* 40C4 80136BF8 84D8088D */  lw         $t0, %lo(D_801BD884)($t0)
     /* 40C8 80136BFC F0FFBD27 */  addiu      $sp, $sp, -0x10
@@ -31,4 +31,4 @@ glabel func_80136BF4
     /* 4124 80136C58 1000BD27 */  addiu      $sp, $sp, 0x10
     /* 4128 80136C5C 0800E003 */  jr         $ra
     /* 412C 80136C60 00000000 */   nop
-endlabel func_80136BF4
+endlabel __main

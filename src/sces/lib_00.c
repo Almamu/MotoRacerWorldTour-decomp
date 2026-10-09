@@ -2,7 +2,7 @@
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_00", __SN_ENTRY_POINT);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_00", func_80136BF4);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_00", __main);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_00", __builtin_delete);
 

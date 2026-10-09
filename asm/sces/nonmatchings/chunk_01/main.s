@@ -1,13 +1,13 @@
-nonmatching func_80135228, 0x288
+nonmatching main, 0x288
 
-glabel func_80135228
+glabel main
     /* 26F4 80135228 C8FFBD27 */  addiu      $sp, $sp, -0x38
     /* 26F8 8013522C 3400BFAF */  sw         $ra, 0x34($sp)
     /* 26FC 80135230 3000B4AF */  sw         $s4, 0x30($sp)
     /* 2700 80135234 2C00B3AF */  sw         $s3, 0x2C($sp)
     /* 2704 80135238 2800B2AF */  sw         $s2, 0x28($sp)
     /* 2708 8013523C 2400B1AF */  sw         $s1, 0x24($sp)
-    /* 270C 80135240 FDDA040C */  jal        func_80136BF4
+    /* 270C 80135240 FDDA040C */  jal        __main
     /* 2710 80135244 2000B0AF */   sw        $s0, 0x20($sp)
     /* 2714 80135248 A6EC040C */  jal        ResetCallback
     /* 2718 8013524C 01001124 */   addiu     $s1, $zero, 0x1
@@ -164,4 +164,4 @@ glabel func_80135228
     /* 2970 801354A4 21100000 */  addu       $v0, $zero, $zero
     /* 2974 801354A8 0800E003 */  jr         $ra
     /* 2978 801354AC 3800BD27 */   addiu     $sp, $sp, 0x38
-endlabel func_80135228
+endlabel main

@@ -202,6 +202,113 @@ CPair::CPair() {
     m_04 = 0;
 }
 
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_00", func_80134CA0);
+/* A bevelled frame, 3 pixels wide, around the 128x43 box at x, y: four
+ * flat quads drawn at once. */
+void func_80134CA0(int x, int y, int color) {
+    POLY_F4 p;
+    char c = color;
 
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_00", Startup);
+    ((u_char *)&p.tag)[3] = 5;
+    p.code = 0x28;
+    p.r0 = c;
+    p.g0 = c;
+    p.b0 = c;
+    p.x0 = x;
+    p.y0 = y;
+    p.x1 = x - 3;
+    p.y1 = y - 3;
+    p.x2 = x + 128;
+    p.y2 = y;
+    p.x3 = x + 131;
+    p.y3 = y - 3;
+    func_8013C6F0(&p);
+    ((u_char *)&p.tag)[3] = 5;
+    p.code = 0x28;
+    p.r0 = c;
+    p.g0 = c;
+    p.b0 = c;
+    p.x0 = x + 128;
+    p.y0 = y;
+    p.x1 = x + 131;
+    p.y1 = y - 3;
+    p.x2 = x + 128;
+    p.y2 = y + 43;
+    p.x3 = x + 131;
+    p.y3 = y + 46;
+    func_8013C6F0(&p);
+    ((u_char *)&p.tag)[3] = 5;
+    p.code = 0x28;
+    p.r0 = c;
+    p.g0 = c;
+    p.b0 = c;
+    p.x0 = x;
+    p.y0 = y;
+    p.x1 = x - 3;
+    p.y1 = y - 3;
+    p.x2 = x;
+    p.y2 = y + 43;
+    p.x3 = x - 3;
+    p.y3 = y + 46;
+    func_8013C6F0(&p);
+    ((u_char *)&p.tag)[3] = 5;
+    p.code = 0x28;
+    p.r0 = c;
+    p.g0 = c;
+    p.b0 = c;
+    p.x0 = x;
+    p.y0 = y + 43;
+    p.x1 = x - 3;
+    p.y1 = y + 46;
+    p.x2 = x + 128;
+    p.y2 = y + 43;
+    p.x3 = x + 131;
+    p.y3 = y + 46;
+    func_8013C6F0(&p);
+}
+
+/* The language choice: shows the picture, then moves a frame over a 3x2
+ * grid until a choice is made or about 500 frames pass. The game reads the
+ * choice (column + 3 * row) at 0x80010004. Also opens MR3.DAT and loads the
+ * game (data\\LANGIMG.DAT) first. */
+void Startup(void) {
+    Choice choice;
+    RECT rect;
+    u32 size;
+    int count = 1000;
+
+    func_80135D34(0);
+    D_8019D480 = OpenArchive("\\MR3.DAT;1", (void *)0x80010008);
+    LoadFile("data\\LANGIMG.DAT", (u8 *)0x800117F0, &size);
+    func_80134948(&D_8014D3F8, D_801A6C10, 1, 0, 0);
+    rect.x = 0;
+    rect.y = 0;
+    rect.w = 640;
+    rect.h = 256;
+    StoreImage(&rect, (u_long *)D_8014D480);
+    *(u32 *)0x80010000 = 0x12345670;
+    D_8014D3F4 = (u32 *)0x80010004;
+    do {
+        func_8013FA3C(D_8014D35C, &choice);
+        DrawSync(0);
+        rect.y = (D_8019DA5C ^ 1) << 8;
+        LoadImage(&rect, (u_long *)D_8014D480);
+        DrawSync(0);
+        count -= 2;
+        func_80134CA0(choice.col * 160 + 96, choice.row * 77 + 68, (D_8019DA5C << 7) | 0x40);
+        VSync(2);
+        func_80136450();
+        if (count < 0) {
+            SsUtKeyOn(D_8019D990, 0, 0, 0x71, 0, 0x7F, 0x7F);
+            break;
+        }
+    } while (choice.done == 0);
+    func_80136540();
+    *D_8014D3F4 = choice.col + choice.row * 3;
+}
+
+/* An unreferenced copy of the path: the first .rodata of the next source
+ * file (the one starting with func_80135024), where something that was
+ * compiled out used it. Identical literals are merged within a file, so it
+ * can't come from Startup; spelled out until the chunks follow the
+ * original files. */
+extern "C" const char D_8014C38C[] = "\\MR3.DAT;1";

@@ -33,6 +33,16 @@ typedef struct {
 } CdlFILE;
 
 /* libgpu display and drawing environments */
+/* A flat-shaded quadrangle */
+typedef struct {
+    u_long tag;
+    u_char r0, g0, b0, code;
+    short x0, y0;
+    short x1, y1;
+    short x2, y2;
+    short x3, y3;
+} POLY_F4;
+
 typedef struct {
     RECT disp;
     RECT screen;
@@ -65,6 +75,7 @@ void ExitCriticalSection(void);
 /* libetc */
 int VSync(int mode);
 int VSyncCallback(void (*f)());
+void ResetCallback(void);
 void ResetGraph(int mode);
 void SetGraphDebug(int level);
 int SetVideoMode(long mode);
@@ -96,6 +107,7 @@ int DrawSyncCallback(void (*f)());
 int ClearImage(RECT *rect, u_char r, u_char g, u_char b);
 int MoveImage(RECT *rect, int x, int y);
 int LoadImage(RECT *rect, u_long *p);
+int StoreImage(RECT *rect, u_long *p);
 DRAWENV *SetDefDrawEnv(DRAWENV *env, int x, int y, int w, int h);
 DISPENV *SetDefDispEnv(DISPENV *env, int x, int y, int w, int h);
 void SetDispMask(int mask);
@@ -117,6 +129,7 @@ void SsVabClose(short vab_id);
 void SsEnd(void);
 void SsQuit(void);
 void SsSetSerialVol(short s_num, short voll, short volr);
+void SsSetSerialAttr(char s_num, char attr, char mode);
 void SsUtReverbOn(void);
 void SsUtReverbOff(void);
 void SsUtSetReverbType(short type);

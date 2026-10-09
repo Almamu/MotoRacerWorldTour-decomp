@@ -18,6 +18,7 @@ strInit = 0x80134298; // type:func
 D_8014D22C = 0x8014D22C; // size:0x30 (DECENV)
 
 // Library functions the signatures don't name, from how they're used
+__main = 0x80136BF4; // type:func (libsn, runs the constructor list, called from main)
 PutDrawEnv = 0x8013C74C; // type:func (func_801343A0 calls it after PutDispEnv with a DRAWENV)
 // libcd's SYS.OBJ has CdMix, CdGetSector, CdGetSector2, CdDataCallback in a
 // row, as in the game; the signatures put CdGetSector one function late here
@@ -26,6 +27,7 @@ CdGetSector2 = 0x801372AC; // type:func
 LoadEntry = 0x80135C54; // type:func
 strNext = 0x80133DD0; // type:func
 strCallback = 0x80133CCC; // type:func
+main = 0x80135228; // type:func
 
 // PsyQ library functions: library/object and the SDK versions whose code
 // matches there. "exact" ones are Sony's object itself (tools/psyq_match.py),

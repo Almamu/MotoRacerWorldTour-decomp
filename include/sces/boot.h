@@ -38,6 +38,19 @@ struct Archive {
     ArchiveEntry entries[1];
 };
 
+/* The language choice (Startup) */
+struct Choice {
+    int done;
+    int col;
+    int row;
+
+    Choice() {
+        done = 0;
+        col = 0;
+        row = 0;
+    }
+};
+
 /* What the option callbacks (func_80135024...) step. */
 struct Options {
     int unk0;
@@ -55,7 +68,7 @@ extern u_char D_8019E8AC[]; /* its VAB body */
 extern const char D_8014C3C0[]; /* "VAB trans body failed\n" */
 extern int D_8019DA50;
 extern int D_8019DA54;
-extern int D_8019DA5C; /* the buffer being shown */
+extern volatile int D_8019DA5C; /* the buffer being shown */
 extern int D_8019DA60;
 extern int D_8019DA64;
 extern int D_8019DA68;
@@ -108,6 +121,26 @@ void func_8013604C(void);
 void func_80136090(void);
 int func_801360CC(void);
 int func_80135F84(void);
+void func_80134CA0(int x, int y, int color);
+void Startup(void);
+void func_8013C6F0(void *prim); /* libgpu: DrawPrim, by its use */
+void func_8013FA3C(void *a, Choice *choice);
+int func_80134948(CPair *p, void *image, int a, int x, int y); /* shows a picture */
+extern u8 D_8014D480[];
+extern u8 D_80175480[];
+extern u8 D_801A0514[]; /* the first picture */
+extern u8 D_801B1310[]; /* the last one */
+extern u8 D_8014D400[]; /* the intro movie */
+extern void (*D_800117F0)(void); /* the game's entry point (LANGIMG.DAT's first word) */
+int func_80133334(int a, void *movie, int c, int d); /* plays a movie */
+void func_8013F188(int a, int b); /* libpad */
+void func_8013EB24(int a);        /* libpad */
+void func_8013F908(int a);        /* libpad */
+void func_8013F1D0(void);         /* libpad */
+int func_8013B35C(void);          /* libetc */
+extern u8 D_801A6C10[]; /* the language choice picture */
+extern u8 D_8014D35C[];
+extern u32 *D_8014D3F4;
 int func_80136130(int x, int y, int w, int h, int mode, int otSize, int primCount, int clear);
 void func_80136450(void);
 int func_801364D4(void);

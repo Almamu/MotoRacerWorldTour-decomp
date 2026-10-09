@@ -1,5 +1,6 @@
 #include "common.h"
 #include "sces/boot.h"
+#include "sces/movie.h"
 
 void func_80135024(int *key, Options *opt) {
     if (*key == 0xFF) {
@@ -44,7 +45,65 @@ void func_801351D4(int *key, int *done) {
     }
 }
 
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", func_80135228);
+#ifdef NON_MATCHING
+/* Equivalent; at the end the original loads the game's entry point into
+ * $v1, this build into $a0 */
+/* Initialises the hardware, shows two pictures and plays the intro movie
+ * (again if the first try fails), runs the language choice (Startup, which
+ * also loads the game), shuts everything down and jumps to the game's entry
+ * point, the first word of LANGIMG.DAT. GCC calls __main (the constructor
+ * list) first by itself. */
+int main(void) {
+    ResetCallback();
+    ResetGraph(0);
+    CdInit();
+    func_80135F84();
+    func_80136130(0, 14, 640, 256, 1, 0x2800, 1, 1);
+    func_80136450();
+    VSync(20);
+    func_80136450();
+    func_8013F188(0, 1);
+    func_8013EB24(1);
+    func_8013F908(20);
+    func_801360CC();
+    func_80136090();
+    func_8013604C();
+    VSync(0);
+    func_80136028();
+    SsSetSerialAttr(0, 0, 1);
+    D_8014D3F8.Set((int)D_8014D480, 0x50000);
+    func_80134948(&D_8014D3F8, D_801A0514, 1, 0, 0);
+    VSync(250);
+    func_80136450();
+    func_801364D4();
+    D_8014D0C0 = (u_long *)D_8014D480;
+    D_8014D0C4 = (u_long *)D_80175480;
+    if (func_80133334(3, D_8014D400, 5, 0) == 0) {
+        VSync(3);
+        func_80133334(0, D_8014D400, 5, 0);
+        VSync(3);
+    }
+    func_80136130(0, 14, 640, 256, 1, 0x2800, 1, 1);
+    Startup();
+    func_801364D4();
+    func_80136130(0, 14, 512, 256, 1, 0x2800, 1, 1);
+    func_80136450();
+    SetDispMask(0);
+    func_80134948(&D_8014D3F8, D_801B1310, 1, 0, 0);
+    func_80134948(&D_8014D3F8, D_801B1310, 1, 0, 256);
+    func_80136450();
+    SetDispMask(1);
+    func_801364D4();
+    func_80135F10();
+    SsQuit();
+    func_8013F1D0();
+    func_8013B35C();
+    D_800117F0();
+    return 0;
+}
+#else
+INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", main);
+#endif
 
 inline void *operator new(unsigned int, void *p) {
     return p;
