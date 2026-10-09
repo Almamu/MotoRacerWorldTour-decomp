@@ -408,8 +408,9 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02b", func_80016A8C);
 #endif
 
 #ifdef NON_MATCHING
-/* The prim pointer: the original keeps a copy of it in $a2 (the second
- * call takes that), and the vector subtraction is scheduled apart */
+/* Registers (42 off): the matrix and the camera in each other's saved
+ * registers. The page tested twice and the prim read again give the
+ * original's copy of the prim in $a2 (as func_800194E4) */
 /* Projects the point at the matrix's position and, if the triangle
  * around it faces the camera, draws the object's prim there. */
 void func_80016C3C(CobjetModel *o, MATRIX *m) {
@@ -432,9 +433,15 @@ void func_80016C3C(CobjetModel *o, MATRIX *m) {
     func_80098674(&c->m_view, m, rp);
     a = m->t;
     b = c->m_view.t;
-    d[0] = a[0] - b[0];
-    d[1] = a[1] - b[1];
-    d[2] = a[2] - b[2];
+    {
+        long x = a[0] - b[0];
+        long y = a[1] - b[1];
+        long z = a[2] - b[2];
+
+        d[0] = x;
+        d[1] = y;
+        d[2] = z;
+    }
     func_8009887C(d, rot.t);
     l = D_800C8864->m_lens;
     zsf3 = (l->m_1C << 16) / ((l->m_14 << 15) + (l->m_14 << 14));
@@ -448,7 +455,7 @@ void func_80016C3C(CobjetModel *o, MATRIX *m) {
     prim = o->m_prim;
     page = prim[1];
     if (o->m_54) {
-        page = o->m_54;
+        page = o->m_54 ? o->m_54 : prim[1];
     }
     r = 0xFF00FF00;
     GTE_MTC2(r, 0);
@@ -471,10 +478,10 @@ void func_80016C3C(CobjetModel *o, MATRIX *m) {
         GTE_MTC2(r, 1);
         GTE_RTPS();
         GTE_MFC2(sxy, 14);
-        if ((prim[0] & 7) == 1) {
-            func_80018AEC(prim, page, (short)sxy, sxy >> 16);
+        if ((o->m_prim[0] & 7) == 1) {
+            func_80018AEC(o->m_prim, page, (short)sxy, sxy >> 16);
         } else {
-            func_80019114(prim, page, (short)sxy, sxy >> 16);
+            func_80019114(o->m_prim, page, (short)sxy, sxy >> 16);
         }
     }
 }

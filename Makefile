@@ -60,7 +60,8 @@ LIB_cdaudio_G      := 0
 langimg.chunk_01_G := 0
 # The game's code built with GCC 2.91.66 (its classes are 2.95.2's).
 langimg.chunk_02_GCC  := 2.91.66-psx
-langimg.chunk_02_G    := 0
+langimg.chunk_02_CFLAGS :=
+langimg.chunk_02_MASPSXFLAGS = $(MASPSXFLAGS) --small-externs=
 langimg.chunk_02b_GCC := 2.91.66-psx
 langimg.chunk_02b_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=D_800C493C,D_800C4944
 langimg.chunk_03_GCC  := 2.91.66-psx

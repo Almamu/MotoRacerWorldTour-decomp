@@ -1,5 +1,6 @@
 #include "common.h"
 #include "langimg/cobjet.h"
+#include "gte.h"
 
 /* The game's code built with GCC 2.91.66 and -G0
  * (docs/matching/issue-4-langimg-chunk03.md). */
@@ -12,6 +13,49 @@ extern void CobjetDtor(Cobjet *o, int flags) asm("_._6Cobjet");
 #define SET_VTABLE(o, vt) (*(void **)((char *)(o) + 0x50) = (vt))
 
 extern "C" {
+struct UiList;
+void func_80015CF4(UiList *l);
+void *func_80096240(int id);
+extern int D_800CBE80;
+extern int D_800CBE84;
+extern int D_800CA778;
+void func_800185F0(CobjetList *l, int set, int clear, int from, int to);
+void func_8001865C(CobjetList *l);
+void func_80018814(void);
+
+// A 2D object: Cobjet's flag 1 (its prim at 0x10, its screen position in
+// its flags)
+struct Obj2D {
+    int m_00;
+    u32 m_flags; // 0x04: bits 11-21 x, 22-31 y
+    int m_08;
+    int m_page; // 0x0C: or the prim's own
+    int *m_prim;
+};
+void func_800194E4(Obj2D *o);
+
+// An entry of a sequence: an object, its linked entry, and its m_3F
+struct SeqEntry {
+    int m_obj : 12;
+    int m_link : 12; // -1: none
+    int m_3F : 8;
+    SeqEntry *m_next;
+};
+
+// A sequence of objects and their linked entries
+struct Seq {
+    int m_00;
+    CobjetList *m_objs;
+    CobjetLinkedTable *m_links;
+    int m_0C;
+    SeqEntry *m_entries;
+    int m_14;
+    unsigned m_state : 2; // 0x18
+    unsigned m_18_2 : 4;
+    unsigned m_mode : 6;
+};
+int func_80019578(Seq *s, int a, int back, int c);
+void func_80018954(MATRIX *view, Cobjet *o, long *sxy);
 /* The subclasses' vtables: one entry each, their destructor */
 extern int D_800C4948[];
 extern int D_800C4958[];
@@ -548,11 +592,89 @@ void func_800184A4(CobjetList *l, CobjetTreeObj *g) {
     func_80017730(l);
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_03", func_800185F0);
+/* Sets and clears flags on the list's objects from..to. */
+void func_800185F0(CobjetList *l, int set, int clear, int from, int to) {
+    Cobjet **p = l->m_items + from;
+    int n;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_03", func_8001865C);
+    if (to >= l->m_count) {
+        to = l->m_count - 1;
+    }
+    n = to - from + 1;
+    if (n > 0) {
+        do {
+            if (*p) {
+                (*p)->m_04 = ((*p)->m_04 | set) & ~clear;
+            }
+            p++;
+        } while (--n);
+    }
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_03", func_80018814);
+/* Resolves the texture blocks of the list's models and prims once ("BLKS"
+ * blocks become addresses), and the 2D item lists' (func_80015CF4). */
+void func_8001865C(CobjetList *l) {
+    int i;
+
+    for (i = 0; i < l->m_count; i++) {
+        int done = 0x20000000;
+        int magic = 0x534B4C42;
+        int two = 2;
+        Cobjet *o = l->m_items[i];
+        int *prim;
+
+        if (!o) {
+            continue;
+        }
+        /* an empty loop around the rest: its registers' weights (found by the
+         * permuter) */
+        do {
+            if (o->m_04 & 1) {
+                if (!(o->m_04 & 0x40)) {
+                    continue;
+                }
+                prim = *(int **)&o->m_pos.vz;
+            } else if (o->m_04 & 0x2000) {
+                int *b = (int *)func_80096240(((CobjetModel *)o)->m_54);
+
+                if (b && b[1] == magic) {
+                    ((CobjetModel *)o)->m_54 = D_800CBE84 + b[0];
+                }
+                continue;
+            } else if (o->m_04 & 0x40) {
+                prim = ((CobjetModel *)o)->m_prim;
+            } else {
+                continue;
+            }
+            if (!(prim[0] & 7)) {
+                if (D_800CBE80 && !(prim[0] & done)) {
+                    int *b = (int *)func_80096240(prim[2]);
+
+                    if (b && b[1] == magic) {
+                        prim[2] = D_800CBE84 + b[0];
+                    }
+                    prim[0] |= done;
+                }
+            } else if ((prim[0] & 7) == two) {
+                func_80015CF4((UiList *)prim[2]);
+            }
+        } while (0);
+    }
+}
+
+/* Waits a little: longer the first time. */
+void func_80018814(void) {
+    int i;
+
+    if (++D_800CA778 == 1) {
+        i = 10;
+        while (i--) {
+        }
+    }
+    i = 32;
+    while (i--) {
+    }
+}
 
 /* The destructor of the subclass with vtable D_800C4958. */
 void func_8001885C(Cobjet *o, int flags) {
@@ -605,12 +727,156 @@ int func_800188CC(int *item) {
     return r;
 }
 
+#ifdef NON_MATCHING
+/* Equivalent; the original recomputes &rot for each use where GCC keeps it
+ * in a saved register (docs/matching_techniques.md, "Open problems") */
+/* Where an object's position is on screen, seen through view. */
+void func_80018954(MATRIX *view, Cobjet *o, long *sxy) {
+    Vector3 pos;
+    MATRIX rot;
+    MATRIX m;
+    long d[3];
+    long *a;
+    long *b;
+    CameraLens *l;
+    int zsf3, zsf4;
+    int tx, ty, tz;
+    register int xy asm("$9");
+    register int z asm("$10");
+    register int r asm("$11");
+
+    pos = o->m_pos;
+    m.m[0][0] = m.m[1][1] = m.m[2][2] = 0x1000;
+    m.m[0][1] = m.m[0][2] = 0;
+    m.m[1][0] = m.m[1][2] = 0;
+    m.m[2][0] = m.m[2][1] = 0;
+    {
+        Vector3 *p = &pos;
+        long x = p->vx;
+        long y = p->vy;
+        long w = p->vz;
+
+        m.t[0] = x;
+        m.t[1] = y;
+        m.t[2] = w;
+    }
+    func_80098674(view, &m, &rot);
+    a = m.t;
+    b = view->t;
+    d[0] = a[0] - b[0];
+    d[1] = a[1] - b[1];
+    d[2] = a[2] - b[2];
+    func_8009887C(d, rot.t);
+    l = D_800C8864->m_lens;
+    zsf3 = (l->m_1C << 16) / ((l->m_14 << 15) + (l->m_14 << 14));
+    zsf4 = (l->m_1C << 16) / (l->m_14 << 16);
+    GTE_SET_ZSF(zsf3, zsf4);
+    tx = rot.t[0] >> 2;
+    ty = rot.t[1] >> 2;
+    tz = rot.t[2] >> 2;
+    GTE_SET_ROT(&rot);
+    GTE_SET_TRANS(tx, ty, tz);
+    xy = 0;
+    GTE_MTC2(xy, 0);
+    z = 0;
+    GTE_MTC2(z, 1);
+    GTE_RTPS();
+    GTE_MFC2(r, 14);
+    *sxy = r;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_03", func_80018954);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_03", func_80018AEC);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_03", func_80019114);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_03", func_800194E4);
+/* Draws a 2D object's prim at its position. */
+void func_800194E4(Obj2D *o) {
+    int *prim = o->m_prim;
+    u32 f;
+    int page;
 
+    if (prim && ((f = o->m_flags) & 2)) {
+        /* the page tested twice and the prim read again: the original's
+         * shape (found by the permuter) */
+        page = prim[1];
+        if (o->m_page) {
+            page = o->m_page ? o->m_page : prim[1];
+        }
+        if ((o->m_prim[0] & 7) == 1) {
+            func_80018AEC(o->m_prim, page, (f >> 11) & 0x7FF, f >> 22);
+        } else {
+            func_80019114(o->m_prim, page, (f >> 11) & 0x7FF, f >> 22);
+        }
+    }
+}
+
+#ifdef NON_MATCHING
+/* Registers only (15 off): the original keeps the constants -0xF01 and 2
+ * in $t1 */
+/* Starts a sequence: its objects' flags and m_3F set, and their linked
+ * entries restarted, forwards or (back) backwards. Returns whether it has
+ * entries. */
+int func_80019578(Seq *s, int a, int back, int c) {
+    SeqEntry *e;
+
+    s->m_state = 1;
+    for (e = s->m_entries; e; e = e->m_next) {
+        int seen = 0x10000002;
+        int both = 0x180000;
+        int keep = ~0x100000;
+        int none = 0xFFF000;
+        CobjetList *objs;
+        Cobjet *o = 0;
+        CobjetLinkedPos *k;
+        CobjetLink *l;
+        int dir;
+
+        objs = s->m_objs;
+        if (e->m_obj >= 0) {
+            o = objs->m_items[e->m_obj];
+        }
+        if (!o || (o->m_04 & 1)) {
+            continue;
+        }
+        if (s->m_mode >= 5 && s->m_mode <= 7) {
+            o->m_04 |= seen;
+        }
+        if ((o->m_04 & both) == both) {
+            o->m_04 &= keep;
+        }
+        func_8001798C(o, e->m_3F);
+        if ((*(int *)e & none) == none) {
+            continue;
+        }
+        k = (CobjetLinkedPos *)s->m_links->m_items[e->m_link];
+        k->m_flags &= ~0xF00;
+        l = o->m_links;
+        do {
+            if (l) {
+                CobjetLinked *x = s->m_links->m_items[l->m_index];
+
+                if (x && x != k && x->m_id == k->m_id) {
+                    x->m_2C = 0;
+                }
+            }
+            l = l->m_next;
+        } while (l);
+        if (!a && (u32)(k->m_id - 3) < 3) {
+            func_800167B8(o, &k->m_44);
+            func_800167F8(o, (SVECTOR *)&k->m_74);
+        }
+        dir = back ? -1 : 1;
+        if (k->m_04 == 2 && k->m_2C && !a && dir == ((k->m_flags << 28) >> 28)) {
+            continue;
+        }
+        func_800747A8(k, back ? -1 : 1, &c, 0);
+        k->v30(1000, dir, a, c);
+    }
+    return s->m_entries != 0;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_03", func_80019578);
+#endif

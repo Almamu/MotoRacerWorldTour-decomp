@@ -130,8 +130,9 @@ struct CobjetList {
 class CobjetLinked {
 public:
     int m_id; // its type, 3 to 5 for some
-    u8 m_04[8];
-    int m_flags; // 0x0C
+    int m_04;
+    int m_08;
+    int m_flags; // 0x0C: bits 0-3 a direction, 8-11 and 12-15 holds
     u8 m_10[0x1C];
     int m_2C;
     int m_30;
@@ -221,7 +222,7 @@ void *__builtin_new(size_t n);
 void __builtin_delete(void *p);
 void func_80017A9C(Cobjet *o, int id);
 int func_80017B88(Cobjet *o, CobjetLinkedPos *e);
-void func_800747A8(CobjetLinked *e, int a, int b, int c);
+void func_800747A8(CobjetLinked *e, int dir, int *p, int c);
 extern CobjetLinkedTable *D_800C873C;
 void func_80017574(CobjetList *l, CobjetPartList *parts, int a, int b, int kind);
 void func_80017730(CobjetList *l);
