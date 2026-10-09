@@ -76,11 +76,32 @@ public:
     void Init();
 };
 
+// A list of objects (a scene's?)
+struct CobjetList {
+    Cobjet **m_items;
+    int m_04;
+    int m_count;
+};
+
+// A model part
+struct CobjetPart {
+    u8 m_00[8];
+    int m_size; // 0x08, << 8
+    short m_0C;
+    short m_0E;
+};
+
+struct CobjetPartList {
+    CobjetPart **m_items;
+    int m_count;
+};
+
 extern "C" {
 extern Cobjet *D_800CA750[10]; // objects whose angles are cached
 extern SVECTOR D_800CA780[10]; // and their angles
 extern int D_800C493C;         // the cache's last entry
 
+int func_80016144(Cobjet *o, int a, int b, int n, ...);
 void func_80016234(Cobjet *o, MATRIX *m, int own);
 void func_80016798(Cobjet *o);
 void func_800167B8(Cobjet *o, Vector3 *out);
@@ -95,6 +116,10 @@ void func_800169B0(void);
 void func_800169B8(Cobjet *o, int v, int force);
 int func_80016A38(Cobjet *o);
 void func_80098418(MATRIX *m, SVECTOR *angles);
+int func_800178DC(Cobjet *o, int n);
+void func_80017574(CobjetList *l, CobjetPartList *parts, int a, int b, int kind);
+void func_80017730(CobjetList *l);
+void *memset(void *p, int c, size_t n);
 }
 
 #endif

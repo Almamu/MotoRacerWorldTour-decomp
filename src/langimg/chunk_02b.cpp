@@ -1,10 +1,47 @@
 #include "common.h"
 #include "langimg/cobjet.h"
+#include "stdarg.h"
 
 /* Functions on Cobjet with C linkage, built with GCC 2.91.66 like the
  * game's other C files (docs/matching/issue-3-langimg-chunk02.md). */
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02b", func_80016144);
+/* Sets up the object's parts (func_800178DC) and the n part numbers that
+ * follow; m_3D is the first that isn't -1. */
+int func_80016144(Cobjet *o, int a, int b, int n, ...) {
+    int r = 0;
+    int i;
+    int j;
+    int k;
+
+    o->m_matp = 0;
+    if (func_800178DC(o, n)) {
+        if (o->m_38) {
+            va_list ap;
+
+            va_start(ap, n);
+            for (i = 0; i < n; i++) {
+                o->m_38[i] = va_arg(ap, int);
+            }
+            va_end(ap);
+        }
+        j = 0;
+        k = n;
+        o->m_3D = -1;
+    /* the test of j at the top, of m_3D at the bottom: a goto */
+    top:
+        if (j < k) {
+            if (o->m_38[j] != -1) {
+                o->m_3D = j;
+            }
+            j++;
+            if (o->m_3D == -1) {
+                goto top;
+            }
+        }
+        r = 1;
+    }
+    return r;
+}
 
 /* Points the object at a matrix; flag 0x40000 when it isn't its own. */
 void func_80016234(Cobjet *o, MATRIX *m, int own) {
@@ -142,6 +179,61 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02b", func_80016C3C);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02b", func_80016E34);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02b", func_80017574);
+/* Scales the parts that the list's objects of a kind use. */
+void func_80017574(CobjetList *l, CobjetPartList *parts, int a, int b, int kind) {
+    s8 used[256];
+    int n;
+    int i;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02b", func_80017730);
+    if (!parts) {
+        return;
+    }
+    n = parts->m_count;
+    memset(used, 0, n);
+    for (i = 0; i < l->m_count; i++) {
+        Cobjet *o = l->m_items[i];
+
+        if (o && !(o->m_04 & 0x2800D841) && (o->m_04 & 0xC0000000) == (kind << 30) && o->m_38) {
+            int k;
+
+            for (k = 0; k < o->m_3C; k++) {
+                used[o->m_38[k]] = 1;
+            }
+        }
+    }
+    for (i = 0; i < n; i++) {
+        if (used[i]) {
+            int v = (parts->m_items[i]->m_size >> 8) * a;
+
+            parts->m_items[i]->m_0C = (b << 16) / (v * 3);
+            parts->m_items[i]->m_0E = (b << 16) / (v * 4);
+        }
+    }
+}
+
+/* Resets m_44 on the list's objects, then sets it again down their trees
+ * (objects with flag 1 left alone). */
+void func_80017730(CobjetList *l) {
+    int n;
+    Cobjet **p;
+    Cobjet *o;
+
+    n = l->m_count;
+    p = l->m_items;
+    do {
+        o = *p;
+        if (o && !(o->m_04 & 1)) {
+            o->m_44 = -1;
+        }
+        p++;
+    } while (--n);
+    n = l->m_count;
+    p = l->m_items;
+    do {
+        o = *p;
+        if (o && !(o->m_04 & 1)) {
+            func_800169B8(o, 1, 0);
+        }
+        p++;
+    } while (--n);
+}
