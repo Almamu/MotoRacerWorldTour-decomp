@@ -117,7 +117,55 @@ int func_80013E64(SndWorld *w, const char *name) {
     return r;
 }
 
+#ifdef NON_MATCHING
+/* Equivalent; the original keeps done's address in a register and takes
+ * the emitters' address anew for each pass; registers */
+/* Once a frame: updates the listeners and the emitters in use (those
+ * with 0x10000 first), and frees those that are done. */
+void func_80013F38(SndWorld *w, int dt) {
+    s8 done[64];
+    int n = 0;
+    int i;
+    int pass;
+    int listeners = w->unk208;
+
+    for (i = 0; i < listeners; i++) {
+        func_80013554(&w->listeners[i]);
+    }
+    for (i = 0; i < 64; i++) {
+        (&w->emitters[i])->flags &= ~0x40000;
+    }
+    for (pass = 0; pass < 2; pass++) {
+        for (i = 0; i < 64; i++) {
+            int flags = w->emitters[i].flags;
+
+            if (flags & 1) {
+                int r = 0;
+
+                if (!pass) {
+                    if (flags & 0x10000) {
+                        r = func_80013764(&w->emitters[i], dt);
+                    }
+                } else {
+                    if (!(flags & 0x10000)) {
+                        r = func_80013764(&w->emitters[i], dt);
+                    }
+                }
+                if (r) {
+                    done[n++] = i;
+                }
+            }
+        }
+    }
+    for (i = 0; i < n; i++) {
+        func_80014130(w, done[i]);
+    }
+    func_80011A68();
+    D_800C473D = 0;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_01", func_80013F38);
+#endif
 
 /* Takes a free emitter; -1 when none is. */
 int func_800140CC(SndWorld *w) {
@@ -384,7 +432,71 @@ void func_8001483C(SndWorld *w, int id, int flags) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_01", func_800148D8);
+/* Sets an emitter up from the world's defaults, a part for each flag. */
+void func_800148D8(SndWorld *w, SndEmitter *e, int flags) {
+    if (e) {
+        int f;
+
+        flags |= w->unk1CF8;
+        f = e->flags;
+        if (flags & 0x1000) {
+            e->unk0 = -1;
+        }
+        if (flags & 0x100) {
+            f |= 0x10000;
+            e->link = 0;
+        }
+        if (flags & 0x200) {
+            f |= 0x20000;
+            e->link = 0;
+        }
+        if (flags & 4) {
+            e->listener = w->unk1CD0;
+            f |= 8;
+        }
+        if (flags & 8) {
+            f |= 8;
+            CopyVector(&e->unk50, &w->unk1CDC);
+            CopyVector(&e->unk5C, &w->unk1CE8);
+        }
+        if (flags & 0x20) {
+            e->unk3C = w->unk1CD4;
+            e->unk40 = w->unk1CD8;
+            f |= 0x408;
+        }
+        if (flags & 0x10) {
+            f |= 0x1208;
+            e->unk3C = w->unk1CD4;
+        }
+        if (flags & 0x40) {
+            f |= 0x800;
+        }
+        if (flags & 0x80) {
+            f |= 0x4000;
+            e->unk1C = w->unk1CF6;
+        }
+        if (flags & 0x400) {
+            f |= 0x80000;
+        }
+        if (flags & 0x800) {
+            f |= 0x200000;
+        }
+        e->flags = f;
+        if (flags & 1) {
+            func_80013BA0(e, 0x7F);
+            e->unk24 = 0x1000;
+            e->unk16 = 0x40;
+        }
+        if (flags & 2) {
+            e->unk16 = w->unk1CF4;
+        }
+        if (flags & 0x2000) {
+            e->unk1E = w->unk1CFC;
+        } else {
+            e->unk1E = -1;
+        }
+    }
+}
 
 /* Plays the note at i of the map; returns the emitter's handle. */
 u32 func_80014A98(SndWorld *w, int i, int flags) {

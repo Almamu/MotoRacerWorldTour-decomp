@@ -1021,7 +1021,7 @@ void func_80013450(SndListener *l, SndVector *a, SndVector *b, SndVector *c, Snd
     l->angle = ratan2((z << 12) / len, x) - 0x400;
 }
 
-void func_80013554(void) {
+void func_80013554(SndListener *l) {
 }
 
 /* An emitter's volume by where the listener faces and where the emitter

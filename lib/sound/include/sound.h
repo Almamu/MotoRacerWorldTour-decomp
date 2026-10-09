@@ -119,19 +119,25 @@ typedef struct {
     s8 unk3; /* emitters changed now get flag 0x100000 */
     u8 unk4[2];
     short notes[256]; /* note numbers by index; -1: none (func_80013DB8) */
-    int unk208;
+    int unk208;       /* listeners in use */
     SndEmitter emitters[64];
     SndListener listeners[2];
     short unk1C84;
     short nFree;
     s8 free[64]; /* the free emitters, a stack */
-    int unk1CC8;
-    u8 unk1CCC[0x10];
+    int unk1CC8; /* the next emitter's serial number */
+    /* What func_800148D8 gives new emitters */
+    int unk1CCC;
+    SndListener *unk1CD0;
+    SndVector *unk1CD4;
+    SndVector *unk1CD8;
     SndVector unk1CDC;
     SndVector unk1CE8;
     short unk1CF4;
     short unk1CF6;
-    int unk1CF8;
+    int unk1CF8; /* flags added to every func_800148D8 */
+    short unk1CFC;
+    short unk1CFE;
 } SndWorld;
 
 /* A note name to put in the note map (SndWorld.notes) */
@@ -354,7 +360,7 @@ int func_800130CC(u32 handle);
 SoundSlot *func_80013348(u32 handle);
 void func_80013440(SndWorld *w);
 void func_80013448(SndListener *l);
-void func_80013554(void);
+void func_80013554(SndListener *l);
 
 /* chunk_01: the 3D sounds' emitters and listeners */
 void func_80013BA0(SndEmitter *e, int v);
@@ -392,6 +398,7 @@ void func_8001483C(SndWorld *w, int id, int flags);
 void func_800148D8(SndWorld *w, SndEmitter *e, int flags);
 void func_80014B18(SndWorld *w, u32 handle);
 u32 func_80014C70(SndWorld *w, int i);
+int func_80013764(SndEmitter *e, int dt);
 int func_800A60AC(const char *a, const char *b); /* strcmp */
 extern char D_800C48E0[];                        /* "Unknow Id" */
 extern char D_800C48EC[];                        /* "Null Id" */
