@@ -11,6 +11,8 @@ operands (%hi/%lo, jal targets) differ when the code before the function
 changed size, so check the first difference, not the count. Exit status 0
 when the bytes are identical.
 """
+import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -18,6 +20,16 @@ from pathlib import Path
 import rabbitizer
 
 ROOT = Path(__file__).resolve().parent.parent
+
+
+def cross(tool):
+    """A binutils tool: $CROSS, else Nix's or Debian/Ubuntu's prefix."""
+    prefix = os.environ.get("CROSS")
+    if not prefix:
+        prefix = "mipsel-unknown-linux-gnu-" if shutil.which("mipsel-unknown-linux-gnu-" + tool) else "mipsel-linux-gnu-"
+    return prefix + tool
+
+
 # target: (original, file offset of vram 0)
 TARGETS = {
     "langimg": ("extracted/mr3dat/data/LANGIMG.DAT", -0x800117F0),
@@ -30,7 +42,7 @@ def find(name):
         elf = ROOT / "build" / f"{target}.elf"
         if not elf.exists():
             continue
-        out = subprocess.run(["mipsel-unknown-linux-gnu-readelf", "-sW", str(elf)],
+        out = subprocess.run([cross("readelf"), "-sW", str(elf)],
                              capture_output=True, text=True, check=True).stdout
         for line in out.splitlines():
             p = line.split()

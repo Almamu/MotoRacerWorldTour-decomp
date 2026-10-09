@@ -14,12 +14,17 @@ The function list comes from build/<target>.elf, so build first (make).
   tools/chunks.py issues DIR              write each chunk's issue (title + body) to DIR
   tools/chunks.py issues DIR --create     ...and open them on GitHub (gh)
   tools/chunks.py sync [--dry-run]        tick done functions in the open chunk issues
+  tools/chunks.py check                   the tree's bookkeeping (needs no build): every
+                                          INCLUDE_ASM/INCLUDE_RODATA has its .s, every .s under
+                                          asm/*/nonmatchings/ is included, handwritten.txt agrees
   tools/chunks.py cleanup-issues DIR --naming N --headers N [--create]
                                           a blocked cleanup follow-up per game chunk
 """
 import argparse
 import json
+import os
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -27,6 +32,16 @@ from pathlib import Path
 import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
+
+
+def cross(tool):
+    """A binutils tool: $CROSS, else Nix's or Debian/Ubuntu's prefix."""
+    prefix = os.environ.get("CROSS")
+    if not prefix:
+        prefix = "mipsel-unknown-linux-gnu-" if shutil.which("mipsel-unknown-linux-gnu-" + tool) else "mipsel-linux-gnu-"
+    return prefix + tool
+
+
 REPO = "Almamu/MotoRacerWorldTour-decomp"
 URL = f"https://github.com/{REPO}"
 LABEL = "decomp-chunk"
@@ -79,7 +94,7 @@ def functions(target):
     if not elf.exists():
         sys.exit(f"{elf} is missing: run make first")
     res = subprocess.run(
-        ["mipsel-unknown-linux-gnu-readelf", "-sW", str(elf)],
+        [cross("readelf"), "-sW", str(elf)],
         capture_output=True, text=True, check=True,
     ).stdout
     funcs = {}
@@ -344,6 +359,35 @@ def cmd_cleanup_issues(args):
             print(f"{url} {title}")
 
 
+INCLUDE_RE = re.compile(r'^\s*INCLUDE_(?:ASM|RODATA)\(\s*"([^"]*)"\s*,\s*([^\s)]+)\s*\)', re.M)
+
+
+def cmd_check(args):
+    errors = []
+    for target in TARGETS:
+        included = set()
+        for src in sorted((ROOT / "src" / target).glob("*.c*")):
+            for m in INCLUDE_RE.finditer(COMMENT_RE.sub("", src.read_text())):
+                path = ROOT / m.group(1) / f"{m.group(2)}.s"
+                included.add(path)
+                if not path.exists():
+                    errors.append(f"{src.relative_to(ROOT)}: {m.group(2)}: "
+                                  f"{path.relative_to(ROOT)} is missing")
+        for path in sorted((ROOT / "asm" / target / "nonmatchings").rglob("*.s")):
+            if path not in included:
+                errors.append(f"{path.relative_to(ROOT)}: no INCLUDE_ASM includes it "
+                              "(delete it once its function is decompiled)")
+        names = {p.stem for p in included}
+        for name in sorted(handwritten(target)):
+            if name not in names:
+                errors.append(f"config/{target}/handwritten.txt: {name} has no INCLUDE_ASM")
+    for e in errors:
+        print(e)
+    if errors:
+        sys.exit(f"{len(errors)} problem(s)")
+    print("ok")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -354,13 +398,14 @@ def main():
     p.add_argument("--create", action="store_true")
     p = sub.add_parser("sync")
     p.add_argument("--dry-run", action="store_true")
+    sub.add_parser("check")
     p = sub.add_parser("cleanup-issues")
     p.add_argument("dir")
     p.add_argument("--naming", type=int, required=True, help="the naming tracking issue")
     p.add_argument("--headers", type=int, required=True, help="the headers issue")
     p.add_argument("--create", action="store_true")
     args = ap.parse_args()
-    {"status": cmd_status, "issues": cmd_issues, "sync": cmd_sync,
+    {"status": cmd_status, "issues": cmd_issues, "sync": cmd_sync, "check": cmd_check,
      "cleanup-issues": cmd_cleanup_issues}[args.cmd](args)
 
 

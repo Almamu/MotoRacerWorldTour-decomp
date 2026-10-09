@@ -3,6 +3,7 @@
 #   make setup    fetch the compilers (GCC 2.95.2 and 2.91.66 for the PlayStation) and maspsx
 #   make split    disassemble the executables with splat (needs extracted/)
 #   make          build and compare against the originals
+#   make objects  just compile src/ (needs neither the game files nor splat)
 #   make sdk      also link Sony's PsyQ objects in place of the library asm they
 #                 match, and compare that (needs tools/fetch_psyq.sh first)
 
@@ -14,7 +15,8 @@ SHELL := bash
 
 #### Tools ####
 
-CROSS    := mipsel-unknown-linux-gnu-
+# The binutils prefix: Nix's, or Debian/Ubuntu's (binutils-mipsel-linux-gnu).
+CROSS    ?= $(shell command -v mipsel-unknown-linux-gnu-as >/dev/null && echo mipsel-unknown-linux-gnu- || echo mipsel-linux-gnu-)
 AS       := $(CROSS)as
 LD       := $(CROSS)ld
 OBJCOPY  := $(CROSS)objcopy
@@ -75,7 +77,7 @@ $(shell mkdir -p $(BUILD); echo '$(FLAGS_NOW)' | cmp -s - $(FLAGS_STAMP) || echo
 
 #### Rules ####
 
-.PHONY: setup split build compare sdk clean distclean
+.PHONY: setup split build compare objects sdk clean distclean
 
 COMPILERS := $(sort $(foreach t,$(TARGETS),$($(t)_GCC)))
 
@@ -99,6 +101,11 @@ compare: split
 	sha1sum -c config/checksums.sha1
 
 build: $(foreach t,$(TARGETS),$($(t)_BIN))
+
+# Every source file compiled, without linking: what CI checks when it has
+# no copy of the game.
+SRC_OBJECTS := $(foreach t,$(TARGETS),$(patsubst %,$(BUILD)/$(t)/%.o,$(basename $(wildcard src/$(t)/*.c src/$(t)/*.cpp))))
+objects: $(SRC_OBJECTS)
 
 # The library code with Sony's own objects linked in where they match
 # (docs/decomp.md, "Libraries"); the normal build stays on the asm.

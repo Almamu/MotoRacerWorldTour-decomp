@@ -5,9 +5,12 @@
 # and a normal build (make) for the linker scripts and the other objects.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-AS=mipsel-unknown-linux-gnu-as
-LD=mipsel-unknown-linux-gnu-ld
-OBJCOPY=mipsel-unknown-linux-gnu-objcopy
+if [ -z "${CROSS:-}" ]; then
+    command -v mipsel-unknown-linux-gnu-as >/dev/null && CROSS=mipsel-unknown-linux-gnu- || CROSS=mipsel-linux-gnu-
+fi
+AS=${CROSS}as
+LD=${CROSS}ld
+OBJCOPY=${CROSS}objcopy
 ASFLAGS="-EL -march=r3000 -mtune=r3000 -mabi=32 -no-pad-sections -O1 -G0 -I include"
 OUT=build/sdk
 [ -x tools/psyq/psyq-obj-parser ] || { echo "tools/psyq is missing: run tools/fetch_psyq.sh" >&2; exit 1; }
