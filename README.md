@@ -13,6 +13,12 @@ are ignored).
 See [`docs/`](docs/README.md) for the disc layout, the executables and every
 file format worked out so far.
 
+## Matching decompilation
+
+The game code and the boot executable rebuild byte for byte (`make setup`,
+then `make`). The game was compiled with GCC 2.95.2 for the PlayStation; see
+[`docs/decomp.md`](docs/decomp.md).
+
 ## Modding workflow
 
 ```sh

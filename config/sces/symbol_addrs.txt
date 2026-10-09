@@ -1,0 +1,8 @@
+// Known SCES_030.37 symbols (docs/executables.md).
+Startup = 0x80134E34; // type:func
+LoadFile = 0x80135610; // type:func
+LzssDecompress = 0x80135514; // type:func
+FindEntry = 0x8013598C; // type:func
+OpenArchive = 0x80135B1C; // type:func
+Crc32 = 0x80135D98; // type:func
+StrUpper = 0x80135EC8; // type:func

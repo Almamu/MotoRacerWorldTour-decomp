@@ -1,0 +1,59 @@
+# splat config for SCES_030.37, the boot executable (see docs/decomp.md).
+name: SCES_030.37
+sha1: 83e20568a179d5a066c1535b79acd0ce458b9144
+options:
+  basename: sces
+  target_path: extracted/disc/SCES_030.37
+  elf_path: build/sces.elf
+  base_path: ..
+  platform: psx
+  compiler: PSYQ
+
+  asm_path: asm/sces
+  src_path: src/sces
+  asset_path: assets/sces
+  build_path: build/sces
+  ld_script_path: build/sces.ld
+  ld_dependencies: True
+  create_asm_dependencies: True
+
+  find_file_boundaries: True
+  gp_value: 0x801C0A54
+  ld_gp_expression: "0x801C0A54"
+
+  o_as_suffix: True
+  use_legacy_include_asm: False
+  migrate_rodata_to_functions: True
+
+  section_order: [".text", ".rodata", ".data", ".bss"]
+  ld_align_section_vram_end: False
+  ld_align_segment_vram_end: False
+  ld_bss_is_noload: True
+
+  symbol_addrs_path:
+    - config/sces/symbol_addrs.txt
+  undefined_funcs_auto_path: build/sces/undefined_funcs_auto.txt
+  undefined_syms_auto_path: build/sces/undefined_syms_auto.txt
+
+  subalign: 4
+
+  string_encoding: ASCII
+  data_string_encoding: ASCII
+  rodata_string_guesser_level: 2
+  data_string_guesser_level: 2
+
+  include_asm_macro_style: maspsx_hack
+
+segments:
+  - name: header
+    type: header
+    start: 0x0
+
+  - name: main
+    type: code
+    start: 0x800
+    vram: 0x80133334
+    subsegments:
+      - [0x800, asm, text]
+      - [0x196F8, data, data]
+  - [0x8E000]

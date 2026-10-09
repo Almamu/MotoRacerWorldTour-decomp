@@ -1,0 +1,65 @@
+# splat config for data\LANGIMG.DAT, the game code (see docs/decomp.md).
+# The file is a 16-byte header followed by the image loaded at 0x80011800.
+name: LANGIMG.DAT
+sha1: b773b2906d3407bf0eabfb640d785061918badbe
+options:
+  basename: langimg
+  target_path: extracted/mr3dat/data/LANGIMG.DAT
+  elf_path: build/langimg.elf
+  base_path: ..
+  platform: psx
+  compiler: PSYQ
+
+  asm_path: asm/langimg
+  src_path: src/langimg
+  asset_path: assets/langimg
+  build_path: build/langimg
+  ld_script_path: build/langimg.ld
+  ld_dependencies: True
+  create_asm_dependencies: True
+
+  find_file_boundaries: True
+  gp_value: 0x800C46F0
+  ld_gp_expression: "0x800C46F0"
+
+  o_as_suffix: True
+  use_legacy_include_asm: False
+  migrate_rodata_to_functions: True
+
+  section_order: [".text", ".rodata", ".data", ".bss"]
+  ld_align_section_vram_end: False
+  ld_align_segment_vram_end: False
+  ld_bss_is_noload: True
+
+  symbol_addrs_path:
+    - config/langimg/symbol_addrs.txt
+  undefined_funcs_auto_path: build/langimg/undefined_funcs_auto.txt
+  undefined_syms_auto_path: build/langimg/undefined_syms_auto.txt
+
+  subalign: 4
+
+  string_encoding: ASCII
+  data_string_encoding: ASCII
+  rodata_string_guesser_level: 2
+  data_string_guesser_level: 2
+
+  include_asm_macro_style: maspsx_hack
+
+segments:
+  - [0x0, bin, header] # entry point, load address, size, unused word
+  - name: main
+    type: code
+    start: 0x10
+    vram: 0x80011800
+    bss_size: 0x14868 # 0x800C9F48-0x800DE7B0, cleared by the entry point
+    subsegments:
+      - [0x10, textbin, text_table] # 8 words of data at the start of .text
+      - [0x30, asm, text]
+      - [0x46BC, cpp, cobjet]
+      - [0x48C0, asm, text_800160B0]
+      - [0xA597C, rodata, ctors] # __CTOR_LIST__ / __DTOR_LIST__
+      - [0xA59E8, rodata, rodata]
+      - [0xB2F00, data, data] # 0x800C46F0 = $gp
+      - { start: 0xB8758, type: bss, vram: 0x800C9F48, name: bss }
+  # 0xB8758-0xB8810: zeros up to the end of the 2 KB sector, added by the Makefile
+  - [0xB8758]

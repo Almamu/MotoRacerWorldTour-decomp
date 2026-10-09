@@ -1,0 +1,25 @@
+// Known LANGIMG.DAT symbols. C++ functions use GCC 2.95's mangled names.
+
+EntryPoint = 0x800A7084; // type:func
+
+// libgcc / libc
+__builtin_delete = 0x800A719C; // type:func
+__builtin_new = 0x800A71C0; // type:func
+__builtin_vec_delete = 0x800A7234; // type:func
+__builtin_vec_new = 0x800A7254; // type:func
+strcmp = 0x800A6100; // type:func
+strlen = 0x800B64B8; // type:func
+memcpy = 0x800B6578; // type:func
+
+// src/langimg/cobjet.cpp (CName, CNamed and CobjetLink are placeholder names)
+__5CName = 0x80015EAC; // type:func
+_._5CName = 0x80015EB8; // type:func
+Set__5CNamePCc = 0x80015F10; // type:func
+Get__5CName = 0x80015F9C; // type:func
+Equals__5CNamePCc = 0x80015FA8; // type:func
+__6CNamed = 0x80015FD4; // type:func
+__6Cobjet = 0x80016000; // type:func
+_._6Cobjet = 0x8001603C; // type:func
+Init__6Cobjet = 0x800160B0; // type:func
+_._10CobjetLink = 0x80074A84; // type:func
+_vt.6Cobjet = 0x800C4978; // size:0x10

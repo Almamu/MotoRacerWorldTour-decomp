@@ -2,3 +2,9 @@ iso/
 extracted/
 __pycache__/
 build/
+
+# Decompilation: disassembly and binaries extracted from the game, the
+# downloaded compiler
+asm/
+assets/
+tools/gcc-*/
