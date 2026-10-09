@@ -71,12 +71,22 @@ matched with the second form tried
 ([issue-1-langimg-sound.md](matching/issue-1-langimg-sound.md)). Such code
 goes in `lib/` with its own settings ([libraries.md](libraries.md)).
 
+The game itself is two languages from two compilers: its C++ classes are
+2.95.2's, and its plain C functions 2.91.66's. **Case:** in chunk_02,
+`CName::Equals` only matches with 2.95.2, and the functions after the
+classes (`func_80016914`, `func_800169B8`) only with 2.91.66. A run of C
+functions next to C++ is a reason to try the other compiler; the chunk
+is cut where the language changes and the C part gets per-chunk settings
+([issue-3-langimg-chunk02.md](matching/issue-3-langimg-chunk02.md)).
+
 | Code | Compiler | `-G` | Flags | maspsx |
 |---|---|---|---|---|
 | `LANGIMG.DAT` (`src/langimg`) | GCC 2.95.2 | 8 | `-mno-split-addresses` | `--expand-div` |
 | `lib/sound` chunk_00 (in `LANGIMG.DAT`) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks` |
 | `lib/sound` chunk_01 | GCC 2.91.66 | 0 | `-mno-split-addresses` | `--expand-div --div-no-checks` |
 | `lib/cdaudio` chunk_01b | GCC 2.91.66 | 0 | (split addresses) | `--expand-div` |
+| `src/langimg` chunk_02 (the game's C) | GCC 2.91.66 | 0 | `-mno-split-addresses` | `--expand-div` |
+| `src/langimg` chunk_02b (the game's C) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `SCES_030.37` (`src/sces`) | GCC 2.91.66 | 0 | `-fsigned-char` | `--expand-div` |
 
 All at `-O2`, C++ with `-fno-exceptions -fno-rtti`, through maspsx
@@ -110,6 +120,14 @@ not as an array of unknown size. Arrays and structs over 8 bytes are
 reached with `lui`/`addiu` as before. **Case:** `func_80011924`,
 `func_80011E08`.
 
+Not every file was assembled that way. The game's C helpers in chunk_02b
+reach most of the game's small globals with `lui` + `lw`, although they
+are in `.sdata` and the file is `-G8`, and only two (`D_800C493C`,
+`D_800C4944`) with `%gp_rel`: their assembler knew only the sizes of what
+the file defined. `--small-externs=D_800C493C,D_800C4944` (a per-chunk
+maspsx flag) makes only those small. Both GCC versions emit `.extern`
+with sizes, so this isn't the compiler's doing.
+
 ### Divisions
 
 GCC 2.9x leaves a division to the assembler (`div $2,$3,$4`), which
@@ -117,7 +135,8 @@ expands it. ASPSX 2.79 adds divide-by-zero and overflow checks (`bnez`,
 `break 7`, ..., `break 6`); `maspsx --expand-div` emulates that, and the
 game's own code has them. The sound engine's division has none: a bare
 `div $0,...` and `mflo`. `tools/maspsx_plus.py --div-no-checks` produces
-that, for `lib/sound` (`func_800128E8`). That assembler also treated
+that, for `lib/sound` (`func_800128E8`) and the game's C helpers in
+chunk_02b (`func_80017574`). That assembler also treated
 `mflo` like a load: the next instruction that reads its register gets a
 `nop` in front of it, even past a label (in `func_800128E8` a branch lands
 on that `nop`); `--div-no-checks` adds it too (`func_80012FEC`).
@@ -148,6 +167,15 @@ globals), a script that tries every order is quicker than guessing:
   has the store after the branches from the start, and the next
   statement's constants moved above it as in the original
   (`func_80011E44`).
+- **A load before a store tells the source's order.** GCC never moves a
+  load from a pointer above a store to a global (they may alias), so a
+  field the original reads before a store was read first in the source:
+  `D_800CBCA4 = o->m_54;` before `D_800CBCA0 = -1;`, the two stores then
+  scheduled in either order (`func_80016A8C`).
+- **Read the fields first.** For the same reason, a function that loads
+  all of a struct's fields before its first store through another pointer
+  had them in locals: the 2D items' `x0`, `y0`, `x1`, `y1` before the
+  packet's stores (`func_80015798`).
 
 ### Result variables
 
@@ -187,6 +215,11 @@ globals), a script that tries every order is quicker than guessing:
   skipping its first test. GCC only does that itself when it can prove
   the test; when it doesn't, write the jump: `goto body; test: if (n ==
   0) goto done; body: ...; if (more) goto test;` (`func_8001184C`).
+- **Two tests, at the top and at the bottom.** A loop that tests its
+  count on entry and its exit condition at the end, `top: if (j < n) {
+  ...; j++; if (o->m_3D == -1) goto top; }`, is a `goto`: a `while` with a
+  `break`, a `for` with both tests and a `do` were 27 to 48 instructions
+  off (`func_80016144`).
 - **Loop shape under 2.91.66.** 2.91.66 keeps an up-counting `i` and walks
   the fields with separate pointers where 2.95.2 makes one count-down
   pointer. A loop compiled the "wrong" way is a hint to check the
@@ -247,6 +280,18 @@ globals), a script that tries every order is quicker than guessing:
   loads once before the test where the inline form loads in each branch
   (`Changed()` in `lib/sound` chunk_01; `func_80014188` with
   `old = e->flags`).
+- **An inline function and egcs's global CSE.** 2.91.66 runs a global
+  CSE with partial redundancy elimination (`-fgcse`): a field read before
+  a branch and again after it can be loaded once before the branch and
+  reloaded only in the branch that makes a call. `func_80016A8C` reads
+  `m_3C` that way when the distance is an inline function (`CameraLod`)
+  and the caller tests `o->m_3C` before and after; written in place, the
+  load wasn't shared. The inline's result went through one more register
+  in the original: `d = n >= 2 ? CameraLod(&pos) : 0; lod = d;` (found by
+  the permuter).
+- **A multiplication written as shifts.** `x * 0x3000` is `(x * 3) << 12`
+  to GCC; the original's `(x << 12) + (x << 13)` (and `<< 14`, `<< 15`
+  for `0xC000`) is written so (`func_80016A8C`, `func_80016C3C`).
 - **Through an inline function.** A value returned by an inline function
   can survive where the same constant written inline is folded: in
   `func_80012F7C`, `ClearFlags(&f, 1)` keeps `~1` in a register as the
@@ -273,6 +318,13 @@ globals), a script that tries every order is quicker than guessing:
   SoundSlot *slot = f(handle);` (`func_80012C18`), and a result set to 0
   at its declaration stays in a saved register across a call where `r = 0`
   after it doesn't (`func_80014724`).
+- **Declaration order sets stack slots.** GCC 2.91.66 gives locals stack
+  slots in their declaration order, so two locals swapped in the frame are
+  declared the other way round: `func_800167F8`'s `b`, then `a`.
+- **Locals in separate blocks share slots.** Variables declared in two
+  sibling blocks can get the same stack slot; the original's frame shows
+  where: `func_80016E34`'s matrix and its two vectors, both at `0x10`.
+  Declared at function level they need a bigger frame.
 - **Unused locals.** A frame bigger than its variables need means the
   original had locals the optimiser dropped: `int unused[6];` gives
   `func_8001184C`'s 0x30-byte frame.
@@ -346,6 +398,10 @@ assignments were further off.
   pass its own argument on: `func_80012F40` calls `func_80013348` with
   `$a0` untouched, so it takes the handle and passes it. Written without
   parameters it can even match, and is wrong.
+- **Variadic functions, PsyQ's way.** `include/stdarg.h` is PsyQ's:
+  `va_start` takes the address of the last named argument, which keeps
+  the named arguments in their stack slots as the original does. GCC's own
+  (`__builtin_next_arg`) didn't (`func_80016144`).
 - **C linkage for placeholder names.** A function in a `.cpp` chunk whose
   real name isn't known is declared `extern "C"` (`lib/sound/include/sound.h`),
   so its symbol is the plain `func_XXXXXXXX` the asm calls.
@@ -354,8 +410,8 @@ assignments were further off.
 
 What's left once the instructions are right is usually register choice.
 
-- Declaration order of locals made no difference in the cases tried
-  (`FindEntry`).
+- Declaration order of locals made no difference to registers in the
+  cases tried (`FindEntry`); it does decide their stack slots (above).
 - The permuter (`tools/permuter_setup.py`) is the tool for this. Most of
   its suggestions are noise (dummy variables, `x++; x--;`); keep the idea
   behind a good one, written plainly (the `ClearFlags` case above).
@@ -367,6 +423,32 @@ What's left once the instructions are right is usually register choice.
 | Macro | What | Case |
 |---|---|---|
 | `STORE_UNALIGNED(p, v)` | A store to an unaligned address through the assembler's `usw` macro: GCC sees one opaque instruction and can't schedule anything between or across it. | `LzssDecompress`: in C (a packed struct), GCC moves the loop counter's decrement before the store. |
+
+### The GTE and other inline assembly
+
+`include/gte.h` has the GTE (coprocessor 2) as the game's code drives it
+(`func_80016C3C`):
+
+- **Single moves** (`GTE_CTC2`, `GTE_MTC2`, `GTE_MFC2`, `GTE_CFC2`): one
+  instruction per `asm` statement, with registers GCC chooses, as the
+  original's are.
+- **Fixed sequences** where the original's registers never change:
+  `GTE_SET_ROT` loads the matrix through `$a1` and `$a2` in pairs;
+  `GTE_SET_TRANS` and `GTE_SET_ZSF` move several values in one statement.
+- **Constants through one register**: the original loads every vertex
+  constant into `$t1` (`lui`/`ori`, `addu $t1, $zero, $zero` for 0, and
+  reuses a 0 still there). That's a `register int r asm("$9")` set from C
+  before each `GTE_MTC2(r, n)`; GCC picks the instructions.
+- **`mfc2` and `cfc2` have a load's delay.** The original has a `nop`
+  between `mfc2 $v0, $24` and the `blez` reading `$v0`, and none where
+  the next instruction doesn't read it: the assembler's load-delay rule.
+  `tools/maspsx_plus.py` adds both to maspsx's loads.
+
+`ADD_PRIM` (chunk_02) links a GPU packet into the ordering table with
+`lwl`, `sll`, `swl`, `swl` on the 24-bit links. PsyQ's `addPrim`
+(`P_TAG` bitfields) compiles to masks and merges with every compiler
+here, so the original's was hand-written: one `asm` statement with GCC's
+registers (`func_80015798`).
 
 ### Hand-written assembly
 
@@ -452,6 +534,17 @@ files (issue-1-langimg-sound.md, "The flags, function by function").
   The loops starting at a variable index (`func_80011960`,
   `func_80011A68`) don't have the problem. The slot loops also keep `~1`
   in a register (`ClearFlags`, above).
+- **Stack addresses kept in registers** (chunk_02b: `func_80016268`,
+  `func_80016434`, `func_80016600`, `func_80016E34`): the original
+  computes a local's address anew (`addiu $a0, $sp, 0x20`) for each call
+  it's passed to; GCC keeps every local's address but the first one's in
+  a saved register, so the frame and registers differ. Not the compiler
+  (2.7.2 to 2.95.2), the front end, GCSE, CSE options or `-O1`
+  ([issue-3-langimg-chunk02.md](matching/issue-3-langimg-chunk02.md)).
+- **All constants hoisted** (`func_80015798`): the original keeps 8
+  constants in saved registers through its loop; as loop-local variables
+  five are hoisted, but not the switch's `1` or the two sprite codes a
+  ternary chooses between.
 - `FindEntry`, the movie loop (`func_80133334`), `func_80134948` (boot
   executable): registers only, or registers and the order of stack
   arguments ([issue-85-sces-chunk01.md](matching/issue-85-sces-chunk01.md)).

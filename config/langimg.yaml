@@ -66,7 +66,9 @@ segments:
       - [0x30, cpp, chunk_00] # 80011820
       - [0x1F74, cpp, chunk_01] # 80013764
       - [0x34C8, cpp, chunk_01b] # 80014CB8: the CD audio library (docs/libraries.md)
-      - [0x3FA8, cpp, chunk_02] # 80015798
+      - [0x3FA8, cpp, chunk_02] # 80015798: C, GCC 2.91.66, -G0
+      - [0x46BC, cpp, chunk_02a] # 80015EAC: C++, CName and Cobjet
+      - [0x4954, cpp, chunk_02b] # 80016144: C, GCC 2.91.66
       - [0x5FF8, cpp, chunk_03] # 800177E8
       - [0x804C, cpp, chunk_04] # 8001983C
       - [0x9F88, cpp, chunk_05] # 8001B778

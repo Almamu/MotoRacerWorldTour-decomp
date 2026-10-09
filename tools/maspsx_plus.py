@@ -13,6 +13,12 @@ Takes maspsx's arguments, and these:
   small data?" test; maspsx doesn't define them (the data disassembly
   does). With -G0 nothing changes.
 
+- --small-externs=SYM,...: only these externs are small. The rest are
+  reached with lui, as ASPSX does for a variable it has no size for. The
+  game's C helpers (chunk_02b) reach most of the game's small globals
+  with lui, and two (D_800C493C, D_800C4944) with $gp: the ones the file
+  defined, while its data isn't split from the rest (#101).
+
 - --div-no-checks: a division GCC leaves to the assembler (`div $d,$a,$b`,
   also divu, rem and remu) becomes the bare instruction and a move from
   LO (or HI), without the divide-by-zero and overflow checks ASPSX 2.79
@@ -47,19 +53,32 @@ class SmallData(dict):
 preprocess = maspsx.MaspsxProcessor.preprocess_lines
 
 
+ONLY_EXTERNS = None
+for arg in list(sys.argv):
+    if arg.startswith("--small-externs="):
+        sys.argv.remove(arg)
+        ONLY_EXTERNS = set(filter(None, arg.split("=", 1)[1].split(",")))
+
+
 def preprocess_lines(self):
     preprocess(self)
     externs = set()
     for line in self.lines:
         if line.startswith(".extern"):
             symbol, _, size = line.split(None, 1)[1].partition(",")
-            size = int(size.strip() or 0)
+            symbol, size = symbol.strip(), int(size.strip() or 0)
+            if ONLY_EXTERNS is not None and symbol not in ONLY_EXTERNS:
+                continue
             if 0 < size <= self.sdata_limit:
-                externs.add(symbol.strip())
+                externs.add(symbol)
     self.sdata_entries = SmallData(self.sdata_entries, externs)
 
 
 maspsx.MaspsxProcessor.preprocess_lines = preprocess_lines
+
+# A move from the GTE has a load's delay: ASPSX puts a nop before an
+# instruction that reads its register (func_80016C3C's mfc2 and blez).
+maspsx.load_mnemonics.update({"mfc2", "cfc2"})
 
 DIV = re.compile(r"^(\s*)(div|divu|rem|remu)\s+(\$\w+),\s*(\$\w+),\s*(\$\w+)\s*$")
 
