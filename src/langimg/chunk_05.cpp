@@ -4,6 +4,10 @@
 /* The game's code built with GCC 2.91.66, -G8, split addresses
  * (docs/matching/issue-6-langimg-chunk05.md). */
 
+static inline void VecZero(Vector3 *v) {
+    v->vx = v->vy = v->vz = 0;
+}
+
 /* Sorts the race's entries of kind 0x44 by their m_474, and resets the
  * rest. */
 void func_8001B778(RaceSort *t, RaceWorld *w) {
@@ -36,7 +40,41 @@ void func_8001B778(RaceSort *t, RaceWorld *w) {
     t->m_180 = 0x12345678;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_05", func_8001B84C);
+/* The race state's frame: the entries stepped, the places sorted, and the
+ * ring's vectors reset. */
+void func_8001B84C(RaceSort *t, RaceWorld *w) {
+    RaceEntry *e;
+    int i;
+
+    if (!t->m_34) {
+        return;
+    }
+    func_8001CC14(t, w);
+    e = w->m_race->m_entries;
+    t->m_80 = -1;
+    for (i = 0; i < 5; i++, e++) {
+        int on = e->m_bits.m_on;
+
+        if (on) {
+            func_8001B974(t, i, w, 0);
+        }
+    }
+    func_8001CBA0(t, t->m_74);
+    func_8001CF34(t);
+    D_800CB42C = 0;
+    e = t->m_74;
+    if (e->m_30->m_ring) {
+        do {
+            RaceEntryX *x = e->m_30;
+
+            VecZero(&x->m_174);
+            VecZero(&x->m_18C);
+            VecZero(&x->m_180);
+            e = x->m_ring;
+            x->m_198 = 0x1000;
+        } while (e != t->m_74);
+    }
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_05", func_8001B974);
 
@@ -60,7 +98,37 @@ void func_8001CBA0(RaceSort *t, RaceEntry *e) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_05", func_8001CC14);
 
+#ifdef NON_MATCHING
+/* Equivalent; the original walks m_count and m_by with pointers of their
+ * own (strength reduction) and uses $s0 */
+/* Sorts each kind's entries, furthest first, and gives them their places. */
+void func_8001CF34(RaceSort *t) {
+    int k;
+
+    for (k = 0; k < t->m_kinds; k++) {
+        int n = t->m_count[k];
+        int i;
+        int j;
+
+        for (j = n - 1; j > 0; j--) {
+            for (i = 0; i < j; i++) {
+                RaceEntryX *a = t->m_by[k][i];
+                RaceEntryX *b = t->m_by[k][j];
+
+                if (a->m_214 < b->m_214) {
+                    t->m_by[k][i] = b;
+                    t->m_by[k][j] = a;
+                }
+            }
+        }
+        for (i = 0; i < n; i++) {
+            t->m_by[k][i]->m_218 = i;
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_05", func_8001CF34);
+#endif
 
 /* How far b is ahead of a, within half a lap either way. */
 int func_8001D018(Track *t, TrackPos *a, TrackPos *b) {

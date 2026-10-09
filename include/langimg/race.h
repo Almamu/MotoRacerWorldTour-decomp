@@ -9,9 +9,19 @@ extern "C" {
 // A race entry (0x568 bytes; Race::m_entries)
 struct RaceEntry;
 struct RaceEntryX {
-    u8 m_00[0x1C4];
+    u8 m_00[0x174];
+    Vector3 m_174;
+    Vector3 m_180;
+    Vector3 m_18C;
+    int m_198;
+    u8 m_19C[0x18];
+    RaceEntry *m_ring; // 0x1B4: the next around a ring of entries
+    u8 m_1B8[0xC];
     RaceEntry *m_next; // 0x1C4: the next along the chain
-    u8 m_1C8[0x2AC];
+    u8 m_1C8[0x4C];
+    int m_214; // how far it is
+    int m_218; // its place among its kind
+    u8 m_21C[0x258];
     int m_474; // its kind's index
 };
 struct RaceEntry {
@@ -20,6 +30,7 @@ struct RaceEntry {
         struct {
             unsigned m_b0 : 1;
             int m_kind5 : 5;
+            unsigned m_on : 1; // bit 6: to step
         } m_bits;
     };
     u8 m_04[0x2C];
@@ -37,14 +48,16 @@ struct RaceWorld {
 // The race's entries of kind 0x44 sorted by their m_474, 5 per kind
 struct RaceSort {
     int m_00;
-    u8 m_04[0x70];
-    int m_74;
-    int m_78; // the highest kind index along the chain
+    u8 m_04[0x30];
+    int m_34;
+    u8 m_38[0x3C];
+    RaceEntry *m_74; // the ring's first
+    int m_78;        // the highest kind index along the chain
     int m_7C;
     int m_80;
     int m_84;
     int m_88;
-    u8 m_8C[4];
+    int m_kinds;            // 0x8C
     int m_count[7];         // 0x90
     RaceEntryX *m_by[7][5]; // 0xAC
     u8 m_138[0x48];
@@ -119,6 +132,11 @@ struct RaceCam {
 void func_8001B6B4(RaceSort *t, RaceWorld *w);
 void func_8001B778(RaceSort *t, RaceWorld *w);
 void func_8001CBA0(RaceSort *t, RaceEntry *e);
+void func_8001B84C(RaceSort *t, RaceWorld *w);
+void func_8001B974(RaceSort *t, int i, RaceWorld *w, int a);
+void func_8001CC14(RaceSort *t, RaceWorld *w);
+void func_8001CF34(RaceSort *t);
+extern int D_800CB42C;
 int func_8001D018(Track *t, TrackPos *a, TrackPos *b);
 void func_8001D07C(RaceCam *c);
 Racer *func_8001D108(Racer *r);
