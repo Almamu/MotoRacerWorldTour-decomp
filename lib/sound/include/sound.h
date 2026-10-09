@@ -84,16 +84,20 @@ typedef struct {
 } SndListener;
 
 /* Something that makes sounds in the world (func_8001355C, func_8001363C) */
-typedef struct {
-    u8 unk0[0x10];
-    int flags; /* 0x400: follows unk3C/unk40; 0x200: moves (unk44 its last place) */
+typedef struct SndEmitter {
+    int unk0;
+    int unk4; /* serial number (a handle's high bits) */
+    int unk8;
+    short unkC; /* (a handle's bits 6-13) */
+    short unkE;
+    int flags; /* 1: in use; 0x400: follows unk3C/unk40; 0x200: moves (unk44 its last place) */
     short unk14;
     short unk16;
     short unk18;
     short unk1A;
     short unk1C; /* scales unk14 when flags & 0x4000 (1.0 = 0x1000) */
     short unk1E;
-    int unk20;
+    struct SndEmitter *link; /* its pair (func_8001467C) */
     int unk24;
     int unk28;
     int volume; /* by where the listener faces */
@@ -110,27 +114,31 @@ typedef struct {
 /* The 3D sounds: emitters and listeners (func_80013CFC) */
 typedef struct {
     u8 unk0;
-    u8 unk1;
+    s8 on; /* the SPU is set up (func_800146EC) */
     u8 unk2;
-    u8 unk3[0x205];
+    s8 unk3; /* emitters changed now get flag 0x100000 */
+    u8 unk4[2];
+    short notes[256]; /* note numbers by index; -1: none (func_80013DB8) */
     int unk208;
     SndEmitter emitters[64];
     SndListener listeners[2];
     short unk1C84;
     short nFree;
-    u8 free[64]; /* the free emitters, a stack */
+    s8 free[64]; /* the free emitters, a stack */
     int unk1CC8;
-    u8 unk1CCC[0x28];
+    u8 unk1CCC[0x10];
+    SndVector unk1CDC;
+    SndVector unk1CE8;
     short unk1CF4;
     short unk1CF6;
     int unk1CF8;
 } SndWorld;
 
-/* Note numbers by index (func_80013DB8 clears them to -1) */
+/* A note name to put in the note map (SndWorld.notes) */
 typedef struct {
-    u8 unk0[6];
-    short notes[256];
-} NoteMap;
+    const char *name;
+    short index;
+} NoteDef;
 
 /* What func_80013BD4 sets on an emitter, each field when its bit is in
  * mask */
@@ -352,7 +360,36 @@ void func_80013554(void);
 void func_80013BA0(SndEmitter *e, int v);
 void func_80013BD4(SndEmitter *e, SndParams *p);
 void func_80013CFC(SndWorld *w);
-u16 func_80014C24(NoteMap *map, int i);
+void func_80013DB8(SndWorld *w);
+int func_80013DE0(SndWorld *w, int n, NoteDef *defs);
+int func_80013E64(SndWorld *w, const char *name);
+int func_800140CC(SndWorld *w);
+void func_80014130(SndWorld *w, int i);
+SndEmitter *func_8001427C(SndWorld *w, u32 handle);
+short func_800147A4(SndWorld *w, const char *name);
+short func_800147C8(SndWorld *w, NoteDef *def);
+const char *func_80014BB0(SndWorld *w, int i);
+u16 func_80014C24(SndWorld *w, int i);
+void func_80013F38(SndWorld *w, int a);
+void func_80014530(SndWorld *w, SndVector *a, SndVector *b);
+int func_8001456C(SndWorld *w, u32 handle);
+int func_800145A8(SndWorld *w);
+void func_80014634(SndWorld *w);
+void func_800146EC(SndWorld *w);
+int func_80014724(SndWorld *w, const char *name);
+void func_80014774(SndWorld *w);
+void func_8001480C(SndWorld *w);
+void func_80014B74(SndWorld *w, u32 handle);
+void func_800142E0(SndWorld *w, u32 handle, int vol, int x);
+void func_80014368(SndWorld *w, u32 handle, int vol);
+void func_800143E0(SndWorld *w, u32 handle, int x);
+void func_8001444C(SndWorld *w, u32 handle, int x);
+void func_800144B8(SndWorld *w, u32 handle, SndParams *p);
+u32 func_8001467C(SndWorld *w, int a, int b, u32 other);
+u32 func_80014A98(SndWorld *w, int a, int b);
+int func_800A60AC(const char *a, const char *b); /* strcmp */
+extern char D_800C48E0[];                        /* "Unknow Id" */
+extern char D_800C48EC[];                        /* "Null Id" */
 void func_8001355C(SndEmitter *e, SndVector *pos, SndVector *dir);
 void func_8001363C(SndEmitter *e, SndVector *pos, SndVector *dir, int dt);
 
