@@ -1183,9 +1183,21 @@ rotation + base rotation at part +0x0C, 4096 = 360°), `t_local = pivot
 indices are slot byte offsets), so seam polygons use neighbouring parts'
 vertices; extra seam groups (model +0x4C / +0x6C / +0x70) follow. Rig space
 is Y up. `tools/sdf_rig.py` implements it (OBJ export of any pose; write
-back of vertices and poses). Level root 9 is the **opponents'** rider: a
-mesh edit there shows on the AI riders in the emulator, not on the
-player's.
+back of vertices and poses). Level root 9 is **every** rider, the player's
+included: scaling part 10 (chest/head) in the model enlarges all riders in
+the emulator. Each bike has a runtime rig (five in a race); the game
+switches a rig between model 0 and model 1 by distance, so model 1 is the
+low-detail model (also used in split screen).
+
+**Pose use** (checked in the emulator by zeroing pose records in RAM):
+0x8008E1F8 walks joints 0–23 in order and applies the next joint of its
+list as it reaches it; the riding pose 8 is applied with the list at
+0x800C7570 (`0, 19, 20, 17, …`), which in effect sets only the bike body
+and the footpegs. The rider's stance comes from the blends: pose **5** is
+the **left** lean and pose **3** the **right** lean (zeroing pose 5 makes
+the rider take a left corner sitting upright with arms out; riding
+straight blends in a little of pose 3). Poses 1, 2, 7 and 11–15 had no
+effect while riding (other states: crashes, wheelies, the start?).
 
 The rider **models** (+0x290) are rigs: `{s16 part count, …, +0x0A s16
 type (draw-function pair from 0x800C8D34), …, +0x28 Part** parts}`; their 31
@@ -1239,8 +1251,5 @@ a flag bit: an 8-bit value, a 16-bit button mask (1 = accelerate), another
 
 ## Next steps
 
-- Riders: where the player's rider rig lives (root 9 drives the
-  opponents), and when the pose records are applied (zeroing pose 8 in RAM
-  changes nothing during a normal ride; the `.san` animations of root 11
-  probably drive the riding motion).
+- Riders: when poses 1, 2, 7 and 11–15 are used.
 
