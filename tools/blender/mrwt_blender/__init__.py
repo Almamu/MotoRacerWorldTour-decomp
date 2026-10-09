@@ -70,22 +70,8 @@ def to_game(v, s):
 # --- textures ----------------------------------------------------------------
 
 def find_vrm(sdf_path):
-    """The texture bank for a scene: Sac_PS.sdf / Sac2_PS.sdf -> Sac.Vrm,
-    Menu_N -> menu/banks/MMenuVrm.vrm, EndM_N -> menu/sc_banks/MENDVRM.vrm."""
-    p = Path(sdf_path)
-    files = {f.name.lower(): f for f in p.parent.iterdir()}
-    stem = p.stem.lower()
-    if stem.startswith("menu_"):
-        cands = [p.parent.parent / "menu" / "banks" / "MMenuVrm.vrm"]
-    elif stem.startswith("endm_"):
-        cands = [p.parent.parent / "menu" / "sc_banks" / "MENDVRM.vrm"]
-    else:
-        base = stem[:-3] if stem.endswith("_ps") else stem
-        cands = [files.get(f"{b}.vrm") for b in (base, base[:-1] if base.endswith("2") else None) if b]
-    for c in cands:
-        if c and c.exists():
-            return c
-    return None
+    import vram_usage
+    return vram_usage.find_vrm(sdf_path)
 
 
 class Textures:

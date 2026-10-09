@@ -52,6 +52,23 @@ correctly with the level geometry.
 Colour modes: 0 = 4 bpp (16-colour CLUT), 1 = 8 bpp (256-colour CLUT),
 2 = 15-bit direct. Colour 0x0000 is transparent.
 
+### Moving a sprite
+
+The game draws a sprite from its BLKS entry when it is used (HUD
+elements at the entry's size), so pointing the entry at another texture
+works: `vram_usage.relocate_sprite` places a new image in free VRAM
+(4-bit, 8-bit or 15-bit, with a palette of its own) and rewrites the
+corners, clut, tpage and every palette variant in place (the entry keeps
+its size). Checked in the emulator: Sachsenring's 15 x 20 four-bit HUD
+stopwatch replaced by a 30 x 40 eight-bit one is drawn at the new size
+and colours. `vrm.py import` / the workspace do this for sprite PNGs that
+change size or ask for a colour depth in `blks/<hash>.json`.
+
+Free VRAM: pixels not referenced by the bank's chunks, by the textured
+polygons of the scenes that load the bank, or by the rider texture
+atlases (`tools/vram_usage.py`; checked by filling the rest with noise).
+About 5% of a track bank is free.
+
 ## DPAL — palette
 
 8 bytes, e.g. `0002 0010 0020 0135`:

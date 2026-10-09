@@ -41,6 +41,8 @@ import sys
 from pathlib import Path
 
 TOOLS = Path(__file__).resolve().parent
+sys.path.insert(0, str(TOOLS))
+import vram_usage  # noqa: E402
 
 
 def run(*args):
@@ -166,7 +168,7 @@ def repack(ws, out_track):
         entry = ws / "mr3dat" / e["file"]
         a = assets / e["file"]
         if k == ".vrm" and (changed_under(e["file"] + "/", now, state["assets"]) or e["file"] in shared_banks):
-            run("vrm.py", "import", entry, a, entry)
+            run("vrm.py", "import", entry, a, entry, *vram_usage.scenes_for_bank(entry, ws / "mr3dat"))
         elif k == ".snd" and changed_under(e["file"] + "/", now, state["assets"]):
             run("snd.py", "import", entry, a, entry)
         elif k == ".bs" and now.get(e["file"] + ".png") != state["assets"].get(e["file"] + ".png"):

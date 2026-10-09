@@ -24,12 +24,16 @@ usage: vrm.py export <file.vrm> <out_dir>   (or just vrm.py <file.vrm> <out_dir>
   fonts/<hash>.png + fonts/<hash>.json (glyph strip and metrics) and
   cluts/<id>.png (one pixel per colour; alpha 0 = transparent 0x0000,
   128 = STP bit set, 255 = opaque) with cluts.json listing their users
-       vrm.py import <file.vrm> <dir> <out.vrm>
+       vrm.py import <file.vrm> <dir> <out.vrm> [<scene.sdf> ...]
   writes edited blks/*.png and fonts/*.png from <dir> back into VRAM: colours
   are mapped to each texture's own palette (nearest colour; alpha 0 =
   transparent index); unchanged pixels keep their index, so an unedited
   export imports back byte-identical. Edited palettes are written first
-  (exact 15-bit colours + STP), then textures; sizes never change.
+  (exact 15-bit colours + STP), then textures. A sprite PNG with a new
+  size, or with blks/<hash>.json {"bpp": 4|8|15} asking for another colour
+  depth, is moved to free VRAM with its own palette and its BLKS entry
+  rewritten; give the scene files that load the bank so their textures
+  are left alone.
 """
 
 import json
@@ -70,11 +74,26 @@ class Vrm:
         ends = [t[0] for t in table[1:]] + [desc_size]
         self.chunks = [(tag.decode(), h, data[base + off:base + end])
                        for (off, tag, h), end in zip(table, ends)]
+        self.chunk_at = {(tag.decode(), h): base + off for off, tag, h in table}
         self.pix = base + desc_size
         self.x, self.y, self.width, self.height = struct.unpack_from("<4H", data, self.pix)
         self.vram = np.frombuffer(data, dtype="<u2", count=self.width * self.height,
                                   offset=self.pix + 8).reshape(self.height, self.width).copy()
         self.original = self.vram.copy()
+
+    def set_blks(self, h, uvs, clut, tpage):
+        """Point BLKS `h` at another texture: corners (u, v) top-left,
+        top-right, bottom-left, bottom-right (inclusive), clut and tpage;
+        every palette variant is set to `clut`. The entry keeps its size."""
+        at = self.chunk_at[("BLKS", h)]
+        raw = bytearray(self.raw)
+        uv = [u | v << 8 for u, v in uvs]
+        k = struct.unpack_from("<H", raw, at + 12)[0]
+        struct.pack_into("<6H", raw, at, uv[0], clut, uv[1], tpage, uv[2], uv[3])
+        struct.pack_into(f"<{k}H", raw, at + 14, *([clut] * k))
+        self.raw = bytes(raw)
+        self.chunks = [(t, hh, self.raw[self.chunk_at[(t, hh)]:self.chunk_at[(t, hh)] + len(b)])
+                       for t, hh, b in self.chunks]
 
     def to_bytes(self):
         return self.raw[:self.pix + 8] + self.vram.astype("<u2").tobytes() + self.raw[self.pix + 8 + self.vram.size * 2:]
@@ -287,17 +306,40 @@ def export(vrm, out):
             print(f"{tag} {h:08x} {len(blob)} bytes")
 
 
-def import_(vrm, src):
+DEPTH_OF_MODE = {0: 4, 1: 8, 2: 15}
+
+
+def import_(vrm, src, scenes=()):
     """Write edited cluts/*.png, then blks/<hash>.png and fonts/<hash>.png back
-    into VRAM (palettes first, so edited textures map to the new colours)."""
+    into VRAM (palettes first, so edited textures map to the new colours).
+    A sprite whose PNG has a different size, or whose blks/<hash>.json asks
+    for another colour depth ({"bpp": 4, 8 or 15}), is moved to free VRAM
+    with a palette of its own (tools/vram_usage.py; `scenes` are the parsed
+    scene files that load the bank, so their textures stay untouched)."""
     from PIL import Image
     changed = import_palettes(vrm, src)
-    for tag, h, blob in vrm.chunks:
+    used = None
+    for tag, h, blob in list(vrm.chunks):
         if tag == "BLKS":
             png = src / "blks" / f"{h:08x}.png"
             if png.exists():
                 uvs, clut, tpage, _ = parse_blks(blob)
-                n = vrm.put_texture(uvs, clut, tpage, np.array(Image.open(png).convert("RGBA")))
+                rgba = np.array(Image.open(png).convert("RGBA"))
+                side = png.with_suffix(".json")
+                want = json.loads(side.read_text()).get("bpp") if side.exists() else None
+                cur = DEPTH_OF_MODE.get((tpage >> 7) & 3, 4)
+                size = (max(u for u, _ in uvs) - min(u for u, _ in uvs) + 1,
+                        max(v for _, v in uvs) - min(v for _, v in uvs) + 1)
+                if (rgba.shape[1], rgba.shape[0]) != size or (want and want != cur):
+                    import vram_usage
+                    if used is None:
+                        used = vram_usage.usage(vrm.to_bytes(), list(scenes))
+                    t = vram_usage.relocate_sprite(vrm, used, h, rgba, want or cur)
+                    print(f"BLKS {h:08x}: moved, {t['w']}x{t['h']} {t['bpp']}-bit at tpage {t['tpage']:04x} "
+                          f"clut {t['clut']:04x}")
+                    changed += rgba.shape[0] * rgba.shape[1]
+                    continue
+                n = vrm.put_texture(uvs, clut, tpage, rgba)
                 if n:
                     print(f"BLKS {h:08x}: {n} pixels changed")
                 changed += n
@@ -322,9 +364,10 @@ def main():
         a = ["export"] + a
     if len(a) == 3 and a[0] == "export":
         export(Vrm(Path(a[1]).read_bytes()), Path(a[2]))
-    elif len(a) == 4 and a[0] == "import":
+    elif len(a) >= 4 and a[0] == "import":
+        from sdf import parse
         vrm = Vrm(Path(a[1]).read_bytes())
-        n = import_(vrm, Path(a[2]))
+        n = import_(vrm, Path(a[2]), [parse(Path(f).read_bytes()) for f in a[4:]])
         Path(a[3]).write_bytes(vrm.to_bytes())
         print(f"{n} pixels/colours changed -> {a[3]}")
     else:

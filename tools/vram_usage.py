@@ -24,6 +24,37 @@ from sdf import parse
 BANK_X, BANK_Y, BANK_W, BANK_H = 512, 0, 512, 512
 
 
+def find_vrm(sdf_path):
+    """The texture bank for a scene: Sac_PS.sdf / Sac2_PS.sdf -> Sac.Vrm,
+    Menu_N -> menu/banks/MMenuVrm.vrm, EndM_N -> menu/sc_banks/MENDVRM.vrm."""
+    p = Path(sdf_path)
+    files = {f.name.lower(): f for f in p.parent.iterdir()}
+    stem = p.stem.lower()
+    if stem.startswith("menu_"):
+        cands = [p.parent.parent / "menu" / "banks" / "MMenuVrm.vrm"]
+    elif stem.startswith("endm_"):
+        cands = [p.parent.parent / "menu" / "sc_banks" / "MENDVRM.vrm"]
+    else:
+        base = stem[:-3] if stem.endswith("_ps") else stem
+        cands = [files.get(f"{b}.vrm") for b in (base, base[:-1] if base.endswith("2") else None) if b]
+    for c in cands:
+        if c and c.exists():
+            return c
+    return None
+
+
+def scenes_for_bank(bank_path, root):
+    """Scene files under `root` (an unpacked MR3.DAT) that load the bank."""
+    bank = Path(bank_path).resolve()
+    out = []
+    for f in sorted(Path(root).rglob("*")):
+        if f.suffix.lower() == ".sdf" and f.is_file():
+            v = find_vrm(f)
+            if v is not None and Path(v).resolve() == bank:
+                out.append(f)
+    return out
+
+
 def page_box(tpage, uvs):
     """VRAM rectangle (x0, y0, x1, y1) a polygon or sprite samples."""
     mode = (tpage >> 7) & 3
@@ -313,3 +344,16 @@ def write_texture(bank_vrm, t, rgba):
     bank_vrm.vram[y:y + h, x:x + vw] = packed
     cx, cy = (t["clut"] & 0x3F) * 16 - BANK_X, (t["clut"] >> 6) - BANK_Y
     bank_vrm.vram[cy, cx:cx + len(words)] = np.array(words, np.uint16)
+
+
+def relocate_sprite(bank_vrm, used, h, rgba, bpp=4):
+    """Give BLKS sprite `h` a new texture: placed in free VRAM with its own
+    palette (bpp 4/8/15, see add_texture) and the sprite entry pointed at
+    it, so it can change size and colours. The game draws HUD sprites at
+    their entry's size. Returns the placement."""
+    rgba = np.asarray(rgba, np.uint8)
+    t = add_texture(bank_vrm, used, rgba, bpp)
+    u, v, w, h_ = t["u"], t["v"], t["w"], t["h"]
+    bank_vrm.set_blks(h, [(u, v), (u + w - 1, v), (u, v + h_ - 1), (u + w - 1, v + h_ - 1)],
+                      t["clut"], t["tpage"])
+    return t
