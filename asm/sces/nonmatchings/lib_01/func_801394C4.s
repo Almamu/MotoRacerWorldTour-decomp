@@ -44,7 +44,7 @@ glabel func_801394C4
     /* 69F8 8013952C B3DC040C */  jal        CdDataCallback
     /* 69FC 80139530 21200000 */   addu      $a0, $zero, $zero
     /* 6A00 80139534 1000A427 */  addiu      $a0, $sp, 0x10
-    /* 6A04 80139538 ABDC040C */  jal        CdGetSector
+    /* 6A04 80139538 ABDC040C */  jal        CdGetSector2
     /* 6A08 8013953C 03000524 */   addiu     $a1, $zero, 0x3
     /* 6A0C 80139540 BCDC040C */  jal        CdDataSync
     /* 6A10 80139544 21200000 */   addu      $a0, $zero, $zero
@@ -54,7 +54,7 @@ glabel func_801394C4
     /* 6A20 80139554 59E50408 */  j          .L80139564
     /* 6A24 80139558 00000000 */   nop
   .L8013955C:
-    /* 6A28 8013955C A3DC040C */  jal        func_8013728C
+    /* 6A28 8013955C A3DC040C */  jal        CdGetSector
     /* 6A2C 80139560 03000524 */   addiu     $a1, $zero, 0x3
   .L80139564:
     /* 6A30 80139564 05DD040C */  jal        CdPosToInt
@@ -82,7 +82,7 @@ glabel func_801394C4
     /* 6A84 801395B8 80DC4224 */  addiu      $v0, $v0, %lo(D_801BDC80)
     /* 6A88 801395BC 0000448C */  lw         $a0, 0x0($v0)
     /* 6A8C 801395C0 0800458C */  lw         $a1, 0x8($v0)
-    /* 6A90 801395C4 ABDC040C */  jal        CdGetSector
+    /* 6A90 801395C4 ABDC040C */  jal        CdGetSector2
     /* 6A94 801395C8 00000000 */   nop
     /* 6A98 801395CC 8BE50408 */  j          .L8013962C
     /* 6A9C 801395D0 00000000 */   nop
@@ -91,7 +91,7 @@ glabel func_801394C4
     /* 6AA4 801395D8 80DC1026 */  addiu      $s0, $s0, %lo(D_801BDC80)
     /* 6AA8 801395DC 0000048E */  lw         $a0, 0x0($s0)
     /* 6AAC 801395E0 0800058E */  lw         $a1, 0x8($s0)
-    /* 6AB0 801395E4 A3DC040C */  jal        func_8013728C
+    /* 6AB0 801395E4 A3DC040C */  jal        CdGetSector
     /* 6AB4 801395E8 00000000 */   nop
     /* 6AB8 801395EC F8FF0426 */  addiu      $a0, $s0, -0x8
     /* 6ABC 801395F0 0800028E */  lw         $v0, 0x8($s0)

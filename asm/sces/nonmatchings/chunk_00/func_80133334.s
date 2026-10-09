@@ -529,7 +529,7 @@ glabel func_80133334
     /* E18 8013394C A2DB040C */  jal        CdReady
     /* E1C 80133950 21280000 */   addu      $a1, $zero, $zero
     /* E20 80133954 28D2248E */  lw         $a0, %lo(D_8014D228)($s1)
-    /* E24 80133958 A3DC040C */  jal        func_8013728C
+    /* E24 80133958 A3DC040C */  jal        CdGetSector
     /* E28 8013395C 00020524 */   addiu     $a1, $zero, 0x200
     /* E2C 80133960 28D2308E */  lw         $s0, %lo(D_8014D228)($s1)
     /* E30 80133964 00000000 */  nop

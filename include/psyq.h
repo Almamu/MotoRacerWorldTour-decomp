@@ -71,7 +71,10 @@ int SetVideoMode(long mode);
 
 /* libcd */
 int CdInit(void);
+int CdControl(u_char com, u_char *param, u_char *result);
 int CdControlB(u_char com, u_char *param, u_char *result);
+int CdReady(int mode, u_char *result);
+int CdGetSector(void *madr, int size);
 int CdRead2(long mode);
 CdlFILE *CdSearchFile(CdlFILE *fp, char *name);
 int CdPosToInt(CdlLOC *p);

@@ -193,7 +193,85 @@ u8 *LoadFile(const char *name, u8 *dest, u32 *sizeOut) {
 INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", LoadFile);
 #endif
 
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", func_80135780);
+/* Reads size bytes at loc into dest (allocated when 0), at double speed,
+ * retrying twice on a disc error. Mode 2 reads an archive's header: its
+ * first sector gives the entry table's size, which is what gets read. Then
+ * the hook D_8019D48C, if set, sees the data. */
+void *func_80135780(int mode, CdlLOC *loc, u32 size, void *dest) {
+    u_char param[8];
+    CdlLOC pos;
+    int allocated = 0;
+    u32 sectors;
+    int retries;
+    int n;
+    u8 *p;
+    int r;
+    u32 esize;
+
+    pos = *loc;
+    D_8019DB70 = 1;
+    VSync(0);
+    sectors = (size + 0x7FF) >> 11;
+    if (dest == 0) {
+        dest = (void *)func_8014A454(sectors << 11);
+        allocated = 1;
+        if (dest == 0) {
+            goto end;
+        }
+    }
+    retries = 2;
+retry:
+    n = sectors;
+    p = (u8 *)dest;
+    param[0] = 0x80;
+    CdControlB(0x0E, param, 0);
+    CdControl(0x06, (u_char *)&pos, 0);
+    while (--n != -1) {
+        r = CdReady(0, 0);
+        if (r == 5) {
+        error:
+            if (retries == 0) {
+                break;
+            }
+            CdControlB(0x09, 0, 0);
+            retries--;
+            goto retry;
+        }
+        if (r == 1) {
+            if (CdGetSector(p, 0x200) != r) {
+                goto error;
+            }
+            if (mode == 2 && p == dest) {
+                esize = 0;
+                if (dest) {
+                    esize = ((Archive *)dest)->entrySize;
+                    if (esize == 0) {
+                        esize = 0x30;
+                    }
+                }
+                size = ((Archive *)dest)->count * esize + 0x10;
+                sectors = (size + 0x7FF) >> 11;
+                if (allocated) {
+                    func_8014A838(dest, sectors << 11);
+                }
+                p = (u8 *)dest;
+                n = sectors - 1;
+            }
+            p += 0x800;
+        }
+    }
+    CdControlB(0x09, 0, 0);
+    if (D_8019D48C) {
+        (*D_8019D48C)(dest);
+    }
+    if (allocated) {
+        dest = (void *)func_8014A838(dest, size);
+    }
+end:
+    D_8019DB70 = 0;
+    VSync(0);
+    return dest;
+}
 
 #ifdef NON_MATCHING
 /* Equivalent; the original assigns several values to other registers

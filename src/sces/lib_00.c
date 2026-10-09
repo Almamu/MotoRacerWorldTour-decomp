@@ -34,9 +34,9 @@ INCLUDE_ASM("asm/sces/nonmatchings/lib_00", CdControlF);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_00", CdControlB);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_00", func_8013728C);
-
 INCLUDE_ASM("asm/sces/nonmatchings/lib_00", CdGetSector);
+
+INCLUDE_ASM("asm/sces/nonmatchings/lib_00", CdGetSector2);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_00", CdDataCallback);
 

@@ -225,6 +225,13 @@ def cmd_symbols(sigs, sdk_dir=None):
                 continue
             lines[vram] = (n, size, f"{c['lib']}/{c['obj']} {vrange(c['versions'])}")
         lines.update(exact)
+        # Names given by hand (above the generated block) win: drop what
+        # clashes with them, by name or by address.
+        manual = (ROOT / "config" / target / "symbol_addrs.txt").read_text()
+        manual = manual.split("// PsyQ library functions")[0]
+        hand = {m.group(1): int(m.group(2), 16)
+                for m in re.finditer(r"^\s*([A-Za-z_.$][\w.$]*)\s*=\s*(0x[0-9A-Fa-f]+);", manual, re.M)}
+        lines = {v: l for v, l in lines.items() if v not in hand.values() and l[0] not in hand}
         # Names Sony's objects use for the symbols they refer to, at the
         # addresses their relocations have in the original.
         if sdk_dir and (sdk_dir / target / f"{target}_syms.ld").exists():

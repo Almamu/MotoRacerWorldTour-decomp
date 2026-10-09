@@ -63,7 +63,8 @@ extern void *D_8019DB64;
 extern void *D_8019DB68;
 extern DRAWENV D_8019DA80[2];
 extern DISPENV D_8019DB38[2];
-extern int D_8019DB70;
+extern int D_8019DB70; /* a CD read is going on */
+extern void (**D_8019D48C)(void *buf); /* a hook on what func_80135780 reads */
 extern int D_8019DB60; /* 1: interlaced (h > 256) */
 extern int D_8019DB6C; /* the ordering table's size */
 extern void *D_8019DA70;
