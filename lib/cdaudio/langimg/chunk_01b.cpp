@@ -2,7 +2,97 @@
 #include "cdaudio.h"
 #include "sound.h"
 
+/* This file saw func_80011820 (the CD volume) with short parameters, the
+ * sound engine's with s8 ones: callers extend to 16 bits. */
+#define SET_CD_VOLUME(v) ((void (*)(int, short, short))func_80011820)(0, v, v)
+
+#ifdef NON_MATCHING
+/* Equivalent; the original keeps the variables' %hi parts in saved
+ * registers in another order (D_800CC4EC's in $s1, D_800B877C's in $s3)
+ * and computes the fades' step in other registers */
+/* Once a frame: watches the drive and runs the player's states (9: start
+ * a track, 10 and 13: fade, 7: fade out and stop, 12 and 15: go on). */
+void func_80014CB8(void) {
+    u8 param[8];
+    u8 result[8];
+    int status;
+    int step;
+
+    if (!D_800B8784 || D_800B8744 == 11 || !D_800B8744) {
+        return;
+    }
+    status = CD_sync(1, 0);
+    if (status == 5) {
+        D_800B8758 = 8;
+        if (func_80096508()) {
+            D_800B8764 = 1;
+            if (D_800B8744 == 11) {
+                D_800B8744 = 9;
+            }
+        } else {
+            D_800B8764 = 0;
+        }
+        return;
+    }
+    if (status != 2) {
+        return;
+    }
+    if (D_800B8744 == 9) {
+        SET_CD_VOLUME(D_800B8780);
+        param[0] = 3;
+        CdControlB(0xE, param, result);
+        CdControlF(3, (u8 *)&D_800CC4F8[D_800CC4D4[D_800CC68C]]);
+        D_800B8744 = 11;
+    }
+    if (D_800B8744 == 10) {
+        SET_CD_VOLUME(D_800CC4D8 >> 16);
+        if (!(D_800CC4EC < D_800B877C)) {
+            CdControlF(9, 0);
+            D_800B8744 = 12;
+        }
+        step = (D_800B8780 << 16) / D_800B877C;
+        D_800CC4EC++;
+        D_800CC4D8 -= step;
+    } else if (D_800B8744 == 12) {
+        SET_CD_VOLUME(D_800B8780);
+        param[0] = 3;
+        CdControlB(0xE, param, result);
+        CdControlF(3, (u8 *)&D_800CC4F8[D_800CC4D4[D_800CC68C]]);
+        D_800B8744 = 11;
+    }
+    if (D_800B8744 == 7) {
+        if (D_800B8780) {
+            SET_CD_VOLUME(D_800CC4D8 >> 16);
+        }
+        if (!(D_800CC4EC < D_800B877C) || !D_800B8780) {
+            param[0] = 0x80;
+            CdControlB(0xE, param, result);
+            CdControlF(9, 0);
+            D_800B8744 = 0;
+        }
+        step = (D_800B8780 << 16) / D_800B877C;
+        D_800CC4EC++;
+        D_800CC4D8 -= step;
+    }
+    if (D_800B8744 == 13) {
+        SET_CD_VOLUME(D_800CC4D8 >> 16);
+        if (!(D_800CC4EC < D_800B877C)) {
+            CdControlF(9, 0);
+            D_800B8744 = 14;
+        }
+        step = (D_800B8780 << 16) / D_800B877C;
+        D_800CC4EC++;
+        D_800CC4D8 -= step;
+    }
+    if (D_800B8744 == 15) {
+        SET_CD_VOLUME(D_800B8780);
+        CdControlF(3, 0);
+        D_800B8744 = 11;
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_01b", func_80014CB8);
+#endif
 
 /* The drive's callback: notes errors and, at the end of a track, goes on
  * to the next one (or back to the first when looping). */
@@ -48,9 +138,9 @@ void func_80015200(int x) {
 #ifdef NON_MATCHING
 /* Equivalent; scheduling only: the original stores D_800CC4CC in the
  * call's delay slot and D_800CC4F0 before D_800CC68C */
-/* Plays count tracks from track. */
-int func_80015210(int track, int count, int mode) {
-    D_800CC4D4 = track;
+/* Plays count tracks of a list. */
+int func_80015210(int *tracks, int count, int mode) {
+    D_800CC4D4 = tracks;
     D_800CC4F0 = count;
     D_800CC68C = 0;
     D_800CC4CC = mode & 0xFF;
@@ -108,11 +198,9 @@ extern "C" const char D_800B721C[] = "UnPause Play\n";
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_01b", func_800152E4);
 #endif
 
-/* Sets the CD volume. This file declared func_80011820 with short
- * parameters (the caller extends them to 16 bits), the sound engine with
- * s8 ones. */
+/* Sets the CD volume. */
 void func_800153FC(int vol) {
-    ((void (*)(int, short, short))func_80011820)(0, vol, vol);
+    SET_CD_VOLUME(vol);
     D_800B8780 = vol;
 }
 
