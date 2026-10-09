@@ -1,8 +1,8 @@
 nonmatching SpuSetReverbModeDepth, 0x30
 
 glabel SpuSetReverbModeDepth
-    /* A3AA0 800B5290 0C80023C */  lui        $v0, %hi(D_800C3DB0)
-    /* A3AA4 800B5294 B03D428C */  lw         $v0, %lo(D_800C3DB0)($v0)
+    /* A3AA0 800B5290 0C80023C */  lui        $v0, %hi(_spu_RXX)
+    /* A3AA4 800B5294 B03D428C */  lw         $v0, %lo(_spu_RXX)($v0)
     /* A3AA8 800B5298 00000000 */  nop
     /* A3AAC 800B529C 840144A4 */  sh         $a0, 0x184($v0)
     /* A3AB0 800B52A0 860145A4 */  sh         $a1, 0x186($v0)

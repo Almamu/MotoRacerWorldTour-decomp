@@ -34,12 +34,12 @@ glabel _SsInit
     /* 10F88 80143ABC F7FF4014 */  bnez       $v0, .L80143A9C
     /* 10F8C 80143AC0 40008424 */   addiu     $a0, $a0, 0x40
     /* 10F90 80143AC4 3C000224 */  addiu      $v0, $zero, 0x3C
-    /* 10F94 80143AC8 1D80013C */  lui        $at, %hi(D_801CEADC)
-    /* 10F98 80143ACC DCEA22AC */  sw         $v0, %lo(D_801CEADC)($at)
-    /* 10F9C 80143AD0 1D80013C */  lui        $at, %hi(D_801CEAD8)
-    /* 10FA0 80143AD4 D8EA20AC */  sw         $zero, %lo(D_801CEAD8)($at)
-    /* 10FA4 80143AD8 1D80013C */  lui        $at, %hi(D_801CEAD4)
-    /* 10FA8 80143ADC D4EA20AC */  sw         $zero, %lo(D_801CEAD4)($at)
+    /* 10F94 80143AC8 1D80013C */  lui        $at, %hi(VBLANK_MINUS)
+    /* 10F98 80143ACC DCEA22AC */  sw         $v0, %lo(VBLANK_MINUS)($at)
+    /* 10F9C 80143AD0 1D80013C */  lui        $at, %hi(_snd_openflag)
+    /* 10FA0 80143AD4 D8EA20AC */  sw         $zero, %lo(_snd_openflag)($at)
+    /* 10FA4 80143AD8 1D80013C */  lui        $at, %hi(_snd_ev_flag)
+    /* 10FA8 80143ADC D4EA20AC */  sw         $zero, %lo(_snd_ev_flag)($at)
     /* 10FAC 80143AE0 1000BF8F */  lw         $ra, 0x10($sp)
     /* 10FB0 80143AE4 1800BD27 */  addiu      $sp, $sp, 0x18
     /* 10FB4 80143AE8 0800E003 */  jr         $ra

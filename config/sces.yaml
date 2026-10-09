@@ -55,11 +55,14 @@ segments:
     type: code
     start: 0x800
     vram: 0x80133334
+    bss_size: 0xF2A4 # 0x801C0B34-0x801CFDD8, cleared by the startup code
     subsegments:
       # Code in chunks of about 8 KB (docs/decomp.md, "Chunks"): chunk_* is
       # the boot code, lib_* the libraries from the startup code on.
       - [0x800, cpp, chunk_00] # 80133334
       - [0x24F0, cpp, chunk_01] # 80135024
+      # hand-written: a VLC decoder using the GTE's leading-zero count
+      - [0x3AC4, asm, vlc] # 801365F8
       - [0x4018, c, lib_00] # 80136B4C
       - [0x5F14, c, lib_01] # 80138A48
       - [0x8048, c, lib_02] # 8013AB7C
@@ -84,4 +87,5 @@ segments:
       - [0x1A23C, .rodata, lib_08] # 8014CD70
       - [0x1A27C, .rodata, lib_10] # 8014CDB0
       - [0x1A58C, data, data] # 8014D0C0
+      - { start: 0x8E000, type: bss, vram: 0x801C0B34, name: bss }
   - [0x8E000]

@@ -2,8 +2,8 @@ nonmatching _SsSndReplay, 0x60
 
 glabel _SsSndReplay
     /* 125EC 80145120 00240400 */  sll        $a0, $a0, 16
-    /* 125F0 80145124 1D80023C */  lui        $v0, %hi(D_801CEAE0)
-    /* 125F4 80145128 E0EA4224 */  addiu      $v0, $v0, %lo(D_801CEAE0)
+    /* 125F0 80145124 1D80023C */  lui        $v0, %hi(_ss_score)
+    /* 125F4 80145128 E0EA4224 */  addiu      $v0, $v0, %lo(_ss_score)
     /* 125F8 8014512C 83230400 */  sra        $a0, $a0, 14
     /* 125FC 80145130 21208200 */  addu       $a0, $a0, $v0
     /* 12600 80145134 002C0500 */  sll        $a1, $a1, 16

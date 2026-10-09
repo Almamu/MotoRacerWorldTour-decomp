@@ -3,8 +3,8 @@ nonmatching _SsSndCrescendo, 0x210
 glabel _SsSndCrescendo
     /* 11A6C 801445A0 C8FFBD27 */  addiu      $sp, $sp, -0x38
     /* 11A70 801445A4 00140400 */  sll        $v0, $a0, 16
-    /* 11A74 801445A8 1D80033C */  lui        $v1, %hi(D_801CEAE0)
-    /* 11A78 801445AC E0EA6324 */  addiu      $v1, $v1, %lo(D_801CEAE0)
+    /* 11A74 801445A8 1D80033C */  lui        $v1, %hi(_ss_score)
+    /* 11A78 801445AC E0EA6324 */  addiu      $v1, $v1, %lo(_ss_score)
     /* 11A7C 801445B0 83130200 */  sra        $v0, $v0, 14
     /* 11A80 801445B4 21404300 */  addu       $t0, $v0, $v1
     /* 11A84 801445B8 001C0500 */  sll        $v1, $a1, 16
@@ -115,9 +115,9 @@ glabel _SsSndCrescendo
     /* 11C04 80144738 21104300 */  addu       $v0, $v0, $v1
     /* 11C08 8014473C 80100200 */  sll        $v0, $v0, 2
     /* 11C0C 80144740 23104300 */  subu       $v0, $v0, $v1
-    /* 11C10 80144744 1D80033C */  lui        $v1, %hi(D_801CEAE0)
+    /* 11C10 80144744 1D80033C */  lui        $v1, %hi(_ss_score)
     /* 11C14 80144748 21186400 */  addu       $v1, $v1, $a0
-    /* 11C18 8014474C E0EA638C */  lw         $v1, %lo(D_801CEAE0)($v1)
+    /* 11C18 8014474C E0EA638C */  lw         $v1, %lo(_ss_score)($v1)
     /* 11C1C 80144750 00110200 */  sll        $v0, $v0, 4
     /* 11C20 80144754 21104300 */  addu       $v0, $v0, $v1
   .L80144758:

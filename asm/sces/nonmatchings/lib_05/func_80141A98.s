@@ -9,14 +9,14 @@ glabel func_80141A98
     /* EF78 80141AAC 0D004010 */  beqz       $v0, .L80141AE4
     /* EF7C 80141AB0 1400BFAF */   sw        $ra, 0x14($sp)
     /* EF80 80141AB4 0C00048E */  lw         $a0, 0xC($s0)
-    /* EF84 80141AB8 1C80023C */  lui        $v0, %hi(D_801BFE74)
-    /* EF88 80141ABC 74FE428C */  lw         $v0, %lo(D_801BFE74)($v0)
+    /* EF84 80141AB8 1C80023C */  lui        $v0, %hi(_padFuncSendAuto)
+    /* EF88 80141ABC 74FE428C */  lw         $v0, %lo(_padFuncSendAuto)($v0)
     /* EF8C 80141AC0 00000000 */  nop
     /* EF90 80141AC4 09F84000 */  jalr       $v0
     /* EF94 80141AC8 E0018424 */   addiu     $a0, $a0, 0x1E0
     /* EF98 80141ACC 0C00048E */  lw         $a0, 0xC($s0)
-    /* EF9C 80141AD0 1C80023C */  lui        $v0, %hi(D_801BFE74)
-    /* EFA0 80141AD4 74FE428C */  lw         $v0, %lo(D_801BFE74)($v0)
+    /* EF9C 80141AD0 1C80023C */  lui        $v0, %hi(_padFuncSendAuto)
+    /* EFA0 80141AD4 74FE428C */  lw         $v0, %lo(_padFuncSendAuto)($v0)
     /* EFA4 80141AD8 00000000 */  nop
     /* EFA8 80141ADC 09F84000 */  jalr       $v0
     /* EFAC 80141AE0 D0028424 */   addiu     $a0, $a0, 0x2D0

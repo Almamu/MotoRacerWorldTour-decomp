@@ -32,14 +32,14 @@ glabel func_800B1D44
     /* A05C0 800B1DB0 0D004010 */  beqz       $v0, .L800B1DE8
     /* A05C4 800B1DB4 00000000 */   nop
     /* A05C8 800B1DB8 0C00048E */  lw         $a0, 0xC($s0)
-    /* A05CC 800B1DBC 0C80023C */  lui        $v0, %hi(D_800C3CA0)
-    /* A05D0 800B1DC0 A03C428C */  lw         $v0, %lo(D_800C3CA0)($v0)
+    /* A05CC 800B1DBC 0C80023C */  lui        $v0, %hi(_padFuncSendAuto)
+    /* A05D0 800B1DC0 A03C428C */  lw         $v0, %lo(_padFuncSendAuto)($v0)
     /* A05D4 800B1DC4 00000000 */  nop
     /* A05D8 800B1DC8 09F84000 */  jalr       $v0
     /* A05DC 800B1DCC 00000000 */   nop
     /* A05E0 800B1DD0 0C00048E */  lw         $a0, 0xC($s0)
-    /* A05E4 800B1DD4 0C80023C */  lui        $v0, %hi(D_800C3CA0)
-    /* A05E8 800B1DD8 A03C428C */  lw         $v0, %lo(D_800C3CA0)($v0)
+    /* A05E4 800B1DD4 0C80023C */  lui        $v0, %hi(_padFuncSendAuto)
+    /* A05E8 800B1DD8 A03C428C */  lw         $v0, %lo(_padFuncSendAuto)($v0)
     /* A05EC 800B1DDC 00000000 */  nop
     /* A05F0 800B1DE0 09F84000 */  jalr       $v0
     /* A05F4 800B1DE4 F0008424 */   addiu     $a0, $a0, 0xF0

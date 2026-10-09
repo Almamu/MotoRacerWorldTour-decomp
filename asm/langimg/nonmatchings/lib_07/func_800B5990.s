@@ -6,7 +6,7 @@ glabel func_800B5990
     /* A41A8 800B5998 1400BFAF */  sw         $ra, 0x14($sp)
     /* A41AC 800B599C 1000B0AF */  sw         $s0, 0x10($sp)
     /* A41B0 800B59A0 12800000 */  mflo       $s0
-    /* A41B4 800B59A4 D3D4020C */  jal        func_800B534C
+    /* A41B4 800B59A4 D3D4020C */  jal        malloc
     /* A41B8 800B59A8 21200002 */   addu      $a0, $s0, $zero
     /* A41BC 800B59AC 21284000 */  addu       $a1, $v0, $zero
     /* A41C0 800B59B0 1500A010 */  beqz       $a1, .L800B5A08

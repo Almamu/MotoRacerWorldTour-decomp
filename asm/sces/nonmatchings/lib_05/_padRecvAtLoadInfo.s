@@ -131,8 +131,8 @@ glabel _padRecvAtLoadInfo
     /* E4C0 80140FF4 81004228 */  slti       $v0, $v0, 0x81
     /* E4C4 80140FF8 0B004014 */  bnez       $v0, .L80141028
     /* E4C8 80140FFC 00000000 */   nop
-    /* E4CC 80141000 1C80023C */  lui        $v0, %hi(D_801BFE60)
-    /* E4D0 80141004 60FE428C */  lw         $v0, %lo(D_801BFE60)($v0)
+    /* E4CC 80141000 1C80023C */  lui        $v0, %hi(_padFuncClrInfo)
+    /* E4D0 80141004 60FE428C */  lw         $v0, %lo(_padFuncClrInfo)($v0)
     /* E4D4 80141008 00000000 */  nop
     /* E4D8 8014100C 09F84000 */  jalr       $v0
     /* E4DC 80141010 21200002 */   addu      $a0, $s0, $zero

@@ -1,23 +1,23 @@
-nonmatching func_80143528, 0x44
+nonmatching _spu_FsetRXX, 0x44
 
-glabel func_80143528
+glabel _spu_FsetRXX
     /* 109F4 80143528 0700C014 */  bnez       $a2, .L80143548
     /* 109F8 8014352C 40100400 */   sll       $v0, $a0, 1
-    /* 109FC 80143530 1C80033C */  lui        $v1, %hi(D_801BFF14)
-    /* 10A00 80143534 14FF638C */  lw         $v1, %lo(D_801BFF14)($v1)
+    /* 109FC 80143530 1C80033C */  lui        $v1, %hi(_spu_RXX)
+    /* 10A00 80143534 14FF638C */  lw         $v1, %lo(_spu_RXX)($v1)
     /* 10A04 80143538 00000000 */  nop
     /* 10A08 8014353C 21104300 */  addu       $v0, $v0, $v1
     /* 10A0C 80143540 590D0508 */  j          .L80143564
     /* 10A10 80143544 000045A4 */   sh        $a1, 0x0($v0)
   .L80143548:
-    /* 10A14 80143548 1C80043C */  lui        $a0, %hi(D_801BFF14)
-    /* 10A18 8014354C 14FF848C */  lw         $a0, %lo(D_801BFF14)($a0)
-    /* 10A1C 80143550 1C80033C */  lui        $v1, %hi(D_801BFF3C)
-    /* 10A20 80143554 3CFF638C */  lw         $v1, %lo(D_801BFF3C)($v1)
+    /* 10A14 80143548 1C80043C */  lui        $a0, %hi(_spu_RXX)
+    /* 10A18 8014354C 14FF848C */  lw         $a0, %lo(_spu_RXX)($a0)
+    /* 10A1C 80143550 1C80033C */  lui        $v1, %hi(_spu_mem_mode_plus)
+    /* 10A20 80143554 3CFF638C */  lw         $v1, %lo(_spu_mem_mode_plus)($v1)
     /* 10A24 80143558 21104400 */  addu       $v0, $v0, $a0
     /* 10A28 8014355C 06186500 */  srlv       $v1, $a1, $v1
     /* 10A2C 80143560 000043A4 */  sh         $v1, 0x0($v0)
   .L80143564:
     /* 10A30 80143564 0800E003 */  jr         $ra
     /* 10A34 80143568 00000000 */   nop
-endlabel func_80143528
+endlabel _spu_FsetRXX

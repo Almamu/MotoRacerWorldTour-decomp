@@ -8,7 +8,7 @@ INCLUDE_ASM("asm/sces/nonmatchings/lib_10", func_8014A3C8);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_10", func_8014A454);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_10", func_8014A66C);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_10", free);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_10", func_8014A7B8);
 

@@ -1,8 +1,8 @@
 nonmatching _spu_Fw, 0x84
 
 glabel _spu_Fw
-    /* A1FA8 800B3798 0C80023C */  lui        $v0, %hi(D_800C3DCC)
-    /* A1FAC 800B379C CC3D428C */  lw         $v0, %lo(D_800C3DCC)($v0)
+    /* A1FA8 800B3798 0C80023C */  lui        $v0, %hi(_spu_transMode)
+    /* A1FAC 800B379C CC3D428C */  lw         $v0, %lo(_spu_transMode)($v0)
     /* A1FB0 800B37A0 E0FFBD27 */  addiu      $sp, $sp, -0x20
     /* A1FB4 800B37A4 1400B1AF */  sw         $s1, 0x14($sp)
     /* A1FB8 800B37A8 21888000 */  addu       $s1, $a0, $zero
@@ -10,10 +10,10 @@ glabel _spu_Fw
     /* A1FC0 800B37B0 2180A000 */  addu       $s0, $a1, $zero
     /* A1FC4 800B37B4 10004014 */  bnez       $v0, .L800B37F8
     /* A1FC8 800B37B8 1800BFAF */   sw        $ra, 0x18($sp)
-    /* A1FCC 800B37BC 0C80023C */  lui        $v0, %hi(D_800C3DC8)
-    /* A1FD0 800B37C0 C83D4294 */  lhu        $v0, %lo(D_800C3DC8)($v0)
-    /* A1FD4 800B37C4 0C80053C */  lui        $a1, %hi(D_800C3DD8)
-    /* A1FD8 800B37C8 D83DA58C */  lw         $a1, %lo(D_800C3DD8)($a1)
+    /* A1FCC 800B37BC 0C80023C */  lui        $v0, %hi(_spu_tsa)
+    /* A1FD0 800B37C0 C83D4294 */  lhu        $v0, %lo(_spu_tsa)($v0)
+    /* A1FD4 800B37C4 0C80053C */  lui        $a1, %hi(_spu_mem_mode_plus)
+    /* A1FD8 800B37C8 D83DA58C */  lw         $a1, %lo(_spu_mem_mode_plus)($a1)
     /* A1FDC 800B37CC 02000424 */  addiu      $a0, $zero, 0x2
     /* A1FE0 800B37D0 46CD020C */  jal        _spu_t
     /* A1FE4 800B37D4 0428A200 */   sllv      $a1, $v0, $a1

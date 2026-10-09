@@ -41,8 +41,8 @@ glabel SsSetTickMode
     /* 12B40 80145674 000040AC */  sw         $zero, 0x0($v0)
     /* 12B44 80145678 FCFF50AC */  sw         $s0, -0x4($v0)
   .L8014567C:
-    /* 12B48 8014567C 1C80033C */  lui        $v1, %hi(D_801C0464)
-    /* 12B4C 80145680 6404638C */  lw         $v1, %lo(D_801C0464)($v1)
+    /* 12B48 8014567C 1C80033C */  lui        $v1, %hi(_snd_seq_tick_env)
+    /* 12B4C 80145680 6404638C */  lw         $v1, %lo(_snd_seq_tick_env)($v1)
     /* 12B50 80145684 00000000 */  nop
     /* 12B54 80145688 06006228 */  slti       $v0, $v1, 0x6
     /* 12B58 8014568C 34004010 */  beqz       $v0, .L80145760
@@ -57,34 +57,34 @@ glabel SsSetTickMode
     /* 12B7C 801456B0 00000000 */   nop
   .L801456B4:
     /* 12B80 801456B4 32000324 */  addiu      $v1, $zero, 0x32
-    /* 12B84 801456B8 1D80013C */  lui        $at, %hi(D_801CEADC)
-    /* 12B88 801456BC DCEA23AC */  sw         $v1, %lo(D_801CEADC)($at)
+    /* 12B84 801456B8 1D80013C */  lui        $at, %hi(VBLANK_MINUS)
+    /* 12B88 801456BC DCEA23AC */  sw         $v1, %lo(VBLANK_MINUS)($at)
     /* 12B8C 801456C0 01000224 */  addiu      $v0, $zero, 0x1
     /* 12B90 801456C4 09008210 */  beq        $a0, $v0, .L801456EC
     /* 12B94 801456C8 05000224 */   addiu     $v0, $zero, 0x5
-    /* 12B98 801456CC 1C80013C */  lui        $at, %hi(D_801C0464)
+    /* 12B98 801456CC 1C80013C */  lui        $at, %hi(_snd_seq_tick_env)
     /* 12B9C 801456D0 DA150508 */  j          .L80145768
-    /* 12BA0 801456D4 640423AC */   sw        $v1, %lo(D_801C0464)($at)
+    /* 12BA0 801456D4 640423AC */   sw        $v1, %lo(_snd_seq_tick_env)($at)
   .L801456D8:
     /* 12BA4 801456D8 3C000224 */  addiu      $v0, $zero, 0x3C
-    /* 12BA8 801456DC 1D80013C */  lui        $at, %hi(D_801CEADC)
+    /* 12BA8 801456DC 1D80013C */  lui        $at, %hi(VBLANK_MINUS)
     /* 12BAC 801456E0 02008014 */  bnez       $a0, .L801456EC
-    /* 12BB0 801456E4 DCEA22AC */   sw        $v0, %lo(D_801CEADC)($at)
+    /* 12BB0 801456E4 DCEA22AC */   sw        $v0, %lo(VBLANK_MINUS)($at)
     /* 12BB4 801456E8 05000224 */  addiu      $v0, $zero, 0x5
   .L801456EC:
-    /* 12BB8 801456EC 1C80013C */  lui        $at, %hi(D_801C0464)
+    /* 12BB8 801456EC 1C80013C */  lui        $at, %hi(_snd_seq_tick_env)
     /* 12BBC 801456F0 DA150508 */  j          .L80145768
-    /* 12BC0 801456F4 640422AC */   sw        $v0, %lo(D_801C0464)($at)
+    /* 12BC0 801456F4 640422AC */   sw        $v0, %lo(_snd_seq_tick_env)($at)
   .L801456F8:
     /* 12BC4 801456F8 78000224 */  addiu      $v0, $zero, 0x78
-    /* 12BC8 801456FC 1D80013C */  lui        $at, %hi(D_801CEADC)
+    /* 12BC8 801456FC 1D80013C */  lui        $at, %hi(VBLANK_MINUS)
     /* 12BCC 80145700 DA150508 */  j          .L80145768
-    /* 12BD0 80145704 DCEA22AC */   sw        $v0, %lo(D_801CEADC)($at)
+    /* 12BD0 80145704 DCEA22AC */   sw        $v0, %lo(VBLANK_MINUS)($at)
   .L80145708:
     /* 12BD4 80145708 F0000224 */  addiu      $v0, $zero, 0xF0
-    /* 12BD8 8014570C 1D80013C */  lui        $at, %hi(D_801CEADC)
+    /* 12BD8 8014570C 1D80013C */  lui        $at, %hi(VBLANK_MINUS)
     /* 12BDC 80145710 DA150508 */  j          .L80145768
-    /* 12BE0 80145714 DCEA22AC */   sw        $v0, %lo(D_801CEADC)($at)
+    /* 12BE0 80145714 DCEA22AC */   sw        $v0, %lo(VBLANK_MINUS)($at)
   .L80145718:
     /* 12BE4 80145718 0D008010 */  beqz       $a0, .L80145750
     /* 12BE8 8014571C 01000224 */   addiu     $v0, $zero, 0x1
@@ -99,18 +99,18 @@ glabel SsSetTickMode
     /* 12C08 8014573C 3C000224 */   addiu     $v0, $zero, 0x3C
   .L80145740:
     /* 12C0C 80145740 32000224 */  addiu      $v0, $zero, 0x32
-    /* 12C10 80145744 1D80013C */  lui        $at, %hi(D_801CEADC)
+    /* 12C10 80145744 1D80013C */  lui        $at, %hi(VBLANK_MINUS)
     /* 12C14 80145748 DA150508 */  j          .L80145768
-    /* 12C18 8014574C DCEA22AC */   sw        $v0, %lo(D_801CEADC)($at)
+    /* 12C18 8014574C DCEA22AC */   sw        $v0, %lo(VBLANK_MINUS)($at)
   .L80145750:
     /* 12C1C 80145750 3C000224 */  addiu      $v0, $zero, 0x3C
   .L80145754:
-    /* 12C20 80145754 1D80013C */  lui        $at, %hi(D_801CEADC)
+    /* 12C20 80145754 1D80013C */  lui        $at, %hi(VBLANK_MINUS)
     /* 12C24 80145758 DA150508 */  j          .L80145768
-    /* 12C28 8014575C DCEA22AC */   sw        $v0, %lo(D_801CEADC)($at)
+    /* 12C28 8014575C DCEA22AC */   sw        $v0, %lo(VBLANK_MINUS)($at)
   .L80145760:
-    /* 12C2C 80145760 1D80013C */  lui        $at, %hi(D_801CEADC)
-    /* 12C30 80145764 DCEA23AC */  sw         $v1, %lo(D_801CEADC)($at)
+    /* 12C2C 80145760 1D80013C */  lui        $at, %hi(VBLANK_MINUS)
+    /* 12C30 80145764 DCEA23AC */  sw         $v1, %lo(VBLANK_MINUS)($at)
   .L80145768:
     /* 12C34 80145768 1400BF8F */  lw         $ra, 0x14($sp)
     /* 12C38 8014576C 1000B08F */  lw         $s0, 0x10($sp)

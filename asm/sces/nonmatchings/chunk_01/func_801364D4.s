@@ -18,11 +18,11 @@ glabel func_801364D4
     /* 39D8 8013650C 60DA60AC */  sw         $zero, %lo(D_8019DA60)($v1)
     /* 39DC 80136510 1A80033C */  lui        $v1, %hi(D_8019DA68)
     /* 39E0 80136514 64DA40AC */  sw         $zero, %lo(D_8019DA64)($v0)
-    /* 39E4 80136518 9B29050C */  jal        func_8014A66C
+    /* 39E4 80136518 9B29050C */  jal        free
     /* 39E8 8013651C 68DA60AC */   sw        $zero, %lo(D_8019DA68)($v1)
     /* 39EC 80136520 1A80053C */  lui        $a1, %hi(D_8019DB68)
     /* 39F0 80136524 68DBA48C */  lw         $a0, %lo(D_8019DB68)($a1)
-    /* 39F4 80136528 9B29050C */  jal        func_8014A66C
+    /* 39F4 80136528 9B29050C */  jal        free
     /* 39F8 8013652C 00000000 */   nop
     /* 39FC 80136530 1000BF8F */  lw         $ra, 0x10($sp)
     /* 3A00 80136534 01000224 */  addiu      $v0, $zero, 0x1

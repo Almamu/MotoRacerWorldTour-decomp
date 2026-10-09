@@ -4,9 +4,9 @@ INCLUDE_ASM("asm/langimg/nonmatchings/lib_07", SpuSetReverbModeDepth);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_07", func_800B52C0);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_07", func_800B534C);
+INCLUDE_ASM("asm/langimg/nonmatchings/lib_07", malloc);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_07", func_800B5564);
+INCLUDE_ASM("asm/langimg/nonmatchings/lib_07", free);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_07", func_800B56B0);
 
@@ -86,7 +86,7 @@ INCLUDE_ASM("asm/langimg/nonmatchings/lib_07", atoi);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_07", bzero);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_07", func_800B608C);
+INCLUDE_ASM("asm/langimg/nonmatchings/lib_07", tolower);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_07", bcmp);
 

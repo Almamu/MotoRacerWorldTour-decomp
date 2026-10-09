@@ -3,8 +3,8 @@ nonmatching _SsSeqGetEof, 0x244
 glabel _SsSeqGetEof
     /* 11E48 8014497C E0FFBD27 */  addiu      $sp, $sp, -0x20
     /* 11E4C 80144980 00140400 */  sll        $v0, $a0, 16
-    /* 11E50 80144984 1D80033C */  lui        $v1, %hi(D_801CEAE0)
-    /* 11E54 80144988 E0EA6324 */  addiu      $v1, $v1, %lo(D_801CEAE0)
+    /* 11E50 80144984 1D80033C */  lui        $v1, %hi(_ss_score)
+    /* 11E54 80144988 E0EA6324 */  addiu      $v1, $v1, %lo(_ss_score)
     /* 11E58 8014498C 83130200 */  sra        $v0, $v0, 14
     /* 11E5C 80144990 21384300 */  addu       $a3, $v0, $v1
     /* 11E60 80144994 001C0500 */  sll        $v1, $a1, 16

@@ -3,9 +3,9 @@ nonmatching _SsVmGetSeqVol, 0x64
 glabel _SsVmGetSeqVol
     /* 168A0 801493D4 FF008230 */  andi       $v0, $a0, 0xFF
     /* 168A4 801493D8 80100200 */  sll        $v0, $v0, 2
-    /* 168A8 801493DC 1D80033C */  lui        $v1, %hi(D_801CEAE0)
+    /* 168A8 801493DC 1D80033C */  lui        $v1, %hi(_ss_score)
     /* 168AC 801493E0 21186200 */  addu       $v1, $v1, $v0
-    /* 168B0 801493E4 E0EA638C */  lw         $v1, %lo(D_801CEAE0)($v1)
+    /* 168B0 801493E4 E0EA638C */  lw         $v1, %lo(_ss_score)($v1)
     /* 168B4 801493E8 1D80073C */  lui        $a3, %hi(D_801CFBC4)
     /* 168B8 801493EC C4FBE724 */  addiu      $a3, $a3, %lo(D_801CFBC4)
     /* 168BC 801493F0 0000E4A4 */  sh         $a0, 0x0($a3)

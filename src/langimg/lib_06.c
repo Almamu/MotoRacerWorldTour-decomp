@@ -12,9 +12,9 @@ INCLUDE_ASM("asm/langimg/nonmatchings/lib_06", _spu_t);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_06", _spu_Fw);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_06", func_800B381C);
+INCLUDE_ASM("asm/langimg/nonmatchings/lib_06", _spu_FsetRXX);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_06", func_800B3860);
+INCLUDE_ASM("asm/langimg/nonmatchings/lib_06", _spu_FsetRXXa);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_06", _spu_FsetPCR);
 

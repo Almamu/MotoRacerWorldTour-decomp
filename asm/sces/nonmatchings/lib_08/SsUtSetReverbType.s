@@ -15,8 +15,8 @@ glabel SsUtSetReverbType
     /* 13C2C 80146760 0A00422C */  sltiu      $v0, $v0, 0xA
     /* 13C30 80146764 16004010 */  beqz       $v0, .L801467C0
     /* 13C34 80146768 01000224 */   addiu     $v0, $zero, 0x1
-    /* 13C38 8014676C 1D80043C */  lui        $a0, %hi(D_801CFAB0)
-    /* 13C3C 80146770 B0FA8424 */  addiu      $a0, $a0, %lo(D_801CFAB0)
+    /* 13C38 8014676C 1D80043C */  lui        $a0, %hi(_svm_rattr)
+    /* 13C3C 80146770 B0FA8424 */  addiu      $a0, $a0, %lo(_svm_rattr)
     /* 13C40 80146774 0400A010 */  beqz       $a1, .L80146788
     /* 13C44 80146778 000082AC */   sw        $v0, 0x0($a0)
     /* 13C48 8014677C 00016234 */  ori        $v0, $v1, 0x100
@@ -34,9 +34,9 @@ glabel SsUtSetReverbType
     /* 13C70 801467A4 F519050C */  jal        SpuSetReverb
     /* 13C74 801467A8 21200000 */   addu      $a0, $zero, $zero
   .L801467AC:
-    /* 13C78 801467AC 1D80043C */  lui        $a0, %hi(D_801CFAB0)
+    /* 13C78 801467AC 1D80043C */  lui        $a0, %hi(_svm_rattr)
     /* 13C7C 801467B0 6217050C */  jal        SpuSetReverbModeParam
-    /* 13C80 801467B4 B0FA8424 */   addiu     $a0, $a0, %lo(D_801CFAB0)
+    /* 13C80 801467B4 B0FA8424 */   addiu     $a0, $a0, %lo(_svm_rattr)
     /* 13C84 801467B8 F1190508 */  j          .L801467C4
     /* 13C88 801467BC 21100002 */   addu      $v0, $s0, $zero
   .L801467C0:

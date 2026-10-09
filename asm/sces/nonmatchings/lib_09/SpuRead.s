@@ -14,13 +14,13 @@ glabel SpuRead
   .L8014A220:
     /* 176EC 8014A220 290D050C */  jal        _spu_Fw
     /* 176F0 8014A224 21280002 */   addu      $a1, $s0, $zero
-    /* 176F4 8014A228 1C80023C */  lui        $v0, %hi(D_801BFF4C)
-    /* 176F8 8014A22C 4CFF428C */  lw         $v0, %lo(D_801BFF4C)($v0)
+    /* 176F4 8014A228 1C80023C */  lui        $v0, %hi(_spu_transferCallback)
+    /* 176F8 8014A22C 4CFF428C */  lw         $v0, %lo(_spu_transferCallback)($v0)
     /* 176FC 8014A230 00000000 */  nop
     /* 17700 8014A234 03004014 */  bnez       $v0, .L8014A244
     /* 17704 8014A238 21100002 */   addu      $v0, $s0, $zero
-    /* 17708 8014A23C 1C80013C */  lui        $at, %hi(D_801BFF48)
-    /* 1770C 8014A240 48FF20AC */  sw         $zero, %lo(D_801BFF48)($at)
+    /* 17708 8014A23C 1C80013C */  lui        $at, %hi(_spu_inTransfer)
+    /* 1770C 8014A240 48FF20AC */  sw         $zero, %lo(_spu_inTransfer)($at)
   .L8014A244:
     /* 17710 8014A244 1400BF8F */  lw         $ra, 0x14($sp)
     /* 17714 8014A248 1000B08F */  lw         $s0, 0x10($sp)

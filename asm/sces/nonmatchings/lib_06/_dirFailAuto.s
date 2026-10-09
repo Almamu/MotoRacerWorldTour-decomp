@@ -37,8 +37,8 @@ glabel _dirFailAuto
     /* FEF4 80142A28 00000000 */  nop
     /* FEF8 80142A2C 06004010 */  beqz       $v0, .L80142A48
     /* FEFC 80142A30 00000000 */   nop
-    /* FF00 80142A34 1C80023C */  lui        $v0, %hi(D_801BFE60)
-    /* FF04 80142A38 60FE428C */  lw         $v0, %lo(D_801BFE60)($v0)
+    /* FF00 80142A34 1C80023C */  lui        $v0, %hi(_padFuncClrInfo)
+    /* FF04 80142A38 60FE428C */  lw         $v0, %lo(_padFuncClrInfo)($v0)
     /* FF08 80142A3C 00000000 */  nop
     /* FF0C 80142A40 09F84000 */  jalr       $v0
     /* FF10 80142A44 21200002 */   addu      $a0, $s0, $zero

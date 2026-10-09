@@ -2,8 +2,8 @@ nonmatching SsSeqCalledTbyT, 0x270
 
 glabel SsSeqCalledTbyT
     /* 117FC 80144330 C8FFBD27 */  addiu      $sp, $sp, -0x38
-    /* 11800 80144334 1D80023C */  lui        $v0, %hi(D_801CEAD4)
-    /* 11804 80144338 D4EA428C */  lw         $v0, %lo(D_801CEAD4)($v0)
+    /* 11800 80144334 1D80023C */  lui        $v0, %hi(_snd_ev_flag)
+    /* 11804 80144338 D4EA428C */  lw         $v0, %lo(_snd_ev_flag)($v0)
     /* 11808 8014433C 01000324 */  addiu      $v1, $zero, 0x1
     /* 1180C 80144340 3400BFAF */  sw         $ra, 0x34($sp)
     /* 11810 80144344 3000BEAF */  sw         $fp, 0x30($sp)
@@ -16,27 +16,27 @@ glabel SsSeqCalledTbyT
     /* 1182C 80144360 1400B1AF */  sw         $s1, 0x14($sp)
     /* 11830 80144364 82004310 */  beq        $v0, $v1, .L80144570
     /* 11834 80144368 1000B0AF */   sw        $s0, 0x10($sp)
-    /* 11838 8014436C 1D80013C */  lui        $at, %hi(D_801CEAD4)
-    /* 1183C 80144370 D4EA23AC */  sw         $v1, %lo(D_801CEAD4)($at)
+    /* 11838 8014436C 1D80013C */  lui        $at, %hi(_snd_ev_flag)
+    /* 1183C 80144370 D4EA23AC */  sw         $v1, %lo(_snd_ev_flag)($at)
     /* 11840 80144374 4D1B050C */  jal        _SsVmFlush
     /* 11844 80144378 21B80000 */   addu      $s7, $zero, $zero
-    /* 11848 8014437C 1D80023C */  lui        $v0, %hi(D_801CF360)
-    /* 1184C 80144380 60F34284 */  lh         $v0, %lo(D_801CF360)($v0)
+    /* 11848 8014437C 1D80023C */  lui        $v0, %hi(_snd_seq_s_max)
+    /* 1184C 80144380 60F34284 */  lh         $v0, %lo(_snd_seq_s_max)($v0)
     /* 11850 80144384 00000000 */  nop
     /* 11854 80144388 77004018 */  blez       $v0, .L80144568
     /* 11858 8014438C 00000000 */   nop
-    /* 1185C 80144390 1D801E3C */  lui        $fp, %hi(D_801CEAE0)
-    /* 11860 80144394 E0EADE27 */  addiu      $fp, $fp, %lo(D_801CEAE0)
+    /* 1185C 80144390 1D801E3C */  lui        $fp, %hi(_ss_score)
+    /* 11860 80144394 E0EADE27 */  addiu      $fp, $fp, %lo(_ss_score)
   .L80144398:
     /* 11864 80144398 01000224 */  addiu      $v0, $zero, 0x1
-    /* 11868 8014439C 1D80033C */  lui        $v1, %hi(D_801CEAD8)
-    /* 1186C 801443A0 D8EA638C */  lw         $v1, %lo(D_801CEAD8)($v1)
+    /* 11868 8014439C 1D80033C */  lui        $v1, %hi(_snd_openflag)
+    /* 1186C 801443A0 D8EA638C */  lw         $v1, %lo(_snd_openflag)($v1)
     /* 11870 801443A4 0410E202 */  sllv       $v0, $v0, $s7
     /* 11874 801443A8 24186200 */  and        $v1, $v1, $v0
     /* 11878 801443AC 68006010 */  beqz       $v1, .L80144550
     /* 1187C 801443B0 00000000 */   nop
-    /* 11880 801443B4 1D80023C */  lui        $v0, %hi(D_801CF362)
-    /* 11884 801443B8 62F34284 */  lh         $v0, %lo(D_801CF362)($v0)
+    /* 11880 801443B4 1D80023C */  lui        $v0, %hi(_snd_seq_t_max)
+    /* 11884 801443B8 62F34284 */  lh         $v0, %lo(_snd_seq_t_max)($v0)
     /* 11888 801443BC 00000000 */  nop
     /* 1188C 801443C0 63004018 */  blez       $v0, .L80144550
     /* 11890 801443C4 21B00000 */   addu      $s6, $zero, $zero
@@ -140,22 +140,22 @@ glabel SsSeqCalledTbyT
   .L80144530:
     /* 119FC 80144530 0100023C */  lui        $v0, (0x10000 >> 16)
     /* 11A00 80144534 21986202 */  addu       $s3, $s3, $v0
-    /* 11A04 80144538 1D80023C */  lui        $v0, %hi(D_801CF362)
-    /* 11A08 8014453C 62F34284 */  lh         $v0, %lo(D_801CF362)($v0)
+    /* 11A04 80144538 1D80023C */  lui        $v0, %hi(_snd_seq_t_max)
+    /* 11A08 8014453C 62F34284 */  lh         $v0, %lo(_snd_seq_t_max)($v0)
     /* 11A0C 80144540 0100D626 */  addiu      $s6, $s6, 0x1
     /* 11A10 80144544 2A10C202 */  slt        $v0, $s6, $v0
     /* 11A14 80144548 A4FF4014 */  bnez       $v0, .L801443DC
     /* 11A18 8014454C B0001026 */   addiu     $s0, $s0, 0xB0
   .L80144550:
-    /* 11A1C 80144550 1D80023C */  lui        $v0, %hi(D_801CF360)
-    /* 11A20 80144554 60F34284 */  lh         $v0, %lo(D_801CF360)($v0)
+    /* 11A1C 80144550 1D80023C */  lui        $v0, %hi(_snd_seq_s_max)
+    /* 11A20 80144554 60F34284 */  lh         $v0, %lo(_snd_seq_s_max)($v0)
     /* 11A24 80144558 0100F726 */  addiu      $s7, $s7, 0x1
     /* 11A28 8014455C 2A10E202 */  slt        $v0, $s7, $v0
     /* 11A2C 80144560 8DFF4014 */  bnez       $v0, .L80144398
     /* 11A30 80144564 0400DE27 */   addiu     $fp, $fp, 0x4
   .L80144568:
-    /* 11A34 80144568 1D80013C */  lui        $at, %hi(D_801CEAD4)
-    /* 11A38 8014456C D4EA20AC */  sw         $zero, %lo(D_801CEAD4)($at)
+    /* 11A34 80144568 1D80013C */  lui        $at, %hi(_snd_ev_flag)
+    /* 11A38 8014456C D4EA20AC */  sw         $zero, %lo(_snd_ev_flag)($at)
   .L80144570:
     /* 11A3C 80144570 3400BF8F */  lw         $ra, 0x34($sp)
     /* 11A40 80144574 3000BE8F */  lw         $fp, 0x30($sp)

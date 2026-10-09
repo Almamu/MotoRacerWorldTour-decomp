@@ -3,8 +3,8 @@ nonmatching func_80141978, 0x48
 glabel func_80141978
     /* EE44 80141978 E8FFBD27 */  addiu      $sp, $sp, -0x18
     /* EE48 8014197C 1000B0AF */  sw         $s0, 0x10($sp)
-    /* EE4C 80141980 1C80023C */  lui        $v0, %hi(D_801BFE74)
-    /* EE50 80141984 74FE428C */  lw         $v0, %lo(D_801BFE74)($v0)
+    /* EE4C 80141980 1C80023C */  lui        $v0, %hi(_padFuncSendAuto)
+    /* EE50 80141984 74FE428C */  lw         $v0, %lo(_padFuncSendAuto)($v0)
     /* EE54 80141988 1400BFAF */  sw         $ra, 0x14($sp)
     /* EE58 8014198C 09F84000 */  jalr       $v0
     /* EE5C 80141990 21808000 */   addu      $s0, $a0, $zero

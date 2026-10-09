@@ -20,8 +20,8 @@ glabel func_8014274C
     /* FC58 8014278C 010040A0 */  sb         $zero, 0x1($v0)
     /* FC5C 80142790 E80000A2 */  sb         $zero, 0xE8($s0)
     /* FC60 80142794 350000A2 */  sb         $zero, 0x35($s0)
-    /* FC64 80142798 1C80023C */  lui        $v0, %hi(D_801BFE60)
-    /* FC68 8014279C 60FE428C */  lw         $v0, %lo(D_801BFE60)($v0)
+    /* FC64 80142798 1C80023C */  lui        $v0, %hi(_padFuncClrInfo)
+    /* FC68 8014279C 60FE428C */  lw         $v0, %lo(_padFuncClrInfo)($v0)
     /* FC6C 801427A0 00000000 */  nop
     /* FC70 801427A4 09F84000 */  jalr       $v0
     /* FC74 801427A8 00000000 */   nop
@@ -86,8 +86,8 @@ glabel func_8014274C
     /* FD48 8014287C 06004510 */  beq        $v0, $a1, .L80142898
     /* FD4C 80142880 00000000 */   nop
   .L80142884:
-    /* FD50 80142884 1C80023C */  lui        $v0, %hi(D_801BFE60)
-    /* FD54 80142888 60FE428C */  lw         $v0, %lo(D_801BFE60)($v0)
+    /* FD50 80142884 1C80023C */  lui        $v0, %hi(_padFuncClrInfo)
+    /* FD54 80142888 60FE428C */  lw         $v0, %lo(_padFuncClrInfo)($v0)
     /* FD58 8014288C 00000000 */  nop
     /* FD5C 80142890 09F84000 */  jalr       $v0
     /* FD60 80142894 21200002 */   addu      $a0, $s0, $zero
@@ -114,8 +114,8 @@ glabel func_8014274C
     /* FDAC 801428E0 F3000224 */  addiu      $v0, $zero, 0xF3
     /* FDB0 801428E4 08006210 */  beq        $v1, $v0, .L80142908
     /* FDB4 801428E8 00000000 */   nop
-    /* FDB8 801428EC 1C80023C */  lui        $v0, %hi(D_801BFE60)
-    /* FDBC 801428F0 60FE428C */  lw         $v0, %lo(D_801BFE60)($v0)
+    /* FDB8 801428EC 1C80023C */  lui        $v0, %hi(_padFuncClrInfo)
+    /* FDBC 801428F0 60FE428C */  lw         $v0, %lo(_padFuncClrInfo)($v0)
     /* FDC0 801428F4 00000000 */  nop
     /* FDC4 801428F8 09F84000 */  jalr       $v0
     /* FDC8 801428FC 21200002 */   addu      $a0, $s0, $zero

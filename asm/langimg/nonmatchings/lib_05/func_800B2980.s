@@ -19,8 +19,8 @@ glabel func_800B2980
     /* A11CC 800B29BC 00000000 */  nop
     /* A11D0 800B29C0 06006214 */  bne        $v1, $v0, .L800B29DC
     /* A11D4 800B29C4 00000000 */   nop
-    /* A11D8 800B29C8 0C80023C */  lui        $v0, %hi(D_800C3C8C)
-    /* A11DC 800B29CC 8C3C428C */  lw         $v0, %lo(D_800C3C8C)($v0)
+    /* A11D8 800B29C8 0C80023C */  lui        $v0, %hi(_padFuncClrInfo)
+    /* A11DC 800B29CC 8C3C428C */  lw         $v0, %lo(_padFuncClrInfo)($v0)
     /* A11E0 800B29D0 00000000 */  nop
     /* A11E4 800B29D4 09F84000 */  jalr       $v0
     /* A11E8 800B29D8 21200002 */   addu      $a0, $s0, $zero

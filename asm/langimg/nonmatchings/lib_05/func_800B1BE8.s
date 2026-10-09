@@ -17,8 +17,8 @@ glabel func_800B1BE8
     /* A0428 800B1C18 0DC70208 */  j          .L800B1C34
     /* A042C 800B1C1C 460082A0 */   sb        $v0, 0x46($a0)
   .L800B1C20:
-    /* A0430 800B1C20 0C80023C */  lui        $v0, %hi(D_800C3C8C)
-    /* A0434 800B1C24 8C3C428C */  lw         $v0, %lo(D_800C3C8C)($v0)
+    /* A0430 800B1C20 0C80023C */  lui        $v0, %hi(_padFuncClrInfo)
+    /* A0434 800B1C24 8C3C428C */  lw         $v0, %lo(_padFuncClrInfo)($v0)
     /* A0438 800B1C28 00000000 */  nop
     /* A043C 800B1C2C 09F84000 */  jalr       $v0
     /* A0440 800B1C30 00000000 */   nop

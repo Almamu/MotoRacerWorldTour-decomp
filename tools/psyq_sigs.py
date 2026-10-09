@@ -5,10 +5,12 @@ isn't part of this repository).
 
   tools/psyq_sigs.py SIGS versions       functions and bytes matched by each SDK version
   tools/psyq_sigs.py SIGS objects        where each library object sits, and its versions
-  tools/psyq_sigs.py SIGS symbols [MATCH_JSON]
-                                         symbol_addrs.txt lines for every identified function;
-                                         the exact matches of tools/psyq_match.py --json, when
-                                         given, override the signatures' names
+  tools/psyq_sigs.py SIGS symbols [SDK_DIR]
+                                         symbol_addrs.txt lines for every identified function.
+                                         SDK_DIR is make sdk's output (build/sdk): its exact
+                                         matches (match.json) override the signatures' names,
+                                         and the names its objects refer to (<target>/
+                                         <target>_syms.ld, functions and data) are added
 
 Each signature is an object's .text with its relocated bytes masked. It is
 cut at the object's function labels and matched function by function (one
@@ -36,6 +38,9 @@ STATIC_RE = re.compile(r"^text_[0-9A-Fa-f]+$")
 # the second (libcd's strings are in both executables).
 DUPLICATES = {"LIBDS.LIB": "LIBCD.LIB", "LIBMCX.LIB": "LIBPAD.LIB", "LIBHMD.LIB": "LIBETC.LIB",
               "LIBGS.LIB": "LIBETC.LIB"}
+# End of what each config's segments cover (bss included): data symbols
+# past it are absolute.
+IMAGE_END = {"langimg": 0x800DE7B0, "sces": 0x801CFDD8}
 # target: (file, file offset of vram 0, start and end of the searched code).
 # The search starts before the startup code, where the libraries begin, to
 # catch library code linked before it.
@@ -181,8 +186,9 @@ def cmd_objects(sigs):
                   f"bytes, versions {vrange(c['versions'])}")
 
 
-def cmd_symbols(sigs, match_json=None):
-    exact_all = json.loads(Path(match_json).read_text()) if match_json else {}
+def cmd_symbols(sigs, sdk_dir=None):
+    sdk_dir = Path(sdk_dir) if sdk_dir else None
+    exact_all = json.loads((sdk_dir / "match.json").read_text()) if sdk_dir else {}
     for target in TARGETS:
         print(f"// {target}")
         # Exact matches (Sony's object itself is there): their names win.
@@ -219,8 +225,28 @@ def cmd_symbols(sigs, match_json=None):
                 continue
             lines[vram] = (n, size, f"{c['lib']}/{c['obj']} {vrange(c['versions'])}")
         lines.update(exact)
+        # Names Sony's objects use for the symbols they refer to, at the
+        # addresses their relocations have in the original.
+        if sdk_dir and (sdk_dir / target / f"{target}_syms.ld").exists():
+            _, _, lo, hi = TARGETS[target]
+            taken = {n for n, _, _ in lines.values()}
+            for line in (sdk_dir / target / f"{target}_syms.ld").read_text().splitlines():
+                m = re.match(r"(\S+) = 0x([0-9A-F]+);", line)
+                if not m:
+                    continue
+                name, vram = m.group(1), int(m.group(2), 16)
+                if name in taken or vram in lines:
+                    continue
+                code = lo <= vram < hi
+                lines[vram] = (name, 0, "referred to by an SDK object" + ("" if code else " (data)"))
+                if not code:
+                    lines[vram] = (name, -1, lines[vram][2])
         for vram in sorted(lines):
             n, size, note = lines[vram]
+            if size == -1:  # data
+                absolute = " absolute:True" if vram >= IMAGE_END[target] else ""
+                print(f"{n} = 0x{vram:08X}; //{absolute} {note}")
+                continue
             sz = f" size:0x{size:X}" if size else ""
             print(f"{n} = 0x{vram:08X}; // type:func{sz} {note}")
 

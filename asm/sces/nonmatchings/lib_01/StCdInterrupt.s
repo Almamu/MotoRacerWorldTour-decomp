@@ -107,8 +107,8 @@ glabel StCdInterrupt
     /* 76E0 8013A214 3CDD638C */  lw         $v1, %lo(D_801BDD3C)($v1)
     /* 76E4 8013A218 23130224 */  addiu      $v0, $zero, 0x1323
     /* 76E8 8013A21C 000062AC */  sw         $v0, 0x0($v1)
-    /* 76EC 8013A220 1C80023C */  lui        $v0, %hi(D_801C64D8)
-    /* 76F0 8013A224 D864428C */  lw         $v0, %lo(D_801C64D8)($v0)
+    /* 76EC 8013A220 1C80023C */  lui        $v0, %hi(StMode)
+    /* 76F0 8013A224 D864428C */  lw         $v0, %lo(StMode)($v0)
     /* 76F4 8013A228 00000000 */  nop
     /* 76F8 8013A22C 14004014 */  bnez       $v0, .L8013A280
     /* 76FC 8013A230 21200000 */   addu      $a0, $zero, $zero

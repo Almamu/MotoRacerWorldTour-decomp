@@ -12,8 +12,8 @@ glabel _padLoadActInfo
     /* E5AC 801410E0 00000000 */  nop
     /* E5B0 801410E4 26004014 */  bnez       $v0, .L80141180
     /* E5B4 801410E8 21100000 */   addu      $v0, $zero, $zero
-    /* E5B8 801410EC 1C80023C */  lui        $v0, %hi(D_801BFE78)
-    /* E5BC 801410F0 78FE428C */  lw         $v0, %lo(D_801BFE78)($v0)
+    /* E5B8 801410EC 1C80023C */  lui        $v0, %hi(_padFuncChkEng)
+    /* E5BC 801410F0 78FE428C */  lw         $v0, %lo(_padFuncChkEng)($v0)
     /* E5C0 801410F4 00000000 */  nop
     /* E5C4 801410F8 09F84000 */  jalr       $v0
     /* E5C8 801410FC 00000000 */   nop

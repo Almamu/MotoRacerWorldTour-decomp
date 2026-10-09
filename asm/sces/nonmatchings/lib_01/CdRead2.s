@@ -15,12 +15,12 @@ glabel CdRead2
     /* 7188 80139CBC 20000232 */   andi      $v0, $s0, 0x20
     /* 718C 80139CC0 04004010 */  beqz       $v0, .L80139CD4
     /* 7190 80139CC4 01000224 */   addiu     $v0, $zero, 0x1
-    /* 7194 80139CC8 1C80013C */  lui        $at, %hi(D_801C64D8)
+    /* 7194 80139CC8 1C80013C */  lui        $at, %hi(StMode)
     /* 7198 80139CCC 37E70408 */  j          .L80139CDC
-    /* 719C 80139CD0 D86420AC */   sw        $zero, %lo(D_801C64D8)($at)
+    /* 719C 80139CD0 D86420AC */   sw        $zero, %lo(StMode)($at)
   .L80139CD4:
-    /* 71A0 80139CD4 1C80013C */  lui        $at, %hi(D_801C64D8)
-    /* 71A4 80139CD8 D86422AC */  sw         $v0, %lo(D_801C64D8)($at)
+    /* 71A0 80139CD4 1C80013C */  lui        $at, %hi(StMode)
+    /* 71A4 80139CD8 D86422AC */  sw         $v0, %lo(StMode)($at)
   .L80139CDC:
     /* 71A8 80139CDC 1480043C */  lui        $a0, %hi(data_ready_callback)
     /* 71AC 80139CE0 B3DC040C */  jal        CdDataCallback

@@ -22,33 +22,33 @@ glabel _SsVmKeyOffNow
     /* 15DE4 80148918 1D80013C */  lui        $at, %hi(D_801CF39D)
     /* 15DE8 8014891C 21082200 */  addu       $at, $at, $v0
     /* 15DEC 80148920 9DF320A0 */  sb         $zero, %lo(D_801CF39D)($at)
-    /* 15DF0 80148924 1D80033C */  lui        $v1, %hi(D_801CFAA8)
-    /* 15DF4 80148928 A8FA6394 */  lhu        $v1, %lo(D_801CFAA8)($v1)
-    /* 15DF8 8014892C 1D80043C */  lui        $a0, %hi(D_801CFAAA)
-    /* 15DFC 80148930 AAFA8494 */  lhu        $a0, %lo(D_801CFAAA)($a0)
+    /* 15DF0 80148924 1D80033C */  lui        $v1, %hi(_svm_okof1)
+    /* 15DF4 80148928 A8FA6394 */  lhu        $v1, %lo(_svm_okof1)($v1)
+    /* 15DF8 8014892C 1D80043C */  lui        $a0, %hi(_svm_okof2)
+    /* 15DFC 80148930 AAFA8494 */  lhu        $a0, %lo(_svm_okof2)($a0)
     /* 15E00 80148934 1D80013C */  lui        $at, %hi(D_801CF384)
     /* 15E04 80148938 21082200 */  addu       $at, $at, $v0
     /* 15E08 8014893C 84F320A4 */  sh         $zero, %lo(D_801CF384)($at)
-    /* 15E0C 80148940 1D80013C */  lui        $at, %hi(D_801CF380)
+    /* 15E0C 80148940 1D80013C */  lui        $at, %hi(_svm_voice)
     /* 15E10 80148944 21082200 */  addu       $at, $at, $v0
-    /* 15E14 80148948 80F320A4 */  sh         $zero, %lo(D_801CF380)($at)
-    /* 15E18 8014894C 1D80023C */  lui        $v0, %hi(D_801CF370)
-    /* 15E1C 80148950 70F34294 */  lhu        $v0, %lo(D_801CF370)($v0)
+    /* 15E14 80148948 80F320A4 */  sh         $zero, %lo(_svm_voice)($at)
+    /* 15E18 8014894C 1D80023C */  lui        $v0, %hi(_svm_okon1)
+    /* 15E1C 80148950 70F34294 */  lhu        $v0, %lo(_svm_okon1)($v0)
     /* 15E20 80148954 25186600 */  or         $v1, $v1, $a2
-    /* 15E24 80148958 1D80013C */  lui        $at, %hi(D_801CFAA8)
-    /* 15E28 8014895C A8FA23A4 */  sh         $v1, %lo(D_801CFAA8)($at)
+    /* 15E24 80148958 1D80013C */  lui        $at, %hi(_svm_okof1)
+    /* 15E28 8014895C A8FA23A4 */  sh         $v1, %lo(_svm_okof1)($at)
     /* 15E2C 80148960 27180300 */  nor        $v1, $zero, $v1
     /* 15E30 80148964 24104300 */  and        $v0, $v0, $v1
-    /* 15E34 80148968 1D80013C */  lui        $at, %hi(D_801CF370)
-    /* 15E38 8014896C 70F322A4 */  sh         $v0, %lo(D_801CF370)($at)
-    /* 15E3C 80148970 1D80023C */  lui        $v0, %hi(D_801CF372)
-    /* 15E40 80148974 72F34294 */  lhu        $v0, %lo(D_801CF372)($v0)
+    /* 15E34 80148968 1D80013C */  lui        $at, %hi(_svm_okon1)
+    /* 15E38 8014896C 70F322A4 */  sh         $v0, %lo(_svm_okon1)($at)
+    /* 15E3C 80148970 1D80023C */  lui        $v0, %hi(_svm_okon2)
+    /* 15E40 80148974 72F34294 */  lhu        $v0, %lo(_svm_okon2)($v0)
     /* 15E44 80148978 25208500 */  or         $a0, $a0, $a1
-    /* 15E48 8014897C 1D80013C */  lui        $at, %hi(D_801CFAAA)
-    /* 15E4C 80148980 AAFA24A4 */  sh         $a0, %lo(D_801CFAAA)($at)
+    /* 15E48 8014897C 1D80013C */  lui        $at, %hi(_svm_okof2)
+    /* 15E4C 80148980 AAFA24A4 */  sh         $a0, %lo(_svm_okof2)($at)
     /* 15E50 80148984 27200400 */  nor        $a0, $zero, $a0
     /* 15E54 80148988 24104400 */  and        $v0, $v0, $a0
-    /* 15E58 8014898C 1D80013C */  lui        $at, %hi(D_801CF372)
+    /* 15E58 8014898C 1D80013C */  lui        $at, %hi(_svm_okon2)
     /* 15E5C 80148990 0800E003 */  jr         $ra
-    /* 15E60 80148994 72F322A4 */   sh        $v0, %lo(D_801CF372)($at)
+    /* 15E60 80148994 72F322A4 */   sh        $v0, %lo(_svm_okon2)($at)
 endlabel _SsVmKeyOffNow

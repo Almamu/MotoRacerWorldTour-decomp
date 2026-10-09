@@ -25,17 +25,17 @@ glabel SsVabOpenHead
     /* 16EF8 80149A2C 21106000 */   addu      $v0, $v1, $zero
     /* 16EFC 80149A30 00141000 */  sll        $v0, $s0, 16
     /* 16F00 80149A34 03140200 */  sra        $v0, $v0, 16
-    /* 16F04 80149A38 1D80013C */  lui        $at, %hi(D_801CFBD0)
+    /* 16F04 80149A38 1D80013C */  lui        $at, %hi(_svm_vab_used)
     /* 16F08 80149A3C 21082200 */  addu       $at, $at, $v0
-    /* 16F0C 80149A40 D0FB20A0 */  sb         $zero, %lo(D_801CFBD0)($at)
+    /* 16F0C 80149A40 D0FB20A0 */  sb         $zero, %lo(_svm_vab_used)($at)
     /* 16F10 80149A44 5120050C */  jal        _spu_setInTransfer
     /* 16F14 80149A48 21200000 */   addu      $a0, $zero, $zero
-    /* 16F18 80149A4C 1D80033C */  lui        $v1, %hi(D_801CFC28)
-    /* 16F1C 80149A50 28FC6394 */  lhu        $v1, %lo(D_801CFC28)($v1)
+    /* 16F18 80149A4C 1D80033C */  lui        $v1, %hi(_svm_vab_count)
+    /* 16F1C 80149A50 28FC6394 */  lhu        $v1, %lo(_svm_vab_count)($v1)
     /* 16F20 80149A54 FFFF0224 */  addiu      $v0, $zero, -0x1
     /* 16F24 80149A58 FFFF6324 */  addiu      $v1, $v1, -0x1
-    /* 16F28 80149A5C 1D80013C */  lui        $at, %hi(D_801CFC28)
-    /* 16F2C 80149A60 28FC23A4 */  sh         $v1, %lo(D_801CFC28)($at)
+    /* 16F28 80149A5C 1D80013C */  lui        $at, %hi(_svm_vab_count)
+    /* 16F2C 80149A60 28FC23A4 */  sh         $v1, %lo(_svm_vab_count)($at)
   .L80149A64:
     /* 16F30 80149A64 1400BF8F */  lw         $ra, 0x14($sp)
     /* 16F34 80149A68 1000B08F */  lw         $s0, 0x10($sp)

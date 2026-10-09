@@ -4,8 +4,8 @@ glabel _SsSndPause
     /* 11C7C 801447B0 E0FFBD27 */  addiu      $sp, $sp, -0x20
     /* 11C80 801447B4 1800B2AF */  sw         $s2, 0x18($sp)
     /* 11C84 801447B8 00940400 */  sll        $s2, $a0, 16
-    /* 11C88 801447BC 1D80023C */  lui        $v0, %hi(D_801CEAE0)
-    /* 11C8C 801447C0 E0EA4224 */  addiu      $v0, $v0, %lo(D_801CEAE0)
+    /* 11C88 801447BC 1D80023C */  lui        $v0, %hi(_ss_score)
+    /* 11C8C 801447C0 E0EA4224 */  addiu      $v0, $v0, %lo(_ss_score)
     /* 11C90 801447C4 83931200 */  sra        $s2, $s2, 14
     /* 11C94 801447C8 21904202 */  addu       $s2, $s2, $v0
     /* 11C98 801447CC 00140500 */  sll        $v0, $a1, 16

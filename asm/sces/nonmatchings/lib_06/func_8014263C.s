@@ -23,8 +23,8 @@ glabel func_8014263C
     /* FB54 80142688 00000000 */  nop
     /* FB58 8014268C 06006214 */  bne        $v1, $v0, .L801426A8
     /* FB5C 80142690 00000000 */   nop
-    /* FB60 80142694 1C80023C */  lui        $v0, %hi(D_801BFE60)
-    /* FB64 80142698 60FE428C */  lw         $v0, %lo(D_801BFE60)($v0)
+    /* FB60 80142694 1C80023C */  lui        $v0, %hi(_padFuncClrInfo)
+    /* FB64 80142698 60FE428C */  lw         $v0, %lo(_padFuncClrInfo)($v0)
     /* FB68 8014269C 00000000 */  nop
     /* FB6C 801426A0 09F84000 */  jalr       $v0
     /* FB70 801426A4 21200002 */   addu      $a0, $s0, $zero

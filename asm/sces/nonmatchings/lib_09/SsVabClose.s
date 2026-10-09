@@ -9,30 +9,30 @@ glabel SsVabClose
     /* 16A88 801495BC 1000B0AF */   sw        $s0, 0x10($sp)
     /* 16A8C 801495C0 00140400 */  sll        $v0, $a0, 16
     /* 16A90 801495C4 03840200 */  sra        $s0, $v0, 16
-    /* 16A94 801495C8 1D80033C */  lui        $v1, %hi(D_801CFBD0)
+    /* 16A94 801495C8 1D80033C */  lui        $v1, %hi(_svm_vab_used)
     /* 16A98 801495CC 21187000 */  addu       $v1, $v1, $s0
-    /* 16A9C 801495D0 D0FB6390 */  lbu        $v1, %lo(D_801CFBD0)($v1)
+    /* 16A9C 801495D0 D0FB6390 */  lbu        $v1, %lo(_svm_vab_used)($v1)
     /* 16AA0 801495D4 00000000 */  nop
     /* 16AA4 801495D8 03006228 */  slti       $v0, $v1, 0x3
     /* 16AA8 801495DC 17004010 */  beqz       $v0, .L8014963C
     /* 16AAC 801495E0 00000000 */   nop
     /* 16AB0 801495E4 15006010 */  beqz       $v1, .L8014963C
     /* 16AB4 801495E8 80101000 */   sll       $v0, $s0, 2
-    /* 16AB8 801495EC 1D80043C */  lui        $a0, %hi(D_801CFC30)
+    /* 16AB8 801495EC 1D80043C */  lui        $a0, %hi(_svm_vab_start)
     /* 16ABC 801495F0 21208200 */  addu       $a0, $a0, $v0
-    /* 16AC0 801495F4 30FC848C */  lw         $a0, %lo(D_801CFC30)($a0)
+    /* 16AC0 801495F4 30FC848C */  lw         $a0, %lo(_svm_vab_start)($a0)
     /* 16AC4 801495F8 9625050C */  jal        SpuFree
     /* 16AC8 801495FC 00000000 */   nop
-    /* 16ACC 80149600 1D80013C */  lui        $at, %hi(D_801CFBD0)
+    /* 16ACC 80149600 1D80013C */  lui        $at, %hi(_svm_vab_used)
     /* 16AD0 80149604 21083000 */  addu       $at, $at, $s0
-    /* 16AD4 80149608 D0FB20A0 */  sb         $zero, %lo(D_801CFBD0)($at)
-    /* 16AD8 8014960C 1D80023C */  lui        $v0, %hi(D_801CFC28)
-    /* 16ADC 80149610 28FC4294 */  lhu        $v0, %lo(D_801CFC28)($v0)
+    /* 16AD4 80149608 D0FB20A0 */  sb         $zero, %lo(_svm_vab_used)($at)
+    /* 16AD8 8014960C 1D80023C */  lui        $v0, %hi(_svm_vab_count)
+    /* 16ADC 80149610 28FC4294 */  lhu        $v0, %lo(_svm_vab_count)($v0)
     /* 16AE0 80149614 00000000 */  nop
     /* 16AE4 80149618 FFFF4224 */  addiu      $v0, $v0, -0x1
-    /* 16AE8 8014961C 1D80013C */  lui        $at, %hi(D_801CFC28)
+    /* 16AE8 8014961C 1D80013C */  lui        $at, %hi(_svm_vab_count)
     /* 16AEC 80149620 5B20050C */  jal        _spu_getInTransfer
-    /* 16AF0 80149624 28FC22A4 */   sh        $v0, %lo(D_801CFC28)($at)
+    /* 16AF0 80149624 28FC22A4 */   sh        $v0, %lo(_svm_vab_count)($at)
     /* 16AF4 80149628 01000324 */  addiu      $v1, $zero, 0x1
     /* 16AF8 8014962C 03004314 */  bne        $v0, $v1, .L8014963C
     /* 16AFC 80149630 00000000 */   nop

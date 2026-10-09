@@ -1,6 +1,6 @@
-nonmatching func_800B534C, 0x218
+nonmatching malloc, 0x218
 
-glabel func_800B534C
+glabel malloc
     /* A3B5C 800B534C E8FFBD27 */  addiu      $sp, $sp, -0x18
     /* A3B60 800B5350 1000B0AF */  sw         $s0, 0x10($sp)
     /* A3B64 800B5354 21800000 */  addu       $s0, $zero, $zero
@@ -151,4 +151,4 @@ glabel func_800B534C
     /* A3D68 800B5558 1000B08F */  lw         $s0, 0x10($sp)
     /* A3D6C 800B555C 0800E003 */  jr         $ra
     /* A3D70 800B5560 1800BD27 */   addiu     $sp, $sp, 0x18
-endlabel func_800B534C
+endlabel malloc

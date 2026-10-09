@@ -15,9 +15,9 @@ glabel _SsSeqPlay
     /* 11D78 801448AC 1800B2AF */  sw         $s2, 0x18($sp)
     /* 11D7C 801448B0 1400B1AF */  sw         $s1, 0x14($sp)
     /* 11D80 801448B4 1000B0AF */  sw         $s0, 0x10($sp)
-    /* 11D84 801448B8 1D80033C */  lui        $v1, %hi(D_801CEAE0)
+    /* 11D84 801448B8 1D80033C */  lui        $v1, %hi(_ss_score)
     /* 11D88 801448BC 21186400 */  addu       $v1, $v1, $a0
-    /* 11D8C 801448C0 E0EA638C */  lw         $v1, %lo(D_801CEAE0)($v1)
+    /* 11D8C 801448C0 E0EA638C */  lw         $v1, %lo(_ss_score)($v1)
     /* 11D90 801448C4 00110200 */  sll        $v0, $v0, 4
     /* 11D94 801448C8 21886200 */  addu       $s1, $v1, $v0
     /* 11D98 801448CC 54002286 */  lh         $v0, 0x54($s1)

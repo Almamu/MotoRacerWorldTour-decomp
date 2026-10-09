@@ -16,7 +16,7 @@ glabel func_8014A838
   .L8014A868:
     /* 17D34 8014A868 05008014 */  bnez       $a0, .L8014A880
     /* 17D38 8014A86C FCFF0524 */   addiu     $a1, $zero, -0x4
-    /* 17D3C 8014A870 9B29050C */  jal        func_8014A66C
+    /* 17D3C 8014A870 9B29050C */  jal        free
     /* 17D40 8014A874 21204002 */   addu      $a0, $s2, $zero
     /* 17D44 8014A878 A02A0508 */  j          .L8014AA80
     /* 17D48 8014A87C 21100000 */   addu      $v0, $zero, $zero
@@ -69,7 +69,7 @@ glabel func_8014A838
     /* 17DF4 8014A928 000012AE */   sw        $s2, 0x0($s0)
     /* 17DF8 8014A92C 000050AD */  sw         $s0, 0x0($t2)
   .L8014A930:
-    /* 17DFC 8014A930 9B29050C */  jal        func_8014A66C
+    /* 17DFC 8014A930 9B29050C */  jal        free
     /* 17E00 8014A934 08000426 */   addiu     $a0, $s0, 0x8
     /* 17E04 8014A938 A02A0508 */  j          .L8014AA80
     /* 17E08 8014A93C 08004226 */   addiu     $v0, $s2, 0x8
@@ -159,7 +159,7 @@ glabel func_8014A838
     /* 17F34 8014AA68 21284002 */  addu       $a1, $s2, $zero
     /* 17F38 8014AA6C EE29050C */  jal        func_8014A7B8
     /* 17F3C 8014AA70 21302002 */   addu      $a2, $s1, $zero
-    /* 17F40 8014AA74 9B29050C */  jal        func_8014A66C
+    /* 17F40 8014AA74 9B29050C */  jal        free
     /* 17F44 8014AA78 21204002 */   addu      $a0, $s2, $zero
   .L8014AA7C:
     /* 17F48 8014AA7C 21100002 */  addu       $v0, $s0, $zero

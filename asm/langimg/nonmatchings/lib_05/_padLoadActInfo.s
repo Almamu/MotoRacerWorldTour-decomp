@@ -12,8 +12,8 @@ glabel _padLoadActInfo
     /* 9FDF0 800B15E0 00000000 */  nop
     /* 9FDF4 800B15E4 26004014 */  bnez       $v0, .L800B1680
     /* 9FDF8 800B15E8 21100000 */   addu      $v0, $zero, $zero
-    /* 9FDFC 800B15EC 0C80023C */  lui        $v0, %hi(D_800C3CA4)
-    /* 9FE00 800B15F0 A43C428C */  lw         $v0, %lo(D_800C3CA4)($v0)
+    /* 9FDFC 800B15EC 0C80023C */  lui        $v0, %hi(_padFuncChkEng)
+    /* 9FE00 800B15F0 A43C428C */  lw         $v0, %lo(_padFuncChkEng)($v0)
     /* 9FE04 800B15F4 00000000 */  nop
     /* 9FE08 800B15F8 09F84000 */  jalr       $v0
     /* 9FE0C 800B15FC 00000000 */   nop

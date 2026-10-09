@@ -1,6 +1,6 @@
-nonmatching func_8014A66C, 0x14C
+nonmatching free, 0x14C
 
-glabel func_8014A66C
+glabel free
     /* 17B38 8014A66C 38008010 */  beqz       $a0, .L8014A750
     /* 17B3C 8014A670 F8FF8424 */   addiu     $a0, $a0, -0x8
     /* 17B40 8014A674 0400858C */  lw         $a1, 0x4($a0)
@@ -92,4 +92,4 @@ glabel func_8014A66C
     /* 17C78 8014A7AC 2000A3AC */  sw         $v1, 0x20($a1)
     /* 17C7C 8014A7B0 0800E003 */  jr         $ra
     /* 17C80 8014A7B4 01000224 */   addiu     $v0, $zero, 0x1
-endlabel func_8014A66C
+endlabel free

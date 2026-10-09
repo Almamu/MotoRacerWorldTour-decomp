@@ -32,10 +32,10 @@ enddlabel D_800B85E8
 nonmatching func_800B329C, 0x1C0
 
 glabel func_800B329C
-    /* A1AAC 800B329C 0C80023C */  lui        $v0, %hi(D_800C3DB0)
-    /* A1AB0 800B32A0 B03D428C */  lw         $v0, %lo(D_800C3DB0)($v0)
-    /* A1AB4 800B32A4 0C80033C */  lui        $v1, %hi(D_800C3DC8)
-    /* A1AB8 800B32A8 C83D6394 */  lhu        $v1, %lo(D_800C3DC8)($v1)
+    /* A1AAC 800B329C 0C80023C */  lui        $v0, %hi(_spu_RXX)
+    /* A1AB0 800B32A0 B03D428C */  lw         $v0, %lo(_spu_RXX)($v0)
+    /* A1AB4 800B32A4 0C80033C */  lui        $v1, %hi(_spu_tsa)
+    /* A1AB8 800B32A8 C83D6394 */  lhu        $v1, %lo(_spu_tsa)($v1)
     /* A1ABC 800B32AC D8FFBD27 */  addiu      $sp, $sp, -0x28
     /* A1AC0 800B32B0 1400B1AF */  sw         $s1, 0x14($sp)
     /* A1AC4 800B32B4 2188A000 */  addu       $s1, $a1, $zero
@@ -57,8 +57,8 @@ glabel func_800B329C
   .L800B32F0:
     /* A1B00 800B32F0 0A00001A */  blez       $s0, .L800B331C
     /* A1B04 800B32F4 21180000 */   addu      $v1, $zero, $zero
-    /* A1B08 800B32F8 0C80043C */  lui        $a0, %hi(D_800C3DB0)
-    /* A1B0C 800B32FC B03D848C */  lw         $a0, %lo(D_800C3DB0)($a0)
+    /* A1B08 800B32F8 0C80043C */  lui        $a0, %hi(_spu_RXX)
+    /* A1B0C 800B32FC B03D848C */  lw         $a0, %lo(_spu_RXX)($a0)
   .L800B3300:
     /* A1B10 800B3300 00004296 */  lhu        $v0, 0x0($s2)
     /* A1B14 800B3304 02005226 */  addiu      $s2, $s2, 0x2
@@ -68,8 +68,8 @@ glabel func_800B329C
     /* A1B24 800B3314 FAFF4014 */  bnez       $v0, .L800B3300
     /* A1B28 800B3318 00000000 */   nop
   .L800B331C:
-    /* A1B2C 800B331C 0C80033C */  lui        $v1, %hi(D_800C3DB0)
-    /* A1B30 800B3320 B03D638C */  lw         $v1, %lo(D_800C3DB0)($v1)
+    /* A1B2C 800B331C 0C80033C */  lui        $v1, %hi(_spu_RXX)
+    /* A1B30 800B3320 B03D638C */  lw         $v1, %lo(_spu_RXX)($v1)
     /* A1B34 800B3324 00000000 */  nop
     /* A1B38 800B3328 AA016494 */  lhu        $a0, 0x1AA($v1)
     /* A1B3C 800B332C 00000000 */  nop
@@ -77,8 +77,8 @@ glabel func_800B329C
     /* A1B44 800B3334 10004234 */  ori        $v0, $v0, 0x10
     /* A1B48 800B3338 6BCE020C */  jal        _spu_Fw1ts
     /* A1B4C 800B333C AA0162A4 */   sh        $v0, 0x1AA($v1)
-    /* A1B50 800B3340 0C80023C */  lui        $v0, %hi(D_800C3DB0)
-    /* A1B54 800B3344 B03D428C */  lw         $v0, %lo(D_800C3DB0)($v0)
+    /* A1B50 800B3340 0C80023C */  lui        $v0, %hi(_spu_RXX)
+    /* A1B54 800B3344 B03D428C */  lw         $v0, %lo(_spu_RXX)($v0)
     /* A1B58 800B3348 00000000 */  nop
     /* A1B5C 800B334C AE014294 */  lhu        $v0, 0x1AE($v0)
     /* A1B60 800B3350 00000000 */  nop
@@ -98,8 +98,8 @@ glabel func_800B329C
     /* A1B94 800B3384 EBCC0208 */  j          .L800B33AC
     /* A1B98 800B3388 00000000 */   nop
   .L800B338C:
-    /* A1B9C 800B338C 0C80023C */  lui        $v0, %hi(D_800C3DB0)
-    /* A1BA0 800B3390 B03D428C */  lw         $v0, %lo(D_800C3DB0)($v0)
+    /* A1B9C 800B338C 0C80023C */  lui        $v0, %hi(_spu_RXX)
+    /* A1BA0 800B3390 B03D428C */  lw         $v0, %lo(_spu_RXX)($v0)
     /* A1BA4 800B3394 00000000 */  nop
     /* A1BA8 800B3398 AE014294 */  lhu        $v0, 0x1AE($v0)
     /* A1BAC 800B339C 00000000 */  nop
@@ -114,8 +114,8 @@ glabel func_800B329C
     /* A1BCC 800B33BC C9FF2016 */  bnez       $s1, .L800B32E4
     /* A1BD0 800B33C0 4100222E */   sltiu     $v0, $s1, 0x41
   .L800B33C4:
-    /* A1BD4 800B33C4 0C80023C */  lui        $v0, %hi(D_800C3DB0)
-    /* A1BD8 800B33C8 B03D428C */  lw         $v0, %lo(D_800C3DB0)($v0)
+    /* A1BD4 800B33C4 0C80023C */  lui        $v0, %hi(_spu_RXX)
+    /* A1BD8 800B33C8 B03D428C */  lw         $v0, %lo(_spu_RXX)($v0)
     /* A1BDC 800B33CC 00000000 */  nop
     /* A1BE0 800B33D0 AA014494 */  lhu        $a0, 0x1AA($v0)
     /* A1BE4 800B33D4 FFFF6532 */  andi       $a1, $s3, 0xFFFF
@@ -139,8 +139,8 @@ glabel func_800B329C
     /* A1C28 800B3418 10CD0208 */  j          .L800B3440
     /* A1C2C 800B341C 00000000 */   nop
   .L800B3420:
-    /* A1C30 800B3420 0C80023C */  lui        $v0, %hi(D_800C3DB0)
-    /* A1C34 800B3424 B03D428C */  lw         $v0, %lo(D_800C3DB0)($v0)
+    /* A1C30 800B3420 0C80023C */  lui        $v0, %hi(_spu_RXX)
+    /* A1C34 800B3424 B03D428C */  lw         $v0, %lo(_spu_RXX)($v0)
     /* A1C38 800B3428 00000000 */  nop
     /* A1C3C 800B342C AE014294 */  lhu        $v0, 0x1AE($v0)
     /* A1C40 800B3430 00000000 */  nop

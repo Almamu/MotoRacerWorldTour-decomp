@@ -5,8 +5,8 @@ glabel _padSetActAlign
     /* A01C4 800B19B4 1000B0AF */  sw         $s0, 0x10($sp)
     /* A01C8 800B19B8 21808000 */  addu       $s0, $a0, $zero
     /* A01CC 800B19BC 1400B1AF */  sw         $s1, 0x14($sp)
-    /* A01D0 800B19C0 0C80023C */  lui        $v0, %hi(D_800C3CA4)
-    /* A01D4 800B19C4 A43C428C */  lw         $v0, %lo(D_800C3CA4)($v0)
+    /* A01D0 800B19C0 0C80023C */  lui        $v0, %hi(_padFuncChkEng)
+    /* A01D4 800B19C4 A43C428C */  lw         $v0, %lo(_padFuncChkEng)($v0)
     /* A01D8 800B19C8 1800BFAF */  sw         $ra, 0x18($sp)
     /* A01DC 800B19CC 09F84000 */  jalr       $v0
     /* A01E0 800B19D0 2188A000 */   addu      $s1, $a1, $zero

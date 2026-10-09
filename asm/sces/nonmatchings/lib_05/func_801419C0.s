@@ -32,14 +32,14 @@ glabel func_801419C0
     /* EEF8 80141A2C 0D004010 */  beqz       $v0, .L80141A64
     /* EEFC 80141A30 00000000 */   nop
     /* EF00 80141A34 0C00048E */  lw         $a0, 0xC($s0)
-    /* EF04 80141A38 1C80023C */  lui        $v0, %hi(D_801BFE74)
-    /* EF08 80141A3C 74FE428C */  lw         $v0, %lo(D_801BFE74)($v0)
+    /* EF04 80141A38 1C80023C */  lui        $v0, %hi(_padFuncSendAuto)
+    /* EF08 80141A3C 74FE428C */  lw         $v0, %lo(_padFuncSendAuto)($v0)
     /* EF0C 80141A40 00000000 */  nop
     /* EF10 80141A44 09F84000 */  jalr       $v0
     /* EF14 80141A48 00000000 */   nop
     /* EF18 80141A4C 0C00048E */  lw         $a0, 0xC($s0)
-    /* EF1C 80141A50 1C80023C */  lui        $v0, %hi(D_801BFE74)
-    /* EF20 80141A54 74FE428C */  lw         $v0, %lo(D_801BFE74)($v0)
+    /* EF1C 80141A50 1C80023C */  lui        $v0, %hi(_padFuncSendAuto)
+    /* EF20 80141A54 74FE428C */  lw         $v0, %lo(_padFuncSendAuto)($v0)
     /* EF24 80141A58 00000000 */  nop
     /* EF28 80141A5C 09F84000 */  jalr       $v0
     /* EF2C 80141A60 F0008424 */   addiu     $a0, $a0, 0xF0

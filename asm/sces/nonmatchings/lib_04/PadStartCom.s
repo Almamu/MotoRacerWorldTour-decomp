@@ -29,15 +29,15 @@ glabel PadStartCom
     /* D838 8014036C 00000000 */   nop
     /* D83C 80140370 1C80043C */  lui        $a0, %hi(D_801BFE90)
     /* D840 80140374 90FE848C */  lw         $a0, %lo(D_801BFE90)($a0)
-    /* D844 80140378 1C80023C */  lui        $v0, %hi(D_801BFE60)
-    /* D848 8014037C 60FE428C */  lw         $v0, %lo(D_801BFE60)($v0)
+    /* D844 80140378 1C80023C */  lui        $v0, %hi(_padFuncClrInfo)
+    /* D848 8014037C 60FE428C */  lw         $v0, %lo(_padFuncClrInfo)($v0)
     /* D84C 80140380 00000000 */  nop
     /* D850 80140384 09F84000 */  jalr       $v0
     /* D854 80140388 00000000 */   nop
     /* D858 8014038C 1C80043C */  lui        $a0, %hi(D_801BFE90)
     /* D85C 80140390 90FE848C */  lw         $a0, %lo(D_801BFE90)($a0)
-    /* D860 80140394 1C80023C */  lui        $v0, %hi(D_801BFE60)
-    /* D864 80140398 60FE428C */  lw         $v0, %lo(D_801BFE60)($v0)
+    /* D860 80140394 1C80023C */  lui        $v0, %hi(_padFuncClrInfo)
+    /* D864 80140398 60FE428C */  lw         $v0, %lo(_padFuncClrInfo)($v0)
     /* D868 8014039C 00000000 */  nop
     /* D86C 801403A0 09F84000 */  jalr       $v0
     /* D870 801403A4 F0008424 */   addiu     $a0, $a0, 0xF0

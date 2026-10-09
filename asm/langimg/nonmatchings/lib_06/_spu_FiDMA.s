@@ -9,8 +9,8 @@ glabel _spu_FiDMA
     /* A1C80 800B3470 6BCE020C */  jal        _spu_Fw1ts
     /* A1C84 800B3474 00000000 */   nop
   .L800B3478:
-    /* A1C88 800B3478 0C80043C */  lui        $a0, %hi(D_800C3DB0)
-    /* A1C8C 800B347C B03D848C */  lw         $a0, %lo(D_800C3DB0)($a0)
+    /* A1C88 800B3478 0C80043C */  lui        $a0, %hi(_spu_RXX)
+    /* A1C8C 800B347C B03D848C */  lw         $a0, %lo(_spu_RXX)($a0)
     /* A1C90 800B3480 00000000 */  nop
     /* A1C94 800B3484 AA018294 */  lhu        $v0, 0x1AA($a0)
     /* A1C98 800B3488 00000000 */  nop
@@ -32,13 +32,13 @@ glabel _spu_FiDMA
     /* A1CD4 800B34C4 F9FF4014 */  bnez       $v0, .L800B34AC
     /* A1CD8 800B34C8 01006324 */   addiu     $v1, $v1, 0x1
   .L800B34CC:
-    /* A1CDC 800B34CC 0C80023C */  lui        $v0, %hi(D_800C3DE8)
-    /* A1CE0 800B34D0 E83D428C */  lw         $v0, %lo(D_800C3DE8)($v0)
+    /* A1CDC 800B34CC 0C80023C */  lui        $v0, %hi(_spu_transferCallback)
+    /* A1CE0 800B34D0 E83D428C */  lw         $v0, %lo(_spu_transferCallback)($v0)
     /* A1CE4 800B34D4 00000000 */  nop
     /* A1CE8 800B34D8 08004010 */  beqz       $v0, .L800B34FC
     /* A1CEC 800B34DC 00F0043C */   lui       $a0, (0xF0000009 >> 16)
-    /* A1CF0 800B34E0 0C80023C */  lui        $v0, %hi(D_800C3DE8)
-    /* A1CF4 800B34E4 E83D428C */  lw         $v0, %lo(D_800C3DE8)($v0)
+    /* A1CF0 800B34E0 0C80023C */  lui        $v0, %hi(_spu_transferCallback)
+    /* A1CF4 800B34E4 E83D428C */  lw         $v0, %lo(_spu_transferCallback)($v0)
     /* A1CF8 800B34E8 00000000 */  nop
     /* A1CFC 800B34EC 09F84000 */  jalr       $v0
     /* A1D00 800B34F0 00000000 */   nop

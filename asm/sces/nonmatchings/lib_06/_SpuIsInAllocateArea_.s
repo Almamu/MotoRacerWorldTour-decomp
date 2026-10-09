@@ -1,10 +1,10 @@
 nonmatching _SpuIsInAllocateArea_, 0x8C
 
 glabel _SpuIsInAllocateArea_
-    /* 10D7C 801438B0 1C80023C */  lui        $v0, %hi(D_801BFF3C)
-    /* 10D80 801438B4 3CFF428C */  lw         $v0, %lo(D_801BFF3C)($v0)
-    /* 10D84 801438B8 1C80033C */  lui        $v1, %hi(D_801BFFFC)
-    /* 10D88 801438BC FCFF638C */  lw         $v1, %lo(D_801BFFFC)($v1)
+    /* 10D7C 801438B0 1C80023C */  lui        $v0, %hi(_spu_mem_mode_plus)
+    /* 10D80 801438B4 3CFF428C */  lw         $v0, %lo(_spu_mem_mode_plus)($v0)
+    /* 10D84 801438B8 1C80033C */  lui        $v1, %hi(_spu_memList)
+    /* 10D88 801438BC FCFF638C */  lw         $v1, %lo(_spu_memList)($v1)
     /* 10D8C 801438C0 00000000 */  nop
     /* 10D90 801438C4 03006014 */  bnez       $v1, .L801438D4
     /* 10D94 801438C8 04204400 */   sllv      $a0, $a0, $v0

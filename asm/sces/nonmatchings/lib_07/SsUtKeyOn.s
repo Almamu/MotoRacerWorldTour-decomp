@@ -6,8 +6,8 @@ glabel SsUtKeyOn
     /* 12E74 801459A8 4C00B08F */  lw         $s0, 0x4C($sp)
     /* 12E78 801459AC 1400B1AF */  sw         $s1, 0x14($sp)
     /* 12E7C 801459B0 5000B18F */  lw         $s1, 0x50($sp)
-    /* 12E80 801459B4 1D80023C */  lui        $v0, %hi(D_801CEAD4)
-    /* 12E84 801459B8 D4EA428C */  lw         $v0, %lo(D_801CEAD4)($v0)
+    /* 12E80 801459B4 1D80023C */  lui        $v0, %hi(_snd_ev_flag)
+    /* 12E84 801459B8 D4EA428C */  lw         $v0, %lo(_snd_ev_flag)($v0)
     /* 12E88 801459BC 3000BEAF */  sw         $fp, 0x30($sp)
     /* 12E8C 801459C0 21F08000 */  addu       $fp, $a0, $zero
     /* 12E90 801459C4 2800B6AF */  sw         $s6, 0x28($sp)
@@ -28,8 +28,8 @@ glabel SsUtKeyOn
     /* 12ECC 80145A00 32170508 */  j          .L80145CC8
     /* 12ED0 80145A04 FFFF0224 */   addiu     $v0, $zero, -0x1
   .L80145A08:
-    /* 12ED4 80145A08 1D80013C */  lui        $at, %hi(D_801CEAD4)
-    /* 12ED8 80145A0C D4EA23AC */  sw         $v1, %lo(D_801CEAD4)($at)
+    /* 12ED4 80145A08 1D80013C */  lui        $at, %hi(_snd_ev_flag)
+    /* 12ED8 80145A0C D4EA23AC */  sw         $v1, %lo(_snd_ev_flag)($at)
     /* 12EDC 80145A10 00240400 */  sll        $a0, $a0, 16
     /* 12EE0 80145A14 03240400 */  sra        $a0, $a0, 16
     /* 12EE4 80145A18 002C0500 */  sll        $a1, $a1, 16
@@ -93,8 +93,8 @@ glabel SsUtKeyOn
     /* 12FB0 80145AE4 F1FFA2A0 */  sb         $v0, -0xF($a1)
   .L80145AE8:
     /* 12FB4 80145AE8 001C1600 */  sll        $v1, $s6, 16
-    /* 12FB8 80145AEC 1D80023C */  lui        $v0, %hi(D_801CFB94)
-    /* 12FBC 80145AF0 94FB428C */  lw         $v0, %lo(D_801CFB94)($v0)
+    /* 12FB8 80145AEC 1D80023C */  lui        $v0, %hi(_svm_pg)
+    /* 12FBC 80145AF0 94FB428C */  lw         $v0, %lo(_svm_pg)($v0)
     /* 12FC0 80145AF4 031B0300 */  sra        $v1, $v1, 12
     /* 12FC4 80145AF8 21186200 */  addu       $v1, $v1, $v0
     /* 12FC8 80145AFC 01006290 */  lbu        $v0, 0x1($v1)
@@ -112,8 +112,8 @@ glabel SsUtKeyOn
     /* 12FF8 80145B2C 21104300 */  addu       $v0, $v0, $v1
     /* 12FFC 80145B30 00140200 */  sll        $v0, $v0, 16
     /* 13000 80145B34 F6FF04A2 */  sb         $a0, -0xA($s0)
-    /* 13004 80145B38 1D80033C */  lui        $v1, %hi(D_801CFBA0)
-    /* 13008 80145B3C A0FB638C */  lw         $v1, %lo(D_801CFBA0)($v1)
+    /* 13004 80145B38 1D80033C */  lui        $v1, %hi(_svm_tn)
+    /* 13008 80145B3C A0FB638C */  lw         $v1, %lo(_svm_tn)($v1)
     /* 1300C 80145B40 C3120200 */  sra        $v0, $v0, 11
     /* 13010 80145B44 21104300 */  addu       $v0, $v0, $v1
     /* 13014 80145B48 00004390 */  lbu        $v1, 0x0($v0)
@@ -141,14 +141,14 @@ glabel SsUtKeyOn
     /* 1306C 80145BA0 391A050C */  jal        _SsVmAlloc
     /* 13070 80145BA4 00000000 */   nop
     /* 13074 80145BA8 FF005130 */  andi       $s1, $v0, 0xFF
-    /* 13078 80145BAC 1D80023C */  lui        $v0, %hi(D_801CFBA4)
-    /* 1307C 80145BB0 A4FB4280 */  lb         $v0, %lo(D_801CFBA4)($v0)
+    /* 13078 80145BAC 1D80023C */  lui        $v0, %hi(_SsVmMaxVoice)
+    /* 1307C 80145BB0 A4FB4280 */  lb         $v0, %lo(_SsVmMaxVoice)($v0)
     /* 13080 80145BB4 21182002 */  addu       $v1, $s1, $zero
     /* 13084 80145BB8 05006214 */  bne        $v1, $v0, .L80145BD0
     /* 13088 80145BBC C0200300 */   sll       $a0, $v1, 3
   .L80145BC0:
-    /* 1308C 80145BC0 1D80013C */  lui        $at, %hi(D_801CEAD4)
-    /* 13090 80145BC4 D4EA20AC */  sw         $zero, %lo(D_801CEAD4)($at)
+    /* 1308C 80145BC0 1D80013C */  lui        $at, %hi(_snd_ev_flag)
+    /* 13090 80145BC4 D4EA20AC */  sw         $zero, %lo(_snd_ev_flag)($at)
     /* 13094 80145BC8 32170508 */  j          .L80145CC8
     /* 13098 80145BCC FFFF0224 */   addiu     $v0, $zero, -0x1
   .L80145BD0:
@@ -172,9 +172,9 @@ glabel SsUtKeyOn
     /* 130E0 80145C14 21082400 */  addu       $at, $at, $a0
     /* 130E4 80145C18 92F322A4 */  sh         $v0, %lo(D_801CF392)($at)
     /* 130E8 80145C1C 0C000296 */  lhu        $v0, 0xC($s0)
-    /* 130EC 80145C20 1D80013C */  lui        $at, %hi(D_801CF380)
+    /* 130EC 80145C20 1D80013C */  lui        $at, %hi(_svm_voice)
     /* 130F0 80145C24 21082400 */  addu       $at, $at, $a0
-    /* 130F4 80145C28 80F322A4 */  sh         $v0, %lo(D_801CF380)($at)
+    /* 130F4 80145C28 80F322A4 */  sh         $v0, %lo(_svm_voice)($at)
     /* 130F8 80145C2C 02000292 */  lbu        $v0, 0x2($s0)
     /* 130FC 80145C30 1D80013C */  lui        $at, %hi(D_801CF38E)
     /* 13100 80145C34 21082400 */  addu       $at, $at, $a0
@@ -213,8 +213,8 @@ glabel SsUtKeyOn
     /* 13180 80145CB4 6622050C */  jal        _SsVmKeyOnNow
     /* 13184 80145CB8 FFFF4530 */   andi      $a1, $v0, 0xFFFF
   .L80145CBC:
-    /* 13188 80145CBC 1D80013C */  lui        $at, %hi(D_801CEAD4)
-    /* 1318C 80145CC0 D4EA20AC */  sw         $zero, %lo(D_801CEAD4)($at)
+    /* 13188 80145CBC 1D80013C */  lui        $at, %hi(_snd_ev_flag)
+    /* 1318C 80145CC0 D4EA20AC */  sw         $zero, %lo(_snd_ev_flag)($at)
     /* 13190 80145CC4 21102002 */  addu       $v0, $s1, $zero
   .L80145CC8:
     /* 13194 80145CC8 3400BF8F */  lw         $ra, 0x34($sp)

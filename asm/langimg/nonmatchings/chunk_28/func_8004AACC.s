@@ -8,7 +8,7 @@ glabel func_8004AACC
     /* 392EC 8004AADC FA99020C */  jal        func_800A67E8
     /* 392F0 8004AAE0 21200000 */   addu      $a0, $zero, $zero
     /* 392F4 8004AAE4 0000048E */  lw         $a0, 0x0($s0)
-    /* 392F8 8004AAE8 59D5020C */  jal        func_800B5564
+    /* 392F8 8004AAE8 59D5020C */  jal        free
     /* 392FC 8004AAEC 00000000 */   nop
     /* 39300 8004AAF0 94B2010C */  jal        func_8006CA50
     /* 39304 8004AAF4 00000000 */   nop

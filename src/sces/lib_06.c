@@ -26,9 +26,9 @@ INCLUDE_ASM("asm/sces/nonmatchings/lib_06", _spu_t);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_06", _spu_Fw);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_06", func_80143528);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_06", _spu_FsetRXX);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_06", func_8014356C);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_06", _spu_FsetRXXa);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_06", _spu_FsetPCR);
 

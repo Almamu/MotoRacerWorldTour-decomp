@@ -13,7 +13,7 @@ glabel func_80078BA0
     /* 673D4 80078BC4 2A105200 */  slt        $v0, $v0, $s2
     /* 673D8 80078BC8 0F004010 */  beqz       $v0, .L80078C08
     /* 673DC 80078BCC 21980000 */   addu      $s3, $zero, $zero
-    /* 673E0 80078BD0 D3D4020C */  jal        func_800B534C
+    /* 673E0 80078BD0 D3D4020C */  jal        malloc
     /* 673E4 80078BD4 21204002 */   addu      $a0, $s2, $zero
     /* 673E8 80078BD8 21884000 */  addu       $s1, $v0, $zero
     /* 673EC 80078BDC 0B002012 */  beqz       $s1, .L80078C0C
@@ -22,7 +22,7 @@ glabel func_80078BA0
     /* 673F8 80078BE8 00000000 */  nop
     /* 673FC 80078BEC 04008010 */  beqz       $a0, .L80078C00
     /* 67400 80078BF0 01001324 */   addiu     $s3, $zero, 0x1
-    /* 67404 80078BF4 59D5020C */  jal        func_800B5564
+    /* 67404 80078BF4 59D5020C */  jal        free
     /* 67408 80078BF8 00000000 */   nop
     /* 6740C 80078BFC 280000AE */  sw         $zero, 0x28($s0)
   .L80078C00:

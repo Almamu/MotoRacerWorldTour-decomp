@@ -52,7 +52,7 @@ glabel func_800A2148
     /* 909DC 800A21CC 0B80043C */   lui       $a0, %hi(D_800B7B20)
     /* 909E0 800A21D0 0400A012 */  beqz       $s5, .L800A21E4
     /* 909E4 800A21D4 00000000 */   nop
-    /* 909E8 800A21D8 59D5020C */  jal        func_800B5564
+    /* 909E8 800A21D8 59D5020C */  jal        free
     /* 909EC 800A21DC 21202002 */   addu      $a0, $s1, $zero
     /* 909F0 800A21E0 21880000 */  addu       $s1, $zero, $zero
   .L800A21E4:

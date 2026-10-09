@@ -27,7 +27,7 @@ glabel func_800A1CF8
     /* 90564 800A1D54 FF07E326 */  addiu      $v1, $s7, 0x7FF
     /* 90568 800A1D58 06006016 */  bnez       $s3, .L800A1D74
     /* 9056C 800A1D5C C2A20300 */   srl       $s4, $v1, 11
-    /* 90570 800A1D60 D3D4020C */  jal        func_800B534C
+    /* 90570 800A1D60 D3D4020C */  jal        malloc
     /* 90574 800A1D64 C0221400 */   sll       $a0, $s4, 11
     /* 90578 800A1D68 21984000 */  addu       $s3, $v0, $zero
     /* 9057C 800A1D6C 52006012 */  beqz       $s3, .L800A1EB8

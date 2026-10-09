@@ -9,10 +9,10 @@ glabel SpuGetAllKeysStatus
     /* A2C68 800B4458 21288000 */  addu       $a1, $a0, $zero
   .L800B445C:
     /* A2C6C 800B445C 00210600 */  sll        $a0, $a2, 4
-    /* A2C70 800B4460 0C80023C */  lui        $v0, %hi(D_800C3DB0)
-    /* A2C74 800B4464 B03D428C */  lw         $v0, %lo(D_800C3DB0)($v0)
-    /* A2C78 800B4468 0C80033C */  lui        $v1, %hi(D_800C3D3C)
-    /* A2C7C 800B446C 3C3D638C */  lw         $v1, %lo(D_800C3D3C)($v1)
+    /* A2C70 800B4460 0C80023C */  lui        $v0, %hi(_spu_RXX)
+    /* A2C74 800B4464 B03D428C */  lw         $v0, %lo(_spu_RXX)($v0)
+    /* A2C78 800B4468 0C80033C */  lui        $v1, %hi(_spu_keystat)
+    /* A2C7C 800B446C 3C3D638C */  lw         $v1, %lo(_spu_keystat)($v1)
     /* A2C80 800B4470 21208200 */  addu       $a0, $a0, $v0
     /* A2C84 800B4474 0410C700 */  sllv       $v0, $a3, $a2
     /* A2C88 800B4478 24186200 */  and        $v1, $v1, $v0

@@ -17,8 +17,8 @@ glabel func_8014186C
     /* ED68 8014189C 2E060508 */  j          .L801418B8
     /* ED6C 801418A0 460082A0 */   sb        $v0, 0x46($a0)
   .L801418A4:
-    /* ED70 801418A4 1C80023C */  lui        $v0, %hi(D_801BFE60)
-    /* ED74 801418A8 60FE428C */  lw         $v0, %lo(D_801BFE60)($v0)
+    /* ED70 801418A4 1C80023C */  lui        $v0, %hi(_padFuncClrInfo)
+    /* ED74 801418A8 60FE428C */  lw         $v0, %lo(_padFuncClrInfo)($v0)
     /* ED78 801418AC 00000000 */  nop
     /* ED7C 801418B0 09F84000 */  jalr       $v0
     /* ED80 801418B4 00000000 */   nop

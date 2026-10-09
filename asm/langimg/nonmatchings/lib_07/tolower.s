@@ -1,6 +1,6 @@
-nonmatching func_800B608C, 0x34
+nonmatching tolower, 0x34
 
-glabel func_800B608C
+glabel tolower
     /* A489C 800B608C 21188000 */  addu       $v1, $a0, $zero
     /* A48A0 800B6090 FF006230 */  andi       $v0, $v1, 0xFF
     /* A48A4 800B6094 0C80013C */  lui        $at, %hi(D_800C4631)
@@ -15,6 +15,6 @@ glabel func_800B608C
     /* A48C4 800B60B4 00160300 */  sll        $v0, $v1, 24
     /* A48C8 800B60B8 0800E003 */  jr         $ra
     /* A48CC 800B60BC 03160200 */   sra       $v0, $v0, 24
-endlabel func_800B608C
+endlabel tolower
     /* A48D0 800B60C0 00000000 */  nop
     /* A48D4 800B60C4 00000000 */  nop

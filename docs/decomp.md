@@ -76,6 +76,10 @@ static objects, and its destructor takes the in-charge flag. The free
 functions are declared `extern "C"` in `include/sces/*.h` only to keep
 their placeholder names plain.
 
+The VLC decoder at 0x801365F8-0x80136B4C is hand-written assembly (it
+counts leading zeros with the GTE), so it stays assembly, in its own
+segment (`asm/sces/vlc.s`), and isn't counted as code to decompile.
+
 The movie player is Sony's `cd/MOVIE` sample (in the runtime library
 releases, `psx/sample/cd/MOVIE/TUTO*.C`) adapted, and its functions keep
 the sample's names (`strSync`, `strNextVlc`, `strKickCD`, ...).
@@ -89,14 +93,17 @@ with PsyQ's startup code (`__SN_ENTRY_POINT`: 0x800A7084 in the game,
 
 **Names.** `config/<target>/symbol_addrs.txt` has a generated block of
 library names. Lines marked `exact` are functions of an SDK object found
-whole in the executable (`tools/psyq_match.py`); the rest come from the
+whole in the executable (`tools/psyq_match.py`); "referred to by an SDK
+object" ones (functions and data) are what Sony's objects call the
+symbols they use, at the addresses their relocations have in the
+original; the rest come from the
 [psx_psyq_signatures](https://github.com/lab313ru/psx_psyq_signatures)
 database (`tools/psyq_sigs.py`), which matches function by function and
 places each object where most of it matches over every SDK version:
 
 ```sh
 make sdk                                             # writes build/sdk/match.json
-tools/psyq_sigs.py ../psx_psyq_signatures symbols build/sdk/match.json   # the block to paste in
+tools/psyq_sigs.py ../psx_psyq_signatures symbols build/sdk   # the block to paste in
 ```
 
 **Sony's objects.** `tools/fetch_psyq.sh` downloads the runtime libraries

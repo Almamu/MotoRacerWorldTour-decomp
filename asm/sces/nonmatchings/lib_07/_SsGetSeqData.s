@@ -4,8 +4,8 @@ glabel _SsGetSeqData
     /* 1208C 80144BC0 D0FFBD27 */  addiu      $sp, $sp, -0x30
     /* 12090 80144BC4 00140400 */  sll        $v0, $a0, 16
     /* 12094 80144BC8 034C0200 */  sra        $t1, $v0, 16
-    /* 12098 80144BCC 1D80023C */  lui        $v0, %hi(D_801CEAE0)
-    /* 1209C 80144BD0 E0EA4224 */  addiu      $v0, $v0, %lo(D_801CEAE0)
+    /* 12098 80144BCC 1D80023C */  lui        $v0, %hi(_ss_score)
+    /* 1209C 80144BD0 E0EA4224 */  addiu      $v0, $v0, %lo(_ss_score)
     /* 120A0 80144BD4 80300900 */  sll        $a2, $t1, 2
     /* 120A4 80144BD8 2130C200 */  addu       $a2, $a2, $v0
     /* 120A8 80144BDC 00140500 */  sll        $v0, $a1, 16
@@ -94,8 +94,8 @@ glabel _SsGetSeqData
     /* 121E4 80144D18 21202002 */  addu       $a0, $s1, $zero
     /* 121E8 80144D1C 21280002 */  addu       $a1, $s0, $zero
     /* 121EC 80144D20 900062AE */  sw         $v0, 0x90($s3)
-    /* 121F0 80144D24 1D80023C */  lui        $v0, %hi(D_801CEA40)
-    /* 121F4 80144D28 40EA428C */  lw         $v0, %lo(D_801CEA40)($v0)
+    /* 121F0 80144D24 1D80023C */  lui        $v0, %hi(SsFCALL)
+    /* 121F4 80144D28 40EA428C */  lw         $v0, %lo(SsFCALL)($v0)
     /* 121F8 80144D2C 9E130508 */  j          .L80144E78
     /* 121FC 80144D30 21304002 */   addu      $a2, $s2, $zero
   .L80144D34:
@@ -183,8 +183,8 @@ glabel _SsGetSeqData
     /* 1232C 80144E60 21280002 */  addu       $a1, $s0, $zero
     /* 12330 80144E64 21304002 */  addu       $a2, $s2, $zero
     /* 12334 80144E68 900062AE */  sw         $v0, 0x90($s3)
-    /* 12338 80144E6C 1D80023C */  lui        $v0, %hi(D_801CEA40)
-    /* 1233C 80144E70 40EA428C */  lw         $v0, %lo(D_801CEA40)($v0)
+    /* 12338 80144E6C 1D80023C */  lui        $v0, %hi(SsFCALL)
+    /* 1233C 80144E70 40EA428C */  lw         $v0, %lo(SsFCALL)($v0)
     /* 12340 80144E74 00000000 */  nop
   .L80144E78:
     /* 12344 80144E78 09F84000 */  jalr       $v0

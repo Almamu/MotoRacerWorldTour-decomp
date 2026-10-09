@@ -44,7 +44,7 @@ glabel func_8009674C
     /* 84FF0 800967E0 005A0208 */  j          .L80096800
     /* 84FF4 800967E4 21200002 */   addu      $a0, $s0, $zero
   .L800967E8:
-    /* 84FF8 800967E8 D3D4020C */  jal        func_800B534C
+    /* 84FF8 800967E8 D3D4020C */  jal        malloc
     /* 84FFC 800967EC 21200002 */   addu      $a0, $s0, $zero
     /* 85000 800967F0 21200002 */  addu       $a0, $s0, $zero
     /* 85004 800967F4 01000324 */  addiu      $v1, $zero, 0x1

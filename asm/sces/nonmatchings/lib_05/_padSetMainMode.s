@@ -9,8 +9,8 @@ glabel _padSetMainMode
     /* EC60 80141794 1800B2AF */  sw         $s2, 0x18($sp)
     /* EC64 80141798 2190C000 */  addu       $s2, $a2, $zero
     /* EC68 8014179C 1C00B3AF */  sw         $s3, 0x1C($sp)
-    /* EC6C 801417A0 1C80023C */  lui        $v0, %hi(D_801BFE78)
-    /* EC70 801417A4 78FE428C */  lw         $v0, %lo(D_801BFE78)($v0)
+    /* EC6C 801417A0 1C80023C */  lui        $v0, %hi(_padFuncChkEng)
+    /* EC70 801417A4 78FE428C */  lw         $v0, %lo(_padFuncChkEng)($v0)
     /* EC74 801417A8 2000BFAF */  sw         $ra, 0x20($sp)
     /* EC78 801417AC 09F84000 */  jalr       $v0
     /* EC7C 801417B0 21982002 */   addu      $s3, $s1, $zero

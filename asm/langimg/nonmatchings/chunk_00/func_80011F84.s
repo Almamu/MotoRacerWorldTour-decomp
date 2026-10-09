@@ -12,7 +12,7 @@ glabel func_80011F84
     /* 7B4 80011FA4 0C0082AF */  sw         $v0, %gp_rel(D_800C46FC)($gp)
     /* 7B8 80011FA8 04008010 */  beqz       $a0, .L80011FBC
     /* 7BC 80011FAC 00000000 */   nop
-    /* 7C0 80011FB0 59D5020C */  jal        func_800B5564
+    /* 7C0 80011FB0 59D5020C */  jal        free
     /* 7C4 80011FB4 00000000 */   nop
     /* 7C8 80011FB8 000080AF */  sw         $zero, %gp_rel(D_800C46F0)($gp)
   .L80011FBC:

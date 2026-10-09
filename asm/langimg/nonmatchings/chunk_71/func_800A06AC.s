@@ -25,7 +25,7 @@ glabel func_800A06AC
     /* 8EF10 800A0700 87D6020C */  jal        func_800B5A1C
     /* 8EF14 800A0704 01001424 */   addiu     $s4, $zero, 0x1
     /* 8EF18 800A0708 F0FF5024 */  addiu      $s0, $v0, -0x10
-    /* 8EF1C 800A070C D3D4020C */  jal        func_800B534C
+    /* 8EF1C 800A070C D3D4020C */  jal        malloc
     /* 8EF20 800A0710 21200002 */   addu      $a0, $s0, $zero
     /* 8EF24 800A0714 21984000 */  addu       $s3, $v0, $zero
     /* 8EF28 800A0718 21807002 */  addu       $s0, $s3, $s0

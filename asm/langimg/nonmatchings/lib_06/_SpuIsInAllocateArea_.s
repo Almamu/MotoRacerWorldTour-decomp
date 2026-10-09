@@ -1,8 +1,8 @@
 nonmatching _SpuIsInAllocateArea_, 0x8C
 
 glabel _SpuIsInAllocateArea_
-    /* A23A4 800B3B94 0C80023C */  lui        $v0, %hi(D_800C3DD8)
-    /* A23A8 800B3B98 D83D428C */  lw         $v0, %lo(D_800C3DD8)($v0)
+    /* A23A4 800B3B94 0C80023C */  lui        $v0, %hi(_spu_mem_mode_plus)
+    /* A23A8 800B3B98 D83D428C */  lw         $v0, %lo(_spu_mem_mode_plus)($v0)
     /* A23AC 800B3B9C 0C80033C */  lui        $v1, %hi(D_800C3E18)
     /* A23B0 800B3BA0 183E638C */  lw         $v1, %lo(D_800C3E18)($v1)
     /* A23B4 800B3BA4 00000000 */  nop

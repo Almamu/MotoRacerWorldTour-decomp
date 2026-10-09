@@ -29,9 +29,9 @@ glabel _SsVabOpenHeadWithMode
     /* 17278 80149DAC 14006214 */  bne        $v1, $v0, .L80149E00
     /* 1727C 80149DB0 21280000 */   addu      $a1, $zero, $zero
   .L80149DB4:
-    /* 17280 80149DB4 1D80023C */  lui        $v0, %hi(D_801CFBD0)
+    /* 17280 80149DB4 1D80023C */  lui        $v0, %hi(_svm_vab_used)
     /* 17284 80149DB8 21104500 */  addu       $v0, $v0, $a1
-    /* 17288 80149DBC D0FB4290 */  lbu        $v0, %lo(D_801CFBD0)($v0)
+    /* 17288 80149DBC D0FB4290 */  lbu        $v0, %lo(_svm_vab_used)($v0)
     /* 1728C 80149DC0 00000000 */  nop
     /* 17290 80149DC4 07004010 */  beqz       $v0, .L80149DE4
     /* 17294 80149DC8 01000224 */   addiu     $v0, $zero, 0x1
@@ -42,30 +42,30 @@ glabel _SsVabOpenHeadWithMode
     /* 172A8 80149DDC 91270508 */  j          .L80149E44
     /* 172AC 80149DE0 03340200 */   sra       $a2, $v0, 16
   .L80149DE4:
-    /* 172B0 80149DE4 1D80013C */  lui        $at, %hi(D_801CFBD0)
+    /* 172B0 80149DE4 1D80013C */  lui        $at, %hi(_svm_vab_used)
     /* 172B4 80149DE8 21082500 */  addu       $at, $at, $a1
-    /* 172B8 80149DEC D0FB22A0 */  sb         $v0, %lo(D_801CFBD0)($at)
-    /* 172BC 80149DF0 1D80023C */  lui        $v0, %hi(D_801CFC28)
-    /* 172C0 80149DF4 28FC4294 */  lhu        $v0, %lo(D_801CFC28)($v0)
+    /* 172B8 80149DEC D0FB22A0 */  sb         $v0, %lo(_svm_vab_used)($at)
+    /* 172BC 80149DF0 1D80023C */  lui        $v0, %hi(_svm_vab_count)
+    /* 172C0 80149DF4 28FC4294 */  lhu        $v0, %lo(_svm_vab_count)($v0)
     /* 172C4 80149DF8 8C270508 */  j          .L80149E30
     /* 172C8 80149DFC 2190A000 */   addu      $s2, $a1, $zero
   .L80149E00:
-    /* 172CC 80149E00 1D80023C */  lui        $v0, %hi(D_801CFBD0)
+    /* 172CC 80149E00 1D80023C */  lui        $v0, %hi(_svm_vab_used)
     /* 172D0 80149E04 21104300 */  addu       $v0, $v0, $v1
-    /* 172D4 80149E08 D0FB4290 */  lbu        $v0, %lo(D_801CFBD0)($v0)
+    /* 172D4 80149E08 D0FB4290 */  lbu        $v0, %lo(_svm_vab_used)($v0)
     /* 172D8 80149E0C 00000000 */  nop
     /* 172DC 80149E10 0B004014 */  bnez       $v0, .L80149E40
     /* 172E0 80149E14 00141200 */   sll       $v0, $s2, 16
-    /* 172E4 80149E18 1D80013C */  lui        $at, %hi(D_801CFBD0)
+    /* 172E4 80149E18 1D80013C */  lui        $at, %hi(_svm_vab_used)
     /* 172E8 80149E1C 21082300 */  addu       $at, $at, $v1
-    /* 172EC 80149E20 D0FB31A0 */  sb         $s1, %lo(D_801CFBD0)($at)
-    /* 172F0 80149E24 1D80023C */  lui        $v0, %hi(D_801CFC28)
-    /* 172F4 80149E28 28FC4294 */  lhu        $v0, %lo(D_801CFC28)($v0)
+    /* 172EC 80149E20 D0FB31A0 */  sb         $s1, %lo(_svm_vab_used)($at)
+    /* 172F0 80149E24 1D80023C */  lui        $v0, %hi(_svm_vab_count)
+    /* 172F4 80149E28 28FC4294 */  lhu        $v0, %lo(_svm_vab_count)($v0)
     /* 172F8 80149E2C 21900002 */  addu       $s2, $s0, $zero
   .L80149E30:
     /* 172FC 80149E30 01004224 */  addiu      $v0, $v0, 0x1
-    /* 17300 80149E34 1D80013C */  lui        $at, %hi(D_801CFC28)
-    /* 17304 80149E38 28FC22A4 */  sh         $v0, %lo(D_801CFC28)($at)
+    /* 17300 80149E34 1D80013C */  lui        $at, %hi(_svm_vab_count)
+    /* 17304 80149E38 28FC22A4 */  sh         $v0, %lo(_svm_vab_count)($at)
     /* 17308 80149E3C 00141200 */  sll        $v0, $s2, 16
   .L80149E40:
     /* 1730C 80149E40 03340200 */  sra        $a2, $v0, 16
@@ -80,9 +80,9 @@ glabel _SsVabOpenHeadWithMode
     /* 17328 80149E5C FFFF0224 */   addiu     $v0, $zero, -0x1
   .L80149E60:
     /* 1732C 80149E60 80100600 */  sll        $v0, $a2, 2
-    /* 17330 80149E64 1D80013C */  lui        $at, %hi(D_801CFB08)
+    /* 17330 80149E64 1D80013C */  lui        $at, %hi(_svm_vab_vh)
     /* 17334 80149E68 21082200 */  addu       $at, $at, $v0
-    /* 17338 80149E6C 08FB27AC */  sw         $a3, %lo(D_801CFB08)($at)
+    /* 17338 80149E6C 08FB27AC */  sw         $a3, %lo(_svm_vab_vh)($at)
     /* 1733C 80149E70 5600033C */  lui        $v1, (0x564142 >> 16)
     /* 17340 80149E74 21206002 */  addu       $a0, $s3, $zero
     /* 17344 80149E78 0000858C */  lw         $a1, 0x0($a0)
@@ -92,9 +92,9 @@ glabel _SsVabOpenHeadWithMode
     /* 17354 80149E88 02120500 */  srl        $v0, $a1, 8
     /* 17358 80149E8C 06004310 */  beq        $v0, $v1, .L80149EA8
     /* 1735C 80149E90 2000E724 */   addiu     $a3, $a3, 0x20
-    /* 17360 80149E94 1D80013C */  lui        $at, %hi(D_801CFBD0)
+    /* 17360 80149E94 1D80013C */  lui        $at, %hi(_svm_vab_used)
     /* 17364 80149E98 21082600 */  addu       $at, $at, $a2
-    /* 17368 80149E9C D0FB20A0 */  sb         $zero, %lo(D_801CFBD0)($at)
+    /* 17368 80149E9C D0FB20A0 */  sb         $zero, %lo(_svm_vab_used)($at)
     /* 1736C 80149EA0 0C280508 */  j          .L8014A030
     /* 17370 80149EA4 21200000 */   addu      $a0, $zero, $zero
   .L80149EA8:
@@ -109,26 +109,26 @@ glabel _SsVabOpenHeadWithMode
     /* 17394 80149EC8 40000224 */   addiu     $v0, $zero, 0x40
     /* 17398 80149ECC 80000224 */  addiu      $v0, $zero, 0x80
   .L80149ED0:
-    /* 1739C 80149ED0 1D80013C */  lui        $at, %hi(D_801CFB92)
-    /* 173A0 80149ED4 92FB22A4 */  sh         $v0, %lo(D_801CFB92)($at)
+    /* 1739C 80149ED0 1D80013C */  lui        $at, %hi(kMaxPrograms)
+    /* 173A0 80149ED4 92FB22A4 */  sh         $v0, %lo(kMaxPrograms)($at)
     /* 173A4 80149ED8 12008294 */  lhu        $v0, 0x12($a0)
-    /* 173A8 80149EDC 1D80033C */  lui        $v1, %hi(D_801CFB92)
-    /* 173AC 80149EE0 92FB6384 */  lh         $v1, %lo(D_801CFB92)($v1)
+    /* 173A8 80149EDC 1D80033C */  lui        $v1, %hi(kMaxPrograms)
+    /* 173AC 80149EE0 92FB6384 */  lh         $v1, %lo(kMaxPrograms)($v1)
     /* 173B0 80149EE4 00000000 */  nop
     /* 173B4 80149EE8 2A106200 */  slt        $v0, $v1, $v0
     /* 173B8 80149EEC 07004010 */  beqz       $v0, .L80149F0C
     /* 173BC 80149EF0 00141200 */   sll       $v0, $s2, 16
     /* 173C0 80149EF4 03140200 */  sra        $v0, $v0, 16
-    /* 173C4 80149EF8 1D80013C */  lui        $at, %hi(D_801CFBD0)
+    /* 173C4 80149EF8 1D80013C */  lui        $at, %hi(_svm_vab_used)
     /* 173C8 80149EFC 21082200 */  addu       $at, $at, $v0
-    /* 173CC 80149F00 D0FB20A0 */  sb         $zero, %lo(D_801CFBD0)($at)
+    /* 173CC 80149F00 D0FB20A0 */  sb         $zero, %lo(_svm_vab_used)($at)
     /* 173D0 80149F04 0C280508 */  j          .L8014A030
     /* 173D4 80149F08 21200000 */   addu      $a0, $zero, $zero
   .L80149F0C:
     /* 173D8 80149F0C 83130200 */  sra        $v0, $v0, 14
-    /* 173DC 80149F10 1D80013C */  lui        $at, %hi(D_801CFAC8)
+    /* 173DC 80149F10 1D80013C */  lui        $at, %hi(_svm_vab_pg)
     /* 173E0 80149F14 21082200 */  addu       $at, $at, $v0
-    /* 173E4 80149F18 C8FA27AC */  sw         $a3, %lo(D_801CFAC8)($at)
+    /* 173E4 80149F18 C8FA27AC */  sw         $a3, %lo(_svm_vab_pg)($at)
     /* 173E8 80149F1C 2198E000 */  addu       $s3, $a3, $zero
     /* 173EC 80149F20 00110300 */  sll        $v0, $v1, 4
     /* 173F0 80149F24 21386202 */  addu       $a3, $s3, $v0
@@ -154,9 +154,9 @@ glabel _SsVabOpenHeadWithMode
     /* 17434 80149F68 00141200 */  sll        $v0, $s2, 16
     /* 17438 80149F6C 83130200 */  sra        $v0, $v0, 14
     /* 1743C 80149F70 1000A627 */  addiu      $a2, $sp, 0x10
-    /* 17440 80149F74 1D80013C */  lui        $at, %hi(D_801CFB50)
+    /* 17440 80149F74 1D80013C */  lui        $at, %hi(_svm_vab_tn)
     /* 17444 80149F78 21082200 */  addu       $at, $at, $v0
-    /* 17448 80149F7C 50FB27AC */  sw         $a3, %lo(D_801CFB50)($at)
+    /* 17448 80149F7C 50FB27AC */  sw         $a3, %lo(_svm_vab_tn)($at)
     /* 1744C 80149F80 12008294 */  lhu        $v0, 0x12($a0)
     /* 17450 80149F84 16009490 */  lbu        $s4, 0x16($a0)
     /* 17454 80149F88 40120200 */  sll        $v0, $v0, 9
@@ -201,24 +201,24 @@ glabel _SsVabOpenHeadWithMode
     /* 174E4 8014A018 0F004010 */  beqz       $v0, .L8014A058
     /* 174E8 8014A01C 80101100 */   sll       $v0, $s1, 2
     /* 174EC 8014A020 21200000 */  addu       $a0, $zero, $zero
-    /* 174F0 8014A024 1D80013C */  lui        $at, %hi(D_801CFBD0)
+    /* 174F0 8014A024 1D80013C */  lui        $at, %hi(_svm_vab_used)
     /* 174F4 8014A028 21083100 */  addu       $at, $at, $s1
-    /* 174F8 8014A02C D0FB20A0 */  sb         $zero, %lo(D_801CFBD0)($at)
+    /* 174F8 8014A02C D0FB20A0 */  sb         $zero, %lo(_svm_vab_used)($at)
   .L8014A030:
     /* 174FC 8014A030 5120050C */  jal        _spu_setInTransfer
     /* 17500 8014A034 00000000 */   nop
-    /* 17504 8014A038 1D80033C */  lui        $v1, %hi(D_801CFC28)
-    /* 17508 8014A03C 28FC6394 */  lhu        $v1, %lo(D_801CFC28)($v1)
+    /* 17504 8014A038 1D80033C */  lui        $v1, %hi(_svm_vab_count)
+    /* 17508 8014A03C 28FC6394 */  lhu        $v1, %lo(_svm_vab_count)($v1)
     /* 1750C 8014A040 00000000 */  nop
     /* 17510 8014A044 FFFF6324 */  addiu      $v1, $v1, -0x1
-    /* 17514 8014A048 1D80013C */  lui        $at, %hi(D_801CFC28)
-    /* 17518 8014A04C 28FC23A4 */  sh         $v1, %lo(D_801CFC28)($at)
+    /* 17514 8014A048 1D80013C */  lui        $at, %hi(_svm_vab_count)
+    /* 17518 8014A04C 28FC23A4 */  sh         $v1, %lo(_svm_vab_count)($at)
     /* 1751C 8014A050 43280508 */  j          .L8014A10C
     /* 17520 8014A054 FFFF0224 */   addiu     $v0, $zero, -0x1
   .L8014A058:
-    /* 17524 8014A058 1D80013C */  lui        $at, %hi(D_801CFC30)
+    /* 17524 8014A058 1D80013C */  lui        $at, %hi(_svm_vab_start)
     /* 17528 8014A05C 21082200 */  addu       $at, $at, $v0
-    /* 1752C 8014A060 30FC24AC */  sw         $a0, %lo(D_801CFC30)($at)
+    /* 1752C 8014A060 30FC24AC */  sw         $a0, %lo(_svm_vab_start)($at)
     /* 17530 8014A064 21800000 */  addu       $s0, $zero, $zero
     /* 17534 8014A068 FF008332 */  andi       $v1, $s4, 0xFF
     /* 17538 8014A06C 00006228 */  slti       $v0, $v1, 0x0
@@ -258,13 +258,13 @@ glabel _SsVabOpenHeadWithMode
     /* 175B0 8014A0E4 00141200 */  sll        $v0, $s2, 16
     /* 175B4 8014A0E8 03140200 */  sra        $v0, $v0, 16
     /* 175B8 8014A0EC 80180200 */  sll        $v1, $v0, 2
-    /* 175BC 8014A0F0 1D80013C */  lui        $at, %hi(D_801CFBE8)
+    /* 175BC 8014A0F0 1D80013C */  lui        $at, %hi(_svm_vab_total)
     /* 175C0 8014A0F4 21082300 */  addu       $at, $at, $v1
-    /* 175C4 8014A0F8 E8FB30AC */  sw         $s0, %lo(D_801CFBE8)($at)
+    /* 175C4 8014A0F8 E8FB30AC */  sw         $s0, %lo(_svm_vab_total)($at)
     /* 175C8 8014A0FC 02000324 */  addiu      $v1, $zero, 0x2
-    /* 175CC 8014A100 1D80013C */  lui        $at, %hi(D_801CFBD0)
+    /* 175CC 8014A100 1D80013C */  lui        $at, %hi(_svm_vab_used)
     /* 175D0 8014A104 21082200 */  addu       $at, $at, $v0
-    /* 175D4 8014A108 D0FB23A0 */  sb         $v1, %lo(D_801CFBD0)($at)
+    /* 175D4 8014A108 D0FB23A0 */  sb         $v1, %lo(_svm_vab_used)($at)
   .L8014A10C:
     /* 175D8 8014A10C 2C04BF8F */  lw         $ra, 0x42C($sp)
     /* 175DC 8014A110 2804B68F */  lw         $s6, 0x428($sp)

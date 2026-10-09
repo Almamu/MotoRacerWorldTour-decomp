@@ -9,14 +9,14 @@ glabel SpuSetTransferStartAddr
     /* A2AF8 800B42E8 2B104300 */  sltu       $v0, $v0, $v1
     /* A2AFC 800B42EC 0B004014 */  bnez       $v0, .L800B431C
     /* A2B00 800B42F0 1000BFAF */   sw        $ra, 0x10($sp)
-    /* A2B04 800B42F4 18CE020C */  jal        func_800B3860
+    /* A2B04 800B42F4 18CE020C */  jal        _spu_FsetRXXa
     /* A2B08 800B42F8 FFFF0424 */   addiu     $a0, $zero, -0x1
-    /* A2B0C 800B42FC 0C80013C */  lui        $at, %hi(D_800C3DC8)
-    /* A2B10 800B4300 C83D22A4 */  sh         $v0, %lo(D_800C3DC8)($at)
-    /* A2B14 800B4304 0C80033C */  lui        $v1, %hi(D_800C3DC8)
-    /* A2B18 800B4308 C83D6394 */  lhu        $v1, %lo(D_800C3DC8)($v1)
-    /* A2B1C 800B430C 0C80023C */  lui        $v0, %hi(D_800C3DD8)
-    /* A2B20 800B4310 D83D428C */  lw         $v0, %lo(D_800C3DD8)($v0)
+    /* A2B0C 800B42FC 0C80013C */  lui        $at, %hi(_spu_tsa)
+    /* A2B10 800B4300 C83D22A4 */  sh         $v0, %lo(_spu_tsa)($at)
+    /* A2B14 800B4304 0C80033C */  lui        $v1, %hi(_spu_tsa)
+    /* A2B18 800B4308 C83D6394 */  lhu        $v1, %lo(_spu_tsa)($v1)
+    /* A2B1C 800B430C 0C80023C */  lui        $v0, %hi(_spu_mem_mode_plus)
+    /* A2B20 800B4310 D83D428C */  lw         $v0, %lo(_spu_mem_mode_plus)($v0)
     /* A2B24 800B4314 C8D00208 */  j          .L800B4320
     /* A2B28 800B4318 04104300 */   sllv      $v0, $v1, $v0
   .L800B431C:

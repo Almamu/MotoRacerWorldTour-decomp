@@ -56,8 +56,8 @@ glabel _padInitSioMode
     /* D9A8 801404DC 00210400 */  sll        $a0, $a0, 4
     /* D9AC 801404E0 000062AC */  sw         $v0, 0x0($v1)
     /* D9B0 801404E4 0C00028E */  lw         $v0, 0xC($s0)
-    /* D9B4 801404E8 1C80033C */  lui        $v1, %hi(D_801BFE7C)
-    /* D9B8 801404EC 7CFE638C */  lw         $v1, %lo(D_801BFE7C)($v1)
+    /* D9B4 801404E8 1C80033C */  lui        $v1, %hi(_padFuncRecvAuto)
+    /* D9B8 801404EC 7CFE638C */  lw         $v1, %lo(_padFuncRecvAuto)($v1)
     /* D9BC 801404F0 00000000 */  nop
     /* D9C0 801404F4 09F86000 */  jalr       $v1
     /* D9C4 801404F8 21204400 */   addu      $a0, $v0, $a0
@@ -82,8 +82,8 @@ glabel _padInitSioMode
     /* DA0C 80140540 0C004014 */  bnez       $v0, .L80140574
     /* DA10 80140544 FFFF0324 */   addiu     $v1, $zero, -0x1
     /* DA14 80140548 21200002 */  addu       $a0, $s0, $zero
-    /* DA18 8014054C 1C80023C */  lui        $v0, %hi(D_801BFE7C)
-    /* DA1C 80140550 7CFE428C */  lw         $v0, %lo(D_801BFE7C)($v0)
+    /* DA18 8014054C 1C80023C */  lui        $v0, %hi(_padFuncRecvAuto)
+    /* DA1C 80140550 7CFE428C */  lw         $v0, %lo(_padFuncRecvAuto)($v0)
     /* DA20 80140554 00000000 */  nop
     /* DA24 80140558 09F84000 */  jalr       $v0
     /* DA28 8014055C 0000A3AC */   sw        $v1, 0x0($a1)

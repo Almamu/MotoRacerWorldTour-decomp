@@ -50,7 +50,7 @@ glabel func_80135C54
     /* 319C 80135CD0 1580043C */   lui       $a0, %hi(D_8014C398)
     /* 31A0 80135CD4 04008012 */  beqz       $s4, .L80135CE8
     /* 31A4 80135CD8 00000000 */   nop
-    /* 31A8 80135CDC 9B29050C */  jal        func_8014A66C
+    /* 31A8 80135CDC 9B29050C */  jal        free
     /* 31AC 80135CE0 21200002 */   addu      $a0, $s0, $zero
     /* 31B0 80135CE4 21800000 */  addu       $s0, $zero, $zero
   .L80135CE8:

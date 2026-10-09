@@ -9,28 +9,28 @@ glabel SpuSetKey
     /* 149C4 801474F8 01000224 */  addiu      $v0, $zero, 0x1
     /* 149C8 801474FC 66008214 */  bne        $a0, $v0, .L80147698
     /* 149CC 80147500 00000000 */   nop
-    /* 149D0 80147504 1C80023C */  lui        $v0, %hi(D_801BFFE0)
-    /* 149D4 80147508 E0FF428C */  lw         $v0, %lo(D_801BFFE0)($v0)
+    /* 149D0 80147504 1C80023C */  lui        $v0, %hi(_spu_env)
+    /* 149D4 80147508 E0FF428C */  lw         $v0, %lo(_spu_env)($v0)
     /* 149D8 8014750C 00000000 */  nop
     /* 149DC 80147510 01004230 */  andi       $v0, $v0, 0x1
     /* 149E0 80147514 24004010 */  beqz       $v0, .L801475A8
     /* 149E4 80147518 00000000 */   nop
-    /* 149E8 8014751C 1D80043C */  lui        $a0, %hi(D_801CEA28)
-    /* 149EC 80147520 28EA8424 */  addiu      $a0, $a0, %lo(D_801CEA28)
+    /* 149E8 8014751C 1D80043C */  lui        $a0, %hi(_spu_RQ)
+    /* 149EC 80147520 28EA8424 */  addiu      $a0, $a0, %lo(_spu_RQ)
     /* 149F0 80147524 000085A4 */  sh         $a1, 0x0($a0)
     /* 149F4 80147528 020086A4 */  sh         $a2, 0x2($a0)
-    /* 149F8 8014752C 1C80023C */  lui        $v0, %hi(D_801BFFAC)
-    /* 149FC 80147530 ACFF428C */  lw         $v0, %lo(D_801BFFAC)($v0)
+    /* 149F8 8014752C 1C80023C */  lui        $v0, %hi(_spu_RQmask)
+    /* 149FC 80147530 ACFF428C */  lw         $v0, %lo(_spu_RQmask)($v0)
     /* 14A00 80147534 00000000 */  nop
     /* 14A04 80147538 01004234 */  ori        $v0, $v0, 0x1
-    /* 14A08 8014753C 1C80013C */  lui        $at, %hi(D_801BFFAC)
-    /* 14A0C 80147540 ACFF22AC */  sw         $v0, %lo(D_801BFFAC)($at)
-    /* 14A10 80147544 1C80023C */  lui        $v0, %hi(D_801BFFA8)
-    /* 14A14 80147548 A8FF428C */  lw         $v0, %lo(D_801BFFA8)($v0)
+    /* 14A08 8014753C 1C80013C */  lui        $at, %hi(_spu_RQmask)
+    /* 14A0C 80147540 ACFF22AC */  sw         $v0, %lo(_spu_RQmask)($at)
+    /* 14A10 80147544 1C80023C */  lui        $v0, %hi(_spu_RQvoice)
+    /* 14A14 80147548 A8FF428C */  lw         $v0, %lo(_spu_RQvoice)($v0)
     /* 14A18 8014754C 00000000 */  nop
     /* 14A1C 80147550 25104500 */  or         $v0, $v0, $a1
-    /* 14A20 80147554 1C80013C */  lui        $at, %hi(D_801BFFA8)
-    /* 14A24 80147558 A8FF22AC */  sw         $v0, %lo(D_801BFFA8)($at)
+    /* 14A20 80147554 1C80013C */  lui        $at, %hi(_spu_RQvoice)
+    /* 14A24 80147558 A8FF22AC */  sw         $v0, %lo(_spu_RQvoice)($at)
     /* 14A28 8014755C 04008294 */  lhu        $v0, 0x4($a0)
     /* 14A2C 80147560 00000000 */  nop
     /* 14A30 80147564 24104500 */  and        $v0, $v0, $a1
@@ -52,37 +52,37 @@ glabel SpuSetKey
     /* 14A6C 801475A0 A61D0508 */  j          .L80147698
     /* 14A70 801475A4 060082A4 */   sh        $v0, 0x6($a0)
   .L801475A8:
-    /* 14A74 801475A8 1C80023C */  lui        $v0, %hi(D_801BFF80)
-    /* 14A78 801475AC 80FF428C */  lw         $v0, %lo(D_801BFF80)($v0)
-    /* 14A7C 801475B0 1C80033C */  lui        $v1, %hi(D_801BFF14)
-    /* 14A80 801475B4 14FF638C */  lw         $v1, %lo(D_801BFF14)($v1)
+    /* 14A74 801475A8 1C80023C */  lui        $v0, %hi(_spu_keystat)
+    /* 14A78 801475AC 80FF428C */  lw         $v0, %lo(_spu_keystat)($v0)
+    /* 14A7C 801475B0 1C80033C */  lui        $v1, %hi(_spu_RXX)
+    /* 14A80 801475B4 14FF638C */  lw         $v1, %lo(_spu_RXX)($v1)
     /* 14A84 801475B8 25104500 */  or         $v0, $v0, $a1
     /* 14A88 801475BC 880165A4 */  sh         $a1, 0x188($v1)
     /* 14A8C 801475C0 A41D0508 */  j          .L80147690
     /* 14A90 801475C4 8A0166A4 */   sh        $a2, 0x18A($v1)
   .L801475C8:
-    /* 14A94 801475C8 1C80023C */  lui        $v0, %hi(D_801BFFE0)
-    /* 14A98 801475CC E0FF428C */  lw         $v0, %lo(D_801BFFE0)($v0)
+    /* 14A94 801475C8 1C80023C */  lui        $v0, %hi(_spu_env)
+    /* 14A98 801475CC E0FF428C */  lw         $v0, %lo(_spu_env)($v0)
     /* 14A9C 801475D0 00000000 */  nop
     /* 14AA0 801475D4 01004230 */  andi       $v0, $v0, 0x1
     /* 14AA4 801475D8 24004010 */  beqz       $v0, .L8014766C
     /* 14AA8 801475DC 00000000 */   nop
-    /* 14AAC 801475E0 1D80043C */  lui        $a0, %hi(D_801CEA28)
-    /* 14AB0 801475E4 28EA8424 */  addiu      $a0, $a0, %lo(D_801CEA28)
+    /* 14AAC 801475E0 1D80043C */  lui        $a0, %hi(_spu_RQ)
+    /* 14AB0 801475E4 28EA8424 */  addiu      $a0, $a0, %lo(_spu_RQ)
     /* 14AB4 801475E8 040085A4 */  sh         $a1, 0x4($a0)
     /* 14AB8 801475EC 060086A4 */  sh         $a2, 0x6($a0)
-    /* 14ABC 801475F0 1C80023C */  lui        $v0, %hi(D_801BFFAC)
-    /* 14AC0 801475F4 ACFF428C */  lw         $v0, %lo(D_801BFFAC)($v0)
+    /* 14ABC 801475F0 1C80023C */  lui        $v0, %hi(_spu_RQmask)
+    /* 14AC0 801475F4 ACFF428C */  lw         $v0, %lo(_spu_RQmask)($v0)
     /* 14AC4 801475F8 00000000 */  nop
     /* 14AC8 801475FC 01004234 */  ori        $v0, $v0, 0x1
-    /* 14ACC 80147600 1C80013C */  lui        $at, %hi(D_801BFFAC)
-    /* 14AD0 80147604 ACFF22AC */  sw         $v0, %lo(D_801BFFAC)($at)
-    /* 14AD4 80147608 1C80023C */  lui        $v0, %hi(D_801BFFA8)
-    /* 14AD8 8014760C A8FF428C */  lw         $v0, %lo(D_801BFFA8)($v0)
+    /* 14ACC 80147600 1C80013C */  lui        $at, %hi(_spu_RQmask)
+    /* 14AD0 80147604 ACFF22AC */  sw         $v0, %lo(_spu_RQmask)($at)
+    /* 14AD4 80147608 1C80023C */  lui        $v0, %hi(_spu_RQvoice)
+    /* 14AD8 8014760C A8FF428C */  lw         $v0, %lo(_spu_RQvoice)($v0)
     /* 14ADC 80147610 27180500 */  nor        $v1, $zero, $a1
     /* 14AE0 80147614 24104300 */  and        $v0, $v0, $v1
-    /* 14AE4 80147618 1C80013C */  lui        $at, %hi(D_801BFFA8)
-    /* 14AE8 8014761C A8FF22AC */  sw         $v0, %lo(D_801BFFA8)($at)
+    /* 14AE4 80147618 1C80013C */  lui        $at, %hi(_spu_RQvoice)
+    /* 14AE8 8014761C A8FF22AC */  sw         $v0, %lo(_spu_RQvoice)($at)
     /* 14AEC 80147620 00008294 */  lhu        $v0, 0x0($a0)
     /* 14AF0 80147624 00000000 */  nop
     /* 14AF4 80147628 24104500 */  and        $v0, $v0, $a1
@@ -104,18 +104,18 @@ glabel SpuSetKey
     /* 14B30 80147664 A61D0508 */  j          .L80147698
     /* 14B34 80147668 020082A4 */   sh        $v0, 0x2($a0)
   .L8014766C:
-    /* 14B38 8014766C 1C80023C */  lui        $v0, %hi(D_801BFF14)
-    /* 14B3C 80147670 14FF428C */  lw         $v0, %lo(D_801BFF14)($v0)
+    /* 14B38 8014766C 1C80023C */  lui        $v0, %hi(_spu_RXX)
+    /* 14B3C 80147670 14FF428C */  lw         $v0, %lo(_spu_RXX)($v0)
     /* 14B40 80147674 00000000 */  nop
     /* 14B44 80147678 8C0145A4 */  sh         $a1, 0x18C($v0)
     /* 14B48 8014767C 8E0146A4 */  sh         $a2, 0x18E($v0)
-    /* 14B4C 80147680 1C80023C */  lui        $v0, %hi(D_801BFF80)
-    /* 14B50 80147684 80FF428C */  lw         $v0, %lo(D_801BFF80)($v0)
+    /* 14B4C 80147680 1C80023C */  lui        $v0, %hi(_spu_keystat)
+    /* 14B50 80147684 80FF428C */  lw         $v0, %lo(_spu_keystat)($v0)
     /* 14B54 80147688 27180500 */  nor        $v1, $zero, $a1
     /* 14B58 8014768C 24104300 */  and        $v0, $v0, $v1
   .L80147690:
-    /* 14B5C 80147690 1C80013C */  lui        $at, %hi(D_801BFF80)
-    /* 14B60 80147694 80FF22AC */  sw         $v0, %lo(D_801BFF80)($at)
+    /* 14B5C 80147690 1C80013C */  lui        $at, %hi(_spu_keystat)
+    /* 14B60 80147694 80FF22AC */  sw         $v0, %lo(_spu_keystat)($at)
   .L80147698:
     /* 14B64 80147698 0800E003 */  jr         $ra
     /* 14B68 8014769C 00000000 */   nop

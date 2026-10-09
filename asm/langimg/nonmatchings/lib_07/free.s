@@ -1,6 +1,6 @@
-nonmatching func_800B5564, 0x14C
+nonmatching free, 0x14C
 
-glabel func_800B5564
+glabel free
     /* A3D74 800B5564 38008010 */  beqz       $a0, .L800B5648
     /* A3D78 800B5568 F8FF8424 */   addiu     $a0, $a0, -0x8
     /* A3D7C 800B556C 0400858C */  lw         $a1, 0x4($a0)
@@ -92,4 +92,4 @@ glabel func_800B5564
     /* A3EB4 800B56A4 2000A3AC */  sw         $v1, 0x20($a1)
     /* A3EB8 800B56A8 0800E003 */  jr         $ra
     /* A3EBC 800B56AC 01000224 */   addiu     $v0, $zero, 0x1
-endlabel func_800B5564
+endlabel free

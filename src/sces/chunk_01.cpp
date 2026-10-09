@@ -61,11 +61,14 @@ void func_801354D4(void) {
     D_8014D3F8.~CPair();
 }
 
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", func_801354FC);
+void func_801354FC(void) {
+}
 
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", func_80135504);
+void func_80135504(void) {
+}
 
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", func_8013550C);
+void func_8013550C(void) {
+}
 
 INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", LzssDecompress);
 
@@ -131,30 +134,98 @@ INCLUDE_RODATA("asm/sces/nonmatchings/chunk_01", D_8014C3C0);
 
 INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", func_80135F84);
 
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", func_80136028);
+/* Master volume to full. */
+void func_80136028(void) {
+    SsSetMVol(127, 127);
+}
 
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", func_8013604C);
+/* Reverb on: type 5, depth 32. */
+void func_8013604C(void) {
+    SsUtReverbOff();
+    SpuClearReverbWorkArea(5);
+    SsUtSetReverbType(5);
+    SsUtSetReverbDepth(32, 32);
+    SsUtReverbOn();
+}
 
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", func_80136090);
+/* Reverb off. */
+void func_80136090(void) {
+    SsUtReverbOff();
+    SpuClearReverbWorkArea(5);
+    SsUtSetReverbType(0);
+    SsUtSetReverbDepth(0, 0);
+}
 
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", func_801360CC);
+/* Sends the menu sound bank's body to the SPU; -1 if there's none or it
+ * fails. The unused buffer is in the original's stack frame too. */
+int func_801360CC(void) {
+    char buf[128];
+
+    if (D_8019D990 == -1) {
+        return -1;
+    }
+    if (SsVabTransBody(D_8019E8AC, D_8019D990) == D_8019D990) {
+        SsVabTransCompleted(1);
+        return 0;
+    }
+    printf(D_8014C3C0);
+    return -1;
+}
 
 INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", func_80136130);
 
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", func_80136450);
+/* Waits for the frame, then shows the buffer just drawn. */
+void func_80136450(void) {
+    DrawSync(0);
+    VSync(0);
+    PutDrawEnv(&D_8019DA80[D_8019DA5C]);
+    PutDispEnv(&D_8019DB38[D_8019DA5C]);
+    D_8019DA5C ^= 1;
+}
 
+#ifdef NON_MATCHING
+/* Equivalent; after the first free() the original puts D_8019DB68's
+ * address in $a1, this build in $v0. strInit has the same quirk: the
+ * original takes the first argument register the call leaves free */
+int func_801364D4(void) {
+    EnterCriticalSection();
+    VSyncCallback(0);
+    DrawSyncCallback(0);
+    ExitCriticalSection();
+    D_8019DA60 = 0;
+    D_8019DA64 = 0;
+    D_8019DA68 = 0;
+    free(D_8019DB64);
+    free(D_8019DB68);
+    return 1;
+}
+#else
 INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", func_801364D4);
+#endif
 
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", func_80136540);
+/* Clears VRAM, and copies line 510 to 511. */
+void func_80136540(void) {
+    RECT rect;
 
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", func_801365C0);
+    DrawSync(0);
+    rect.x = 0;
+    rect.y = 0;
+    rect.w = 640;
+    rect.h = 512;
+    ClearImage(&rect, 0, 0, 0);
+    rect.x = 0;
+    rect.y = 510;
+    rect.w = 640;
+    rect.h = 1;
+    MoveImage(&rect, 0, 511);
+    DrawSync(0);
+}
 
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", func_801365F0);
+/* Vblanks since D_8019DA50. */
+void func_801365C0(void) {
+    D_8019DA54 = VSync(1) - D_8019DA50;
+}
 
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", func_801365F8);
+void func_801365F0(void) {
+}
 
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", func_80136644);
-
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", func_80136784);
-
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", func_80136900);

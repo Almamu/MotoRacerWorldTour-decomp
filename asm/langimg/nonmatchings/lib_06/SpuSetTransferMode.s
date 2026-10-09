@@ -10,9 +10,9 @@ glabel SpuSetTransferMode
   .L800B434C:
     /* A2B5C 800B434C 21100000 */  addu       $v0, $zero, $zero
   .L800B4350:
-    /* A2B60 800B4350 0C80013C */  lui        $at, %hi(D_800C3D40)
-    /* A2B64 800B4354 403D24AC */  sw         $a0, %lo(D_800C3D40)($at)
-    /* A2B68 800B4358 0C80013C */  lui        $at, %hi(D_800C3DCC)
+    /* A2B60 800B4350 0C80013C */  lui        $at, %hi(_spu_trans_mode)
+    /* A2B64 800B4354 403D24AC */  sw         $a0, %lo(_spu_trans_mode)($at)
+    /* A2B68 800B4358 0C80013C */  lui        $at, %hi(_spu_transMode)
     /* A2B6C 800B435C 0800E003 */  jr         $ra
-    /* A2B70 800B4360 CC3D22AC */   sw        $v0, %lo(D_800C3DCC)($at)
+    /* A2B70 800B4360 CC3D22AC */   sw        $v0, %lo(_spu_transMode)($at)
 endlabel SpuSetTransferMode

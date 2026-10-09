@@ -29,15 +29,15 @@ glabel PadStartCom
     /* 9F24C 800B0A3C 00000000 */   nop
     /* 9F250 800B0A40 0C80043C */  lui        $a0, %hi(D_800C3CBC)
     /* 9F254 800B0A44 BC3C848C */  lw         $a0, %lo(D_800C3CBC)($a0)
-    /* 9F258 800B0A48 0C80023C */  lui        $v0, %hi(D_800C3C8C)
-    /* 9F25C 800B0A4C 8C3C428C */  lw         $v0, %lo(D_800C3C8C)($v0)
+    /* 9F258 800B0A48 0C80023C */  lui        $v0, %hi(_padFuncClrInfo)
+    /* 9F25C 800B0A4C 8C3C428C */  lw         $v0, %lo(_padFuncClrInfo)($v0)
     /* 9F260 800B0A50 00000000 */  nop
     /* 9F264 800B0A54 09F84000 */  jalr       $v0
     /* 9F268 800B0A58 00000000 */   nop
     /* 9F26C 800B0A5C 0C80043C */  lui        $a0, %hi(D_800C3CBC)
     /* 9F270 800B0A60 BC3C848C */  lw         $a0, %lo(D_800C3CBC)($a0)
-    /* 9F274 800B0A64 0C80023C */  lui        $v0, %hi(D_800C3C8C)
-    /* 9F278 800B0A68 8C3C428C */  lw         $v0, %lo(D_800C3C8C)($v0)
+    /* 9F274 800B0A64 0C80023C */  lui        $v0, %hi(_padFuncClrInfo)
+    /* 9F278 800B0A68 8C3C428C */  lw         $v0, %lo(_padFuncClrInfo)($v0)
     /* 9F27C 800B0A6C 00000000 */  nop
     /* 9F280 800B0A70 09F84000 */  jalr       $v0
     /* 9F284 800B0A74 F0008424 */   addiu     $a0, $a0, 0xF0

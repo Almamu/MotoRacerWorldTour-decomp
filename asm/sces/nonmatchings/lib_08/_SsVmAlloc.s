@@ -9,14 +9,14 @@ glabel _SsVmAlloc
     /* 13DC4 801468F8 21380000 */  addu       $a3, $zero, $zero
     /* 13DC8 801468FC 1D80023C */  lui        $v0, %hi(D_801CFBBF)
     /* 13DCC 80146900 BFFB4290 */  lbu        $v0, %lo(D_801CFBBF)($v0)
-    /* 13DD0 80146904 1D80033C */  lui        $v1, %hi(D_801CFBA4)
-    /* 13DD4 80146908 A4FB6380 */  lb         $v1, %lo(D_801CFBA4)($v1)
+    /* 13DD0 80146904 1D80033C */  lui        $v1, %hi(_SsVmMaxVoice)
+    /* 13DD4 80146908 A4FB6380 */  lb         $v1, %lo(_SsVmMaxVoice)($v1)
     /* 13DD8 8014690C 00160200 */  sll        $v0, $v0, 24
     /* 13DDC 80146910 52006018 */  blez       $v1, .L80146A5C
     /* 13DE0 80146914 036E0200 */   sra       $t5, $v0, 24
     /* 13DE4 80146918 01001824 */  addiu      $t8, $zero, 0x1
-    /* 13DE8 8014691C 1C800F3C */  lui        $t7, %hi(D_801C0434)
-    /* 13DEC 80146920 3404EF8D */  lw         $t7, %lo(D_801C0434)($t7)
+    /* 13DE8 8014691C 1C800F3C */  lui        $t7, %hi(_snd_vmask)
+    /* 13DEC 80146920 3404EF8D */  lw         $t7, %lo(_snd_vmask)($t7)
     /* 13DF0 80146924 21706000 */  addu       $t6, $v1, $zero
     /* 13DF4 80146928 FF00E330 */  andi       $v1, $a3, 0xFF
   .L8014692C:
@@ -108,11 +108,11 @@ glabel _SsVmAlloc
     /* 13F34 80146A68 FF004231 */   andi      $v0, $t2, 0xFF
     /* 13F38 80146A6C 03004014 */  bnez       $v0, .L80146A7C
     /* 13F3C 80146A70 21582001 */   addu      $t3, $t1, $zero
-    /* 13F40 80146A74 1D800B3C */  lui        $t3, %hi(D_801CFBA4)
-    /* 13F44 80146A78 A4FB6B91 */  lbu        $t3, %lo(D_801CFBA4)($t3)
+    /* 13F40 80146A74 1D800B3C */  lui        $t3, %hi(_SsVmMaxVoice)
+    /* 13F44 80146A78 A4FB6B91 */  lbu        $t3, %lo(_SsVmMaxVoice)($t3)
   .L80146A7C:
-    /* 13F48 80146A7C 1D80033C */  lui        $v1, %hi(D_801CFBA4)
-    /* 13F4C 80146A80 A4FB6380 */  lb         $v1, %lo(D_801CFBA4)($v1)
+    /* 13F48 80146A7C 1D80033C */  lui        $v1, %hi(_SsVmMaxVoice)
+    /* 13F4C 80146A80 A4FB6380 */  lb         $v1, %lo(_SsVmMaxVoice)($v1)
     /* 13F50 80146A84 FF006231 */  andi       $v0, $t3, 0xFF
     /* 13F54 80146A88 2A104300 */  slt        $v0, $v0, $v1
     /* 13F58 80146A8C 2F004010 */  beqz       $v0, .L80146B4C
@@ -120,8 +120,8 @@ glabel _SsVmAlloc
     /* 13F60 80146A94 19006018 */  blez       $v1, .L80146AFC
     /* 13F64 80146A98 21380000 */   addu      $a3, $zero, $zero
     /* 13F68 80146A9C 01000824 */  addiu      $t0, $zero, 0x1
-    /* 13F6C 80146AA0 1C80063C */  lui        $a2, %hi(D_801C0434)
-    /* 13F70 80146AA4 3404C68C */  lw         $a2, %lo(D_801C0434)($a2)
+    /* 13F6C 80146AA0 1C80063C */  lui        $a2, %hi(_snd_vmask)
+    /* 13F70 80146AA4 3404C68C */  lw         $a2, %lo(_snd_vmask)($a2)
     /* 13F74 80146AA8 21286000 */  addu       $a1, $v1, $zero
     /* 13F78 80146AAC FF00E430 */  andi       $a0, $a3, 0xFF
   .L80146AB0:

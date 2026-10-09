@@ -3,8 +3,8 @@ nonmatching _SsSndStop, 0x180
 glabel _SsSndStop
     /* 1264C 80145180 E8FFBD27 */  addiu      $sp, $sp, -0x18
     /* 12650 80145184 00440400 */  sll        $t0, $a0, 16
-    /* 12654 80145188 1D80023C */  lui        $v0, %hi(D_801CEAE0)
-    /* 12658 8014518C E0EA4224 */  addiu      $v0, $v0, %lo(D_801CEAE0)
+    /* 12654 80145188 1D80023C */  lui        $v0, %hi(_ss_score)
+    /* 12658 8014518C E0EA4224 */  addiu      $v0, $v0, %lo(_ss_score)
     /* 1265C 80145190 83430800 */  sra        $t0, $t0, 14
     /* 12660 80145194 21400201 */  addu       $t0, $t0, $v0
     /* 12664 80145198 00140500 */  sll        $v0, $a1, 16

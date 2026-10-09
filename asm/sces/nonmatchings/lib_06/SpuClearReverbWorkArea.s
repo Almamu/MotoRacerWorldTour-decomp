@@ -14,8 +14,8 @@ glabel SpuClearReverbWorkArea
     /* 1007C 80142BB0 1000A0AF */  sw         $zero, 0x10($sp)
     /* 10080 80142BB4 0A004010 */  beqz       $v0, .L80142BE0
     /* 10084 80142BB8 21A80000 */   addu      $s5, $zero, $zero
-    /* 10088 80142BBC 1C80033C */  lui        $v1, %hi(D_801C0404)
-    /* 1008C 80142BC0 04046324 */  addiu      $v1, $v1, %lo(D_801C0404)
+    /* 10088 80142BBC 1C80033C */  lui        $v1, %hi(_spu_rev_startaddr)
+    /* 1008C 80142BC0 04046324 */  addiu      $v1, $v1, %lo(_spu_rev_startaddr)
     /* 10090 80142BC4 80101000 */  sll        $v0, $s0, 2
     /* 10094 80142BC8 21884300 */  addu       $s1, $v0, $v1
     /* 10098 80142BCC 0000248E */  lw         $a0, 0x0($s1)
@@ -29,8 +29,8 @@ glabel SpuClearReverbWorkArea
   .L80142BE8:
     /* 100B4 80142BE8 08000016 */  bnez       $s0, .L80142C0C
     /* 100B8 80142BEC 0100023C */   lui       $v0, (0x10000 >> 16)
-    /* 100BC 80142BF0 1C80023C */  lui        $v0, %hi(D_801BFF3C)
-    /* 100C0 80142BF4 3CFF428C */  lw         $v0, %lo(D_801BFF3C)($v0)
+    /* 100BC 80142BF0 1C80023C */  lui        $v0, %hi(_spu_mem_mode_plus)
+    /* 100C0 80142BF4 3CFF428C */  lw         $v0, %lo(_spu_mem_mode_plus)($v0)
     /* 100C4 80142BF8 10000324 */  addiu      $v1, $zero, 0x10
     /* 100C8 80142BFC 04884300 */  sllv       $s1, $v1, $v0
     /* 100CC 80142C00 F0FF0334 */  ori        $v1, $zero, 0xFFF0
@@ -38,32 +38,32 @@ glabel SpuClearReverbWorkArea
     /* 100D4 80142C08 04904300 */   sllv      $s2, $v1, $v0
   .L80142C0C:
     /* 100D8 80142C0C 0000248E */  lw         $a0, 0x0($s1)
-    /* 100DC 80142C10 1C80033C */  lui        $v1, %hi(D_801BFF3C)
-    /* 100E0 80142C14 3CFF638C */  lw         $v1, %lo(D_801BFF3C)($v1)
+    /* 100DC 80142C10 1C80033C */  lui        $v1, %hi(_spu_mem_mode_plus)
+    /* 100E0 80142C14 3CFF638C */  lw         $v1, %lo(_spu_mem_mode_plus)($v1)
     /* 100E4 80142C18 23104400 */  subu       $v0, $v0, $a0
     /* 100E8 80142C1C 04886200 */  sllv       $s1, $v0, $v1
     /* 100EC 80142C20 04906400 */  sllv       $s2, $a0, $v1
   .L80142C24:
-    /* 100F0 80142C24 1C80143C */  lui        $s4, %hi(D_801BFF30)
-    /* 100F4 80142C28 30FF948E */  lw         $s4, %lo(D_801BFF30)($s4)
+    /* 100F0 80142C24 1C80143C */  lui        $s4, %hi(_spu_transMode)
+    /* 100F4 80142C28 30FF948E */  lw         $s4, %lo(_spu_transMode)($s4)
     /* 100F8 80142C2C 01000224 */  addiu      $v0, $zero, 0x1
     /* 100FC 80142C30 04008216 */  bne        $s4, $v0, .L80142C44
     /* 10100 80142C34 00000000 */   nop
-    /* 10104 80142C38 1C80013C */  lui        $at, %hi(D_801BFF30)
-    /* 10108 80142C3C 30FF20AC */  sw         $zero, %lo(D_801BFF30)($at)
+    /* 10104 80142C38 1C80013C */  lui        $at, %hi(_spu_transMode)
+    /* 10108 80142C3C 30FF20AC */  sw         $zero, %lo(_spu_transMode)($at)
     /* 1010C 80142C40 01001524 */  addiu      $s5, $zero, 0x1
   .L80142C44:
-    /* 10110 80142C44 1C80023C */  lui        $v0, %hi(D_801BFF4C)
-    /* 10114 80142C48 4CFF428C */  lw         $v0, %lo(D_801BFF4C)($v0)
+    /* 10110 80142C44 1C80023C */  lui        $v0, %hi(_spu_transferCallback)
+    /* 10114 80142C48 4CFF428C */  lw         $v0, %lo(_spu_transferCallback)($v0)
     /* 10118 80142C4C 00000000 */  nop
     /* 1011C 80142C50 07004010 */  beqz       $v0, .L80142C70
     /* 10120 80142C54 01001324 */   addiu     $s3, $zero, 0x1
-    /* 10124 80142C58 1C80023C */  lui        $v0, %hi(D_801BFF4C)
-    /* 10128 80142C5C 4CFF428C */  lw         $v0, %lo(D_801BFF4C)($v0)
+    /* 10124 80142C58 1C80023C */  lui        $v0, %hi(_spu_transferCallback)
+    /* 10128 80142C5C 4CFF428C */  lw         $v0, %lo(_spu_transferCallback)($v0)
     /* 1012C 80142C60 00000000 */  nop
     /* 10130 80142C64 1000A2AF */  sw         $v0, 0x10($sp)
-    /* 10134 80142C68 1C80013C */  lui        $at, %hi(D_801BFF4C)
-    /* 10138 80142C6C 4CFF20AC */  sw         $zero, %lo(D_801BFF4C)($at)
+    /* 10134 80142C68 1C80013C */  lui        $at, %hi(_spu_transferCallback)
+    /* 10138 80142C6C 4CFF20AC */  sw         $zero, %lo(_spu_transferCallback)($at)
   .L80142C70:
     /* 1013C 80142C70 0104222E */  sltiu      $v0, $s1, 0x401
   .L80142C74:
@@ -78,12 +78,12 @@ glabel SpuClearReverbWorkArea
     /* 1015C 80142C90 890C050C */  jal        _spu_t
     /* 10160 80142C94 01000424 */   addiu     $a0, $zero, 0x1
     /* 10164 80142C98 03000424 */  addiu      $a0, $zero, 0x3
-    /* 10168 80142C9C 1C80053C */  lui        $a1, %hi(D_801C0004)
-    /* 1016C 80142CA0 0400A524 */  addiu      $a1, $a1, %lo(D_801C0004)
+    /* 10168 80142C9C 1C80053C */  lui        $a1, %hi(_spu_zerobuf)
+    /* 1016C 80142CA0 0400A524 */  addiu      $a1, $a1, %lo(_spu_zerobuf)
     /* 10170 80142CA4 890C050C */  jal        _spu_t
     /* 10174 80142CA8 21300002 */   addu      $a2, $s0, $zero
-    /* 10178 80142CAC 1C80043C */  lui        $a0, %hi(D_801BFF7C)
-    /* 1017C 80142CB0 7CFF848C */  lw         $a0, %lo(D_801BFF7C)($a0)
+    /* 10178 80142CAC 1C80043C */  lui        $a0, %hi(_spu_EVdma)
+    /* 1017C 80142CB0 7CFF848C */  lw         $a0, %lo(_spu_EVdma)($a0)
     /* 10180 80142CB4 00FC3126 */  addiu      $s1, $s1, -0x400
     /* 10184 80142CB8 E32A050C */  jal        WaitEvent
     /* 10188 80142CBC 00045226 */   addiu     $s2, $s2, 0x400
@@ -91,16 +91,16 @@ glabel SpuClearReverbWorkArea
     /* 10190 80142CC4 0104222E */   sltiu     $v0, $s1, 0x401
     /* 10194 80142CC8 0300A012 */  beqz       $s5, .L80142CD8
     /* 10198 80142CCC 00000000 */   nop
-    /* 1019C 80142CD0 1C80013C */  lui        $at, %hi(D_801BFF30)
-    /* 101A0 80142CD4 30FF34AC */  sw         $s4, %lo(D_801BFF30)($at)
+    /* 1019C 80142CD0 1C80013C */  lui        $at, %hi(_spu_transMode)
+    /* 101A0 80142CD4 30FF34AC */  sw         $s4, %lo(_spu_transMode)($at)
   .L80142CD8:
     /* 101A4 80142CD8 1000A28F */  lw         $v0, 0x10($sp)
     /* 101A8 80142CDC 00000000 */  nop
     /* 101AC 80142CE0 05004010 */  beqz       $v0, .L80142CF8
     /* 101B0 80142CE4 21100000 */   addu      $v0, $zero, $zero
     /* 101B4 80142CE8 1000A28F */  lw         $v0, 0x10($sp)
-    /* 101B8 80142CEC 1C80013C */  lui        $at, %hi(D_801BFF4C)
-    /* 101BC 80142CF0 4CFF22AC */  sw         $v0, %lo(D_801BFF4C)($at)
+    /* 101B8 80142CEC 1C80013C */  lui        $at, %hi(_spu_transferCallback)
+    /* 101BC 80142CF0 4CFF22AC */  sw         $v0, %lo(_spu_transferCallback)($at)
     /* 101C0 80142CF4 21100000 */  addu       $v0, $zero, $zero
   .L80142CF8:
     /* 101C4 80142CF8 3000BF8F */  lw         $ra, 0x30($sp)

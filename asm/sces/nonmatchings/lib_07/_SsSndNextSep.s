@@ -2,8 +2,8 @@ nonmatching _SsSndNextSep, 0x100
 
 glabel _SsSndNextSep
     /* 124EC 80145020 00240400 */  sll        $a0, $a0, 16
-    /* 124F0 80145024 1D80023C */  lui        $v0, %hi(D_801CEAE0)
-    /* 124F4 80145028 E0EA4224 */  addiu      $v0, $v0, %lo(D_801CEAE0)
+    /* 124F0 80145024 1D80023C */  lui        $v0, %hi(_ss_score)
+    /* 124F4 80145028 E0EA4224 */  addiu      $v0, $v0, %lo(_ss_score)
     /* 124F8 8014502C 83230400 */  sra        $a0, $a0, 14
     /* 124FC 80145030 21208200 */  addu       $a0, $a0, $v0
     /* 12500 80145034 002C0500 */  sll        $a1, $a1, 16

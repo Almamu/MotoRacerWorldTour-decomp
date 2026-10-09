@@ -9,8 +9,8 @@ glabel _padSetMainMode
     /* A0320 800B1B10 1800B2AF */  sw         $s2, 0x18($sp)
     /* A0324 800B1B14 2190C000 */  addu       $s2, $a2, $zero
     /* A0328 800B1B18 1C00B3AF */  sw         $s3, 0x1C($sp)
-    /* A032C 800B1B1C 0C80023C */  lui        $v0, %hi(D_800C3CA4)
-    /* A0330 800B1B20 A43C428C */  lw         $v0, %lo(D_800C3CA4)($v0)
+    /* A032C 800B1B1C 0C80023C */  lui        $v0, %hi(_padFuncChkEng)
+    /* A0330 800B1B20 A43C428C */  lw         $v0, %lo(_padFuncChkEng)($v0)
     /* A0334 800B1B24 2000BFAF */  sw         $ra, 0x20($sp)
     /* A0338 800B1B28 09F84000 */  jalr       $v0
     /* A033C 800B1B2C 21982002 */   addu      $s3, $s1, $zero

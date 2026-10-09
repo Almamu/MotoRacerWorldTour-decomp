@@ -251,7 +251,7 @@ glabel func_80133334
     /* A08 8013353C 15800B3C */  lui        $t3, %hi(D_8014D228)
   .L80133540:
     /* A0C 80133540 28D2648D */  lw         $a0, %lo(D_8014D228)($t3)
-    /* A10 80133544 9B29050C */  jal        func_8014A66C
+    /* A10 80133544 9B29050C */  jal        free
     /* A14 80133548 00000000 */   nop
     /* A18 8013354C ADCE0408 */  j          .L80133AB4
     /* A1C 80133550 FFFF0224 */   addiu     $v0, $zero, -0x1
@@ -620,7 +620,7 @@ glabel func_80133334
     /* F68 80133A9C 7F000524 */   addiu     $a1, $zero, 0x7F
     /* F6C 80133AA0 15800B3C */  lui        $t3, %hi(D_8014D228)
     /* F70 80133AA4 28D2648D */  lw         $a0, %lo(D_8014D228)($t3)
-    /* F74 80133AA8 9B29050C */  jal        func_8014A66C
+    /* F74 80133AA8 9B29050C */  jal        free
     /* F78 80133AAC 00000000 */   nop
     /* F7C 80133AB0 21108002 */  addu       $v0, $s4, $zero
   .L80133AB4:

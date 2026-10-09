@@ -37,8 +37,8 @@ glabel _dirFailAuto
     /* A1558 800B2D48 00000000 */  nop
     /* A155C 800B2D4C 06004010 */  beqz       $v0, .L800B2D68
     /* A1560 800B2D50 00000000 */   nop
-    /* A1564 800B2D54 0C80023C */  lui        $v0, %hi(D_800C3C8C)
-    /* A1568 800B2D58 8C3C428C */  lw         $v0, %lo(D_800C3C8C)($v0)
+    /* A1564 800B2D54 0C80023C */  lui        $v0, %hi(_padFuncClrInfo)
+    /* A1568 800B2D58 8C3C428C */  lw         $v0, %lo(_padFuncClrInfo)($v0)
     /* A156C 800B2D5C 00000000 */  nop
     /* A1570 800B2D60 09F84000 */  jalr       $v0
     /* A1574 800B2D64 21200002 */   addu      $a0, $s0, $zero

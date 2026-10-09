@@ -4,7 +4,7 @@ glabel __builtin_delete
     /* 4130 80136C64 E8FFBD27 */  addiu      $sp, $sp, -0x18
     /* 4134 80136C68 03008010 */  beqz       $a0, .L80136C78
     /* 4138 80136C6C 1000BFAF */   sw        $ra, 0x10($sp)
-    /* 413C 80136C70 9B29050C */  jal        func_8014A66C
+    /* 413C 80136C70 9B29050C */  jal        free
     /* 4140 80136C74 00000000 */   nop
   .L80136C78:
     /* 4144 80136C78 1000BF8F */  lw         $ra, 0x10($sp)

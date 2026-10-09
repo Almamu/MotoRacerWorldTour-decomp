@@ -9,8 +9,8 @@ glabel _spu_FiDMA
     /* 10648 8014317C AE0D050C */  jal        _spu_Fw1ts
     /* 1064C 80143180 00000000 */   nop
   .L80143184:
-    /* 10650 80143184 1C80043C */  lui        $a0, %hi(D_801BFF14)
-    /* 10654 80143188 14FF848C */  lw         $a0, %lo(D_801BFF14)($a0)
+    /* 10650 80143184 1C80043C */  lui        $a0, %hi(_spu_RXX)
+    /* 10654 80143188 14FF848C */  lw         $a0, %lo(_spu_RXX)($a0)
     /* 10658 8014318C 00000000 */  nop
     /* 1065C 80143190 AA018294 */  lhu        $v0, 0x1AA($a0)
     /* 10660 80143194 00000000 */  nop
@@ -32,13 +32,13 @@ glabel _spu_FiDMA
     /* 1069C 801431D0 F9FF4014 */  bnez       $v0, .L801431B8
     /* 106A0 801431D4 01006324 */   addiu     $v1, $v1, 0x1
   .L801431D8:
-    /* 106A4 801431D8 1C80023C */  lui        $v0, %hi(D_801BFF4C)
-    /* 106A8 801431DC 4CFF428C */  lw         $v0, %lo(D_801BFF4C)($v0)
+    /* 106A4 801431D8 1C80023C */  lui        $v0, %hi(_spu_transferCallback)
+    /* 106A8 801431DC 4CFF428C */  lw         $v0, %lo(_spu_transferCallback)($v0)
     /* 106AC 801431E0 00000000 */  nop
     /* 106B0 801431E4 08004010 */  beqz       $v0, .L80143208
     /* 106B4 801431E8 00F0043C */   lui       $a0, (0xF0000009 >> 16)
-    /* 106B8 801431EC 1C80023C */  lui        $v0, %hi(D_801BFF4C)
-    /* 106BC 801431F0 4CFF428C */  lw         $v0, %lo(D_801BFF4C)($v0)
+    /* 106B8 801431EC 1C80023C */  lui        $v0, %hi(_spu_transferCallback)
+    /* 106BC 801431F0 4CFF428C */  lw         $v0, %lo(_spu_transferCallback)($v0)
     /* 106C0 801431F4 00000000 */  nop
     /* 106C4 801431F8 09F84000 */  jalr       $v0
     /* 106C8 801431FC 00000000 */   nop

@@ -38,12 +38,12 @@ glabel SpuSetReverbModeParam
     /* 132D4 80145E08 0A00022E */  sltiu      $v0, $s0, 0xA
     /* 132D8 80145E0C 09004010 */  beqz       $v0, .L80145E34
     /* 132DC 80145E10 80101000 */   sll       $v0, $s0, 2
-    /* 132E0 80145E14 1C80043C */  lui        $a0, %hi(D_801C0404)
+    /* 132E0 80145E14 1C80043C */  lui        $a0, %hi(_spu_rev_startaddr)
     /* 132E4 80145E18 21208200 */  addu       $a0, $a0, $v0
-    /* 132E8 80145E1C 0404848C */  lw         $a0, %lo(D_801C0404)($a0)
-    /* 132EC 80145E20 1C80113C */  lui        $s1, %hi(D_801C0404)
+    /* 132E8 80145E1C 0404848C */  lw         $a0, %lo(_spu_rev_startaddr)($a0)
+    /* 132EC 80145E20 1C80113C */  lui        $s1, %hi(_spu_rev_startaddr)
     /* 132F0 80145E24 2C0E050C */  jal        _SpuIsInAllocateArea_
-    /* 132F4 80145E28 04043126 */   addiu     $s1, $s1, %lo(D_801C0404)
+    /* 132F4 80145E28 04043126 */   addiu     $s1, $s1, %lo(_spu_rev_startaddr)
     /* 132F8 80145E2C 03004010 */  beqz       $v0, .L80145E3C
     /* 132FC 80145E30 01001424 */   addiu     $s4, $zero, 0x1
   .L80145E34:
@@ -62,12 +62,12 @@ glabel SpuSetReverbModeParam
     /* 1332C 80145E60 00110300 */  sll        $v0, $v1, 4
     /* 13330 80145E64 21104300 */  addu       $v0, $v0, $v1
     /* 13334 80145E68 80100200 */  sll        $v0, $v0, 2
-    /* 13338 80145E6C 1C80033C */  lui        $v1, %hi(D_801C0484)
-    /* 1333C 80145E70 84046324 */  addiu      $v1, $v1, %lo(D_801C0484)
+    /* 13338 80145E6C 1C80033C */  lui        $v1, %hi(_spu_rev_param)
+    /* 1333C 80145E70 84046324 */  addiu      $v1, $v1, %lo(_spu_rev_param)
     /* 13340 80145E74 0000848C */  lw         $a0, 0x0($a0)
     /* 13344 80145E78 21184300 */  addu       $v1, $v0, $v1
-    /* 13348 80145E7C 1C80013C */  lui        $at, %hi(D_801BFF90)
-    /* 1334C 80145E80 90FF24AC */  sw         $a0, %lo(D_801BFF90)($at)
+    /* 13348 80145E7C 1C80013C */  lui        $at, %hi(_spu_rev_offsetaddr)
+    /* 1334C 80145E80 90FF24AC */  sw         $a0, %lo(_spu_rev_offsetaddr)($at)
   .L80145E84:
     /* 13350 80145E84 00006290 */  lbu        $v0, 0x0($v1)
     /* 13354 80145E88 01006324 */  addiu      $v1, $v1, 0x1
@@ -123,8 +123,8 @@ glabel SpuSetReverbModeParam
     /* 13408 80145F3C 00190200 */  sll        $v1, $v0, 4
     /* 1340C 80145F40 21186200 */  addu       $v1, $v1, $v0
     /* 13410 80145F44 80180300 */  sll        $v1, $v1, 2
-    /* 13414 80145F48 1C80023C */  lui        $v0, %hi(D_801C0484)
-    /* 13418 80145F4C 84044224 */  addiu      $v0, $v0, %lo(D_801C0484)
+    /* 13414 80145F48 1C80023C */  lui        $v0, %hi(_spu_rev_param)
+    /* 13418 80145F4C 84044224 */  addiu      $v0, $v0, %lo(_spu_rev_param)
     /* 1341C 80145F50 21186200 */  addu       $v1, $v1, $v0
   .L80145F54:
     /* 13420 80145F54 00006290 */  lbu        $v0, 0x0($v1)
@@ -200,8 +200,8 @@ glabel SpuSetReverbModeParam
     /* 1352C 80146060 00190200 */  sll        $v1, $v0, 4
     /* 13530 80146064 21186200 */  addu       $v1, $v1, $v0
     /* 13534 80146068 80180300 */  sll        $v1, $v1, 2
-    /* 13538 8014606C 1C80023C */  lui        $v0, %hi(D_801C0484)
-    /* 1353C 80146070 84044224 */  addiu      $v0, $v0, %lo(D_801C0484)
+    /* 13538 8014606C 1C80023C */  lui        $v0, %hi(_spu_rev_param)
+    /* 1353C 80146070 84044224 */  addiu      $v0, $v0, %lo(_spu_rev_param)
     /* 13540 80146074 21186200 */  addu       $v1, $v1, $v0
   .L80146078:
     /* 13544 80146078 00006290 */  lbu        $v0, 0x0($v1)
@@ -237,8 +237,8 @@ glabel SpuSetReverbModeParam
   .L801460E4:
     /* 135B0 801460E4 0F008012 */  beqz       $s4, .L80146124
     /* 135B4 801460E8 00000000 */   nop
-    /* 135B8 801460EC 1C80033C */  lui        $v1, %hi(D_801BFF14)
-    /* 135BC 801460F0 14FF638C */  lw         $v1, %lo(D_801BFF14)($v1)
+    /* 135B8 801460EC 1C80033C */  lui        $v1, %hi(_spu_RXX)
+    /* 135BC 801460F0 14FF638C */  lw         $v1, %lo(_spu_RXX)($v1)
     /* 135C0 801460F4 00000000 */  nop
     /* 135C4 801460F8 AA016294 */  lhu        $v0, 0x1AA($v1)
     /* 135C8 801460FC 00000000 */  nop
@@ -257,8 +257,8 @@ glabel SpuSetReverbModeParam
     /* 135F8 8014612C 09004010 */  beqz       $v0, .L80146154
     /* 135FC 80146130 00000000 */   nop
   .L80146134:
-    /* 13600 80146134 1C80023C */  lui        $v0, %hi(D_801BFF14)
-    /* 13604 80146138 14FF428C */  lw         $v0, %lo(D_801BFF14)($v0)
+    /* 13600 80146134 1C80023C */  lui        $v0, %hi(_spu_RXX)
+    /* 13604 80146138 14FF428C */  lw         $v0, %lo(_spu_RXX)($v0)
     /* 13608 8014613C 08004396 */  lhu        $v1, 0x8($s2)
     /* 1360C 80146140 00000000 */  nop
     /* 13610 80146144 840143A4 */  sh         $v1, 0x184($v0)
@@ -271,8 +271,8 @@ glabel SpuSetReverbModeParam
     /* 13628 8014615C 13004010 */  beqz       $v0, .L801461AC
     /* 1362C 80146160 00000000 */   nop
   .L80146164:
-    /* 13630 80146164 1C80023C */  lui        $v0, %hi(D_801BFF14)
-    /* 13634 80146168 14FF428C */  lw         $v0, %lo(D_801BFF14)($v0)
+    /* 13630 80146164 1C80023C */  lui        $v0, %hi(_spu_RXX)
+    /* 13634 80146168 14FF428C */  lw         $v0, %lo(_spu_RXX)($v0)
     /* 13638 8014616C 0A004396 */  lhu        $v1, 0xA($s2)
     /* 1363C 80146170 00000000 */  nop
     /* 13640 80146174 860143A4 */  sh         $v1, 0x186($v0)
@@ -281,8 +281,8 @@ glabel SpuSetReverbModeParam
     /* 1364C 80146180 6B180508 */  j          .L801461AC
     /* 13650 80146184 9EFF22A4 */   sh        $v0, %lo(D_801BFF9E)($at)
   .L80146188:
-    /* 13654 80146188 1C80023C */  lui        $v0, %hi(D_801BFF14)
-    /* 13658 8014618C 14FF428C */  lw         $v0, %lo(D_801BFF14)($v0)
+    /* 13654 80146188 1C80023C */  lui        $v0, %hi(_spu_RXX)
+    /* 13658 8014618C 14FF428C */  lw         $v0, %lo(_spu_RXX)($v0)
     /* 1365C 80146190 00000000 */  nop
     /* 13660 80146194 840140A4 */  sh         $zero, 0x184($v0)
     /* 13664 80146198 860140A4 */  sh         $zero, 0x186($v0)
@@ -312,14 +312,14 @@ glabel SpuSetReverbModeParam
   .L801461EC:
     /* 136B8 801461EC 0E008012 */  beqz       $s4, .L80146228
     /* 136BC 801461F0 D1000424 */   addiu     $a0, $zero, 0xD1
-    /* 136C0 801461F4 1C80053C */  lui        $a1, %hi(D_801BFF90)
-    /* 136C4 801461F8 90FFA58C */  lw         $a1, %lo(D_801BFF90)($a1)
-    /* 136C8 801461FC 4A0D050C */  jal        func_80143528
+    /* 136C0 801461F4 1C80053C */  lui        $a1, %hi(_spu_rev_offsetaddr)
+    /* 136C4 801461F8 90FFA58C */  lw         $a1, %lo(_spu_rev_offsetaddr)($a1)
+    /* 136C8 801461FC 4A0D050C */  jal        _spu_FsetRXX
     /* 136CC 80146200 21300000 */   addu      $a2, $zero, $zero
     /* 136D0 80146204 0900E012 */  beqz       $s7, .L8014622C
     /* 136D4 80146208 21100000 */   addu      $v0, $zero, $zero
-    /* 136D8 8014620C 1C80033C */  lui        $v1, %hi(D_801BFF14)
-    /* 136DC 80146210 14FF638C */  lw         $v1, %lo(D_801BFF14)($v1)
+    /* 136D8 8014620C 1C80033C */  lui        $v1, %hi(_spu_RXX)
+    /* 136DC 80146210 14FF638C */  lw         $v1, %lo(_spu_RXX)($v1)
     /* 136E0 80146214 00000000 */  nop
     /* 136E4 80146218 AA016294 */  lhu        $v0, 0x1AA($v1)
     /* 136E8 8014621C 00000000 */  nop

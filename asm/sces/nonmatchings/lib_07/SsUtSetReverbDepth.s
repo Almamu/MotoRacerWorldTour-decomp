@@ -15,8 +15,8 @@ glabel SsUtSetReverbDepth
     /* 131F0 80145D24 2330C500 */  subu       $a2, $a2, $a1
     /* 131F4 80145D28 1800C200 */  mult       $a2, $v0
     /* 131F8 80145D2C E8FFBD27 */  addiu      $sp, $sp, -0x18
-    /* 131FC 80145D30 1D80043C */  lui        $a0, %hi(D_801CFAB0)
-    /* 13200 80145D34 B0FA8424 */  addiu      $a0, $a0, %lo(D_801CFAB0)
+    /* 131FC 80145D30 1D80043C */  lui        $a0, %hi(_svm_rattr)
+    /* 13200 80145D34 B0FA8424 */  addiu      $a0, $a0, %lo(_svm_rattr)
     /* 13204 80145D38 1000BFAF */  sw         $ra, 0x10($sp)
     /* 13208 80145D3C 06000224 */  addiu      $v0, $zero, 0x6
     /* 1320C 80145D40 000082AC */  sw         $v0, 0x0($a0)
