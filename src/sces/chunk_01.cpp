@@ -191,14 +191,11 @@ void LzssDecompress(u8 *src, u8 *dst) {
     } while (off);
 }
 
-#ifdef NON_MATCHING
-/* Equivalent; the original swaps the registers of name and of the
- * archive's address, and copies the packed data with other registers */
 /* Reads a file of MR3.DAT into dest, or into a new block when dest is 0, and
  * undoes LZSS. The packed data is read to the end of the buffer (moved there
  * first when dest is given) and decompressed towards its start. */
 u8 *LoadFile(const char *name, u8 *dest, u32 *sizeOut) {
-    int allocated = 0;
+    int allocated;
     ArchiveEntry *e;
     u32 size;
     u32 unpacked;
@@ -208,6 +205,7 @@ u8 *LoadFile(const char *name, u8 *dest, u32 *sizeOut) {
     u32 n;
 
     e = FindEntry(D_8019D480, name);
+    allocated = 0;
     size = e->size;
     if (dest == 0) {
         allocated = 1;
@@ -221,11 +219,17 @@ u8 *LoadFile(const char *name, u8 *dest, u32 *sizeOut) {
             size = ((u32 *)dest)[1];
             LzssDecompress(dest + 8, buf);
         } else {
-            unpacked = ((u32 *)dest)[1];
+            n = size;
             s = dest + size;
-            d = dest + ((unpacked - (size - 0x1400)) & ~3);
+            unpacked = ((u32 *)dest)[1];
+            /* The packed data goes 0x1400 bytes short of where the unpacked
+             * data will end, so decompressing never overtakes it */
+            {
+                u32 margin = size - 0x1400;
+                d = dest + ((unpacked - margin) & ~3);
+            }
             to = d + size;
-            for (n = size; n != 0; n--) {
+            for (; n != 0; n--) {
                 *--to = *--s;
             }
             LzssDecompress(d + 8, dest);
@@ -242,9 +246,6 @@ u8 *LoadFile(const char *name, u8 *dest, u32 *sizeOut) {
     }
     return buf;
 }
-#else
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", LoadFile);
-#endif
 
 /* Reads size bytes at loc into dest (allocated when 0), at double speed,
  * retrying twice on a disc error. Mode 2 reads an archive's header: its
