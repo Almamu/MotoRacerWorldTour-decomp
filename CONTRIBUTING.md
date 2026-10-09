@@ -10,7 +10,7 @@ version; [docs/decomp.md](docs/decomp.md) has the detail.
 
 - Start from **[the open chunks](https://github.com/Almamu/MotoRacerWorldTour-decomp/issues?q=is%3Aopen%20is%3Aissue%20label%3Adecomp-chunk%20sort%3Acreated-asc)**
   (label `decomp-chunk`), oldest first.
-- `langimg` is the game (C++, GCC 2.95.2), `sces` the boot executable (C,
+- `langimg` is the game (C++, GCC 2.95.2), `sces` the boot executable (C++,
   GCC 2.91.66).
 - `library` marks the PsyQ library code at the end of each executable.
   Don't decompile it by hand: where Sony's own object is what's linked,

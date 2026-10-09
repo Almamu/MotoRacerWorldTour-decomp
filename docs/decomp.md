@@ -22,14 +22,16 @@ What git holds and what it doesn't:
 | Code                          | Compiler                           | Language |
 |-------------------------------|------------------------------------|----------|
 | `LANGIMG.DAT` (`chunk_*`)     | GCC 2.95.2, PlayStation build      | C++      |
-| `SCES_030.37` (`chunk_*`)     | GCC 2.91.66 (egcs 1.1.2), PlayStation build | C |
+| `SCES_030.37` (`chunk_*`)     | GCC 2.91.66 (egcs 1.1.2), PlayStation build | C++      |
 | Libraries in both (`lib_*`)   | not identified yet (see "Libraries") | C      |
 
 Both compilers are the `-psx` builds from
 [decompals/old-gcc](https://github.com/decompals/old-gcc), run at `-O2`
 with `-G8`, and PsyQ's assembler behaviour is emulated by
-[maspsx](https://github.com/mkst/maspsx). `-G8` is confirmed for the game
-only; the boot executable's first matching function has no small data.
+[maspsx](https://github.com/mkst/maspsx). The game uses `-G8`; the boot
+executable `-G0`: it never addresses anything through `$gp`, and with
+`-G8` its global loads come out as single assembler macros instead of the
+split `%hi`/`%lo` pairs it has.
 
 ### The game: GCC 2.95.2
 
@@ -67,6 +69,16 @@ throughout. (`StrUpper`, tried first, compiles the same way
 under every candidate, so it couldn't tell them apart.) The game's copy
 of the same routine (`func_800A645C`) is slightly different code, so the
 boot executable wasn't simply linked from the game's objects.
+
+It's C++ too: a global object (`D_8014D3F8`, placeholder class `CPair`)
+is built and destroyed by the initialiser and finaliser GCC writes for
+static objects, and its destructor takes the in-charge flag. The free
+functions are declared `extern "C"` in `include/sces/*.h` only to keep
+their placeholder names plain.
+
+The movie player is Sony's `cd/MOVIE` sample (in the runtime library
+releases, `psx/sample/cd/MOVIE/TUTO*.C`) adapted, and its functions keep
+the sample's names (`strSync`, `strNextVlc`, `strKickCD`, ...).
 
 ### Libraries
 
@@ -154,7 +166,7 @@ files: those boundaries only matter for the cleanup phase, once the code
 is decompiled.
 
 - `chunk_NN` is the executable's own code: `src/langimg/chunk_00.cpp` to
-  `chunk_74.cpp` (C++), `src/sces/chunk_00.c` and `chunk_01.c` (C).
+  `chunk_74.cpp`, `src/sces/chunk_00.cpp` and `chunk_01.cpp` (all C++).
 - `lib_NN` is the library code after it: `src/langimg/lib_00.c` to
   `lib_07.c`, `src/sces/lib_00.c` to `lib_10.c`.
 - The chunk list is the subsegment list in `config/<target>.yaml`. Each
@@ -185,9 +197,10 @@ tools/chunks.py cleanup-issues /tmp/c --naming 98 --headers 99   # the per-chunk
 3. Delete the function's `.s` file.
 4. `make`. Both lines must say `OK`. `tools/diff_func.py <function>` shows
    the instructions that differ.
-5. If a name or type became known, add it to
-   `config/<target>/symbol_addrs.txt` (C++ functions with their GCC 2.95
-   mangled name, see below). `make` then re-splits.
+5. If a name became known, `tools/rename.py TARGET OLD NEW` renames the
+   symbol everywhere (`symbol_addrs.txt`, sources, the `.s` file); C++
+   functions take their GCC mangled name (see below). `make` then
+   re-splits.
 
 A function that's understood but doesn't match after a real effort is
 **parked**: its C goes under `#ifdef NON_MATCHING` with a comment saying

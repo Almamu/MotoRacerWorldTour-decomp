@@ -90,4 +90,4 @@ INCLUDE_ASM("asm/sces/nonmatchings/lib_02", MoveImage);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_02", func_8013C6F0);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_02", func_8013C74C);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_02", PutDrawEnv);

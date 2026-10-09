@@ -319,7 +319,7 @@ glabel func_80133334
     /* B0C 80133640 12000296 */  lhu        $v0, 0x12($s0)
     /* B10 80133644 2138E800 */  addu       $a3, $a3, $t0
     /* B14 80133648 2338EA00 */  subu       $a3, $a3, $t2
-    /* B18 8013364C C9D0040C */  jal        func_80134324
+    /* B18 8013364C C9D0040C */  jal        strSetDefDecEnv
     /* B1C 80133650 1800A2AF */   sw        $v0, 0x18($sp)
     /* B20 80133654 21202002 */  addu       $a0, $s1, $zero
     /* B24 80133658 1380063C */  lui        $a2, %hi(func_80133CCC)
@@ -330,12 +330,12 @@ glabel func_80133334
     /* B38 8013366C C0900300 */  sll        $s2, $v1, 3
     /* B3C 80133670 21104202 */  addu       $v0, $s2, $v0
     /* B40 80133674 1000478C */  lw         $a3, 0x10($v0)
-    /* B44 80133678 A6D0040C */  jal        func_80134298
+    /* B44 80133678 A6D0040C */  jal        strInit
     /* B48 8013367C CC3CC624 */   addiu     $a2, $a2, %lo(func_80133CCC)
     /* B4C 80133680 21206002 */  addu       $a0, $s3, $zero
     /* B50 80133684 15800B3C */  lui        $t3, %hi(D_8014D0D4)
     /* B54 80133688 D0D0C0AF */  sw         $zero, %lo(D_8014D0D0)($fp)
-    /* B58 8013368C 84D0040C */  jal        func_80134210
+    /* B58 8013368C 84D0040C */  jal        strNextVlc
     /* B5C 80133690 D4D060AD */   sw        $zero, %lo(D_8014D0D4)($t3)
     /* B60 80133694 21804000 */  addu       $s0, $v0, $zero
     /* B64 80133698 FEFF0324 */  addiu      $v1, $zero, -0x2
@@ -355,7 +355,7 @@ glabel func_80133334
   .L801336CC:
     /* B98 801336CC E3000212 */  beq        $s0, $v0, .L80133A5C
     /* B9C 801336D0 21202002 */   addu      $a0, $s1, $zero
-    /* BA0 801336D4 50D0040C */  jal        func_80134140
+    /* BA0 801336D4 50D0040C */  jal        strSync
     /* BA4 801336D8 21280000 */   addu      $a1, $zero, $zero
     /* BA8 801336DC 22EC040C */  jal        VSync
     /* BAC 801336E0 21200000 */   addu      $a0, $zero, $zero
@@ -590,7 +590,7 @@ glabel func_80133334
     /* EF8 80133A2C 2128A300 */  addu       $a1, $a1, $v1
     /* EFC 80133A30 0EEB040C */  jal        DecDCTout
     /* F00 80133A34 43280500 */   sra       $a1, $a1, 1
-    /* F04 80133A38 84D0040C */  jal        func_80134210
+    /* F04 80133A38 84D0040C */  jal        strNextVlc
     /* F08 80133A3C 21202002 */   addu      $a0, $s1, $zero
     /* F0C 80133A40 21804000 */  addu       $s0, $v0, $zero
     /* F10 80133A44 FFFF0324 */  addiu      $v1, $zero, -0x1

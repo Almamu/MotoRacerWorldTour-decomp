@@ -7,6 +7,17 @@ OpenArchive = 0x80135B1C; // type:func
 Crc32 = 0x80135D98; // type:func
 StrUpper = 0x80135EC8; // type:func
 Crc32Table = 0x8019D590; // size:0x400
+strKickCD = 0x801340B4; // type:func
+strSync = 0x80134140; // type:func
+strNextVlc = 0x80134210; // type:func
+strSetDefDecEnv = 0x80134324; // type:func
+Set__5CPairii = 0x80134C5C; // type:func
+_._5CPair = 0x80134C68; // type:func
+__5CPair = 0x80134C90; // type:func
+strInit = 0x80134298; // type:func
+
+// Library functions the signatures don't name, from how they're used
+PutDrawEnv = 0x8013C74C; // type:func (func_801343A0 calls it after PutDispEnv with a DRAWENV)
 
 // PsyQ library functions: library/object and the SDK versions whose code
 // matches there. "exact" ones are Sony's object itself (tools/psyq_match.py),

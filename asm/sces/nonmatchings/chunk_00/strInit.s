@@ -1,6 +1,6 @@
-nonmatching func_80134298, 0x8C
+nonmatching strInit, 0x8C
 
-glabel func_80134298
+glabel strInit
     /* 1764 80134298 D8FFBD27 */  addiu      $sp, $sp, -0x28
     /* 1768 8013429C 2000B2AF */  sw         $s2, 0x20($sp)
     /* 176C 801342A0 21908000 */  addu       $s2, $a0, $zero
@@ -28,7 +28,7 @@ glabel func_80134298
     /* 17C4 801342F8 8BE7040C */  jal        StSetStream
     /* 17C8 801342FC 1000A0AF */   sw        $zero, 0x10($sp)
     /* 17CC 80134300 21204002 */  addu       $a0, $s2, $zero
-    /* 17D0 80134304 2DD0040C */  jal        func_801340B4
+    /* 17D0 80134304 2DD0040C */  jal        strKickCD
     /* 17D4 80134308 21282002 */   addu      $a1, $s1, $zero
     /* 17D8 8013430C 2400BF8F */  lw         $ra, 0x24($sp)
     /* 17DC 80134310 2000B28F */  lw         $s2, 0x20($sp)
@@ -36,4 +36,4 @@ glabel func_80134298
     /* 17E4 80134318 1800B08F */  lw         $s0, 0x18($sp)
     /* 17E8 8013431C 0800E003 */  jr         $ra
     /* 17EC 80134320 2800BD27 */   addiu     $sp, $sp, 0x28
-endlabel func_80134298
+endlabel strInit

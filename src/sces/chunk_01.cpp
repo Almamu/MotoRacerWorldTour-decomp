@@ -1,20 +1,65 @@
 #include "common.h"
+#include "sces/boot.h"
 
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", func_80135024);
+void func_80135024(int *key, Options *opt) {
+    if (*key == 0xFF) {
+        if (++opt->unk8 >= 2) {
+            opt->unk8 = 0;
+        }
+        SsUtKeyOn(D_8019D990, 0, 1, 0x71, 0, 0x7F, 0x7F);
+    }
+}
 
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", func_80135090);
+void func_80135090(int *key, Options *opt) {
+    if (*key == 0xFF) {
+        if (--opt->unk8 < 0) {
+            opt->unk8 = 1;
+        }
+        SsUtKeyOn(D_8019D990, 0, 1, 0x71, 0, 0x7F, 0x7F);
+    }
+}
 
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", func_801350FC);
+void func_801350FC(int *key, Options *opt) {
+    if (*key == 0xFF) {
+        if (++opt->unk4 >= 3) {
+            opt->unk4 = 0;
+        }
+        SsUtKeyOn(D_8019D990, 0, 1, 0x71, 0, 0x7F, 0x7F);
+    }
+}
 
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", func_80135168);
+void func_80135168(int *key, Options *opt) {
+    if (*key == 0xFF) {
+        if (--opt->unk4 < 0) {
+            opt->unk4 = 2;
+        }
+        SsUtKeyOn(D_8019D990, 0, 1, 0x71, 0, 0x7F, 0x7F);
+    }
+}
 
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", func_801351D4);
+void func_801351D4(int *key, int *done) {
+    if (*key == 0xFF) {
+        *done = 1;
+        SsUtKeyOn(D_8019D990, 0, 0, 0x71, 0, 0x7F, 0x7F);
+    }
+}
 
 INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", func_80135228);
 
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", func_801354B0);
+inline void *operator new(unsigned int, void *p) {
+    return p;
+}
 
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", func_801354D4);
+/* Construction and destruction of the global CPair. GCC emits these as
+ * _GLOBAL_.I/.D functions at the end of the source file defining the
+ * object; until the chunks become the original files they're spelled out. */
+void func_801354B0(void) {
+    new (&D_8014D3F8) CPair;
+}
+
+void func_801354D4(void) {
+    D_8014D3F8.~CPair();
+}
 
 INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", func_801354FC);
 
@@ -35,8 +80,6 @@ INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", OpenArchive);
 INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", func_80135C54);
 
 INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", func_80135D34);
-
-extern u32 Crc32Table[256];
 
 /* CRC-32 of len bytes at p, continuing from crc: bytes up to a word
  * boundary, then whole words, then the rest of the last word. */

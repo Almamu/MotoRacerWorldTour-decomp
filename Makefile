@@ -28,15 +28,19 @@ langimg_GCC := 2.95.2-psx
 sces_GCC    := 2.91.66-psx
 gcc_dir      = tools/gcc-$(1)
 
-# -O2, small data up to 8 bytes in $gp-relative sections; the game's C++
-# has no exceptions and no RTTI.
-CC1FLAGS    := -O2 -G8 -quiet
+# Small data in $gp-relative sections: up to 8 bytes in the game, none in
+# the boot executable (it never uses $gp).
+langimg_G   := 8
+sces_G      := 0
+
+# -O2; the C++ has no exceptions and no RTTI.
+CC1FLAGS    := -O2 -quiet
 CXXFLAGS    := -fno-exceptions -fno-rtti
 CPPFLAGS    := -nostdinc -D__GNUC__=2 -Dmips -D__mips__ -I include -I src
 ifeq ($(NON_MATCHING),1)
 CPPFLAGS    += -DNON_MATCHING
 endif
-MASPSXFLAGS := --aspsx-version=2.79 -G8 --expand-div
+MASPSXFLAGS := --aspsx-version=2.79 --expand-div
 ASFLAGS     := -EL -march=r3000 -mtune=r3000 -mabi=32 -no-pad-sections -O1 -G0 -I include
 LDFLAGS     := -EL --no-check-sections --no-warn-rwx-segments
 
@@ -61,7 +65,7 @@ ld_objects = $(shell grep -o 'build/[A-Za-z0-9_/.-]*\.o' $(1) 2>/dev/null | sort
 
 # Objects are rebuilt when the compile flags change (NON_MATCHING=1 and back).
 FLAGS_STAMP := $(BUILD)/flags.txt
-FLAGS_NOW   := $(CPPFLAGS) $(CC1FLAGS) $(CXXFLAGS) $(MASPSXFLAGS)
+FLAGS_NOW   := $(CPPFLAGS) $(CC1FLAGS) $(CXXFLAGS) $(MASPSXFLAGS) $(langimg_G) $(sces_G)
 $(shell mkdir -p $(BUILD); echo '$(FLAGS_NOW)' | cmp -s - $(FLAGS_STAMP) || echo '$(FLAGS_NOW)' > $(FLAGS_STAMP))
 
 #### Rules ####
@@ -106,6 +110,9 @@ clean:
 distclean: clean
 	rm -rf asm/*/data asm/*/header.s assets
 
+# Keep the ELFs (tools/diff_func.py and tools/chunks.py read them).
+.SECONDARY: $(foreach t,$(TARGETS),$($(t)_ELF))
+
 # The ELF links whatever objects the linker script lists; it is
 # re-evaluated after the script is (re)generated.
 .SECONDEXPANSION:
@@ -141,12 +148,12 @@ $(BUILD)/$(1)/%.o: %.s
 # splat writes the INCLUDE_ASM ones (<object>.asmproc.d).
 $(BUILD)/$(1)/%.o: %.cpp $(call gcc_dir,$($(1)_GCC))/cc1 $(FLAGS_STAMP)
 	@mkdir -p $$(dir $$@)
-	$(call gcc_dir,$($(1)_GCC))/cpp $(CPPFLAGS) $(call gcc_minor,$(1)) -MD $$(@:.o=.d) -lang-c++ -D__cplusplus -D__GNUG__=2 -D_LANGUAGE_C_PLUS_PLUS $$< | $(call gcc_dir,$($(1)_GCC))/cc1plus $(CC1FLAGS) $(CXXFLAGS) | $(MASPSX) $(MASPSXFLAGS) | $(AS) $(ASFLAGS) -o $$@
+	$(call gcc_dir,$($(1)_GCC))/cpp $(CPPFLAGS) $(call gcc_minor,$(1)) -MD $$(@:.o=.d) -lang-c++ -D__cplusplus -D__GNUG__=2 -D_LANGUAGE_C_PLUS_PLUS $$< | $(call gcc_dir,$($(1)_GCC))/cc1plus $(CC1FLAGS) -G$($(1)_G) $(CXXFLAGS) | $(MASPSX) $(MASPSXFLAGS) -G$($(1)_G) | $(AS) $(ASFLAGS) -o $$@
 	@sed -i 's|^[^:]*:|$$@:|' $$(@:.o=.d)
 
 $(BUILD)/$(1)/%.o: %.c $(call gcc_dir,$($(1)_GCC))/cc1 $(FLAGS_STAMP)
 	@mkdir -p $$(dir $$@)
-	$(call gcc_dir,$($(1)_GCC))/cpp $(CPPFLAGS) $(call gcc_minor,$(1)) -MD $$(@:.o=.d) $$< | $(call gcc_dir,$($(1)_GCC))/cc1 $(CC1FLAGS) | $(MASPSX) $(MASPSXFLAGS) | $(AS) $(ASFLAGS) -o $$@
+	$(call gcc_dir,$($(1)_GCC))/cpp $(CPPFLAGS) $(call gcc_minor,$(1)) -MD $$(@:.o=.d) $$< | $(call gcc_dir,$($(1)_GCC))/cc1 $(CC1FLAGS) -G$($(1)_G) | $(MASPSX) $(MASPSXFLAGS) -G$($(1)_G) | $(AS) $(ASFLAGS) -o $$@
 	@sed -i 's|^[^:]*:|$$@:|' $$(@:.o=.d)
 endef
 $(foreach t,$(TARGETS),$(eval $(call target_rules,$(t))))

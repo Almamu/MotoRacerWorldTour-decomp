@@ -38,7 +38,7 @@ TARGETS = {
     },
     "sces": {
         "what": "`SCES_030.37`, the boot executable",
-        "game": "the boot executable's C, GCC 2.91.66",
+        "game": "the boot executable's C++, GCC 2.91.66",
     },
 }
 LIB_NOTE = (

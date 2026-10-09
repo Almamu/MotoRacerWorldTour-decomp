@@ -16,7 +16,7 @@ file format worked out so far.
 ## Matching decompilation
 
 The game code (`LANGIMG.DAT`, C++, GCC 2.95.2) and the boot executable
-(`SCES_030.37`, C, GCC 2.91.66) rebuild byte for byte from this repository
+(`SCES_030.37`, C++, GCC 2.91.66) rebuild byte for byte from this repository
 and your own copy of the disc: `make setup`, then `make`. Almost all of
 the code is still assembly (`tools/chunks.py status` has the numbers).
 

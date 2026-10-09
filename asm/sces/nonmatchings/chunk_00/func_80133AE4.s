@@ -111,7 +111,7 @@ glabel func_80133AE4
     /* 115C 80133C90 C0200400 */  sll        $a0, $a0, 3
     /* 1160 80133C94 23208300 */  subu       $a0, $a0, $v1
     /* 1164 80133C98 80200400 */  sll        $a0, $a0, 2
-    /* 1168 80133C9C D3F1040C */  jal        func_8013C74C
+    /* 1168 80133C9C D3F1040C */  jal        PutDrawEnv
     /* 116C 80133CA0 21209200 */   addu      $a0, $a0, $s2
     /* 1170 80133CA4 22EC040C */  jal        VSync
     /* 1174 80133CA8 21200000 */   addu      $a0, $zero, $zero

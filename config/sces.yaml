@@ -58,8 +58,8 @@ segments:
     subsegments:
       # Code in chunks of about 8 KB (docs/decomp.md, "Chunks"): chunk_* is
       # the boot code, lib_* the libraries from the startup code on.
-      - [0x800, c, chunk_00] # 80133334
-      - [0x24F0, c, chunk_01] # 80135024
+      - [0x800, cpp, chunk_00] # 80133334
+      - [0x24F0, cpp, chunk_01] # 80135024
       - [0x4018, c, lib_00] # 80136B4C
       - [0x5F14, c, lib_01] # 80138A48
       - [0x8048, c, lib_02] # 8013AB7C
