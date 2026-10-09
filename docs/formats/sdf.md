@@ -1206,7 +1206,8 @@ with poses 14 and 13 (slight lean either side), with a larger lean poses
 5 / 3 take over; poses 11 and 12 are blended by a value that counts down
 at rider +0x104 (the start); pose 15 is blended in over a 1000 ms timer
 (+0x110) once a race-time condition holds, and blends back towards pose 2
-(probably the finish or a celebration; not observed).
+(not observed: zeroing it changes nothing at the start, in crashes, or at a
+won or lost single-player arcade finish).
 
 The rider **models** (+0x290) are rigs: `{s16 part count, …, +0x0A s16
 type (draw-function pair from 0x800C8D34), …, +0x28 Part** parts}`; their 31
@@ -1248,15 +1249,20 @@ Playback (0x8009243C start, 0x80092480 update): the two keys around the
 current time are blended linearly (0x80091FB4), cross-fading from the
 previous pose over the first 100 ms; at the end the last key is held.
 
-Slots: 0–5 transitions / impacts, 6–8 `C_GLISG*` (sliding, left), 9 and
-17 `C_MURD` / `CR_MURD` (wall), 12–14 `C_GLISD*` (sliding, right), 20–22
-`XMUR2–4`, 23–24 `C_DEF01/02`, 25 `C_RESPIR` (breathing idle); off-road
+Slots: 0–5 transitions / impacts, 6–8 `C_GLISG*` (fall and slide, left),
+9 and 17 `C_MURD` / `CR_MURD` (wall), 12–14 `C_GLISD*` (fall and slide,
+right), 20–22 `XMUR2–4`, 23–24 `C_DEF01/02` (**défaite**: played when the
+player finishes behind; nothing plays on a win), 25 `C_RESPIR` (breathing,
+waiting at the start); off-road
 levels have `CR_ROT*` (rolls), `CR_CHOC*` (impacts), `CR_BACK*`, and
 freestyle adds the tricks from slot 26 (`SPLITS`, `CUFFED`, `TWIST`,
 `BARNEY`, `CLASSIC`, can-can, nac-nac, `SUPER`, `HANGER`, `HEEL`, …; trick
 index + 26). A crash picks its first slot from 0x800C75F4 by crash state.
-Checked in the emulator: a crash into Sachsenring's right-hand wall plays
-`CR_MURD` → `XMUR2` → `XMUR3` → `XMUR4`; zeroing `XMUR3`'s keys (or editing
+Checked in the emulator (an autopilot following the racing line, see
+testing.md): a crash into Sachsenring's right-hand wall plays `CR_MURD` →
+`XMUR2` → `XMUR3` → `XMUR4`; running wide off a corner plays `C_GLISG1` →
+`C_GLISG2` → `C_GLISG3`; finishing 5th plays `C_DEF02`, finishing 1st
+nothing; `C_RESPIR` plays on the grid; zeroing `XMUR3`'s keys (or editing
 them in Blender) changes the picture only during its window.
 
 ### Trackside cameras (roots 16, 17)
@@ -1290,6 +1296,5 @@ a flag bit: an 8-bit value, a 16-bit button mask (1 = accelerate), another
 
 ## Next steps
 
-- Riders: confirm pose 15's trigger; which states play the slide and
-  `C_DEF*` animations; root 11's Triple table.
+- Riders: pose 15's trigger (another mode?); root 11's Triple table.
 
