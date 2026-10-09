@@ -170,7 +170,9 @@ def main():
     with tempfile.TemporaryDirectory() as d:
         obj = Path(d) / "out.o"
         cmd = compile_cmd(target, src, obj, args.defines, args.gcc, args.cflags)
-        r = subprocess.run(cmd, shell=True, cwd=ROOT, capture_output=True, text=True)
+        # pipefail: the compiler's errors fail the pipeline, which otherwise
+        # has the assembler's status and an object without the broken code
+        r = subprocess.run(["bash", "-o", "pipefail", "-c", cmd], cwd=ROOT, capture_output=True, text=True)
         errors = [l for l in r.stderr.splitlines() if "warning" not in l]
         if r.returncode or not obj.exists():
             sys.exit("\n".join(errors) or "compile failed")

@@ -65,6 +65,7 @@ segments:
       # the game, lib_* the libraries from the startup code on.
       - [0x30, cpp, chunk_00] # 80011820
       - [0x1F74, cpp, chunk_01] # 80013764
+      - [0x34C8, cpp, chunk_01b] # 80014CB8: the CD audio library (docs/libraries.md)
       - [0x3FA8, cpp, chunk_02] # 80015798
       - [0x5FF8, cpp, chunk_03] # 800177E8
       - [0x804C, cpp, chunk_04] # 8001983C
@@ -148,7 +149,7 @@ segments:
       - [0xA3AA0, c, lib_07] # 800B5290
       - [0xA597C, rodata, ctors] # __CTOR_LIST__ / __DTOR_LIST__
       # .rodata, each piece with the chunk whose functions use it
-      - [0xA59E8, .rodata, chunk_01] # 800B71D8
+      - [0xA59E8, .rodata, chunk_01b] # 800B71D8
       - [0xA5AA8, .rodata, chunk_03] # 800B7298
       - [0xA5AE8, .rodata, chunk_15] # 800B72D8
       - [0xA5B00, .rodata, chunk_19] # 800B72F0

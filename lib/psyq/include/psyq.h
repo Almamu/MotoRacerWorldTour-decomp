@@ -22,6 +22,10 @@ typedef struct {
 } CdlLOC;
 
 typedef struct {
+    u_char val0, val1, val2, val3; /* CD L to SPU L, L to R, R to R, R to L */
+} CdlATV;
+
+typedef struct {
     u_char file, chan;
     u_short pad;
 } CdlFILTER;
@@ -74,6 +78,7 @@ int bcmp(const void *a, const void *b, int n);
 /* libapi */
 void EnterCriticalSection(void);
 void ExitCriticalSection(void);
+void *InterruptCallback(int irq, void (*f)());
 
 /* libetc */
 int VSync(int mode);
@@ -85,6 +90,9 @@ int SetVideoMode(long mode);
 
 /* libcd */
 int CdInit(void);
+int CdControlF(u_char com, u_char *param);
+int CdMix(CdlATV *vol);
+int CdGetToc(CdlLOC *loc);
 int CdControl(u_char com, u_char *param, u_char *result);
 int CdControlB(u_char com, u_char *param, u_char *result);
 int CdReady(int mode, u_char *result);

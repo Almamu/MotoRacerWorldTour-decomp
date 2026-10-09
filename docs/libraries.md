@@ -7,7 +7,8 @@ code stays in `src/`.
 
 | Library | What | Where | Compiler and flags |
 |---|---|---|---|
-| [`lib/sound/`](../lib/sound) | The game's sound engine: SPU voices, VAB banks, reverb, sound slots | `LANGIMG.DAT` 0x80011820-0x80013764 (chunk_00; it may go on into chunk_01, see below) | GCC 2.91.66, `-mno-split-addresses`, divisions without checks |
+| [`lib/sound/`](../lib/sound) | The game's sound engine: SPU voices, VAB banks, reverb, sound slots; and the 3D sounds' emitters and listeners | `LANGIMG.DAT` 0x80011820-0x80014CB8 (chunk_00, chunk_01) | GCC 2.91.66, `-mno-split-addresses`, divisions without checks; chunk_01 with `-G0` |
+| [`lib/cdaudio/`](../lib/cdaudio) | The game's CD audio: music tracks from the disc, fades, the drive's callback | `LANGIMG.DAT` 0x80014CB8-0x80015798 (chunk_01b) | GCC 2.91.66, `-G0`, split addresses, divisions with checks |
 | [`lib/psyq/`](../lib/psyq) | Sony's PsyQ runtime libraries, from the startup code on | `LANGIMG.DAT` 0x800A7084-0x800B71D8 (lib_00-lib_07), `SCES_030.37` 0x80136B4C-0x8014C22C (lib_00-lib_10) | the executable's own (not identified; mostly matched by Sony's objects, `make sdk`) |
 
 ## Layout
@@ -33,22 +34,34 @@ as a stub in `src/`.
 
 ## Build settings
 
-The Makefile gives a library its own settings with three variables, each
+The Makefile gives a library its own settings with four variables, each
 optional (the executable's apply otherwise):
 
 ```make
 LIB_sound_GCC         := 2.91.66-psx                           # tools/gcc-<this>
 LIB_sound_CFLAGS      := -mno-split-addresses                  # cc1/cc1plus flags
 LIB_sound_MASPSXFLAGS  = $(MASPSXFLAGS) --div-no-checks        # maspsx's
+LIB_cdaudio_G         := 0                                     # -G, for cc1 and maspsx
 ```
 
 A setting that's set, even to nothing (`LIB_x_CFLAGS :=`), replaces the
 target's; one that isn't set leaves the target's.
 
-`-G` stays the executable's: the library addresses the same small data
-through the same `$gp`. Every setting needs evidence, written here: code
-of the library that only matches with it, and no matched function that
-stops matching.
+A chunk built unlike the rest of its library (another source file of it,
+with other options) has its own, which replace its library's the same
+way: `<target>.<chunk>_GCC`, `_CFLAGS`, `_G` and `_MASPSXFLAGS`, the chunk
+listed in `CHUNK_SETTINGS`:
+
+```make
+langimg.chunk_01_G := 0
+CHUNK_SETTINGS := langimg.chunk_01
+```
+
+`-G` tells where small data is: the game's own code and the sound
+engine's chunk_00 reach the small globals through `$gp` (`-G8`), the
+sound engine's chunk_01 and the CD audio with `lui` (`-G0`). Every setting
+needs evidence, written here: code of the library that only matches with
+it, and no matched function that stops matching.
 
 ## Moving a chunk into a library
 
@@ -63,7 +76,18 @@ tools/chunks.py check
 Its headers go to `lib/<name>/include/` (`#include "<header>.h"`; the
 directory is on the include path). If the library starts or ends inside
 a chunk, that chunk has to be re-cut first (`config/<target>.yaml`, which
-needs the game to re-split; docs/decomp.md, "What git holds").
+needs the game to re-split; docs/decomp.md, "What git holds"). As chunk_01
+was cut at 0x80014CB8:
+
+1. Add the new segment to `config/<target>.yaml` (`- [0x34C8, cpp,
+   chunk_01b]`, its file offset), and move the `.rodata` piece to it if its
+   functions use it.
+2. Move the functions from the address on to a new source file,
+   `src/<target>/<new>.cpp`, their `INCLUDE_ASM` paths pointing at
+   `asm/<target>/nonmatchings/<new>/`. splat only writes the `.s` files a
+   source's `INCLUDE_ASM`s name, so the file has to exist first.
+3. `make split`, then `git rm` the old copies of the moved `.s` files.
+4. Move the sources into `lib/` as above, settings included.
 
 ## sound: the game's sound engine
 
@@ -116,9 +140,22 @@ this game.
 functions and libgte's `ratan2`; their divisions have no checks either,
 so they were assembled with the rest of the library, not with the game.
 
-**Open:** where it ends. `func_80013764`, the first function of chunk_01,
-uses the sound globals throughout; it may belong to the library (if it
-only matches with 2.91.66), in which case chunk_01 has to be re-cut.
+**chunk_01 belongs to it**, built with `-G0`: the 3D sounds' emitters and
+listeners (a `SndWorld`), the note map and the emitters' frame. It only
+matches with 2.91.66, reaches the engine's small globals with `lui`, and
+ends at 0x80014CB8, where the CD audio starts (docs/matching/issue-2-langimg-chunk01.md).
+
+## cdaudio: the game's CD audio
+
+The second part of the old chunk_01 (now chunk_01b): playing the music
+tracks from the disc through libcd, fading them, and the drive's ready
+callback. GCC 2.91.66 as the sound engine, but with split addresses (`lui`
+in branch delay slots, `func_80015438`), no `$gp`, and ASPSX's checks on
+its divisions (`func_80014CB8`): the boot executable's settings.
+`func_800151F0`, `func_800153FC`, `func_80015438` and `func_80015678` only
+match with split addresses. It declares the sound engine's `func_80011820`
+with `short` parameters where the engine has `s8` ones, so it had its own
+headers.
 
 ## psyq: Sony's libraries
 
