@@ -63,14 +63,14 @@ void func_8001B84C(RaceSort *t, RaceWorld *w) {
     func_8001CF34(t);
     D_800CB42C = 0;
     e = t->m_74;
-    if (e->m_30->m_ring) {
+    if (e->m_30->m_pos.m_next) {
         do {
             RaceEntryX *x = e->m_30;
 
             VecZero(&x->m_174);
             VecZero(&x->m_18C);
             VecZero(&x->m_180);
-            e = x->m_ring;
+            e = x->m_pos.m_next;
             x->m_198 = 0x1000;
         } while (e != t->m_74);
     }
@@ -87,7 +87,7 @@ void func_8001CBA0(RaceSort *t, RaceEntry *e) {
     RaceEntry *x;
 
     t->m_78 = 0;
-    for (x = e->m_30->m_next; x; x = x->m_30->m_next) {
+    for (x = e->m_30->m_pos.m_chain; x; x = x->m_30->m_pos.m_chain) {
         int k = x->m_bits.m_kind5;
 
         if (k == 2 && t->m_78 < x->m_30->m_474) {
@@ -96,7 +96,108 @@ void func_8001CBA0(RaceSort *t, RaceEntry *e) {
     }
 }
 
+#ifdef NON_MATCHING
+/* Registers and scheduling (111 off) in the ring and the gap search */
+/* Links the racing entries into a ring by distance; returns the one
+ * behind the biggest gap. */
+RaceEntry *func_8001CC14(RaceSort *t, RaceWorld *w) {
+    RaceEntry *list[5];
+    RaceEntry *e;
+    RaceEntry *r;
+    int n = 0;
+    int k;
+    int i;
+    int j;
+    int last;
+
+    e = w->m_race->m_entries;
+    for (k = 0; k < 5; k++, e++) {
+        int on = e->m_bits.m_on;
+
+        if (on) {
+            list[n++] = e;
+        }
+    }
+    last = n - 1;
+    for (j = last; j > 0; j--) {
+        RacePos *p = &list[0]->m_30->m_pos;
+
+        for (i = 0; i < j; i++) {
+            RacePos *q = p;
+
+            p = &list[i + 1]->m_30->m_pos;
+            if (p->m_dist < q->m_dist) {
+                RaceEntry *tmp = list[i];
+
+                list[i] = list[i + 1];
+                list[i + 1] = tmp;
+                p = q;
+            }
+        }
+    }
+    for (j = 1; j < last; j++) {
+        RaceEntryX *x = list[j]->m_30;
+
+        x->m_pos.m_next = list[j + 1];
+        x->m_pos.m_prev = list[j - 1];
+    }
+    if (n >= 2) {
+        int gap;
+        int best;
+        int prev;
+        int now;
+
+        RaceEntryX *xl = list[last]->m_30;
+        RaceEntryX *x0 = list[0]->m_30;
+
+        xl->m_pos.m_next = list[0];
+        xl->m_pos.m_prev = list[n - 2];
+        x0->m_pos.m_prev = list[last];
+        x0->m_pos.m_next = list[1];
+        gap = func_8001D018((Track *)t, &list[last]->m_30->m_pos, &list[0]->m_30->m_pos);
+        if (gap < 0) {
+            gap = -gap;
+        }
+        best = 0;
+        prev = last;
+        for (j = 0; j < n; j++) {
+            int d = func_8001D018((Track *)t, &list[prev]->m_30->m_pos, &list[j]->m_30->m_pos);
+
+            if (d < 0) {
+                d = -d;
+            }
+            if (gap < d) {
+                gap = d;
+                best = j;
+            }
+            prev = j;
+        }
+        now = D_800D60FC;
+        for (j = 0; j < n; j++) {
+            RaceEntryX *x = list[j]->m_30;
+
+            if (x->m_pos.m_last && x->m_pos.m_last == x->m_pos.m_next &&
+                now - list[j]->m_530 > 10000) {
+                list[j]->m_530 = now;
+                list[j]->m_534 = 0;
+            }
+            x = list[j]->m_30;
+            x->m_pos.m_last = x->m_pos.m_prev;
+        }
+        r = list[best];
+    } else {
+        r = 0;
+        if (n) {
+            list[0]->m_30->m_pos.m_next = 0;
+            list[0]->m_30->m_pos.m_prev = 0;
+            r = 0;
+        }
+    }
+    return r;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_05", func_8001CC14);
+#endif
 
 #ifdef NON_MATCHING
 /* Equivalent; the original walks m_count and m_by with pointers of their
@@ -131,7 +232,7 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_05", func_8001CF34);
 #endif
 
 /* How far b is ahead of a, within half a lap either way. */
-int func_8001D018(Track *t, TrackPos *a, TrackPos *b) {
+int func_8001D018(Track *t, RacePos *a, RacePos *b) {
     int d = b->m_dist - a->m_dist;
     int half = t->m_len >> 1;
 

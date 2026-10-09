@@ -8,6 +8,18 @@ extern "C" {
 
 // A race entry (0x568 bytes; Race::m_entries)
 struct RaceEntry;
+
+// An entry's place on the track
+struct RacePos {
+    RaceEntry *m_next; // around the ring of racing entries, by distance
+    RaceEntry *m_prev;
+    RaceEntry *m_last; // m_prev last frame
+    int m_0C;
+    RaceEntry *m_chain; // 0x10: the next along another chain
+    u8 m_14[0x40];
+    int m_dist; // 0x54: along the track
+};
+
 struct RaceEntryX {
     u8 m_00[0x174];
     Vector3 m_174;
@@ -15,10 +27,8 @@ struct RaceEntryX {
     Vector3 m_18C;
     int m_198;
     u8 m_19C[0x18];
-    RaceEntry *m_ring; // 0x1B4: the next around a ring of entries
-    u8 m_1B8[0xC];
-    RaceEntry *m_next; // 0x1C4: the next along the chain
-    u8 m_1C8[0x4C];
+    RacePos m_pos; // 0x1B4
+    u8 m_20C[8];
     int m_214; // how far it is
     int m_218; // its place among its kind
     u8 m_21C[0x258];
@@ -35,7 +45,10 @@ struct RaceEntry {
     };
     u8 m_04[0x2C];
     RaceEntryX *m_30;
-    u8 m_34[0x534];
+    u8 m_34[0x4FC];
+    int m_530; // when its neighbour last changed
+    int m_534;
+    u8 m_538[0x30];
 };
 struct Race {
     u8 m_00[0x2E8];
@@ -64,11 +77,6 @@ struct RaceSort {
     int m_180;
 };
 
-// A position along the track (0x54)
-struct TrackPos {
-    u8 m_00[0x54];
-    int m_dist;
-};
 struct Track {
     u8 m_00[0x2C];
     int m_len; // a lap's length
@@ -134,10 +142,11 @@ void func_8001B778(RaceSort *t, RaceWorld *w);
 void func_8001CBA0(RaceSort *t, RaceEntry *e);
 void func_8001B84C(RaceSort *t, RaceWorld *w);
 void func_8001B974(RaceSort *t, int i, RaceWorld *w, int a);
-void func_8001CC14(RaceSort *t, RaceWorld *w);
+RaceEntry *func_8001CC14(RaceSort *t, RaceWorld *w);
+extern int D_800D60FC; // the time
 void func_8001CF34(RaceSort *t);
 extern int D_800CB42C;
-int func_8001D018(Track *t, TrackPos *a, TrackPos *b);
+int func_8001D018(Track *t, RacePos *a, RacePos *b);
 void func_8001D07C(RaceCam *c);
 Racer *func_8001D108(Racer *r);
 void func_8001D180(Racer *r, int flags);
