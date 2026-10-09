@@ -41,6 +41,21 @@ typedef struct {
     SlotVoice voices[6];
 } SoundSlot;
 
+/* libgte's vector */
+typedef struct {
+    long vx, vy, vz;
+} SndVector;
+
+/* Where sounds are heard from (func_80013450) */
+typedef struct {
+    u8 unk0[8];
+    SndVector unk8;
+    SndVector unk14;
+    SndVector unk20; /* the facing direction */
+    SndVector unk2C;
+    int angle; /* of unk20, 0x1000 a turn, 0 along z */
+} SndListener;
+
 /* The sound bank's directory (D_800C472C) */
 typedef struct {
     char name[0x20];
@@ -87,6 +102,8 @@ void *memset(void *p, int c, size_t n);
 char *strncpy(char *dst, const char *src, size_t n);
 int VSync(int mode);
 void free(void *p);
+long ratan2(long y, long x);
+int func_80097AC8(int x); /* a square root */
 
 extern u8 *D_800C4734; /* the VAB header in memory */
 extern int D_800C9F54; /* voices to key off (a bit each) */
@@ -139,6 +156,7 @@ u32 func_80012FEC(int first);
 int func_80013108(int a);
 int func_800133A0(int id);
 void func_800A638C(char *s);
+void func_80013450(SndListener *l, SndVector *a, SndVector *b, SndVector *c, SndVector *d);
 u8 func_800128E8(int dist);
 void func_80012504(int a, int b, int c, int left, int right);
 void func_80012A88(int a, int vol, int pan, int c, int d);

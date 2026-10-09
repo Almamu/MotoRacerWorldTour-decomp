@@ -59,8 +59,12 @@ Found in this order; each is a build setting, not source:
 | `func_80012120` | matches | an `int` parameter; the key loaded before the loop |
 | `func_80012FEC` | matches | an unsigned division; the `mflo` delay |
 | `func_800133A0` | parked | store order |
+| `func_80011FCC` | parked | (third pass) |
+| `func_80013108` | parked | the slot loop |
+| `func_80012E58` | parked | the outer loop |
+| `func_80013450` | parked | the vector copies |
 
-18 functions of the chunk are still asm.
+14 functions of the chunk are still asm.
 
 ### func_8001184C
 
@@ -144,6 +148,31 @@ closer.
 - Also tried for the library as a whole: `-fno-delayed-branch` (matches
   `func_800121C0` with split addresses, and breaks nearly everything
   else).
+
+## Third pass
+
+Four more functions written, all parked, and some negative results worth
+keeping:
+
+- **`func_80011FCC`** (compares a name with a directory entry's, ignoring
+  case): the original range-checks the unsigned byte (`(u32)(c - 'A') <
+  26`) and compares sign-extended ones, reading the entry's byte signed
+  for the zero test and unsigned for the value: a `tolower()`-style
+  macro. Closest: 37 of 45 off.
+- **`func_80013108`** (frees the slots whose voices all stopped, returns
+  a free one): the same freeing sequence as `func_80012F7C` and
+  `func_80011D10` (`unk4 = 0; unk0 = -1; unk6 &= ~1;`), so likely a
+  shared macro or inline. An inline `FreeSlot()` alone didn't help.
+- **`func_80012E58`** (keys off a sound's voices along its chain of
+  notes): the original keeps `0xFF` in a saved register and jumps back to
+  the top of the outer loop; `while (1)`, `goto` and `do` forms all miss.
+- **`func_80013450`** (places the listener): struct copies of four
+  vectors, then an angle with `ratan2`; libgte's `copyVector` macro shape
+  was further off than a plain struct assignment (56 of 65).
+- The slot loops are no better as C (`cc1`) than as C++, nor with GCC
+  2.7.2, 2.8.0 or 2.8.1 (fetched for the test): 2.91.66 is closest
+  throughout. `-fsigned-char` changes nothing that matters.
+- The 3D functions' divisions have no checks: they're library code.
 
 ## What went wrong on the way
 

@@ -36,7 +36,7 @@ executables `OK` counts.
 
 | Tool | What for |
 |---|---|
-| `tools/try_func.py NAME [FILE] [-D NON_MATCHING] [-v] [--gcc V] [--cflags F]` | Compiles one source with the Makefile's own command for its chunk and compares one function with its `.s`, word by word (relocated fields masked). No linking, so it works while the chunk doesn't match. Its last line counts the differing instructions and the "opcode runs out of place": 0 runs out of place means only registers or immediates differ. |
+| `tools/try_func.py NAME [FILE] [-D NON_MATCHING] [-v] [--gcc V] [--cflags F]` | Compiles one source with the Makefile's own command for its chunk and compares one function with its `.s`, word by word (relocated fields masked). `--cflags` go last, so `-O1` wins over the Makefile's `-O2`. No linking, so it works while the chunk doesn't match. Its last line counts the differing instructions and the "opcode runs out of place": 0 runs out of place means only registers or immediates differ. |
 | `tools/diff_func.py NAME` | The same comparison on the linked build against the original. Only meaningful once everything before the function has its original size. |
 | `tools/permuter_setup.py NAME BASE.c DIR` | A [decomp-permuter](https://github.com/simonlindholm/decomp-permuter) directory with the chunk's compile command. |
 | `m2c` | A first draft from the `.s` file. |
@@ -310,6 +310,11 @@ flag on the whole library (`make`), never on the one function.
 
 - `func_800128E8`, `func_80012F7C` (`lib/sound`): the conflicting flags
   above.
+- `func_80012F7C`, `func_80011D10`, `func_80013108` (`lib/sound`) share a
+  slot-freeing sequence that GCC compiles with one pointer where the
+  original has one per field, each from its own `la`, and `~1` in a
+  register: probably one macro or inline in the original, not found yet.
+  Older compilers (2.7.2, 2.8.x) and C instead of C++ were further off.
 - `func_800118C4`, `func_80011D10` (`lib/sound`): under 2.91.66 the loops
   keep their counter and walk the fields with separate pointers as the
   original does, but the pointers are derived from one address where the

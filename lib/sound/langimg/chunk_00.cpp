@@ -460,7 +460,32 @@ void func_80013440(void) {
 void func_80013448(void) {
 }
 
+#ifdef NON_MATCHING
+/* Equivalent; the original copies each vector through its own register
+ * set and a computed destination, and keeps c->vx and c->vz in saved
+ * registers */
+/* Places the listener; its angle is the facing direction's (c) on the
+ * ground. */
+void func_80013450(SndListener *l, SndVector *a, SndVector *b, SndVector *c, SndVector *d) {
+    int x;
+    int z;
+    int len;
+
+    l->unk8 = *a;
+    l->unk14 = *b;
+    l->unk20 = *c;
+    l->unk2C = *d;
+    x = c->vx;
+    z = c->vz;
+    len = func_80097AC8(x * x + z * z);
+    if (len == 0) {
+        len = 1;
+    }
+    l->angle = ratan2((z << 12) / len, (x << 12) / len) - 0x400;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_80013450);
+#endif
 
 void func_80013554(void) {
 }

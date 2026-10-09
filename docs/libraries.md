@@ -69,8 +69,8 @@ needs the game to re-split; docs/decomp.md, "What git holds").
 
 The first chunk of the game, 43 functions: voices (24), sound slots (30,
 20 bytes each, handles of slot number and serial), the VAB tone table,
-reverb, CD audio volume and the volume curve by distance. 20 match, 5
-are parked (docs/matching/issue-1-langimg-sound.md).
+reverb, CD audio volume, the volume curve by distance and 3D placement.
+20 match, 9 are parked (docs/matching/issue-1-langimg-sound.md).
 
 **Compiler: GCC 2.91.66**, the boot executable's, not the game's 2.95.2:
 
@@ -102,6 +102,11 @@ another").
 That it was built apart, with the compiler the boot executable uses,
 suggests a library Delphine kept and reused rather than code written for
 this game.
+
+**Its 3D part belongs to it.** `func_8001280C`, `func_80013450` and
+`func_8001355C` place sounds around a listener with the game's vector
+functions and libgte's `ratan2`; their divisions have no checks either,
+so they were assembled with the rest of the library, not with the game.
 
 **Open:** where it ends. `func_80013764`, the first function of chunk_01,
 uses the sound globals throughout; it may belong to the library (if it
