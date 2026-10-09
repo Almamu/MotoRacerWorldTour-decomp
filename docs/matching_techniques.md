@@ -88,6 +88,7 @@ settings
 | `lib/sound` chunk_01 | GCC 2.91.66 | 0 | `-mno-split-addresses` | `--expand-div --div-no-checks` |
 | `lib/cdaudio` chunk_01b | GCC 2.91.66 | 0 | (split addresses) | `--expand-div` |
 | `src/langimg` chunk_02, chunk_03 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --small-externs=...` |
+| `src/langimg` chunk_04 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=` |
 | `src/langimg` chunk_02b (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `SCES_030.37` (`src/sces`) | GCC 2.91.66 | 0 | `-fsigned-char` | `--expand-div` |
 
@@ -202,6 +203,10 @@ globals), a script that tries every order is quicker than guessing:
 - **One condition, not two returns.** `FindEntry` checks the hash range
   with one `if (hash >= first && last >= hash) { ... }`; two early
   `return`s gave the second exit its own copy of the return value.
+- **Skip rather than return.** The delay slot filler copies a shared
+  `return r`'s move into a branch to it: the original's `bltz` with
+  `addu $v0, $v1` in its slot is `if (r >= 0) r += c; return r;`, not an
+  early `return r` (`func_8001A6AC`).
 - **Read the field again rather than keep it.** `FindEntry`'s binary
   search compares `p->hash` directly; a `h = p->hash` temporary changed
   where the comparison is scheduled.
@@ -233,6 +238,15 @@ globals), a script that tries every order is quicker than guessing:
 - **A constant compared with a variable.** A `switch`'s case values are
   literals and stay in the loop; compared with a loop-local constant
   (`kind == two`) the `2` is hoisted with the others (`func_8001865C`).
+- **Hoisted in order of first use.** The loop pass hoists a loop's
+  constants in the order its statements first use them; a loop-local
+  constant declared in the innermost block, where it's used, lands in
+  the original's place (`int v = (dir & 0xF) << 8;` after the id test,
+  `func_80019BC4`).
+- **A call in the loop's condition.** GCC copies a `while` loop's exit
+  test before the loop, unless it contains a call: `while (n && (r =
+  f(g, v), g++, !r))` keeps the original's test-at-the-top layout, the
+  comma placing `g++` after the call (`func_8001A7F4`).
 - **Empty loops count from one more.** `i = 10; while (i--);` compiles to a
   count from 9 with the decrement first: the original's constant is one
   less than the source's (`func_80018814`).
@@ -366,6 +380,10 @@ globals), a script that tries every order is quicker than guessing:
 
 ### Struct copies
 
+A struct whose members are all shorts and bytes is 2-aligned, and GCC
+copies it with `lwl`/`lwr` pairs; the original's `lw`/`sw` copy means an
+`int` member that aligns it (`RangeDef`, `func_80019F0C`).
+
 A struct assignment (`*d = *s`) copies a 12-byte vector with GCC's block
 move: the source's address in a register, the words through other
 registers than the original's. The sound engine's copies load the three
@@ -390,9 +408,11 @@ assignments were further off.
   (`func_80012504`).
 - **Bitfields as the original reads them.** A signed bitfield compared
   with -1 is a mask test (`(x & 0xFFF000) == 0xFFF000`), and one read as a
-  value is `sll`/`sra` (`SeqEntry`, `func_80019578`). Where the original
-  extracts with shifts but only tests for zero, GCC turns a bitfield into
-  an `andi`: write the shifts (`(e->m_94 << 16) >> 28`, `func_80017B88`).
+  value is `sll`/`sra` (`SeqEntry`, `func_80019578`). Tested in place
+  (`if (s->m_state)`) GCC makes it an `andi`; read into a local first
+  (`int st = s->m_state; if (st)`) it extracts with shifts and tests that,
+  as the original does (`func_80019E30`, `func_8001983C`;
+  `func_80017B88` still has the shifts written by hand).
 - **Signed compares need signed types.** `slti` vs `sltiu`: the movie
   loop's frame counter is compared as `(int)D_8014D0D4 > 60`.
 - **A struct for data read from a file.** The movie loop reads the DPS
@@ -484,6 +504,8 @@ What's left once the instructions are right is usually register choice.
   constant into `$t1` (`lui`/`ori`, `addu $t1, $zero, $zero` for 0, and
   reuses a 0 still there). That's a `register int r asm("$9")` set from C
   before each `GTE_MTC2(r, n)`; GCC picks the instructions.
+- **Operands of `short` type** are loaded with `lhu` for an `asm`; cast to
+  `int` where the original has `lh` (`func_8001ACE4`).
 - **`mfc2` and `cfc2` have a load's delay.** The original has a `nop`
   between `mfc2 $v0, $24` and the `blez` reading `$v0`, and none where
   the next instruction doesn't read it: the assembler's load-delay rule.
