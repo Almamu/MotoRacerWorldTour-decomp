@@ -21,7 +21,7 @@ AS       := $(CROSS)as
 LD       := $(CROSS)ld
 OBJCOPY  := $(CROSS)objcopy
 PYTHON   := python3
-MASPSX   := $(PYTHON) tools/maspsx/maspsx.py
+MASPSX   := $(PYTHON) tools/maspsx_extern.py
 SPLAT    := $(PYTHON) -m splat split
 
 # Each executable has its own compiler (docs/decomp.md): the game GCC 2.95.2,
@@ -37,7 +37,7 @@ sces_G      := 0
 
 # Per-target compiler flags. The boot executable's compiler had signed plain
 # char (the MIPS default); decompals' builds default to unsigned.
-langimg_CFLAGS :=
+langimg_CFLAGS := -mno-split-addresses
 sces_CFLAGS    := -fsigned-char
 
 # -O2; the C++ has no exceptions and no RTTI.
