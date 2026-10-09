@@ -29,14 +29,11 @@ done:
 }
 
 #ifdef NON_MATCHING
-/* Equivalent; the original adds the tone's offset to the pointer into
- * the pointer's register, this build into the offset's (two instructions) */
-/* A field of a note's tone in the VAB: tone note[2] of program note[0]
- * (the tones follow the header and the 128 programs). */
+/* Equivalent; GCC folds 0x820 + 0xC into the load's offset, the original
+ * adds 0x820 to the program's offset first */
+/* A field of a note's tone in the VAB: tone note[2] of program note[0]. */
 u16 func_80011898(u8 *note) {
-    VagAtr *t = (VagAtr *)(D_800C4734 + (note[0] * 0x200 + 0x820));
-
-    return t[note[2]].unkC;
+    return ((Vab *)D_800C4734)->tones[note[0]][note[2]].unkC;
 }
 #else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_80011898);
@@ -44,8 +41,7 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_80011898);
 
 #ifdef NON_MATCHING
 /* Equivalent; the original keeps i and walks the fields with three
- * pointers (unk0, unk4/unkA, unkC), this build with one pointer and a
- * count down */
+ * pointers, this build with one */
 /* Clears the voices' bookkeeping, reserved voices left out of use. */
 void func_800118C4(int reserved) {
     int i;
@@ -193,7 +189,12 @@ int func_80012F40(u32 handle) {
 
 #ifdef NON_MATCHING
 /* Equivalent; the original keeps ~1 in a register and loads each field's
- * address on its own, this build derives them from one */
+ * address on its own. Through ClearFlags (decomp-permuter's idea) the mask
+ * stays in a register; the pointers still differ. */
+static inline void ClearFlags(u16 *flags, int bits) {
+    *flags &= ~bits;
+}
+
 /* Frees every sound slot. */
 int func_80012F7C(void) {
     int i;
@@ -202,7 +203,7 @@ int func_80012F7C(void) {
     for (i = 0; i < 30; i++) {
         D_800CA0F8[i].unk4 = 0;
         D_800CA0F8[i].unk0 = -1;
-        D_800CA0F8[i].unk6 &= ~1;
+        ClearFlags(&D_800CA0F8[i].unk6, 1);
     }
     return 1;
 }

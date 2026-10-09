@@ -33,6 +33,7 @@ from pathlib import Path
 
 import rabbitizer
 
+import chunks
 import paths
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -158,6 +159,13 @@ def main():
     else:
         src = paths.chunk_source(target, chunk)
     want = target_words(asm)
+    # The INCLUDE_ASM assembles the original's own instructions: comparing
+    # those would always "match".
+    todo, parked = chunks.remaining(src)
+    if args.name in todo:
+        sys.exit(f"{args.name}: {src.name} still has its INCLUDE_ASM (no C to compare)")
+    if args.name in parked and "NON_MATCHING" not in args.defines:
+        sys.exit(f"{args.name}: parked in {src.name}; add -D NON_MATCHING to compile its C")
     with tempfile.TemporaryDirectory() as d:
         obj = Path(d) / "out.o"
         cmd = compile_cmd(target, src, obj, args.defines, args.gcc, args.cflags)

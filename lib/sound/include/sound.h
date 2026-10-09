@@ -24,6 +24,13 @@ typedef struct {
     u8 unkE[0x12];
 } VagAtr;
 
+/* A VAB's header in memory: the header, 128 programs, then 16 tones for
+ * each program */
+typedef struct {
+    u8 hdr[0x820];
+    VagAtr tones[128][16];
+} Vab;
+
 /* A playing sound (D_800CA0F8, 30 of them, 20 bytes each). A handle is
  * the slot number in its low 5 bits and a serial number in its high 16. */
 typedef struct {
