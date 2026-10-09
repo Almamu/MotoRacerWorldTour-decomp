@@ -21,16 +21,10 @@ public:
     int m_14;
     int m_state : 2; // 0x18
     int m_prev : 2;  // the state last frame
-    unsigned m_18_4 : 2;
+    int m_reset : 2; // reset its objects' flags when it stops
     unsigned m_mode : 6;
     int m_count : 20;
 };
-
-// Whether a sequence runs: its state bits tested as the original does,
-// with a shift (a bitfield test compiles to a mask)
-static inline int SeqRunning(Seq *s) {
-    return ((int *)s)[0x18 / 4] << 30;
-}
 
 // The sequences (a list along Seq::m_0C)
 struct SeqSet {

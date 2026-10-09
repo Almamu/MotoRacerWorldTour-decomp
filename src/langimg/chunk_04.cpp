@@ -35,13 +35,88 @@ struct Range {
     u8 m_49;
 };
 
+// What D_800C5E14 points at: 4 flags at 0xE4, one per object type
+extern u8 *D_800C5E14;
 void func_80019F0C(Range *r, RangeDef *def);
 void func_80019FA4(Range *r, int a, int b);
 void func_80019FB0(Range *r, int a, int b);
 void func_80019FBC(Range *r, int pos);
 }
 
+#ifdef NON_MATCHING
+/* Registers only (6 off): two constants in $a3, and an address add */
+/* A sequence's frame: each entry's linked object applied
+ * (func_80017B88), the state set while any is running, the object
+ * types seen flagged in D_800C5E14; and when it has stopped, its objects
+ * reset. Returns its state. */
+int func_8001983C(Seq *s) {
+    SeqEntry *e;
+    SeqEntry *f;
+    int *seen;
+    int prev;
+    int st;
+
+    s->m_state = 0;
+    if ((e = s->m_entries)) {
+        seen = 0;
+        if (D_800C5E14) {
+            seen = (int *)(D_800C5E14 + 0xE4);
+        }
+        for (; e; e = e->m_next) {
+            int none = 0xFFF000;
+            int types = 0xC0000000;
+            int one = 1;
+            Cobjet *o = 0;
+            int i = e->m_obj;
+            CobjetList *objs = s->m_objs;
+            CobjetLinkedPos *k;
+            int st;
+            int run;
+
+            if (i >= 0) {
+                o = objs->m_items[i];
+            }
+            if (!o || (o->m_04 & 0x100000) || (*(int *)e & none) == none) {
+                continue;
+            }
+            k = (CobjetLinkedPos *)s->m_links->m_items[e->m_link];
+            st = s->m_state;
+            run = 0;
+            if ((k->m_flags & 0xF00) || func_80017B88(o, k)) {
+                run = 1;
+            }
+            s->m_state = st | run;
+            if (seen) {
+                int t = ((u32)(o->m_04 & types) >> 30) - 1;
+
+                if (t >= 0 && !seen[t]) {
+                    seen[t] = one;
+                }
+            }
+        }
+    }
+    if ((prev = s->m_prev) && !(st = s->m_state)) {
+        if ((st = s->m_reset)) {
+            func_80019A98(s, 0x180000, 0);
+        }
+        for (f = s->m_entries; f; f = f->m_next) {
+            Cobjet *o = 0;
+            int i = f->m_obj;
+            CobjetList *objs = s->m_objs;
+
+            if (i >= 0) {
+                o = objs->m_items[i];
+            }
+            if (o && !(o->m_04 & 1)) {
+                func_80017A0C(o);
+            }
+        }
+    }
+    return s->m_state;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_8001983C);
+#endif
 
 /* Sets and clears flags on the sequence's objects. Returns whether it has
  * entries. */
@@ -155,15 +230,19 @@ int func_80019E30(SeqSet *set) {
     Seq *s;
 
     for (s = set->m_first; s; s = s->m_next) {
-        if (SeqRunning(s)) {
+        int st = s->m_state;
+
+        if (st) {
             func_80019A98(s, 0, 0x200);
         }
     }
     set->m_0C = set->m_08;
     set->m_08 = 0;
     for (s = set->m_first; s; s = s->m_next) {
+        int st;
+
         s->m_prev = s->m_state;
-        if (SeqRunning(s)) {
+        if ((st = s->m_state)) {
             set->m_08 |= func_8001983C(s);
         }
     }
