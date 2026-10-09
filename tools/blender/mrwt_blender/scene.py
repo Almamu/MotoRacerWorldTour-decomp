@@ -324,7 +324,7 @@ def save(base, out, items=None, ground=None, objects=None, collision=None, track
         import sdf_rig
         nv, nj = sdf_rig.write(sdf, sdf_rig.read(sdf), **rider)
         if nv or nj:
-            log.append(f"rider: {nv} vertices, {nj} pose joints changed")
+            log.append(f"rider: {nv} vertices, {nj} pose/animation joints changed")
     if track is not None and old.track:
         ng, nl = write_track(sdf, old.track, track)
         if ng or nl:

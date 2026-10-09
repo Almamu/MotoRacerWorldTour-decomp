@@ -136,17 +136,57 @@ def read(sdf, which=0):
     rig = Rig(model, parts, order, vertices, vbase, extra)
     for k in range(POSE_COUNT):
         p = r9 + 4 + k * POSE_SIZE
-        if (p + 4) not in relocs:
-            continue
-        nt, nr = d[p + 1], d[p + 2]
-        rw, rl = sdf.u32(p + 4), sdf.u32(p + 8)
-        rots = {d[rl + j]: _unpack_rot(sdf.u32(rw + 4 * j)) for j in range(nr - 1)}
-        trans = {}
-        if (p + 0x0C) in relocs and nt > 1:
-            tl, tv = sdf.u32(p + 0x0C), sdf.u32(p + 0x10)
-            trans = {d[tl + j]: struct.unpack_from("<3h", d, tv + 8 * j) for j in range(nt - 1)}
-        rig.poses.append(Pose(k, rots, trans, p))
+        if (p + 4) in relocs:
+            rig.poses.append(parse_pose(sdf, p, k, relocs))
     return rig
+
+
+def parse_pose(sdf, p, index, relocs=None):
+    """A pose record (0x1C bytes: joint counts, packed rotations, joint lists,
+    translations); also the first 0x1C bytes of an animation key."""
+    d = sdf.data
+    relocs = relocs if relocs is not None else set(sdf.relocs)
+    nt, nr = d[p + 1], d[p + 2]
+    rw, rl = sdf.u32(p + 4), sdf.u32(p + 8)
+    rots = {d[rl + j]: _unpack_rot(sdf.u32(rw + 4 * j)) for j in range(nr - 1)}
+    trans = {}
+    if (p + 0x0C) in relocs and nt > 1:
+        tl, tv = sdf.u32(p + 0x0C), sdf.u32(p + 0x10)
+        trans = {d[tl + j]: struct.unpack_from("<3h", d, tv + 8 * j) for j in range(nt - 1)}
+    return Pose(index, rots, trans, p)
+
+
+# --- animations (root 11 records, listed at root 9 +0x1C4) --------------------
+
+KEY_SIZE = 0x20
+
+
+@dataclass
+class Anim:
+    record: int          # AnimRec offset: {char* name, u32 keys, u32 length ms, 0, Key* keys}
+    name: str
+    length: int          # ms
+    keys: list           # [(time ms, Pose)]
+    slots: list          # indices in root 9's animation list that use it
+
+
+def read_anims(sdf):
+    d = sdf.data
+    r9 = sdf.roots[ROOT_RIG]
+    n = sdf.u32(r9 + 0x1C4)
+    relocs = set(sdf.relocs)
+    by_rec = {}
+    for slot in range(n):
+        rec = sdf.u32(r9 + 0x1C8 + 4 * slot)
+        if rec in by_rec:
+            by_rec[rec].slots.append(slot)
+            continue
+        name_at, count, length, keys_at = sdf.u32(rec), sdf.u32(rec + 4), sdf.u32(rec + 8), sdf.u32(rec + 0x10)
+        name = d[name_at:d.index(b"\0", name_at)].decode("latin-1")
+        keys = [(sdf.u32(keys_at + KEY_SIZE * i + 0x1C), parse_pose(sdf, keys_at + KEY_SIZE * i, i, relocs))
+                for i in range(count)]
+        by_rec[rec] = Anim(rec, name, length, keys, [slot])
+    return list(by_rec.values())
 
 
 # --- geometry --------------------------------------------------------------
@@ -245,10 +285,11 @@ def posed_vertices(rig, pose=None, base=True):
 
 # --- writing -----------------------------------------------------------------
 
-def write(sdf, rig, vertices=None, poses=None, base=True):
+def write(sdf, rig, vertices=None, poses=None, base=True, anims=None):
     """vertices: rest-pose rig-space positions per buffer entry (moved ones are
     written back part-local; base=False: given in the zero-angle frame);
-    poses: {index: Pose} with the same joint lists.
+    poses: {index: Pose} with the same joint lists; anims: {AnimRec offset:
+    [Pose per key]} (key values only; times and joint lists are fixed).
     Returns (vertices changed, pose joints changed)."""
     data = bytearray(sdf.data)
     nv = nj = 0
@@ -264,8 +305,13 @@ def write(sdf, rig, vertices=None, poses=None, base=True):
             local = tuple(sum(r[k][j] * rel[k] for k in range(3)) for j in range(3))  # R^T
             struct.pack_into("<3h", data, rig.vbase + 8 * i, *(max(-32768, min(32767, round(c))) for c in local))
             nv += 1
-    for pose in rig.poses:
-        new = (poses or {}).get(pose.index)
+    targets = [(pose, (poses or {}).get(pose.index)) for pose in rig.poses]
+    if anims:
+        old_keys = {a.record: a for a in read_anims(sdf)}
+        for rec, new_keys in anims.items():
+            for (_, old), new in zip(old_keys[rec].keys, new_keys):
+                targets.append((old, new))
+    for pose, new in targets:
         if new is None:
             continue
         p = pose.record

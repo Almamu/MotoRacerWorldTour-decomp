@@ -1034,7 +1034,7 @@ level: `PAUSEWITHRESTART` `PAUSEWITHOUTRESTART` `PAUSERETIRE`
 |  8 | L+0x3E0      | runtime effect list head (0 in the files; nodes: next at +0x94, active at +0xB0; 0x800925A8 update, 0x80092684 draw) |
 |  9 | L+0x3E4      | rider rig and appearance, see below |
 | 10 | L+0x3E8      | first-person (cockpit) view: +0x00 enabled (0 in FSt), +0x04/+0x08 eye offset rotated by the bike's matrix (4200, 500 on road; 6000, −800 off-road), +0x0C pitch (s16, −200 ≈ −17.6°), +0x10 speed-needle gain (needle angle = speed × gain × 16 >> 16), +0x18 / +0x24 rotation axes of the rev and speed needles, +0x3C smoothed rev-needle angle (runtime), +0x44 → the **cockpit model**: a rig with `Corps` (bodywork), `Guidon` (handlebar), `Aiguille1/2` (needles), `Embrayage`/`Frein` (clutch/brake levers), grips, hands and fingers. Each frame 0x80033E4C writes the speed digits (texture-atlas patching), rotates the needles, blinks a warning light and poses the levers and hands; +0x14, +0x30…+0x38, +0x40 not read on that path |
-| 11 | 0x800C5E0C   | rider animation set `{AnimRec*, Triple*, char* path}`, e.g. `Data\Bikes\speed\Anims\C_dummy.san`; AnimRec (20 bytes) `{keys*, key count, length, 0, name*}` |
+| 11 | 0x800C5E0C   | rider animations (see Rider animations): `{AnimRec*, Triple* (3 × 16 bytes, purpose unknown), char* path}` (the `.san` source path, e.g. `Data\Bikes\speed\Anims\C_dummy.san`; the data is in the level) |
 | 12 | 0x800C5E10   | an object handled by 0x80020200–0x80020AB0: 200-entry ring buffer of 24-byte entries plus up to 1600 56-byte records in a buffer it's given (skid marks / decals?) |
 | 13 | 0x800C7F28   | sound state (runtime): 0x988 bytes of channel slots (0x40 each), then +0x988 → s16[112] sound → slot map; reset 0x8006CA50, play 0x8006CA84, update 0x8006DF68. Zeroed in RAM, the race freezes at the countdown |
 | 14 | 0x800C9F30   | HUD sprite hash list |
@@ -1229,6 +1229,36 @@ object's `flags & 7`. The second pair (+0x2B8) patches the second rider
 model, drawn when root 15's mode word has a two-player bit (0xA8) set
 (0x800618BC).
 
+### Rider animations (root 11)
+
+Root 9 +0x1C4 holds a count and that many pointers to animation records
+(26 on road levels, 50 in freestyle; several slots share a record):
+
+| Offset | Type  | Meaning |
+|--------|-------|---------|
+| 0x00   | char* | name (`C_GLISG1`, `CR_MURD`, `XMUR2`, …) |
+| 0x04   | u32   | key count |
+| 0x08   | u32   | length in ms |
+| 0x10   | Key*  | keys, 0x20 bytes each |
+
+A key is a pose record (0x1C bytes, the layout of root 9's poses; joint
+indices are rig parts) followed by a u32 time in ms. Joint lists are shared
+between an animation's keys; each key has its own rotation array.
+Playback (0x8009243C start, 0x80092480 update): the two keys around the
+current time are blended linearly (0x80091FB4), cross-fading from the
+previous pose over the first 100 ms; at the end the last key is held.
+
+Slots: 0–5 transitions / impacts, 6–8 `C_GLISG*` (sliding, left), 9 and
+17 `C_MURD` / `CR_MURD` (wall), 12–14 `C_GLISD*` (sliding, right), 20–22
+`XMUR2–4`, 23–24 `C_DEF01/02`, 25 `C_RESPIR` (breathing idle); off-road
+levels have `CR_ROT*` (rolls), `CR_CHOC*` (impacts), `CR_BACK*`, and
+freestyle adds the tricks from slot 26 (`SPLITS`, `CUFFED`, `TWIST`,
+`BARNEY`, `CLASSIC`, can-can, nac-nac, `SUPER`, `HANGER`, `HEEL`, …; trick
+index + 26). A crash picks its first slot from 0x800C75F4 by crash state.
+Checked in the emulator: a crash into Sachsenring's right-hand wall plays
+`CR_MURD` → `XMUR2` → `XMUR3` → `XMUR4`; zeroing `XMUR3`'s keys (or editing
+them in Blender) changes the picture only during its window.
+
 ### Trackside cameras (roots 16, 17)
 
 Root 16: `{u32 count (Sac 19), Camera* list (next at +0x54), 0, ptr}`.
@@ -1260,5 +1290,6 @@ a flag bit: an 8-bit value, a 16-bit button mask (1 = accelerate), another
 
 ## Next steps
 
-- Riders: confirm pose 15's trigger; the `.san` animations (root 11), e.g. the crash.
+- Riders: confirm pose 15's trigger; which states play the slide and
+  `C_DEF*` animations; root 11's Triple table.
 

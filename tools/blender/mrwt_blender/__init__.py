@@ -403,6 +403,27 @@ def build_rider(context, name, path, s, coll):
             pb = arm_ob.pose.bones[bone_name(rig.parts[k])]
             pb.location = tr
             pb.keyframe_insert("location", frame=1)
+    # animations (root 11): one action each, keys at frame 1 + ms / 20 (PAL)
+    for anim in sdf_rig.read_anims(sdf):
+        act = bpy.data.actions.new(f"{name}_anim_{anim.name}")
+        act["mrwt_anim"] = anim.record
+        act["mrwt_length"] = anim.length
+        act.use_fake_user = True
+        arm_ob.animation_data.action = act
+        for t, key in anim.keys:
+            frame = 1 + t / ANIM_MS_PER_FRAME
+            for k, ang in key.rotations.items():
+                part = rig.parts[k]
+                pb = arm_ob.pose.bones[bone_name(part)]
+                pb.rotation_euler = [(a + b) * 2 * math.pi / 4096 for a, b in zip(ang, part.base_rot)]
+                pb.keyframe_insert("rotation_euler", frame=frame)
+            for k, tr in key.translations.items():
+                pb = arm_ob.pose.bones[bone_name(rig.parts[k])]
+                pb.location = tr
+                pb.keyframe_insert("location", frame=frame)
+        for fc in action_fcurves(act):
+            for kp in fc.keyframe_points:
+                kp.interpolation = "LINEAR"  # the game blends keys linearly
     arm_ob.animation_data.action = None
     for part in rig.parts:  # back to the base pose
         pb = arm_ob.pose.bones[bone_name(part)]
@@ -411,20 +432,27 @@ def build_rider(context, name, path, s, coll):
     return arm_ob
 
 
-def action_values(act, frame=1):
-    """{(bone, property): [values]} of an action's F-curves at `frame`
-    (Blender 4.4+ layered actions, or the older flat F-curve list)."""
-    import re
-    curves = []
-    if getattr(act, "layers", None):
+ANIM_MS_PER_FRAME = 20  # PAL, 50 frames per second
+
+
+def action_fcurves(act):
+    if hasattr(act, "layers"):  # Blender 4.4+: layered actions (possibly empty)
+        out = []
         for layer in act.layers:
             for strip in layer.strips:
                 for slot in act.slots:
                     bag = strip.channelbag(slot)
                     if bag:
-                        curves += list(bag.fcurves)
-    else:
-        curves = list(act.fcurves)
+                        out += list(bag.fcurves)
+        return out
+    return list(act.fcurves)
+
+
+def action_values(act, frame=1):
+    """{(bone, property): [values]} of an action's F-curves at `frame`
+    (Blender 4.4+ layered actions, or the older flat F-curve list)."""
+    import re
+    curves = action_fcurves(act)
     out = {}
     for fc in curves:
         m = re.match(r'pose\.bones\["(.+)"\]\.(\w+)', fc.data_path)
@@ -466,7 +494,27 @@ def rider_from_blender(context, root, path):
             v = vals.get((bone_name(rig.parts[k]), "location"))
             new.translations[k] = old_t if v is None else tuple(round(c) for c in v)
         poses[pose.index] = new
-    return {"vertices": verts, "poses": poses, "base": False}
+    anims = {}
+    by_rec = {a.record: a for a in sdf_rig.read_anims(parse(Path(path).read_bytes()))}
+    for act in bpy.data.actions:
+        anim = by_rec.get(act.get("mrwt_anim"))
+        if anim is None:
+            continue
+        keys = []
+        for t, key in anim.keys:
+            vals = action_values(act, 1 + t / ANIM_MS_PER_FRAME)
+            new = sdf_rig.Pose(key.index, {}, {}, key.record)
+            for k, old_ang in key.rotations.items():
+                part = rig.parts[k]
+                v = vals.get((bone_name(part), "rotation_euler"))
+                new.rotations[k] = old_ang if v is None else tuple(
+                    round(a * 4096 / (2 * math.pi)) - b for a, b in zip(v, part.base_rot))
+            for k, old_t in key.translations.items():
+                v = vals.get((bone_name(rig.parts[k]), "location"))
+                new.translations[k] = old_t if v is None else tuple(round(c) for c in v)
+            keys.append(new)
+        anims[anim.record] = keys
+    return {"vertices": verts, "poses": poses, "base": False, "anims": anims}
 
 
 def import_scene(context, path, vrm_path, s):
