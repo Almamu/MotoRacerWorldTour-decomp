@@ -77,6 +77,11 @@ block-local), types (signed/unsigned, `short`/`int`), struct vs array
 access. [matching_techniques.md](matching_techniques.md) has each with
 the case it came from.
 
+When a loop won't take the original's shape (no pointer per field, a
+constant left inside it), ask GCC why: run
+`tools/try_func.py <function> --cflags=-dL` from a scratch directory and
+read `gccdump.loop` (matching_techniques.md, "Loops").
+
 ## 5. Registers: the permuter
 
 When only registers differ and reshaping doesn't help, run

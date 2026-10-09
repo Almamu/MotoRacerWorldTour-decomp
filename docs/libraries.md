@@ -70,7 +70,8 @@ needs the game to re-split; docs/decomp.md, "What git holds").
 The first chunk of the game, 43 functions: voices (24), sound slots (30,
 20 bytes each, handles of slot number and serial), the VAB tone table,
 reverb, CD audio volume, the volume curve by distance and 3D placement.
-20 match, 9 are parked (docs/matching/issue-1-langimg-sound.md).
+31 match, 10 are parked, 2 are still asm
+(docs/matching/issue-1-langimg-sound.md).
 
 **Compiler: GCC 2.91.66**, the boot executable's, not the game's 2.95.2:
 
@@ -95,8 +96,8 @@ So its assembler was another one, or ASPSX with other options.
 `func_800121C0` gets a `lui` in a branch delay slot the original doesn't
 have. But `func_800128E8` only matches with split addresses, and
 `func_80012F7C` only with `-fno-rerun-cse-after-loop`, which breaks
-`func_80012080`: the library may be several files built with different
-flags (matching_techniques.md, "When a flag fixes one function and breaks
+`func_80012080`, `func_80011960`, `func_80011A68` and `func_8001355C`: the
+library may be several files built with different flags (matching_techniques.md, "When a flag fixes one function and breaks
 another").
 
 That it was built apart, with the compiler the boot executable uses,

@@ -23,7 +23,7 @@ executables `OK` counts.
 2. [Compilers and flags](#compilers-and-flags): find the compiler first,
    per library; unsplit addresses; small globals; divisions; signed char
 3. [Source shape](#source-shape): statement order, result variables,
-   branches, loops, temporaries, pointers, types
+   branches, loops, temporaries, pointers, struct copies, types
 4. [Calls and declarations](#calls-and-declarations)
 5. [Register allocation](#register-allocation)
 6. [Assembler-level fixes](#assembler-level-fixes): the match.h macros
@@ -40,6 +40,7 @@ executables `OK` counts.
 | `tools/diff_func.py NAME` | The same comparison on the linked build against the original. Only meaningful once everything before the function has its original size. |
 | `tools/permuter_setup.py NAME BASE.c DIR` | A [decomp-permuter](https://github.com/simonlindholm/decomp-permuter) directory with the chunk's compile command. |
 | `m2c` | A first draft from the `.s` file. |
+| `tools/try_func.py NAME --cflags=-dL` | GCC's own account of its loop pass, in `gccdump.loop` in the current directory (`-dL`; other letters dump other passes). Says which invariants it hoisted (`moved to`) or didn't (`not desirable`), and which addresses it strength-reduced (`giv ... reduced`) or not (`not worth while`). Run it from a scratch directory. |
 
 Keep a scratch copy of the chunk and try several versions of a function
 in a row (`tools/try_func.py NAME /tmp/x/chunk_00.cpp`): the file must
@@ -170,6 +171,31 @@ size's load), the movie loop's CD position copy (`minute`, `second`,
   the fields with separate pointers where 2.95.2 makes one count-down
   pointer. A loop compiled the "wrong" way is a hint to check the
   compiler before reshaping it (see above).
+- **`(&a[i])->field`, not `a[i].field`, when the original walks the
+  fields with pointers.** GCC's loop pass hoists an invariant (here the
+  array's address) only when it saves enough: roughly, the number of
+  times it's computed times its lifetime against the loop's size. Written
+  `a[i].field`, the address is computed once into a register that's then
+  reused, which isn't worth hoisting in a long loop, so no field gets its
+  own pointer and the loop indexes `i * 16 + a` every time. Each
+  `(&a[i])->` computes the address anew: hoisted, and every field becomes
+  a pointer stepped by the element size, as in the original
+  (`func_80011A68`, `func_80011960`; `VOICE(i)` in
+  `lib/sound/include/sound.h`). `--cflags=-dL` shows which case you're in
+  (`not desirable` / `not worth while`).
+- **Constants set inside the loop.** A constant the original holds in a
+  saved register across the loop (`-1`, `1`, `0xFF`) is one GCC hoisted
+  out of it. Written as a literal it may stay in the loop, or be hoisted
+  later than the original's; as a local set at the top of the body
+  (`s8 none = -1;`, `int bit = 1;`, `u8 end = 0xFF;`) it's hoisted
+  first, before the addresses, in the original's order
+  (`func_80011960`, `func_80011A68`, `func_80012D38`, `func_80012E58`).
+  Its type matters: the chain's terminator compared with a `u8` note
+  field only matched as `u8 end` (`func_80012E58`).
+- **An element's address once.** Where the original computes
+  `&slot->voices[n]` once, uses it twice and passes it on, write it so:
+  `sv = &slot->voices[n]; sv[0].unk1 = x; sv[1].unk1 = x; f(..., sv);`
+  (`func_80012C18`, `func_80012D38`).
 
 ### Temporaries and folding
 
@@ -182,6 +208,15 @@ size's load), the movie loop's CD position copy (`minute`, `second`,
   `{ u32 margin = size - 0x1400; d = dest + ((unpacked - margin) & ~3); }`:
   written inline, GCC reassociates it to `unpacked + 0x1400 - size`; the
   same temporary as a function-wide variable changed the frame.
+- **Which quotient first.** For `ratan2((z << 12) / len, (x << 12) / len)`
+  GCC divides `z` first; the original divides `x` first. Assigning that
+  one to a variable before the call orders them: `x = (x << 12) / len;
+  angle = ratan2((z << 12) / len, x) - 0x400;` (`func_80013450`,
+  `func_8001280C`).
+- **Keeping a sum apart from a call's result.** `f() - (angle + 0x400)`
+  is reassociated to `f() - 0x400 - angle`; the original adds first and
+  subtracts after the call, which `-(angle + 0x400) + f()` gives
+  (`func_8001280C`).
 - **Through an inline function.** A value returned by an inline function
   can survive where the same constant written inline is folded: in
   `func_80012F7C`, `ClearFlags(&f, 1)` keeps `~1` in a register as the
@@ -194,7 +229,18 @@ size's load), the movie loop's CD position copy (`minute`, `second`,
   `e = arc->entries;` before `if (arc)`: GCC computes it in the delay
   slot of the check, as the original does.
 - **A pointer to a local.** `CdlFILE *fp = &file;` passed to
-  `CdSearchFile` keeps `&file` in a saved register (`OpenArchive`).
+  `CdSearchFile` keeps `&file` in a saved register (`OpenArchive`). The
+  same for an address the original computes once, early, and keeps:
+  `facing = &l->unk14;` before the call that comes between
+  (`func_8001355C`), `pv = &v;` before the first call (`func_8001363C`,
+  found by the permuter), `p = &d` for a vector filled and then passed
+  (`func_8001280C`).
+- **Initialise after the call.** Locals the original sets to 0 only
+  after a call (in caller-saved registers) are assigned there, not in
+  their declaration, which would keep them in saved registers across it
+  (`func_80011BA4`). And the other way round: a result counter the
+  original zeroes before a call is declared before it, `int n = 0;
+  SoundSlot *slot = f(handle);` (`func_80012C18`).
 - **Unused locals.** A frame bigger than its variables need means the
   original had locals the optimiser dropped: `int unused[6];` gives
   `func_8001184C`'s 0x30-byte frame.
@@ -204,6 +250,16 @@ size's load), the movie loop's CD position copy (`minute`, `second`,
   symbol GCC loads it into another register (`main`). The bytes are the
   same either way.
 
+### Struct copies
+
+A struct assignment (`*d = *s`) copies a 12-byte vector with GCC's block
+move: the source's address in a register, the words through other
+registers than the original's. The sound engine's copies load the three
+words into locals and store them, which an inline function gives:
+`CopyVector(dst, src)` in `lib/sound/include/sound.h` (`func_80013450`,
+`func_8001363C`). libgte's `copyVector` macro shape and field-by-field
+assignments were further off.
+
 ### Types
 
 - **Narrow parameters are extended by the callee.** A `char` or `short`
@@ -211,6 +267,9 @@ size's load), the movie loop's CD position copy (`minute`, `second`,
   if the original has none, the parameter is an `int`, even when only its
   low byte is used (`func_80012120`, `func_800133A0`, `func_80012FEC`).
 
+- **`s8` where the original loads with `lb`.** Plain `char` is unsigned
+  in these builds (see above), so a status array read with `lb` is
+  `s8 status[24]` (`func_80011BA4`; the libspu call takes `char *`).
 - **Signed compares need signed types.** `slti` vs `sltiu`: the movie
   loop's frame counter is compared as `(int)D_8014D0D4 > 60`.
 - **A struct for data read from a file.** The movie loop reads the DPS
@@ -225,6 +284,11 @@ size's load), the movie loop's CD position copy (`minute`, `second`,
   right after the call come out differently, even when the result isn't
   used. When a register differs right after a call, try an `int` return
   on the callee first.
+- **A callee declared `void` that returns something.** `func_8001363C`
+  only matches with `func_80099DCC` (a vector shift) declared `void`,
+  although it returns its destination: with a pointer return the copy
+  after the call gets other registers. The original's header declared it
+  so; keep such a declaration where the caller needs it, with a comment.
 - **Arguments passed through.** A function that seems to take nothing may
   pass its own argument on: `func_80012F40` calls `func_80013348` with
   `$a0` untouched, so it takes the handle and passes it. Written without
@@ -299,7 +363,7 @@ parked function of `lib/sound` and broken a matched one:
 | Flag | Matches | Breaks |
 |---|---|---|
 | GCC's default split addresses (no `-mno-split-addresses`) | `func_800128E8` (the table address as `la` + `addu`) | `func_800121C0` (a `lui` stolen into a branch delay slot) |
-| `-fno-rerun-cse-after-loop` | `func_80012F7C` (with `ClearFlags`; each field's pointer from its own `la`) | `func_80012080` (4 bytes longer) |
+| `-fno-rerun-cse-after-loop` | `func_80012F7C` (with `ClearFlags`; each field's pointer from its own `la`) | `func_80012080` (4 bytes longer), `func_80011960`, `func_80011A68`, `func_8001355C` |
 
 Either the functions come from source files built with different flags,
 or there is a source shape that matches both ways; until one is shown,
@@ -310,17 +374,17 @@ flag on the whole library (`make`), never on the one function.
 
 - `func_800128E8`, `func_80012F7C` (`lib/sound`): the conflicting flags
   above.
-- `func_80012F7C`, `func_80011D10`, `func_80013108` (`lib/sound`) share a
-  slot-freeing sequence that GCC compiles with one pointer where the
-  original has one per field, each from its own `la`, and `~1` in a
-  register: probably one macro or inline in the original, not found yet.
-  Older compilers (2.7.2, 2.8.x) and C instead of C++ were further off.
-- `func_800118C4`, `func_80011D10` (`lib/sound`): under 2.91.66 the loops
-  keep their counter and walk the fields with separate pointers as the
-  original does, but the pointers are derived from one address where the
-  original loads each with its own `la`, and in `func_800118C4` the
-  original shares one pointer between `unk4` and `unkA` (a nested struct
-  didn't give that).
+- **Loops from 0 over a global array** (`lib/sound`: `func_800118C4`,
+  `func_80012F7C`, `func_80013108`, `func_800131D0`, `func_80011D10`):
+  the original loads each field's pointer with its own `la` (`la
+  D_800CA0FE` for `&D_800CA0F8[0].unk6`); GCC derives them from one
+  (`addiu $a3, $v0, 0xC`), the second CSE pass merging them, which is
+  why `-fno-rerun-cse-after-loop` fixes `func_80012F7C`. Not fixed by
+  `(&a[i])->`, constants in the loop, a signed `unk6`, the array defined
+  in the file or of unknown size, split addresses, older compilers or C.
+  The loops starting at a variable index (`func_80011960`,
+  `func_80011A68`) don't have the problem. The slot loops also keep `~1`
+  in a register (`ClearFlags`, above).
 - `FindEntry`, the movie loop (`func_80133334`), `func_80134948` (boot
   executable): registers only, or registers and the order of stack
   arguments ([issue-85-sces-chunk01.md](matching/issue-85-sces-chunk01.md)).

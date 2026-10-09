@@ -61,10 +61,22 @@ Found in this order; each is a build setting, not source:
 | `func_800133A0` | parked | store order |
 | `func_80011FCC` | parked | (third pass) |
 | `func_80013108` | parked | the slot loop |
-| `func_80012E58` | parked | the outer loop |
-| `func_80013450` | parked | the vector copies |
+| `func_80012E58` | matches | (fourth pass) `u8 end = 0xFF` in the loop |
+| `func_80013450` | matches | (fourth pass) `CopyVector`; `x` divided first |
+| `func_80011BA4` | matches | (fourth pass) `s8` status; zeroed after the call |
+| `func_8001280C` | matches | (fourth pass) `-(angle + 0x400) + ratan2(...)` |
+| `func_8001355C` | matches | (fourth pass) the facing vector's address taken early |
+| `func_8001363C` | matches | (fourth pass) `CopyVector`; `func_80099DCC` declared `void` |
+| `func_80011960` | matches | (fourth pass) `VOICE(i)`; `-1` set in the loop |
+| `func_80011A68` | matches | (fourth pass) `VOICE(i)`; `-1` and `1` set in the loop |
+| `func_8001295C` | matches | (fourth pass) |
+| `func_80012C18` | matches | (fourth pass) the voice pointer once; the counter first |
+| `func_80012D38` | matches | (fourth pass) as `func_80012C18`, with `u8 end` |
+| `func_80011E44` | parked | (fourth pass) scheduling of the relocation |
+| `func_80012AF0` | parked | (fourth pass) scheduling |
+| `func_800131D0` | parked | (fourth pass) one `la` per field, as the slot loops |
 
-14 functions of the chunk are still asm.
+`func_800121F4` and `func_80012504` are still asm.
 
 ### func_8001184C
 
@@ -166,13 +178,67 @@ keeping:
 - **`func_80012E58`** (keys off a sound's voices along its chain of
   notes): the original keeps `0xFF` in a saved register and jumps back to
   the top of the outer loop; `while (1)`, `goto` and `do` forms all miss.
+  (Matched in the fourth pass: the `0xFF` as a `u8` set in the loop.)
 - **`func_80013450`** (places the listener): struct copies of four
   vectors, then an angle with `ratan2`; libgte's `copyVector` macro shape
-  was further off than a plain struct assignment (56 of 65).
+  was further off than a plain struct assignment (56 of 65). (Matched in
+  the fourth pass: an inline that copies a word at a time.)
 - The slot loops are no better as C (`cc1`) than as C++, nor with GCC
   2.7.2, 2.8.0 or 2.8.1 (fetched for the test): 2.91.66 is closest
   throughout. `-fsigned-char` changes nothing that matters.
 - The 3D functions' divisions have no checks: they're library code.
+
+## Fourth pass
+
+Eleven more match (two of them were parked), three are parked: 31 of the
+43 match. What did it:
+
+- **Why the voice loops wouldn't strength-reduce.** `func_80011A68`'s
+  loop came out indexing `i * 16 + D_800C9F70` on every access, the
+  original walking the fields with pointers. GCC's loop dump
+  (`tools/try_func.py ... --cflags=-dL`) said why: the array's address
+  was "not desirable" to hoist (computed once, the loop too long for it
+  to pay), and the one address "not worth" reducing. Written
+  `(&D_800C9F70[i])->field` each access computes it again, so it's
+  hoisted and every field gets its pointer: `VOICE(i)`. The constants
+  the original keeps across the loop (`-1`, `1`) had to be locals set in
+  the loop, so they're hoisted first, in the original's order.
+  `func_80011960` was found with the permuter (a `Voice *` taken after
+  the first store), then reduced to the same two changes.
+- **The note chains.** `func_80012C18`, `func_80012D38` and
+  `func_80012E58` follow a sound's notes (`note += note[3] * 44` until
+  `0xFF`); `u8 end = 0xFF;` set in the loop puts `0xFF` in a saved
+  register as the original has it. The voice entry's address is taken
+  once and passed on, and the result counter is zeroed before the
+  slot lookup.
+- **The 3D functions.** The vector copies are three loads then three
+  stores (`CopyVector`), not a struct assignment. `ratan2`'s second
+  argument is divided first, through a variable. `func_8001363C` needs
+  the shift function `func_80099DCC` declared `void` (it returns its
+  destination; with that declared, the registers after the call differ).
+- **The voice's owner.** A voice's 0xC field is the `SlotVoice` of the
+  sound that has it (set to -1 when the voice is taken away):
+  `Voice.owner`. The bank's directory starts the bank file; its pointers
+  are offsets until `func_80011E44` relocates them, `records` is the VAB
+  (header and programs) and 0x1C its samples, sent to SPU memory and
+  then freed.
+
+Parked:
+
+- **`func_80011E44`** (loads the bank): 32 off, scheduling of the
+  relocation (the original reads the four offsets before storing any)
+  and of the constants around `D_800C46FC`. The permuter found the
+  chained `p = vab->table = ...` assignment (54 to 32).
+- **`func_80012AF0`** (a note placed in 3D): 23 off, the order of the
+  parameter copies in the prologue and of the volume multiplications.
+- **`func_800131D0`** (frees stopped voices): the same `la`-per-field
+  problem as `func_800118C4` and `func_80012F7C` (matching_techniques.md,
+  "Open problems"), and `~1` in a register.
+
+Tried for those loops, without effect: `(&a[i])->`, constants in the
+loop, `short` for the flags, the array defined in the file or of unknown
+size, split addresses. `-fno-rerun-cse-after-loop` still fixes
+`func_80012F7C`, and now breaks three more matched functions.
 
 ## What went wrong on the way
 

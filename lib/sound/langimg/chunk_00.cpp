@@ -239,6 +239,8 @@ int func_80011E08(void) {
  * samples in SPU memory, sends them there and frees them. */
 /* Loads the sound bank: relocates its directory, numbers the VAB's
  * samples in SPU memory, sends them there and frees them. */
+/* Loads the sound bank: relocates its directory, numbers the VAB's
+ * samples in SPU memory, sends them there and frees them. */
 int func_80011E44(const char *name) {
     Dir *dir = func_800A06AC(name, 0, 0);
     u8 *vab;
@@ -262,8 +264,7 @@ int func_80011E44(const char *name) {
     n = *(u16 *)(vab + 0x16);
     off = *(u16 *)(vab + 0x12) * 0x200 + 0x820;
     size = *(int *)(vab + 0xC) - off - 0x200;
-    p = (u16 *)(vab + off);
-    *(u16 **)(vab + 0x1C) = p;
+    p = *(u16 **)(vab + 0x1C) = (u16 *)(vab + off);
     addr = 0x202;
     do {
         int len = *p;
