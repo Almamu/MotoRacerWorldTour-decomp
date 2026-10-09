@@ -301,7 +301,7 @@ int func_80016914(Cobjet *o, SVECTOR *out) {
     return 0;
 }
 
-void func_80016998(void) {
+void func_80016998(Cobjet *o, Vector3 *v) {
 }
 
 void func_800169A0(void) {

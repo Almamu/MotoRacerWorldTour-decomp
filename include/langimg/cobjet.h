@@ -119,6 +119,44 @@ struct CobjetList {
     Cobjet **m_items;
     int m_04;
     int m_count;
+    int m_0C;
+    int m_drawn; // 0x10: how many were drawn this frame
+};
+
+// What an object's links (Cobjet::m_links) index: a class with virtual
+// functions (its vtable pointer at 0x34)
+class CobjetLinked {
+public:
+    int m_id; // its type, 3 to 5 for some
+    u8 m_04[8];
+    int m_flags; // 0x0C
+    u8 m_10[0x1C];
+    int m_2C;
+    int m_30;
+    // vtable pointer at 0x34
+
+    virtual void v08();
+    virtual void v10();
+    virtual int v18();
+    virtual void v20();
+    virtual void v28();
+    virtual void v30(int a, int b, int c, int d);
+};
+
+// One with a position (CobjetLinked's subclass)
+class CobjetLinkedPos : public CobjetLinked {
+public:
+    u8 m_38[0xC];
+    Vector3 m_44;
+    u8 m_50[0x24];
+    Vector3 m_74;
+    u8 m_80[0x14];
+    int m_94; // bits 12-15: a signed field
+    int m_98; // bits 0-23
+};
+
+struct CobjetLinkedTable {
+    CobjetLinked **m_items;
 };
 
 // A model part
@@ -147,7 +185,7 @@ void func_800167F8(Cobjet *o, SVECTOR *out);
 void func_8001687C(void);
 void func_800168A8(Cobjet *o, SVECTOR *v);
 int func_80016914(Cobjet *o, SVECTOR *out);
-void func_80016998(void);
+void func_80016998(Cobjet *o, Vector3 *v);
 void func_800169A0(void);
 void func_800169A8(void);
 void func_800169B0(void);
@@ -155,6 +193,19 @@ void func_800169B8(Cobjet *o, int v, int force);
 int func_80016A38(Cobjet *o);
 void func_80098418(MATRIX *m, SVECTOR *angles);
 int func_800178DC(Cobjet *o, int n);
+void func_800177E8(CobjetList *l, int start, int n);
+int *func_80017948(Cobjet *o);
+void func_8001798C(Cobjet *o, int v);
+void func_80017A0C(Cobjet *o);
+void func_80017A30(Cobjet *o, int id);
+void func_8006E004(Cobjet *o);
+void func_8006E02C(Cobjet *o);
+extern int D_800C8904;
+extern Cobjet *D_800C8740;
+void func_80017A9C(Cobjet *o, int id);
+int func_80017B88(Cobjet *o, CobjetLinkedPos *e);
+void func_800747A8(CobjetLinked *e, int a, int b, int c);
+extern CobjetLinkedTable *D_800C873C;
 void func_80017574(CobjetList *l, CobjetPartList *parts, int a, int b, int kind);
 void func_80017730(CobjetList *l);
 void *memset(void *p, int c, size_t n);
