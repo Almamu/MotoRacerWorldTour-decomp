@@ -42,6 +42,9 @@ LIB_sound_CFLAGS      := -mno-split-addresses                  # cc1/cc1plus fla
 LIB_sound_MASPSXFLAGS  = $(MASPSXFLAGS) --div-no-checks        # maspsx's
 ```
 
+A setting that's set, even to nothing (`LIB_x_CFLAGS :=`), replaces the
+target's; one that isn't set leaves the target's.
+
 `-G` stays the executable's: the library addresses the same small data
 through the same `$gp`. Every setting needs evidence, written here: code
 of the library that only matches with it, and no matched function that
@@ -66,7 +69,7 @@ needs the game to re-split; docs/decomp.md, "What git holds").
 
 The first chunk of the game, 43 functions: voices (24), sound slots (30,
 20 bytes each, handles of slot number and serial), the VAB tone table,
-reverb, CD audio volume and the volume curve by distance. 16 match, 3
+reverb, CD audio volume and the volume curve by distance. 20 match, 5
 are parked (docs/matching/issue-1-langimg-sound.md).
 
 **Compiler: GCC 2.91.66**, the boot executable's, not the game's 2.95.2:
@@ -82,13 +85,19 @@ are parked (docs/matching/issue-1-langimg-sound.md).
 
 **Divisions without checks.** The game's own code divides with ASPSX
 2.79's divide-by-zero and overflow checks (`--expand-div`); the sound
-engine's only division (`func_800128E8`) is a bare `div` and `mflo`.
-`tools/maspsx_plus.py --div-no-checks` assembles it that way.
+engine's divisions (`func_800128E8`, `func_80012FEC`) are a bare `div`
+and `mflo`, with a `nop` before the next instruction that reads the
+result. `tools/maspsx_plus.py --div-no-checks` assembles them that way.
+So its assembler was another one, or ASPSX with other options.
 
 **Addresses unsplit** (`-mno-split-addresses`), as in the rest of the game
 (docs/matching_techniques.md, "Unsplit addresses"): with split ones,
 `func_800121C0` gets a `lui` in a branch delay slot the original doesn't
-have.
+have. But `func_800128E8` only matches with split addresses, and
+`func_80012F7C` only with `-fno-rerun-cse-after-loop`, which breaks
+`func_80012080`: the library may be several files built with different
+flags (matching_techniques.md, "When a flag fixes one function and breaks
+another").
 
 That it was built apart, with the compiler the boot executable uses,
 suggests a library Delphine kept and reused rather than code written for

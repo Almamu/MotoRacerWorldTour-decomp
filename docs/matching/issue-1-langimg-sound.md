@@ -53,8 +53,14 @@ Found in this order; each is a build setting, not source:
 | `func_800130CC` | matches | takes the handle |
 | `func_80013348` | matches | 2.91.66 only |
 | `func_80013440`, `func_80013448`, `func_80013554` | match | empty |
+| `func_80011C5C` | matches | (second pass) |
+| `func_80011D10` | parked | the slot loop, as `func_80012F7C` |
+| `func_80012080` | matches | a struct array and a plain `for` |
+| `func_80012120` | matches | an `int` parameter; the key loaded before the loop |
+| `func_80012FEC` | matches | an unsigned division; the `mflo` delay |
+| `func_800133A0` | parked | store order |
 
-24 functions of the chunk are still asm.
+18 functions of the chunk are still asm.
 
 ### func_8001184C
 
@@ -103,6 +109,41 @@ handle.
 - `func_800128E8` (the volume by distance): the division is right since
   `--div-no-checks`; the clamping (`v < 0`, `v > 127`) comes out in
   another order.
+
+## Second pass
+
+Six more functions: four match, two are parked, and `func_800128E8` came
+closer.
+
+- **`func_80012080`** (a bank entry's value by name): with byte offsets
+  and a `do` loop the counter's increment and the offset's add landed
+  elsewhere; a `Dir`/`DirEntry` struct and `for (i = 0; i < dir->count;
+  i++)`, re-reading the global, match.
+- **`func_80012120`** (a byte of every record whose 4-letter name
+  matches): the value parameter is an `int` (as `s8` it got a sign
+  extension the original doesn't have), and the key word is read into a
+  variable before the loop.
+- **`func_80012FEC`** (the longest note of a chain of 44-byte records):
+  the parameter is an `int`, the division unsigned
+  (`(u32)(x * 28000) / rate`), and the original has a `nop` after the
+  division's `mflo`, before the instruction that reads it. `func_800128E8`
+  has the same `nop`, across a label; `--div-no-checks` now adds it.
+- **`func_800128E8`**: two `if`s for the clamp (not `else if`) and
+  `v = 127 - v;` before the table read bring it to the table's address
+  only: the original forms it with `la` and `addu`, which GCC does with
+  split addresses. With split addresses it matches, but `func_800121C0`
+  doesn't.
+- **`func_80012F7C`**: matches with `ClearFlags` and
+  `-fno-rerun-cse-after-loop`, which breaks `func_80012080`.
+- **`func_80011D10`** (frees every slot and voice) has the same loop as
+  `func_80012F7C`, writing the flags field twice through two pointers
+  (`unk6 = 0`, later `unk6 &= ~1`).
+- **`func_800133A0`** (starts a sound in a free slot): close in shape; the
+  order of the slot's stores and of the serial number's load differs in
+  every order tried.
+- Also tried for the library as a whole: `-fno-delayed-branch` (matches
+  `func_800121C0` with split addresses, and breaks nearly everything
+  else).
 
 ## What went wrong on the way
 

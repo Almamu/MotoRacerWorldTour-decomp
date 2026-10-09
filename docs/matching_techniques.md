@@ -109,7 +109,13 @@ expands it. ASPSX 2.79 adds divide-by-zero and overflow checks (`bnez`,
 `break 7`, ..., `break 6`); `maspsx --expand-div` emulates that, and the
 game's own code has them. The sound engine's division has none: a bare
 `div $0,...` and `mflo`. `tools/maspsx_plus.py --div-no-checks` produces
-that, for `lib/sound` (`func_800128E8`).
+that, for `lib/sound` (`func_800128E8`). That assembler also treated
+`mflo` like a load: the next instruction that reads its register gets a
+`nop` in front of it, even past a label (in `func_800128E8` a branch lands
+on that `nop`); `--div-no-checks` adds it too (`func_80012FEC`).
+
+A division is unsigned (`divu`) only if an operand is: a `u16` times a
+constant is an `int`, so `(u32)(x * 28000) / rate` (`func_80012FEC`).
 
 ### Signed `char`
 
@@ -145,6 +151,16 @@ size's load), the movie loop's CD position copy (`minute`, `second`,
   where the comparison is scheduled.
 
 ### Loops
+
+- **Load before the loop what the original loads before it.** A value
+  read inside the loop's condition (`*(int *)key == names->name`) was
+  loaded after the loop's first test; `k = *(int *)key;` before the loop
+  matches (`func_80012120`).
+- **Scan a table as a struct array** with a plain `for` and the global
+  re-read each time, when the original reloads it after every call:
+  `for (i = 0; i < dir->count; i++) if (!f(name, &dir->entries[i])) return
+  dir->entries[i].value;` (`func_80012080`). Byte offsets and a `do` loop
+  had the increment and the offset add in other places.
 
 - **Jumping into a loop.** The original can enter a loop in the middle,
   skipping its first test. GCC only does that itself when it can prove
@@ -189,6 +205,11 @@ size's load), the movie loop's CD position copy (`minute`, `second`,
   same either way.
 
 ### Types
+
+- **Narrow parameters are extended by the callee.** A `char` or `short`
+  parameter gets an `sll`/`sra` (or `andi`) at the start of the function;
+  if the original has none, the parameter is an `int`, even when only its
+  low byte is used (`func_80012120`, `func_800133A0`, `func_80012FEC`).
 
 - **Signed compares need signed types.** `slti` vs `sltiu`: the movie
   loop's frame counter is compared as `(int)D_8014D0D4 > 60`.
@@ -269,9 +290,27 @@ what still differs, and its `INCLUDE_ASM` under `#else`. Its `.s` stays.
   permuter script, can differ from the build's in flags; `make` with both
   `OK` lines is the only proof.
 
+## When a flag fixes one function and breaks another
+
+A library is built with one set of flags, so a flag is only right if
+every matched function still matches with it. Two have each matched one
+parked function of `lib/sound` and broken a matched one:
+
+| Flag | Matches | Breaks |
+|---|---|---|
+| GCC's default split addresses (no `-mno-split-addresses`) | `func_800128E8` (the table address as `la` + `addu`) | `func_800121C0` (a `lui` stolen into a branch delay slot) |
+| `-fno-rerun-cse-after-loop` | `func_80012F7C` (with `ClearFlags`; each field's pointer from its own `la`) | `func_80012080` (4 bytes longer) |
+
+Either the functions come from source files built with different flags,
+or there is a source shape that matches both ways; until one is shown,
+the library keeps the flags under which everything matched so far. Test a
+flag on the whole library (`make`), never on the one function.
+
 ## Open problems
 
-- `func_800118C4`, `func_80012F7C` (`lib/sound`): under 2.91.66 the loops
+- `func_800128E8`, `func_80012F7C` (`lib/sound`): the conflicting flags
+  above.
+- `func_800118C4`, `func_80011D10` (`lib/sound`): under 2.91.66 the loops
   keep their counter and walk the fields with separate pointers as the
   original does, but the pointers are derived from one address where the
   original loads each with its own `la`, and in `func_800118C4` the
