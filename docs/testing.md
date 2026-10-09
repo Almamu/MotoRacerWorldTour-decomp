@@ -104,7 +104,23 @@ screen → countdown → 1200 frames of racing with the throttle held),
 `lap` (a full lap of Sachsenring driven by `tools/autopilot.py`; fails with
 `LAP NOT FINISHED` if the bike doesn't get round, e.g. because edited
 collision walls it in, or gates no longer count laps), `world_tour` (MODE
-page, track select, bike select) and `options`. Steps
+page, track select, bike select), `options`, and:
+
+- `track_<name>` for each of the 11 single-race tracks (World Tour → MODE →
+  SINGLE RACE → track k → defaults until the race loads): the six road
+  tracks drive a full lap with the autopilot (fails if not finished), the
+  five off-road tracks (Barcelona, USA Park, Stade de France, Reygades, Belo
+  Horizonte) check that the race starts and runs;
+- `mode_traffic`, `mode_dragster`, `mode_freestyle`, `mode_trial` from the
+  MODE page's second row.
+
+These first set every `Valid*` menu variable to 1 (step `menu_vars`), so
+locked tracks and modes are playable: the hook finds the menu's variable
+table in RAM from the data itself (a variable's name string, the
+`{name, changed}` entry pointing at it, and the descriptor `{values,
+info, …, count}` at menu root 0 + 0x74), so it works on edited discs too.
+`--only a,b` (prefix match) runs a subset, e.g. `--only track_,lap`. The
+whole suite takes about 20 minutes; references take as long to record. Steps
 wait for screen conditions (the main menu is detected by its blue
 background), so the changed CD timing of a rebuilt disc doesn't matter.
 

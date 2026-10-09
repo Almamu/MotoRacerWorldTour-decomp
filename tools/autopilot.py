@@ -27,6 +27,29 @@ GATE_SIZE = 20
 LINE_REC = 32
 
 
+def find_level(psx):
+    """The level module object: +0xC6C -> collision header whose face
+    table (+4, count at +0) ends exactly at the header, +0x3EC and +0x378
+    are RAM pointers too. (The current-module global 0x800C5E14 is only
+    set while a module runs, so it reads 0 from outside.)"""
+    import numpy as np
+    words = psx.ram.view(np.uint32)
+    for i in np.nonzero((words >= 0x80000000) & (words < 0x80200000))[0]:
+        coll = int(words[i])
+        c = coll & 0x1FFFFF
+        if c + 8 > len(psx.ram):
+            continue
+        count = struct.unpack("<h", psx.ram[c:c + 2].tobytes())[0]
+        faces = int(words[c // 4 + 1]) if c % 4 == 0 else 0
+        if not (50 < count < 10000 and faces + 56 * count == coll):
+            continue
+        level = 0x80000000 + 4 * int(i) - 0xC6C
+        ok = all(0x80000000 <= psx.u32(level + off) < 0x80200000 for off in (0x3EC, 0x378, 0xC70))
+        if ok:
+            return level
+    raise RuntimeError("level object not found (not in a race?)")
+
+
 class Autopilot:
     def __init__(self, psx, lookahead=4, speed_scale=0.55):
         self.psx = psx
@@ -48,36 +71,18 @@ class Autopilot:
         return self.psx.ram[a:a + n].tobytes()
 
     def _find_level(self):
-        """The level module object: +0xC6C -> collision header whose face
-        table (+4, count at +0) ends exactly at the header, +0x3EC and +0x378
-        are RAM pointers too. (The current-module global 0x800C5E14 is only
-        set while a module runs, so it reads 0 from outside.)"""
-        import numpy as np
-        words = self.psx.ram.view(np.uint32)
-        for i in np.nonzero((words >= 0x80000000) & (words < 0x80200000))[0]:
-            coll = int(words[i])
-            c = coll & 0x1FFFFF
-            if c + 8 > len(self.psx.ram):
-                continue
-            count = struct.unpack("<h", self.psx.ram[c:c + 2].tobytes())[0]
-            faces = int(words[c // 4 + 1]) if c % 4 == 0 else 0
-            if not (50 < count < 10000 and faces + 56 * count == coll):
-                continue
-            level = 0x80000000 + 4 * int(i) - 0xC6C
-            ok = all(0x80000000 <= self.u32(level + off) < 0x80200000 for off in (0x3EC, 0x378, 0xC70))
-            if ok:
-                return level
-        raise RuntimeError("level object not found (not in a race?)")
+        return find_level(self.psx)
 
     def _read_track(self):
         gates_root = self.u32(self.level + 0x3EC)
         lists = self.u32(gates_root + 0x28)
         n, g = self.u32(lists), self.u32(lists + 4)
-        line0 = self.u32(self.u32(lists + 8))
+        first = self.u32(lists + 8)
+        line0 = self.u32(first) if first else 0  # trial / freestyle: no racing lines
         self.points = []
         for i in range(n):
             x, y, z, _, angle = struct.unpack("<3iIH", self._bytes(g + GATE_SIZE * i, 18))
-            rec = self._bytes(line0 + LINE_REC * i, LINE_REC)
+            rec = self._bytes(line0 + LINE_REC * i, LINE_REC) if line0 else bytes(LINE_REC)
             lane = rec[7] - 256 if rec[7] > 127 else rec[7]
             a = angle * 2 * math.pi / 4096
             px, pz = math.sin(a), -math.cos(a)
@@ -95,7 +100,7 @@ class Autopilot:
             ok = True
             for k in range(3):
                 rec = int(words[i + k])
-                if not 0x80000000 <= rec < 0x80200000:
+                if not 0x80000000 <= rec < 0x801FFFFC or rec % 4:
                     ok = False
                     break
                 face = self.u32(rec)

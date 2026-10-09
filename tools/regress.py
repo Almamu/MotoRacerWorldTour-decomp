@@ -2,7 +2,9 @@
 """Regression test a rebuilt disc: play scripted scenarios, compare with references.
 
   regress.py refs <cue> <bios> <refs_dir>                       record references
-  regress.py run  <cue> <bios> <refs_dir> <out_dir> [--track01 X]
+  regress.py run  <cue> <bios> <refs_dir> <out_dir> [--track01 X] [--only a,b]
+  (refs also takes --only; scenario names: arcade_race, lap, world_tour,
+  options, track_<name> for every single-race track)
 
 Each scenario (SCENARIOS below) is a list of steps run on the deterministic
 libretro runner (tools/psxrun.py), one process per scenario. `refs` stores
@@ -35,6 +37,7 @@ HERE = Path(__file__).resolve().parent
 #   ["press", button]                               tap (8 frames)
 #   ["wait", frames]                                 run, checking the picture keeps changing
 #   ["hold", button, frames]                         hold a button, same check
+#   ["menu_vars", {"Valid*": 1}]                     set menu variables in RAM (test hook)
 #   ["autopilot", laps, max_frames]                   drive with tools/autopilot.py; fails if
 #                                                    the lap(s) aren't finished
 #   ["shot", name]                                   checkpoint, compared with the reference
@@ -77,10 +80,96 @@ SCENARIOS = {
     ],
 }
 
+# Single races on every track (World Tour -> MODE -> SINGLE RACE -> track k),
+# with every Valid* unlock set first. Road tracks also drive a lap.
+TRACKS = ["sachsenring", "suzuka", "iom_road", "eastern_creek", "iom_hills", "iom_town",
+          "barcelona", "usa_park", "stade_de_france", "reygades", "belo_horizonte"]
+ROAD = {"sachsenring", "suzuka", "iom_road", "eastern_creek", "iom_hills", "iom_town"}
+for _k, _name in enumerate(TRACKS):
+    SCENARIOS[f"track_{_name}"] = [
+        ["wait", 900, "boot"],
+        ["press_until", "cross", "main_menu", 6000],
+        ["wait", 100], ["menu_vars", {"Valid*": 1}],
+        ["press", "down"], ["wait", 60], ["press", "cross"], ["wait", 300],   # WORLD TOUR -> MODE
+        ["press", "cross"], ["wait", 300],                                     # SINGLE RACE -> tracks
+        *[s for _ in range(_k) for s in (["press", "down"], ["wait", 60])],
+        ["shot", "track"],
+        ["press_until", "cross", "race", 4000],                                # bike, gearbox, ... -> race
+        ["wait", 600, "boot"], ["shot", "race_start"],
+        *([["autopilot", 1, 14000], ["shot", "finish", "loose"]] if _name in ROAD
+          else [["hold", "cross", 600], ["shot", "racing", "loose"]]),
+    ]
+
+# The special modes, from the MODE page's bottom row (cursor starts on
+# SINGLE RACE; down = FREESTYLE), defaults accepted until the race loads.
+for _name, _moves in (("traffic", ["left", "left"]), ("dragster", ["left"]),
+                      ("freestyle", []), ("trial", ["right"])):
+    SCENARIOS[f"mode_{_name}"] = [
+        ["wait", 900, "boot"],
+        ["press_until", "cross", "main_menu", 6000],
+        ["wait", 100], ["menu_vars", {"Valid*": 1}],
+        ["press", "down"], ["wait", 60], ["press", "cross"], ["wait", 300],   # WORLD TOUR -> MODE
+        ["press", "down"], ["wait", 60],
+        *[s for m in _moves for s in (["press", m], ["wait", 60])],
+        ["shot", "mode"],
+        ["press_until", "cross", "race", 5000],
+        ["wait", 600, "boot"], ["shot", "race_start"],
+        ["hold", "cross", 600], ["shot", "racing", "loose"],
+    ]
+
 CONDITIONS = {
     # the main menu's blue checkerboard
     "main_menu": lambda im: (im[..., 2].astype(int) > im[..., 0].astype(int) + 60).mean() > 0.4,
 }
+
+
+def _in_race(psx):
+    """A level is loaded (its module object can be found in RAM)."""
+    from autopilot import find_level
+    try:
+        find_level(psx)
+        return True
+    except Exception:
+        return False
+
+
+def menu_variables(psx):
+    """{name: RAM address of its u32 value} for the running menu, found from
+    the data: a variable's name string, the 8-byte VarInfo {char* name, u32}
+    pointing at it, and the table descriptor {u32* values, VarInfo* info, ...,
+    +0x14 count} whose info array contains that entry (menu root 0 + 0x74)."""
+    ram = psx.ram.tobytes()
+    words = psx.ram.view(np.uint32)
+    at = ram.find(b"ValidTraffic\0")
+    if at < 0:
+        raise RuntimeError("menu variables not found (not in a menu?)")
+    entry = int(np.nonzero(words == 0x80000000 + at)[0][0]) * 4 + 0x80000000
+    for i in np.nonzero((words >= entry - 8 * 400) & (words <= entry) & ((entry - words) % 8 == 0))[0]:
+        desc = int(i) * 4 - 4
+        if desc < 0:
+            continue
+        values, info, count = int(words[desc // 4]), int(words[desc // 4 + 1]), int(words[desc // 4 + 5])
+        if not (0x80000000 <= values < 0x80200000 and 10 < count < 1000 and entry < info + 8 * count):
+            continue
+        out = {}
+        for k in range(count):
+            name_at = int(words[(info & 0x1FFFFF) // 4 + 2 * k]) & 0x1FFFFF
+            out[ram[name_at:ram.index(b"\0", name_at)].decode("latin-1")] = values + 4 * k
+        return out
+    raise RuntimeError("menu variable table not found")
+
+
+def set_menu_variables(psx, assignments):
+    """assignments: {name or prefix*: value}"""
+    variables = menu_variables(psx)
+    n = 0
+    for pattern, value in assignments.items():
+        for name, addr in variables.items():
+            if name == pattern or (pattern.endswith("*") and name.startswith(pattern[:-1])):
+                a = addr & 0x1FFFFF
+                psx.ram[a:a + 4] = list(int(value).to_bytes(4, "little"))
+                n += 1
+    return n
 
 
 def run_scenario(cue, bios, steps, workdir):
@@ -119,12 +208,16 @@ def run_scenario(cue, bios, steps, workdir):
         elif kind == "press_until":
             _, button, cond, timeout = step
             start = psx.frame_count
-            while not CONDITIONS[cond](psx.image()):
+            check = (lambda: _in_race(psx)) if cond == "race" else (lambda: CONDITIONS[cond](psx.image()))
+            while not check():
                 if psx.frame_count - start > timeout:
                     problems.append(f"TIMEOUT waiting for {cond}")
                     break
                 psx.run(8, [button])
                 psx.run(92)
+        elif kind == "menu_vars":
+            if not set_menu_variables(psx, step[1]):
+                problems.append(f"menu variables {list(step[1])} not found")
         elif kind == "autopilot":
             from autopilot import Autopilot
             result = Autopilot(psx).drive(step[2], laps=step[1])
@@ -171,14 +264,22 @@ def make_cue(cue, track01, out):
     return mk(cue, track01, out)
 
 
+def selected(args):
+    """Scenarios to run: all, or those matching --only a,b (prefixes allowed)."""
+    if "--only" not in args:
+        return list(SCENARIOS)
+    want = args[args.index("--only") + 1].split(",")
+    return [n for n in SCENARIOS if any(n == w or n.startswith(w) for w in want)]
+
+
 def main():
     a = sys.argv[1:]
     if a and a[0] == "_child":
         child(a[1], a[2], a[3], Path(a[4]))
         return
-    if len(a) == 4 and a[0] == "refs":
+    if len(a) >= 4 and a[0] == "refs":
         cue, bios, refs = a[1], a[2], Path(a[3])
-        for name in SCENARIOS:
+        for name in selected(a):
             spawn(cue, bios, name, refs / name)
             print(f"{name}: references in {refs / name}")
         return
@@ -189,7 +290,7 @@ def main():
             cue = make_cue(cue, a[a.index("--track01") + 1], out / "disc.cue")
         from PIL import Image
         failed, lines, sheet = False, [], []
-        for name in SCENARIOS:
+        for name in selected(a):
             spawn(cue, bios, name, out / name)
             problems = json.loads((out / name / "problems.json").read_text())
             for p in problems:

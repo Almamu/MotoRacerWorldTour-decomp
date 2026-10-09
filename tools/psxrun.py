@@ -203,11 +203,11 @@ class Psx:
 
     def u32(self, addr):
         a = addr & 0x1FFFFF
-        return int(self.ram[a:a + 4].view(np.uint32)[0])
+        return int.from_bytes(self.ram[a:a + 4].tobytes().ljust(4, b"\0"), "little")
 
     def s32(self, addr):
-        a = addr & 0x1FFFFF
-        return int(self.ram[a:a + 4].view(np.int32)[0])
+        v = self.u32(addr)
+        return v - (1 << 32) if v & 0x80000000 else v
 
 
 def main():
