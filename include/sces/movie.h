@@ -23,11 +23,22 @@ typedef struct {
     u_long dummy;
 } StHEADER;
 
+/* A .DPS file's first sector (docs/formats/dps.md) */
+typedef struct {
+    u_short id;   /* "DP" */
+    u_short type; /* "S" */
+    u_char unk4[0xC];
+    u_short width;
+    u_short height;
+    u_char unk14[8];
+    u_short frames; /* the low half of a u32 */
+} DPSHEADER;
+
 /* An entry of the movie table D_8014D350 (24 bytes) */
 typedef struct {
-    u8 unk0[0x10];
-    int unk10; /* 1: no CD audio fade at the end */
-    int unk14;
+    char name[0x10]; /* in CINE\, without ";1" */
+    int unk10;       /* 1: no CD audio fade at the end */
+    int unk14;       /* 1: the pad only skips after the first 60 frames */
 } MovieEntry;
 
 typedef struct {
@@ -64,9 +75,13 @@ extern int D_8014D358; /* the movie being played */
 extern int D_8014D0F0;
 extern int D_8014D348; /* the buffer being shown during a movie */
 extern int D_8014D0F4;
+extern int D_8014D0D0;    /* frames shown */
+extern CdlLOC D_8014D25C; /* where the movie's frames start */
+extern Choice D_8014D0F8; /* the pad, read during a movie */
+void func_8013ED84(void);
 
 void strKickCD(CdlLOC *loc, int mode);
-void strSync(DECENV *dec);
+void strSync(DECENV *dec, int mode);
 int strNextVlc(DECENV *dec);
 /* The decoder callback; one type for the declaration and the definition
  * (a function pointer type spelled inside extern "C" is a different type). */

@@ -2,7 +2,192 @@
 #include "sces/boot.h"
 #include "sces/movie.h"
 
+#ifdef NON_MATCHING
+/* Stops feeding the decoder: no more MDEC or CD callbacks. */
+static inline void StopCallbacks(void) {
+    DecDCToutCallback(0);
+    CdDataCallback(0);
+    CdReadyCallback(0);
+}
+
+/* Fades the music out, as many steps as the CD audio's volume. */
+static inline void FadeOut(void) {
+    int v;
+
+    for (v = D_8014D34C >> 15; v >= 0; v--) {
+        SsSetMVol(v, v);
+    }
+}
+
+/* Equivalent; the original assigns the saved registers of skipped, the
+ * volume's address and the decoder's address the other way round, and
+ * computes strSetDefDecEnv's stack arguments in another order */
+/* Plays movie id of the table movies (CINE\<name>.DPS). Returns 1 when the
+ * pad cut it short or the stream says so, 0 when it ran to its end and -1
+ * when it couldn't be played. It starts over when a frame doesn't come.
+ * Unless keepScreen, it sets up the movie screen first. */
+int func_80133334(int id, void *movies, int unused, int keepScreen) {
+    CdlFILE file;
+    u_long buf[0x200];
+    DPSHEADER *hdr;
+    u_char param[8];
+    char path[0x88];
+    int skipped = 0;
+    int r;
+    int v;
+
+    D_8014D0F0 = 0;
+    D_8014D0F4 = 0;
+    D_8014D350 = (MovieEntry *)movies;
+    D_8014D358 = id;
+    D_8014D228 = (u_long *)func_8014A454(0x10000);
+    if (D_8014D228 == 0) {
+        printf("No Memory to play movie %s \n", D_8014D350[id].name);
+        return -1;
+    }
+    goto start;
+retry:
+    StopCallbacks();
+    SsSetSerialVol(0, 0, 0);
+    param[0] = 0x80;
+    CdControlB(0x0E, param, 0);
+    CdControlB(0x09, 0, 0);
+    printf("Retry \n");
+start:
+    D_8014D34C = 0x4D0000;
+    SsSetSerialVol(0, 0x9A, 0x9A);
+    D_8014D0E4 = 0;
+    sprintf(path, "\\CINE\\%s", D_8014D350[id].name);
+    StrUpper(path);
+    strcat(path, ";1");
+    if (CdSearchFile(&file, path) == 0) {
+        printf("Error to open a file %s on CD \n", D_8014D350[id].name);
+        free(D_8014D228);
+        return -1;
+    }
+    CdControlB(0x15, (u_char *)&file, 0);
+    CdRead(1, buf, 0x80);
+    while (CdReadSync(1, 0) > 0) {
+    }
+    hdr = (DPSHEADER *)buf;
+    if (hdr->id != 0x5044 && hdr->type != 0x53) {
+        printf("%s is not Dps File\n", path);
+        printf("ID %04x Type %04x\n", hdr->id, hdr->type);
+        free(D_8014D228);
+        return -1;
+    }
+    CdIntToPos(CdPosToInt(&file.pos) + 5, &file.pos);
+    VSync(0);
+    D_8014D354 = hdr->frames;
+    D_8014D25C.minute = file.pos.minute;
+    D_8014D25C.second = file.pos.second;
+    D_8014D25C.sector = file.pos.sector;
+    if (keepScreen == 0) {
+        func_80133AE4(320, 256);
+    }
+    strSetDefDecEnv(&D_8014D22C,
+                    (D_8014D288[0].clip.w >> 1) + D_8014D288[0].ofs[0] - hdr->width / 2,
+                    (D_8014D288[0].clip.h >> 1) + D_8014D288[0].ofs[1] - hdr->height / 2,
+                    (D_8014D288[1].clip.w >> 1) + D_8014D288[1].ofs[0] - hdr->width / 2,
+                    (D_8014D288[1].clip.h >> 1) + D_8014D288[1].ofs[1] - hdr->height / 2,
+                    hdr->width, hdr->height);
+    strInit(&D_8014D25C, D_8014D354, strCallback, D_8014D350[id].unk10);
+    D_8014D0D0 = 0;
+    D_8014D0D4 = 0;
+    r = strNextVlc(&D_8014D22C);
+    if (r == -2) {
+        skipped = 1;
+    }
+    if (r == -1) {
+        goto retry;
+    }
+    SetDispMask(1);
+    if (r == 0) {
+        for (;;) {
+            DecDCTin(D_8014D22C.vlcbuf[D_8014D22C.vlcid], 3);
+            DecDCTout((u_long *)D_8014D22C.imgbuf, D_8014D22C.slice.w * D_8014D22C.slice.h / 2);
+            r = strNextVlc(&D_8014D22C);
+            if (r == -1) {
+                goto retry;
+            }
+            if (r == -2) {
+                skipped = 1;
+                break;
+            }
+            if (r == -3) {
+                break;
+            }
+            strSync(&D_8014D22C, 0);
+            VSync(0);
+            D_8014D348 = D_8014D22C.rectid ^ 1;
+            func_801343A0(D_8014D348);
+            func_8013FA3C(&D_8014D0F8, 0);
+            if (D_8014D350[id].unk14) {
+                if ((int)D_8014D0D4 > 60) {
+                    if (D_8014D0F4) {
+                        StopCallbacks();
+                        FadeOut();
+                        printf("Out by Keyh\n");
+                        skipped = 1;
+                        break;
+                    }
+                    if (D_8014D0F0) {
+                        StopCallbacks();
+                        FadeOut();
+                        printf("Out by KeyRdown");
+                        break;
+                    }
+                }
+            } else {
+                func_8013ED84();
+                if (D_8014D0F4) {
+                    StopCallbacks();
+                    FadeOut();
+                    printf("Out by Keyh\n");
+                    skipped = 1;
+                    break;
+                }
+                if (D_8014D0F0) {
+                    StopCallbacks();
+                    FadeOut();
+                    printf("Out by KeyRdown");
+                    break;
+                }
+            }
+            if (D_8014D340 == 1) {
+                StopCallbacks();
+                param[0] = 0x48;
+                CdControlB(0x0E, param, 0);
+                printf("Wait END\n");
+                if (D_8014D350[id].unk10 == 1) {
+                    do {
+                        CdReady(0, 0);
+                        CdGetSector(D_8014D228, 0x200);
+                    } while (((u_short *)D_8014D228)[8] != 0x4E45 ||
+                             ((u_short *)D_8014D228)[9] != 0x44);
+                }
+                printf("Out cine sound\n");
+                SsSetMVol(0, 0);
+                for (v = D_8014D34C >> 15; v >= 0; v--) {
+                    SsSetSerialVol(0, v, v);
+                }
+                printf("Out end scene\n");
+                break;
+            }
+            D_8014D0D0++;
+        }
+    }
+    SsSetSerialVol(0, 0, 0);
+    param[0] = 0x80;
+    CdControlB(0x0E, param, 0);
+    CdControlB(0x09, 0, 0);
+    SsSetMVol(127, 127);
+    free(D_8014D228);
+    return skipped;
+}
+#else
 INCLUDE_ASM("asm/sces/nonmatchings/chunk_00", func_80133334);
+#endif
 
 /* The screen for movies: 24-bit display, two w x h buffers one above the
  * other, both cleared. */
@@ -151,7 +336,7 @@ void strKickCD(CdlLOC *loc, int mode) {
 }
 
 /* Waits for the frame to finish decoding, giving up after a while. */
-void strSync(DECENV *dec) {
+void strSync(DECENV *dec, int mode) {
     volatile u_long cnt = 100000;
 
     while (dec->isdone == 0) {

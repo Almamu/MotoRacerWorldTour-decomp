@@ -45,9 +45,6 @@ void func_801351D4(int *key, int *done) {
     }
 }
 
-#ifdef NON_MATCHING
-/* Equivalent; at the end the original loads the game's entry point into
- * $v1, this build into $a0 */
 /* Initialises the hardware, shows two pictures and plays the intro movie
  * (again if the first try fails), runs the language choice (Startup, which
  * also loads the game), shuts everything down and jumps to the game's entry
@@ -98,12 +95,9 @@ int main(void) {
     SsQuit();
     func_8013F1D0();
     func_8013B35C();
-    D_800117F0();
+    GAME_ENTRY();
     return 0;
 }
-#else
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", main);
-#endif
 
 inline void *operator new(unsigned int, void *p) {
     return p;
@@ -132,14 +126,15 @@ int func_80135504(void) {
 void func_8013550C(int arg) {
 }
 
-#ifdef NON_MATCHING
-/* Equivalent; the original decrements the word count after the unaligned
- * store in the word-copy loop, this build before it */
-/* A word at any address: stores through it are swl/swr. */
-struct UnalignedU32 {
-    u32 v;
-} __attribute__((packed));
+/* Stores a word at any address (swl/swr). The original goes through the
+ * assembler's usw macro: written in C, GCC schedules the loop counter's
+ * decrement before the store instead of after it. */
+#define STORE_UNALIGNED(p, v) __asm__ volatile("usw %0, 0(%1)" : : "r"(v), "r"(p))
 
+/* Undoes MR3.DAT's LZSS: a flag byte per 8 items, a set bit is a literal
+ * byte, a clear one a 16-bit (offset 12 bits, length 4 bits + 3) copy from
+ * the output. Offset 0 ends the stream. Copies are word-wide when the
+ * source is at least 4 bytes behind. */
 void LzssDecompress(u8 *src, u8 *dst) {
     int bits = 0;
     int flags = 0;
@@ -147,6 +142,7 @@ void LzssDecompress(u8 *src, u8 *dst) {
     int len;
     int k;
     u8 *from;
+    u32 w;
 
     do {
         flags >>= 1;
@@ -180,8 +176,9 @@ void LzssDecompress(u8 *src, u8 *dst) {
                 k &= 3;
                 len >>= 2;
                 while (len) {
-                    ((UnalignedU32 *)dst)->v = *(u32 *)from;
+                    w = *(u32 *)from;
                     from += 4;
+                    STORE_UNALIGNED(dst, w);
                     dst += 4;
                     len--;
                 }
@@ -193,18 +190,12 @@ void LzssDecompress(u8 *src, u8 *dst) {
         }
     } while (off);
 }
-#else
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", LzssDecompress);
-#endif
 
-#ifdef NON_MATCHING
-/* Equivalent; the original swaps the registers of name and of the
- * archive's address, and copies the packed data with other registers */
 /* Reads a file of MR3.DAT into dest, or into a new block when dest is 0, and
  * undoes LZSS. The packed data is read to the end of the buffer (moved there
  * first when dest is given) and decompressed towards its start. */
 u8 *LoadFile(const char *name, u8 *dest, u32 *sizeOut) {
-    int allocated = 0;
+    int allocated;
     ArchiveEntry *e;
     u32 size;
     u32 unpacked;
@@ -214,6 +205,7 @@ u8 *LoadFile(const char *name, u8 *dest, u32 *sizeOut) {
     u32 n;
 
     e = FindEntry(D_8019D480, name);
+    allocated = 0;
     size = e->size;
     if (dest == 0) {
         allocated = 1;
@@ -227,11 +219,17 @@ u8 *LoadFile(const char *name, u8 *dest, u32 *sizeOut) {
             size = ((u32 *)dest)[1];
             LzssDecompress(dest + 8, buf);
         } else {
-            unpacked = ((u32 *)dest)[1];
+            n = size;
             s = dest + size;
-            d = dest + ((unpacked - (size - 0x1400)) & ~3);
+            unpacked = ((u32 *)dest)[1];
+            /* The packed data is moved to end 0x1400 bytes past where the
+             * unpacked data will, so decompressing never overtakes it */
+            {
+                u32 margin = size - 0x1400;
+                d = dest + ((unpacked - margin) & ~3);
+            }
             to = d + size;
-            for (n = size; n != 0; n--) {
+            for (; n != 0; n--) {
                 *--to = *--s;
             }
             LzssDecompress(d + 8, dest);
@@ -248,9 +246,6 @@ u8 *LoadFile(const char *name, u8 *dest, u32 *sizeOut) {
     }
     return buf;
 }
-#else
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", LoadFile);
-#endif
 
 /* Reads size bytes at loc into dest (allocated when 0), at double speed,
  * retrying twice on a disc error. Mode 2 reads an archive's header: its
@@ -333,8 +328,8 @@ end:
 }
 
 #ifdef NON_MATCHING
-/* Equivalent; the original assigns several values to other registers
- * (hash in $t0, lo/hi/mid in $a2/$a3/$a1, e in $s0, count in $s1) */
+/* Equivalent; the control flow matches, but the original swaps the saved
+ * registers of arc and found, and of e and count */
 /* Looks an entry up by name: a leading backslash dropped, upper-cased,
  * CRC-32 hashed, then a binary search when the entries are sorted. */
 ArchiveEntry *FindEntry(Archive *arc, const char *name) {
@@ -349,7 +344,6 @@ ArchiveEntry *FindEntry(Archive *arc, const char *name) {
     u32 lo;
     u32 hi;
     u32 mid;
-    u32 h;
 
     if (arc) {
         esize = arc->entrySize;
@@ -358,10 +352,10 @@ ArchiveEntry *FindEntry(Archive *arc, const char *name) {
             esize = 0x30;
         }
         stride = esize;
+        count = arc->count;
         if (*name == '\\') {
             name++;
         }
-        count = arc->count;
         if (count) {
             strcpy(buf, name);
             StrUpper(buf);
@@ -370,29 +364,23 @@ ArchiveEntry *FindEntry(Archive *arc, const char *name) {
                 hi = count - 1;
                 lo = 0;
                 p = (ArchiveEntry *)((u8 *)e + hi * esize);
-                if (hash < e->hash) {
-                    goto end;
-                }
-                if (p->hash < hash) {
-                    return found;
-                }
-                mid = hi >> 1;
-                p = (ArchiveEntry *)((u8 *)e + mid * esize);
-                h = p->hash;
-                while (hash != h) {
-                    if (h < hash) {
-                        lo = mid + 1;
-                    } else {
-                        hi = mid - 1;
+                if (hash >= e->hash && p->hash >= hash) {
+                    mid = hi >> 1;
+                    p = (ArchiveEntry *)((u8 *)e + mid * esize);
+                    while (p->hash != hash) {
+                        if (p->hash < hash) {
+                            lo = mid + 1;
+                        } else {
+                            hi = mid - 1;
+                        }
+                        if (hi < lo) {
+                            goto end;
+                        }
+                        mid = lo + ((hi - lo) >> 1);
+                        p = (ArchiveEntry *)((u8 *)e + mid * stride);
                     }
-                    if (hi < lo) {
-                        goto end;
-                    }
-                    mid = lo + ((hi - lo) >> 1);
-                    p = (ArchiveEntry *)((u8 *)e + mid * stride);
-                    h = p->hash;
+                    found = p;
                 }
-                found = p;
             } else {
                 while (e->hash != hash) {
                     if (--count == 0) {
@@ -411,25 +399,23 @@ end:
 INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", FindEntry);
 #endif
 
-#ifdef NON_MATCHING
-/* Equivalent; the original keeps &file in a saved register and assigns
- * the others differently */
 /* Reads an archive's header sector and turns each entry's byte offset into
  * a CdlLOC. */
 Archive *OpenArchive(char *path, void *dest) {
     CdlFILE file;
+    CdlFILE *fp = &file;
     Archive *arc = 0;
     int tries;
     CdlFILE *found;
     u32 esize;
     u32 i;
-    u32 *loc;
+    ArchiveEntry *e;
 
     D_8019DB70 = 1;
     VSync(0);
     tries = 2;
     do {
-        found = CdSearchFile(&file, path);
+        found = CdSearchFile(fp, path);
         tries--;
     } while (found == 0 && tries != 0);
     D_8019DB70 = 0;
@@ -437,16 +423,16 @@ Archive *OpenArchive(char *path, void *dest) {
     if (found) {
         arc = (Archive *)func_80135780(2, &file.pos, 0x800, dest);
         esize = 0;
+        e = arc->entries;
         if (arc) {
             esize = arc->entrySize;
             if (esize == 0) {
                 esize = 0x30;
             }
         }
-        loc = &arc->entries[0].loc;
         for (i = 0; i < arc->count; i++) {
-            CdIntToPos(CdPosToInt(&file.pos) + ((*loc + 0x7FF) >> 11), (CdlLOC *)loc);
-            loc = (u32 *)((u8 *)loc + esize);
+            CdIntToPos(CdPosToInt(&file.pos) + ((e->loc + 0x7FF) >> 11), (CdlLOC *)&e->loc);
+            e = (ArchiveEntry *)((u8 *)e + esize);
         }
     }
     if (arc) {
@@ -454,9 +440,6 @@ Archive *OpenArchive(char *path, void *dest) {
     }
     return arc;
 }
-#else
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", OpenArchive);
-#endif
 
 /* Reads an entry of arc into dest (allocated when 0), checking its CRC;
  * one retry. */
