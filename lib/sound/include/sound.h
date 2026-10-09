@@ -17,7 +17,7 @@ typedef struct {
 typedef struct {
     int unk0;
     int unk4;
-    short unk8;
+    u16 unk8;         /* priority: the level it was started at */
     u16 unkA;         /* bit 0: pitch LFO on */
     SlotVoice *owner; /* the sound's entry for it */
 } Voice;
@@ -218,7 +218,8 @@ extern int D_800C46F8;
 extern u8 *D_800C46F4; /* volume by pan (128) */
 extern u8 D_800C4750[];
 extern u8 D_800C47D0[];
-extern int D_800C4724;
+extern int D_800C4724;  /* the voice for notes that take a fixed one (0x800) */
+extern int D_800C474C;  /* counts the notes started */
 extern Dir *D_800C46F0; /* the bank, freed at shutdown */
 extern s8 D_800C473D;
 extern s8 D_800C473E;

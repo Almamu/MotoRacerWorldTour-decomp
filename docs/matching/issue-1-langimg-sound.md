@@ -72,11 +72,13 @@ Found in this order; each is a build setting, not source:
 | `func_8001295C` | matches | (fourth pass) |
 | `func_80012C18` | matches | (fourth pass) the voice pointer once; the counter first |
 | `func_80012D38` | matches | (fourth pass) as `func_80012C18`, with `u8 end` |
-| `func_80011E44` | parked | (fourth pass) scheduling of the relocation |
+| `func_80011E44` | matches | (fourth pass) one `|=` of a conditional; the last stores' order |
 | `func_80012AF0` | parked | (fourth pass) scheduling |
 | `func_800131D0` | parked | (fourth pass) one `la` per field, as the slot loops |
+| `func_800121F4` | parked | (fourth pass) the loop's pointers; registers |
+| `func_80012504` | parked | (fourth pass) needs split addresses; the volumes' order |
 
-`func_800121F4` and `func_80012504` are still asm.
+None is asm only any more: 32 match, 11 are parked.
 
 ### func_8001184C
 
@@ -190,8 +192,9 @@ keeping:
 
 ## Fourth pass
 
-Eleven more match (two of them were parked), three are parked: 31 of the
-43 match. What did it:
+Twelve more match (two of them were parked), and the last five
+functions are written and parked: 32 of the 43 match, the other 11 are
+parked. What did it:
 
 - **Why the voice loops wouldn't strength-reduce.** `func_80011A68`'s
   loop came out indexing `i * 16 + D_800C9F70` on every access, the
@@ -223,17 +226,56 @@ Eleven more match (two of them were parked), three are parked: 31 of the
   (header and programs) and 0x1C its samples, sent to SPU memory and
   then freed.
 
-Parked:
+- **`func_80011E44`** (loads the bank), from 54 off: the permuter found
+  the chained `p = *(u16 **)(vab + 0x1C) = ...` and the samples'
+  relocation before `D_800C4734 = ...` (to 10); `D_800C46FC |= (flags &
+  0x80) ? 4 : 2;` rather than an `if` with a `|=` in each branch (to 3:
+  GCC merges the two identical stores only after scheduling, so the
+  loop's constants couldn't move above them); and the four stores at
+  the end in one of the 24 orders, found by trying them all (to 0).
 
-- **`func_80011E44`** (loads the bank): 32 off, scheduling of the
-  relocation (the original reads the four offsets before storing any)
-  and of the constants around `D_800C46FC`. The permuter found the
-  chained `p = vab->table = ...` assignment (54 to 32).
+Parked:
 - **`func_80012AF0`** (a note placed in 3D): 23 off, the order of the
   parameter copies in the prologue and of the volume multiplications.
 - **`func_800131D0`** (frees stopped voices): the same `la`-per-field
   problem as `func_800118C4` and `func_80012F7C` (matching_techniques.md,
   "Open problems"), and `~1` in a register.
+- **`func_80012504`** (starts a voice: fills libspu's `SpuVoiceAttr` from
+  the note and its VAB tone): the original takes `&D_800C9F70[v].owner`
+  as `la D_800C9F7C` + an index, which GCC only does with split
+  addresses; with them the frame, the saved registers and most of the
+  code line up, once the result is returned through one exit (`r` in
+  `$fp`), `|x|` is the branchless `ABS()` and the tone's fine tune is
+  read before the pitch. Left: the two volumes are multiplied in the
+  other order.
+- **`func_800121F4`** (finds a voice, stealing the lowest-priority one):
+  the original walks the voices of a pair with three pointers that serve
+  both, and reads the priority (`Voice.unk8`) as a `u16`.
+
+### The flags, function by function
+
+Every function compiled with each of the two flags in question (the
+library's `-mno-split-addresses` dropped; `-fno-rerun-cse-after-loop`
+added), matched or parked:
+
+| Functions | Unsplit addresses | Second CSE pass |
+|---|---|---|
+| `func_80011960`, `func_80011A68`, `func_80011BA4`, `func_800121C0` | needed | needed (`func_80012080` too) |
+| `func_800128E8` | breaks it (it matches only without) | either |
+| `func_80012504` (parked) | the original's shape only without | either |
+| `func_80012F7C` | needed | breaks it (it matches only without, with `ClearFlags`) |
+| `func_80013348` | needed | either |
+| `func_8001355C` | either | needed |
+| every other matched function | either | either |
+
+So no one set of flags builds the whole chunk, but the conflicts fall in
+address ranges: the voice code up to `func_800121C0` needs both; the
+note code from `func_800121F4` (`func_80012504`, `func_800128E8`) wants
+split addresses; the slot code around `func_80012F7C` and `func_80013348`
+unsplit addresses without the second pass; the 3D code at the end the
+second pass. That's the shape of several source files built with
+different options (libraries.md). Testing it means cutting chunk_00
+into one chunk per supposed file, each with its flags; not done yet.
 
 Tried for those loops, without effect: `(&a[i])->`, constants in the
 loop, `short` for the flags, the array defined in the file or of unknown

@@ -356,13 +356,133 @@ void func_800121C0(int mode) {
     }
 }
 
+#ifdef NON_MATCHING
+/* Equivalent; the original walks the voices with three pointers
+ * (&D[i].unk0, &D[i - 1].unkA, &D[i - 1].unk8) that serve both voices of
+ * a pair, keeps D_800C9F70's address in a saved register for after the
+ * loop, and allocates its registers otherwise */
+/* Finds a voice (two neighbouring ones for a stereo note) for a note:
+ * a free one, else the one with the lowest priority below level, taken
+ * from its sound. Returns it (the higher of the two), or -1. */
+int func_800121F4(u8 *note, int level) {
+    int voice = -1;
+    u16 flags = *(u16 *)(note + 4);
+    int n;
+    int lfo;
+    int stereo;
+    int i;
+    u32 mask;
+    int found;
+    int best;
+    int bestPri;
+
+    if (flags & 0x800) {
+        voice = D_800C4724;
+        if (voice != -1) {
+            VOICE(voice)->unk0 = (int)note;
+            VOICE(voice)->unk4 = D_800C474C++;
+            VOICE(voice)->unkA |= 2;
+        }
+        goto end;
+    }
+    n = 1;
+    i = D_800C4748;
+    lfo = 0;
+    stereo = (u16)(flags & 0x400);
+    mask = 1 << i;
+    if (stereo) {
+        n = 2;
+        lfo = 1;
+        mask = 3 << i;
+        i++;
+    }
+    found = -1;
+    best = -1;
+    bestPri = 0x40000000;
+    for (; i < 24; i++) {
+        int free = D_800C9F70[i].unk0 == 0;
+        int pri = 0;
+
+        if (!free) {
+            pri = (D_800C9F70[i].unkA & 3) ? 0x40000000 : D_800C9F70[i].unk8;
+        }
+        if (stereo) {
+            int free2 = D_800C9F70[i - 1].unk0 == 0;
+            int pri2 = 0;
+
+            free = free ? free2 != 0 : 0;
+            if (!free2) {
+                pri2 = (D_800C9F70[i - 1].unkA & 3) ? 0x40000000 : D_800C9F70[i - 1].unk8;
+            }
+            if (pri < pri2) {
+                pri = pri2;
+            }
+        }
+        if (free && !(D_800C9F48 & mask) && !(D_800C4738 & mask)) {
+            found = i;
+            break;
+        }
+        if (pri < bestPri) {
+            bestPri = pri;
+            best = i;
+        }
+        mask <<= 1;
+    }
+    if (found == -1) {
+        if (bestPri < level) {
+            if (VOICE(best)->unk0) {
+                VOICE(best)->unk0 = 0;
+                if (VOICE(best)->owner) {
+                    VOICE(best)->owner->voice = found;
+                    VOICE(best)->owner = 0;
+                }
+                if (VOICE(best)->unkA & 1) {
+                    VOICE(best)->unkA &= ~1;
+                    SpuSetPitchLFOVoice(0, 1 << best);
+                }
+            }
+            found = best;
+            if (stereo && VOICE(best - 1)->unk0) {
+                VOICE(best - 1)->unk0 = 0;
+                if (VOICE(best - 1)->owner) {
+                    VOICE(best - 1)->owner->voice = -1;
+                    VOICE(best - 1)->owner = 0;
+                }
+                if (VOICE(best - 1)->unkA & 1) {
+                    VOICE(best - 1)->unkA &= ~1;
+                    SpuSetPitchLFOVoice(0, 1 << (best - 1));
+                }
+                found = best;
+            }
+        }
+        if (found == -1) {
+            goto end;
+        }
+    }
+    voice = found;
+    D_800C9F48 |= mask;
+    {
+        Voice *v = VOICE(found);
+
+        v->unkA |= lfo;
+        do {
+            v->unk0 = (int)note;
+            v->unk4 = D_800C474C++;
+            v--;
+        } while (--n);
+    }
+end:
+    return voice;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_800121F4);
+#endif
 
 #ifdef NON_MATCHING
-/* Equivalent; the original forms the voice's addresses with la + addu
- * (D_800C9F7C, the owner field, kept in $fp for both uses), as split
- * addresses give; with -mno-split-addresses GCC folds them into the
- * stores. Also registers. */
+/* Equivalent. With split addresses (--cflags=-msplit-addresses) it gets
+ * the original's frame, registers and la + addu for the voice's fields
+ * (D_800C9F7C, the owner field, in $fp for both uses), as func_800128E8
+ * needs them; the two volumes are still multiplied in the other order. */
 /* Starts a voice for a note of the bank (sv->voice gets it, -1 when none
  * was free): its volume, pitch, reverb, sample and envelope. Returns 1
  * when it started one. */
@@ -377,11 +497,6 @@ s8 func_80012504(SlotVoice *sv, u8 *note, int pitch, int left, int right) {
     int again;
     u16 flags;
     u32 addr;
-    int bit;
-    int p;
-    u16 rev;
-    u32 mask;
-    int on;
 
     left = left * level >> 14;
     r = 0;
@@ -401,67 +516,75 @@ s8 func_80012504(SlotVoice *sv, u8 *note, int pitch, int left, int right) {
         if (flags & 0x400) {
             sv[1].voice = voice;
         }
-        return r;
-    }
-    {
-        SlotVoice **owner = &VOICE(voice)->owner;
-
-        *owner = sv;
-    }
-    VOICE(voice)->unk8 = level;
-    if (pitch < 0) {
-        p = -pitch;
     } else {
-        p = pitch * t->unkC / 44100;
-    }
-    if (t->shift) {
-        p = (t->shift + 30) * p >> 6;
-    }
-    attr.pitch = p;
-    rev = VOICE(voice)->unkA;
-    on = 0;
-    bit = 1 << voice;
-    if ((t->mode & 4) || (D_800C473D && ((flags & 4) || D_800C473E))) {
-        on = 1;
-        rev |= 4;
-    } else {
-        rev &= ~4;
-    }
-    VOICE(voice)->unkA = rev;
-    SpuSetReverbVoice(on, bit);
-    mask = SPU_VOICE_VOLL | SPU_VOICE_VOLR | SPU_VOICE_PITCH;
-    if (!again) {
-        u16 start = *(u16 *)(note + 0xA);
+        int bit;
+        int p;
+        int rev;
+        int on;
+        int shift;
+        u32 mask;
 
-        if (start != 0xFFFF) {
-            if (flags & 0x10) {
-                mask = SPU_VOICE_VOLL | SPU_VOICE_VOLR | SPU_VOICE_PITCH | SPU_VOICE_LSAX;
-                attr.loop_addr = (addr + *(u16 *)(note + 6)) << 4;
-            }
-            addr += start << 4;
-        }
-        attr.addr = addr;
-        mask |= SPU_VOICE_WDSA | SPU_VOICE_ADSR_ADSR1 | SPU_VOICE_ADSR_ADSR2;
-        attr.adsr1 = t->adsr1;
-        attr.adsr2 = t->adsr2;
-        if (flags & 0x400) {
-            SpuSetPitchLFOVoice(1, bit);
-            sv[1].voice = voice - 1;
-            {
-                SlotVoice **owner = &VOICE(voice - 1)->owner;
+        {
+            SlotVoice **owner = &D_800C9F70[voice].owner;
 
-                *owner = &sv[1];
+            *owner = sv;
+        }
+        D_800C9F70[voice].unk8 = level;
+        shift = t->shift;
+        if (pitch < 0) {
+            p = -pitch;
+        } else {
+            p = pitch * t->unkC / 44100;
+        }
+        if (shift) {
+            p = (shift + 30) * p >> 6;
+        }
+        attr.pitch = p;
+        rev = D_800C9F70[voice].unkA;
+        on = 0;
+        bit = 1 << voice;
+        if ((t->mode & 4) || (D_800C473D && ((flags & 4) || D_800C473E))) {
+            on = 1;
+            rev |= 4;
+        } else {
+            rev &= ~4;
+        }
+        D_800C9F70[voice].unkA = rev;
+        SpuSetReverbVoice(on, bit);
+        mask = SPU_VOICE_VOLL | SPU_VOICE_VOLR | SPU_VOICE_PITCH;
+        if (!again) {
+            u16 start = *(u16 *)(note + 0xA);
+
+            if (start != 0xFFFF) {
+                if (flags & 0x10) {
+                    mask = SPU_VOICE_VOLL | SPU_VOICE_VOLR | SPU_VOICE_PITCH | SPU_VOICE_LSAX;
+                    attr.loop_addr = (addr + *(u16 *)(note + 6)) << 4;
+                }
+                addr += start << 4;
+            }
+            attr.addr = addr;
+            mask |= SPU_VOICE_WDSA | SPU_VOICE_ADSR_ADSR1 | SPU_VOICE_ADSR_ADSR2;
+            attr.adsr1 = t->adsr1;
+            attr.adsr2 = t->adsr2;
+            if (flags & 0x400) {
+                SpuSetPitchLFOVoice(1, bit);
+                sv[1].voice = voice - 1;
+                {
+                    SlotVoice **owner = &D_800C9F70[voice - 1].owner;
+
+                    *owner = &sv[1];
+                }
             }
         }
+        attr.mask = mask;
+        attr.voice = bit;
+        SpuNSetVoiceAttr(voice, &attr);
+        r = 1;
+        if (!again) {
+            SpuSetKey(1, bit);
+        }
+        D_800C9F54 &= ~bit;
     }
-    attr.mask = mask;
-    attr.voice = bit;
-    SpuNSetVoiceAttr(voice, &attr);
-    r = 1;
-    if (!again) {
-        SpuSetKey(1, bit);
-    }
-    D_800C9F54 &= ~bit;
     return r;
 }
 #else

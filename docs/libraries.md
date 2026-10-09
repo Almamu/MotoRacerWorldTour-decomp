@@ -70,7 +70,7 @@ needs the game to re-split; docs/decomp.md, "What git holds").
 The first chunk of the game, 43 functions: voices (24), sound slots (30,
 20 bytes each, handles of slot number and serial), the VAB tone table,
 reverb, CD audio volume, the volume curve by distance and 3D placement.
-31 match, 10 are parked, 2 are still asm
+32 match and 11 are parked
 (docs/matching/issue-1-langimg-sound.md).
 
 **Compiler: GCC 2.91.66**, the boot executable's, not the game's 2.95.2:
@@ -97,8 +97,15 @@ So its assembler was another one, or ASPSX with other options.
 have. But `func_800128E8` only matches with split addresses, and
 `func_80012F7C` only with `-fno-rerun-cse-after-loop`, which breaks
 `func_80012080`, `func_80011960`, `func_80011A68` and `func_8001355C`: the
-library may be several files built with different flags (matching_techniques.md, "When a flag fixes one function and breaks
-another").
+library may be several files built with different flags
+(matching_techniques.md, "When a flag fixes one function and breaks
+another"). Compiling every function both ways puts the conflicts in
+ranges: the voice code (to `func_800121C0`) needs unsplit addresses and
+the second CSE pass, the note code from `func_800121F4` wants split
+addresses, the slot code around `func_80012F7C` no second pass, the 3D
+code the second pass (the table is in issue-1-langimg-sound.md, "The
+flags, function by function"). If that holds, chunk_00 is cut into one
+chunk per file, each with its own flags.
 
 That it was built apart, with the compiler the boot executable uses,
 suggests a library Delphine kept and reused rather than code written for

@@ -131,7 +131,16 @@ default); decompals' builds default to unsigned (`sces_CFLAGS` adds
 Decides the scheduling when nothing else does; reorder before rewriting.
 **Cases:** `LoadFile` (the copy's count and source before the unpacked
 size's load), the movie loop's CD position copy (`minute`, `second`,
-`sector`).
+`sector`). With a few independent statements left (stores to different
+globals), a script that tries every order is quicker than guessing:
+`func_80011E44`'s four last stores matched in 4 of their 24 orders.
+
+- **One store, not one per branch.** `if (c) x |= 4; else x |= 2;` gives
+  two identical stores that GCC merges into one only after scheduling,
+  so nothing that follows can be scheduled above it; `x |= c ? 4 : 2;`
+  has the store after the branches from the start, and the next
+  statement's constants moved above it as in the original
+  (`func_80011E44`).
 
 ### Result variables
 
@@ -140,7 +149,8 @@ size's load), the movie loop's CD position copy (`minute`, `second`,
   twice. With `r = 1;` after the stores it matches (`func_80011924`).
 - **`r = 0; if (p) { ...; r = 1; } return r;`** keeps the result in a
   saved register across the call, where an early `return` doesn't
-  (`func_80012F40`, `func_800130CC`).
+  (`func_80012F40`, `func_800130CC`; `func_80012504`, where `r` is in
+  `$fp` and the failure path jumps to the common exit).
 
 ### Branches
 
@@ -270,6 +280,10 @@ assignments were further off.
 - **`s8` where the original loads with `lb`.** Plain `char` is unsigned
   in these builds (see above), so a status array read with `lb` is
   `s8 status[24]` (`func_80011BA4`; the libspu call takes `char *`).
+- **A branchless `abs`.** `abs()` compiles to `bgez`/`negu`; the sound
+  engine's `|x|` is `sra`, `xor`, `subu`: `ABS(x)` in
+  `lib/sound/include/sound.h`, `((x) ^ ((x) >> 31)) - ((x) >> 31)`
+  (`func_80012504`).
 - **Signed compares need signed types.** `slti` vs `sltiu`: the movie
   loop's frame counter is compared as `(int)D_8014D0D4 > 60`.
 - **A struct for data read from a file.** The movie loop reads the DPS
@@ -369,6 +383,12 @@ Either the functions come from source files built with different flags,
 or there is a source shape that matches both ways; until one is shown,
 the library keeps the flags under which everything matched so far. Test a
 flag on the whole library (`make`), never on the one function.
+
+To see where the conflicts lie, compile every function with and without
+the flag (`tools/try_func.py NAME -D NON_MATCHING --cflags=...`, a
+matched function's `.s` restored from git for the test) and look at the
+addresses: in `lib/sound` they fall in ranges, the shape of several
+files (issue-1-langimg-sound.md, "The flags, function by function").
 
 ## Open problems
 
