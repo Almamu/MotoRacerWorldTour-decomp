@@ -1,4 +1,4 @@
-nonmatching SpuInitMalloc, 0x54
+nonmatching SpuInitMalloc, 0x60
 
 glabel SpuInitMalloc
     /* 155B0 801480E4 21108000 */  addu       $v0, $a0, $zero
@@ -24,7 +24,7 @@ glabel SpuInitMalloc
   .L80148130:
     /* 155FC 80148130 0800E003 */  jr         $ra
     /* 15600 80148134 00000000 */   nop
-endlabel SpuInitMalloc
     /* 15604 80148138 00000000 */  nop
     /* 15608 8014813C 00000000 */  nop
     /* 1560C 80148140 00000000 */  nop
+endlabel SpuInitMalloc

@@ -1,4 +1,4 @@
-nonmatching _ExitCard, 0x70
+nonmatching _ExitCard, 0x80
 
 glabel _ExitCard
     /* 9D774 800AEF64 0E80013C */  lui        $at, %hi(D_800DE388)
@@ -30,10 +30,10 @@ glabel _ExitCard
     /* 9D7D8 800AEFC8 00000000 */  nop
     /* 9D7DC 800AEFCC 0800E003 */  jr         $ra
     /* 9D7E0 800AEFD0 00000000 */   nop
-endlabel _ExitCard
   alabel D_800AEFD4
     /* 9D7E4 800AEFD4 00000000 */  nop
     /* 9D7E8 800AEFD8 00000000 */  nop
     /* 9D7EC 800AEFDC 00000000 */  nop
   alabel D_800AEFE0
     /* 9D7F0 800AEFE0 00000000 */  nop
+endlabel _ExitCard

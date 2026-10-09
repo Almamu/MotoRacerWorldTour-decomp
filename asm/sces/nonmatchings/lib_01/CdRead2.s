@@ -1,4 +1,4 @@
-nonmatching CdRead2, 0x84
+nonmatching CdRead2, 0xB0
 
 glabel CdRead2
     /* 715C 80139C90 E0FFBD27 */  addiu      $sp, $sp, -0x20
@@ -25,9 +25,9 @@ glabel CdRead2
     /* 71A8 80139CDC 1480043C */  lui        $a0, %hi(data_ready_callback)
     /* 71AC 80139CE0 B3DC040C */  jal        CdDataCallback
     /* 71B0 80139CE4 A09D8424 */   addiu     $a0, $a0, %lo(data_ready_callback)
-    /* 71B4 80139CE8 1480043C */  lui        $a0, %hi(func_80139D14)
+    /* 71B4 80139CE8 1480043C */  lui        $a0, %hi(D_80139D14)
     /* 71B8 80139CEC AFDB040C */  jal        CdReadyCallback
-    /* 71BC 80139CF0 149D8424 */   addiu     $a0, $a0, %lo(func_80139D14)
+    /* 71BC 80139CF0 149D8424 */   addiu     $a0, $a0, %lo(D_80139D14)
   .L80139CF4:
     /* 71C0 80139CF4 1B000424 */  addiu      $a0, $zero, 0x1B
     /* 71C4 80139CF8 21280000 */  addu       $a1, $zero, $zero
@@ -37,4 +37,16 @@ glabel CdRead2
     /* 71D4 80139D08 1800B08F */  lw         $s0, 0x18($sp)
     /* 71D8 80139D0C 0800E003 */  jr         $ra
     /* 71DC 80139D10 2000BD27 */   addiu     $sp, $sp, 0x20
+  alabel D_80139D14
+    /* 71E0 80139D14 E8FFBD27 */  addiu      $sp, $sp, -0x18
+    /* 71E4 80139D18 1000BFAF */  sw         $ra, 0x10($sp)
+    /* 71E8 80139D1C 23E8040C */  jal        StCdInterrupt
+    /* 71EC 80139D20 00000000 */   nop
+    /* 71F0 80139D24 1000BF8F */  lw         $ra, 0x10($sp)
+    /* 71F4 80139D28 1800BD27 */  addiu      $sp, $sp, 0x18
+    /* 71F8 80139D2C 0800E003 */  jr         $ra
+    /* 71FC 80139D30 00000000 */   nop
+    /* 7200 80139D34 00000000 */  nop
+    /* 7204 80139D38 00000000 */  nop
+    /* 7208 80139D3C 00000000 */  nop
 endlabel CdRead2

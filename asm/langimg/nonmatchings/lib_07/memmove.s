@@ -1,4 +1,4 @@
-nonmatching memmove, 0x6C
+nonmatching memmove, 0x70
 
 glabel memmove
     /* A5738 800B6F28 21388000 */  addu       $a3, $a0, $zero
@@ -33,5 +33,5 @@ glabel memmove
   .L800B6F8C:
     /* A579C 800B6F8C 0800E003 */  jr         $ra
     /* A57A0 800B6F90 00000000 */   nop
-endlabel memmove
     /* A57A4 800B6F94 00000000 */  nop
+endlabel memmove

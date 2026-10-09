@@ -78,9 +78,7 @@ INCLUDE_ASM("asm/langimg/nonmatchings/lib_07", ChangeClearRCnt);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_07", firstfile);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_07", func_800B5E0C);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_07", func_800B5F10);
+INCLUDE_ASM("asm/langimg/nonmatchings/lib_07", firstfile2);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_07", func_800B5F20);
 
@@ -97,8 +95,6 @@ INCLUDE_ASM("asm/langimg/nonmatchings/lib_07", memcpy);
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_07", memset);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_07", qsort);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_07", func_800B62D8);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_07", func_800B6318);
 

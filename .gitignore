@@ -10,3 +10,5 @@ asm/*/data/
 asm/*/header.s
 assets/
 tools/gcc-*/
+# Sony's PsyQ libraries and psyq-obj-parser (tools/fetch_psyq.sh)
+tools/psyq/

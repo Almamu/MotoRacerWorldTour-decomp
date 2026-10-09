@@ -1,4 +1,4 @@
-nonmatching memmove, 0x6C
+nonmatching memmove, 0x70
 
 glabel memmove
     /* 195E4 8014C118 21388000 */  addu       $a3, $a0, $zero
@@ -33,5 +33,5 @@ glabel memmove
   .L8014C17C:
     /* 19648 8014C17C 0800E003 */  jr         $ra
     /* 1964C 8014C180 00000000 */   nop
-endlabel memmove
     /* 19650 8014C184 00000000 */  nop
+endlabel memmove

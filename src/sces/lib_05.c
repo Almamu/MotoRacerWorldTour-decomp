@@ -60,18 +60,4 @@ INCLUDE_ASM("asm/sces/nonmatchings/lib_05", func_80141C08);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_05", PadInitDirect);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_05", func_80142108);
-
-INCLUDE_ASM("asm/sces/nonmatchings/lib_05", func_80142170);
-
-INCLUDE_ASM("asm/sces/nonmatchings/lib_05", func_80142264);
-
-INCLUDE_ASM("asm/sces/nonmatchings/lib_05", func_80142274);
-
-INCLUDE_ASM("asm/sces/nonmatchings/lib_05", func_80142330);
-
-INCLUDE_ASM("asm/sces/nonmatchings/lib_05", func_801425AC);
-
-INCLUDE_ASM("asm/sces/nonmatchings/lib_05", func_801425E4);
-
 INCLUDE_ASM("asm/sces/nonmatchings/lib_05", _padInitDirSeq);

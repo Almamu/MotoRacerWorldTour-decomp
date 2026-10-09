@@ -3,6 +3,8 @@
 #   make setup    fetch the compilers (GCC 2.95.2 and 2.91.66 for the PlayStation) and maspsx
 #   make split    disassemble the executables with splat (needs extracted/)
 #   make          build and compare against the originals
+#   make sdk      also link Sony's PsyQ objects in place of the library asm they
+#                 match, and compare that (needs tools/fetch_psyq.sh first)
 
 .DEFAULT_GOAL := compare
 
@@ -64,7 +66,7 @@ $(shell mkdir -p $(BUILD); echo '$(FLAGS_NOW)' | cmp -s - $(FLAGS_STAMP) || echo
 
 #### Rules ####
 
-.PHONY: setup split build compare clean distclean
+.PHONY: setup split build compare sdk clean distclean
 
 COMPILERS := $(sort $(foreach t,$(TARGETS),$($(t)_GCC)))
 
@@ -88,6 +90,11 @@ compare: split
 	sha1sum -c config/checksums.sha1
 
 build: $(foreach t,$(TARGETS),$($(t)_BIN))
+
+# The library code with Sony's own objects linked in where they match
+# (docs/decomp.md, "Libraries"); the normal build stays on the asm.
+sdk: compare
+	tools/sdk_build.sh
 
 # The whole build, splat's linker scripts included, so the next make
 # re-splits.

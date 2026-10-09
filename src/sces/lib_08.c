@@ -6,7 +6,7 @@ INCLUDE_ASM("asm/sces/nonmatchings/lib_08", SsUtSetReverbType);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_08", SpuSetReverb);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_08", func_801468A4);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_08", SsUtReverbOff);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_08", SsUtReverbOn);
 
@@ -14,7 +14,7 @@ INCLUDE_ASM("asm/sces/nonmatchings/lib_08", _SsVmAlloc);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_08", _SsVmDoAllocate);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_08", func_80146D24);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_08", _SsVmDamperOff);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_08", _SsVmFlush);
 

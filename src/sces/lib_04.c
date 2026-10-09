@@ -2,8 +2,6 @@
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_04", _patch_gte);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_04", func_8013E8A0);
-
 INCLUDE_ASM("asm/sces/nonmatchings/lib_04", func_8013E8D4);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_04", func_8013E90C);
@@ -72,8 +70,8 @@ INCLUDE_ASM("asm/sces/nonmatchings/lib_04", func_80140110);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_04", func_80140178);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_04", _padStartCom);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_04", PadStartCom);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_04", _padStopCom);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_04", PadStopCom);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_04", _padInitSioMode);

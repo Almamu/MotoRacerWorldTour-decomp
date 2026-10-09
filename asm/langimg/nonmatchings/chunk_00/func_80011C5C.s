@@ -8,7 +8,7 @@ glabel func_80011C5C
     /* 47C 80011C6C 2188A000 */  addu       $s1, $a1, $zero
     /* 480 80011C70 1800B2AF */  sw         $s2, 0x18($sp)
     /* 484 80011C74 1C00BFAF */  sw         $ra, 0x1C($sp)
-    /* 488 80011C78 A7CB020C */  jal        SsUtReverbOff
+    /* 488 80011C78 A7CB020C */  jal        SpuInit
     /* 48C 80011C7C 2190C000 */   addu      $s2, $a2, $zero
     /* 490 80011C80 B1CE020C */  jal        SpuSetReverb
     /* 494 80011C84 21200000 */   addu      $a0, $zero, $zero

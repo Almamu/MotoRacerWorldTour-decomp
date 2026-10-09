@@ -3,7 +3,7 @@ nonmatching func_8013604C, 0x44
 glabel func_8013604C
     /* 3518 8013604C E8FFBD27 */  addiu      $sp, $sp, -0x18
     /* 351C 80136050 1000BFAF */  sw         $ra, 0x10($sp)
-    /* 3520 80136054 291A050C */  jal        func_801468A4
+    /* 3520 80136054 291A050C */  jal        SsUtReverbOff
     /* 3524 80136058 00000000 */   nop
     /* 3528 8013605C E20A050C */  jal        SpuClearReverbWorkArea
     /* 352C 80136060 05000424 */   addiu     $a0, $zero, 0x5

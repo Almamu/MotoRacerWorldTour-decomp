@@ -1,4 +1,4 @@
-nonmatching strcmp, 0x64
+nonmatching strcmp, 0x70
 
 glabel strcmp
     /* A4C08 800B63F8 03008010 */  beqz       $a0, .L800B6408
@@ -31,7 +31,7 @@ glabel strcmp
   .L800B6454:
     /* A4C64 800B6454 0800E003 */  jr         $ra
     /* A4C68 800B6458 00000000 */   nop
-endlabel strcmp
     /* A4C6C 800B645C 00000000 */  nop
     /* A4C70 800B6460 00000000 */  nop
     /* A4C74 800B6464 00000000 */  nop
+endlabel strcmp

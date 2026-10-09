@@ -10,19 +10,7 @@ INCLUDE_ASM("asm/langimg/nonmatchings/lib_02", func_800AB304);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_02", startIntrVSync);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_02", func_800AB380);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_02", func_800AB3EC);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_02", func_800AB418);
-
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_02", startIntrDMA);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_02", func_800AB494);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_02", func_800AB614);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_02", func_800AB6C0);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_02", SetVideoMode);
 

@@ -5,7 +5,10 @@ isn't part of this repository).
 
   tools/psyq_sigs.py SIGS versions       functions and bytes matched by each SDK version
   tools/psyq_sigs.py SIGS objects        where each library object sits, and its versions
-  tools/psyq_sigs.py SIGS symbols        symbol_addrs.txt lines for every identified function
+  tools/psyq_sigs.py SIGS symbols [MATCH_JSON]
+                                         symbol_addrs.txt lines for every identified function;
+                                         the exact matches of tools/psyq_match.py --json, when
+                                         given, override the signatures' names
 
 Each signature is an object's .text with its relocated bytes masked. It is
 cut at the object's function labels and matched function by function (one
@@ -178,9 +181,18 @@ def cmd_objects(sigs):
                   f"bytes, versions {vrange(c['versions'])}")
 
 
-def cmd_symbols(sigs):
+def cmd_symbols(sigs, match_json=None):
+    exact_all = json.loads(Path(match_json).read_text()) if match_json else {}
     for target in TARGETS:
         print(f"// {target}")
+        # Exact matches (Sony's object itself is there): their names win.
+        exact = {}
+        for o in exact_all.get(target, []):
+            for name, vram in o["functions"]:
+                whole = len(o["functions"]) == 1 and vram == o["address"]
+                exact[vram] = (name, o["size"] if whole else 0,
+                               f"{o['lib']}.LIB/{o['module']}.OBJ exact {' '.join(o['versions'])}")
+        exact_names = {n for n, _, _ in exact.values()}
         names, best = {}, {}  # best: name -> (placement's matched bytes, vram)
         for c in resolve(placements(sigs, target)):
             n = sum(f[1] for f in c["funcs"])
@@ -201,19 +213,28 @@ def cmd_symbols(sigs):
                 # functions) or be shorter than this version's.
                 whole = len(c["funcs"]) == 1 and size == c["size"]
                 names[vram] = (ns[0], size if whole else 0, c)
-        for vram in sorted(names):
-            n, size, c = names[vram]
+        lines = {}
+        for vram, (n, size, c) in names.items():
+            if vram in exact or n in exact_names:
+                continue
+            lines[vram] = (n, size, f"{c['lib']}/{c['obj']} {vrange(c['versions'])}")
+        lines.update(exact)
+        for vram in sorted(lines):
+            n, size, note = lines[vram]
             sz = f" size:0x{size:X}" if size else ""
-            print(f"{n} = 0x{vram:08X}; // type:func{sz} "
-                  f"{c['lib']}/{c['obj']} {vrange(c['versions'])}")
+            print(f"{n} = 0x{vram:08X}; // type:func{sz} {note}")
 
 
 def main():
     if len(sys.argv) < 3:
         sys.exit(__doc__)
     sigs, cmd = sys.argv[1], sys.argv[2]
-    {"versions": cmd_versions, "objects": cmd_objects, "symbols": cmd_symbols}.get(
-        cmd, lambda _: sys.exit(__doc__))(sigs)
+    if cmd == "symbols":
+        cmd_symbols(sigs, sys.argv[3] if len(sys.argv) > 3 else None)
+    elif cmd in ("versions", "objects"):
+        {"versions": cmd_versions, "objects": cmd_objects}[cmd](sigs)
+    else:
+        sys.exit(__doc__)
 
 
 if __name__ == "__main__":

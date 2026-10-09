@@ -51,7 +51,7 @@ glabel _SsSndStop
     /* 12708 8014523C 04004234 */  ori        $v0, $v0, 0x4
     /* 1270C 80145240 0E25050C */  jal        _SsVmSeqKeyOff
     /* 12710 80145244 980062AC */   sw        $v0, 0x98($v1)
-    /* 12714 80145248 491B050C */  jal        func_80146D24
+    /* 12714 80145248 491B050C */  jal        _SsVmDamperOff
     /* 12718 8014524C 00000000 */   nop
     /* 1271C 80145250 21380000 */  addu       $a3, $zero, $zero
     /* 12720 80145254 40000A24 */  addiu      $t2, $zero, 0x40

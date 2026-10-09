@@ -48,6 +48,8 @@ LIB_NOTE = (
     "source instead."
 )
 
+# Decompiled, or linked from Sony's own PsyQ object by make sdk.
+DONE = ("done", "sdk")
 INCLUDE_ASM_RE = re.compile(r'^\s*INCLUDE_ASM\(\s*"[^"]*"\s*,\s*([^\s)]+)\s*\)')
 COMMENT_RE = re.compile(r"//.*?$|/\*.*?\*/", re.S | re.M)
 
@@ -108,8 +110,15 @@ def remaining(path):
     return todo, parked
 
 
+def sdk_functions(target):
+    """Functions that a verified make sdk links from Sony's own objects."""
+    p = ROOT / "build" / "sdk" / f"{target}.sdk_functions.txt"
+    return set(p.read_text().split()) if p.exists() else set()
+
+
 def survey(target):
     funcs = functions(target)
+    sdk = sdk_functions(target)
     out = []
     for name, ext, lo, hi in chunks(target):
         src = ROOT / "src" / target / f"{name}.{ext}"
@@ -120,7 +129,8 @@ def survey(target):
             "lib": name.startswith("lib_"), "src": src.relative_to(ROOT).as_posix(),
             "funcs": [
                 {"addr": a, "name": n, "size": sz,
-                 "state": "parked" if n in parked else "todo" if n in todo else "done"}
+                 "state": "parked" if n in parked else "sdk" if n in sdk
+                          else "todo" if n in todo else "done"}
                 for a, n, sz in fs
             ],
         })
@@ -132,12 +142,12 @@ def cmd_status(args):
     for target in TARGETS:
         rows = survey(target)
         tf = sum(len(c["funcs"]) for c in rows)
-        td = sum(1 for c in rows for f in c["funcs"] if f["state"] == "done")
+        td = sum(1 for c in rows for f in c["funcs"] if f["state"] in DONE)
         tb = sum(f["size"] for c in rows for f in c["funcs"])
-        tbd = sum(f["size"] for c in rows for f in c["funcs"] if f["state"] == "done")
+        tbd = sum(f["size"] for c in rows for f in c["funcs"] if f["state"] in DONE)
         print(f"{target}: {td}/{tf} functions, {tbd:,}/{tb:,} bytes ({100 * tbd / tb:.2f}%)")
         for c in rows:
-            done = [f for f in c["funcs"] if f["state"] == "done"]
+            done = [f for f in c["funcs"] if f["state"] in DONE]
             parked = [f for f in c["funcs"] if f["state"] == "parked"]
             if args.all or done or parked:
                 b = sum(f["size"] for f in c["funcs"])
@@ -177,8 +187,9 @@ def issue_body(c):
         "",
     ]
     for f in c["funcs"]:
-        box = "x" if f["state"] == "done" else " "
-        note = " (parked: C doesn't match yet)" if f["state"] == "parked" else ""
+        box = "x" if f["state"] in DONE else " "
+        note = {"parked": " (parked: C doesn't match yet)",
+                "sdk": " (Sony's object, `make sdk`)"}.get(f["state"], "")
         lines.append(f"- [{box}] `{f['name']}` `{f['addr']:08X}` {f['size']:#x} bytes{note}")
     lines += [
         "",
@@ -209,7 +220,7 @@ def cmd_issues(args):
                "--limit", "1000", "--json", "title"))}
     for target in TARGETS:
         for c in survey(target):
-            if all(f["state"] == "done" for f in c["funcs"]):
+            if all(f["state"] in DONE for f in c["funcs"]):
                 continue
             title, body = issue_title(c), issue_body(c)
             stem = f"{c['target']}_{c['name']}"

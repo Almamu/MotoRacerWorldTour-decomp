@@ -1,4 +1,4 @@
-nonmatching SetDefDrawEnv, 0xB4
+nonmatching SetDefDrawEnv, 0xC0
 
 glabel SetDefDrawEnv
     /* BB20 8013E654 D8FFBD27 */  addiu      $sp, $sp, -0x28
@@ -48,7 +48,7 @@ glabel SetDefDrawEnv
     /* BBC8 8013E6FC 1000B08F */  lw         $s0, 0x10($sp)
     /* BBCC 8013E700 0800E003 */  jr         $ra
     /* BBD0 8013E704 2800BD27 */   addiu     $sp, $sp, 0x28
-endlabel SetDefDrawEnv
     /* BBD4 8013E708 00000000 */  nop
     /* BBD8 8013E70C 00000000 */  nop
     /* BBDC 8013E710 00000000 */  nop
+endlabel SetDefDrawEnv

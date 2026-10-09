@@ -1,4 +1,5 @@
-nonmatching _patch_gte, 0xAC
+/* Handwritten function */
+nonmatching _patch_gte, 0xE0
 
 glabel _patch_gte
     /* 9CEF8 800AE6E8 0E80013C */  lui        $at, %hi(D_800DE2E8)
@@ -13,8 +14,8 @@ glabel _patch_gte
     /* 9CF1C 800AE70C 00000000 */  nop
     /* 9CF20 800AE710 28004224 */  addiu      $v0, $v0, 0x28
     /* 9CF24 800AE714 21784000 */  addu       $t7, $v0, $zero
-    /* 9CF28 800AE718 0B800A3C */  lui        $t2, %hi(func_800AE794)
-    /* 9CF2C 800AE71C 94E74A25 */  addiu      $t2, $t2, %lo(func_800AE794)
+    /* 9CF28 800AE718 0B800A3C */  lui        $t2, %hi(D_800AE794)
+    /* 9CF2C 800AE71C 94E74A25 */  addiu      $t2, $t2, %lo(D_800AE794)
     /* 9CF30 800AE720 0B80093C */  lui        $t1, %hi(D_800AE7AC)
     /* 9CF34 800AE724 ACE72925 */  addiu      $t1, $t1, %lo(D_800AE7AC)
   .L800AE728:
@@ -47,4 +48,20 @@ glabel _patch_gte
     /* 9CF98 800AE788 00000000 */  nop
     /* 9CF9C 800AE78C 0800E003 */  jr         $ra
     /* 9CFA0 800AE790 00000000 */   nop
+  alabel D_800AE794
+    /* 9CFA4 800AE794 040041AF */  sw         $at, 0x4($k0) /* handwritten instruction */
+    /* 9CFA8 800AE798 080042AF */  sw         $v0, 0x8($k0) /* handwritten instruction */
+    /* 9CFAC 800AE79C 0C0043AF */  sw         $v1, 0xC($k0) /* handwritten instruction */
+    /* 9CFB0 800AE7A0 7C005FAF */  sw         $ra, 0x7C($k0) /* handwritten instruction */
+    /* 9CFB4 800AE7A4 00700340 */  mfc0       $v1, $14 /* handwritten instruction */
+    /* 9CFB8 800AE7A8 00000000 */  nop
+  alabel D_800AE7AC
+    /* 9CFBC 800AE7AC 040041AF */  sw         $at, 0x4($k0) /* handwritten instruction */
+    /* 9CFC0 800AE7B0 080042AF */  sw         $v0, 0x8($k0) /* handwritten instruction */
+    /* 9CFC4 800AE7B4 00680240 */  mfc0       $v0, $13 /* handwritten instruction */
+    /* 9CFC8 800AE7B8 0C0043AF */  sw         $v1, 0xC($k0) /* handwritten instruction */
+    /* 9CFCC 800AE7BC 00700340 */  mfc0       $v1, $14 /* handwritten instruction */
+    /* 9CFD0 800AE7C0 7C005FAF */  sw         $ra, 0x7C($k0) /* handwritten instruction */
+  alabel D_800AE7C4
+    /* 9CFD4 800AE7C4 00000000 */  nop
 endlabel _patch_gte

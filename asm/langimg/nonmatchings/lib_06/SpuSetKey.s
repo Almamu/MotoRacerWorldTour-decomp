@@ -1,4 +1,4 @@
-nonmatching SpuSetKey, 0x1BC
+nonmatching SpuSetKey, 0x1C0
 
 glabel SpuSetKey
     /* A28C4 800B40B4 FF00023C */  lui        $v0, (0xFFFFFF >> 16)
@@ -119,5 +119,5 @@ glabel SpuSetKey
   .L800B4268:
     /* A2A78 800B4268 0800E003 */  jr         $ra
     /* A2A7C 800B426C 00000000 */   nop
-endlabel SpuSetKey
     /* A2A80 800B4270 00000000 */  nop
+endlabel SpuSetKey

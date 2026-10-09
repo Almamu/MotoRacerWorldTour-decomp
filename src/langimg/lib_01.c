@@ -10,16 +10,6 @@ INCLUDE_ASM("asm/langimg/nonmatchings/lib_01", func_800A92DC);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_01", CdSearchFile);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_01", func_800A968C);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_01", func_800A96AC);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_01", func_800A9970);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_01", func_800A9A14);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_01", func_800A9CB0);
-
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_01", func_800A9D24);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_01", func_800A9D58);
@@ -73,8 +63,6 @@ INCLUDE_ASM("asm/langimg/nonmatchings/lib_01", _card_write);
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_01", _new_card);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_01", VSync);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_01", func_800AAC48);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_01", ResetCallback);
 

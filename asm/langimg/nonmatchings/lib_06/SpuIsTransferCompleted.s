@@ -1,4 +1,4 @@
-nonmatching SpuIsTransferCompleted, 0xA4
+nonmatching SpuIsTransferCompleted, 0xB0
 
 glabel SpuIsTransferCompleted
     /* A2B74 800B4364 0C80023C */  lui        $v0, %hi(D_800C3D40)
@@ -48,7 +48,7 @@ glabel SpuIsTransferCompleted
     /* A2C0C 800B43FC 1000B08F */  lw         $s0, 0x10($sp)
     /* A2C10 800B4400 0800E003 */  jr         $ra
     /* A2C14 800B4404 2000BD27 */   addiu     $sp, $sp, 0x20
-endlabel SpuIsTransferCompleted
     /* A2C18 800B4408 00000000 */  nop
     /* A2C1C 800B440C 00000000 */  nop
     /* A2C20 800B4410 00000000 */  nop
+endlabel SpuIsTransferCompleted

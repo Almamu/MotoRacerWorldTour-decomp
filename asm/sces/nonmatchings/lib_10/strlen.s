@@ -1,4 +1,4 @@
-nonmatching strlen, 0x34
+nonmatching strlen, 0x40
 
 glabel strlen
     /* 1842C 8014AF60 21180000 */  addu       $v1, $zero, $zero
@@ -17,7 +17,7 @@ glabel strlen
   .L8014AF8C:
     /* 18458 8014AF8C 0800E003 */  jr         $ra
     /* 1845C 8014AF90 00000000 */   nop
-endlabel strlen
     /* 18460 8014AF94 00000000 */  nop
     /* 18464 8014AF98 00000000 */  nop
     /* 18468 8014AF9C 00000000 */  nop
+endlabel strlen

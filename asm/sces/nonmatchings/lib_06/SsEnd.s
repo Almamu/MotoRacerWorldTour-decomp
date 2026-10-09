@@ -1,4 +1,4 @@
-nonmatching SsEnd, 0xAC
+nonmatching SsEnd, 0xB0
 
 glabel SsEnd
     /* 10E0C 80143940 E8FFBD27 */  addiu      $sp, $sp, -0x18
@@ -48,5 +48,5 @@ glabel SsEnd
     /* 10EAC 801439E0 1000B08F */  lw         $s0, 0x10($sp)
     /* 10EB0 801439E4 0800E003 */  jr         $ra
     /* 10EB4 801439E8 1800BD27 */   addiu     $sp, $sp, 0x18
-endlabel SsEnd
     /* 10EB8 801439EC 00000000 */  nop
+endlabel SsEnd

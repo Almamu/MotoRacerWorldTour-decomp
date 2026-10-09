@@ -1,4 +1,4 @@
-nonmatching vmNoiseOn, 0x568
+nonmatching vmNoiseOn, 0x570
 
 glabel vmNoiseOn
     /* 157E4 80148318 D8FFBD27 */  addiu      $sp, $sp, -0x28
@@ -364,6 +364,6 @@ glabel vmNoiseOn
     /* 15D40 80148874 1000B08F */  lw         $s0, 0x10($sp)
     /* 15D44 80148878 0800E003 */  jr         $ra
     /* 15D48 8014887C 2800BD27 */   addiu     $sp, $sp, 0x28
-endlabel vmNoiseOn
     /* 15D4C 80148880 00000000 */  nop
     /* 15D50 80148884 00000000 */  nop
+endlabel vmNoiseOn

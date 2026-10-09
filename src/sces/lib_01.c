@@ -4,16 +4,6 @@ INCLUDE_ASM("asm/sces/nonmatchings/lib_01", func_80138A48);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_01", CdSearchFile);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_01", func_80138DF8);
-
-INCLUDE_ASM("asm/sces/nonmatchings/lib_01", func_80138E18);
-
-INCLUDE_ASM("asm/sces/nonmatchings/lib_01", func_801390DC);
-
-INCLUDE_ASM("asm/sces/nonmatchings/lib_01", func_80139180);
-
-INCLUDE_ASM("asm/sces/nonmatchings/lib_01", func_8013941C);
-
 INCLUDE_ASM("asm/sces/nonmatchings/lib_01", func_80139490);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_01", func_801394C4);
@@ -27,8 +17,6 @@ INCLUDE_ASM("asm/sces/nonmatchings/lib_01", CdRead);
 INCLUDE_ASM("asm/sces/nonmatchings/lib_01", CdReadSync);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_01", CdRead2);
-
-INCLUDE_ASM("asm/sces/nonmatchings/lib_01", func_80139D14);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_01", StClearRing);
 

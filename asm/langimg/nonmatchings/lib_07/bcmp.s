@@ -1,4 +1,4 @@
-nonmatching bcmp, 0x4C
+nonmatching bcmp, 0x50
 
 glabel bcmp
     /* A48D8 800B60C8 39D80208 */  j          .L800B60E4
@@ -23,5 +23,5 @@ glabel bcmp
   .L800B610C:
     /* A491C 800B610C 0800E003 */  jr         $ra
     /* A4920 800B6110 00000000 */   nop
-endlabel bcmp
     /* A4924 800B6114 00000000 */  nop
+endlabel bcmp

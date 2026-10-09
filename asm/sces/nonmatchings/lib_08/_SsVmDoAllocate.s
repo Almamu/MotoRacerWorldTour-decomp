@@ -1,4 +1,4 @@
-nonmatching _SsVmDoAllocate, 0x1C8
+nonmatching _SsVmDoAllocate, 0x1D0
 
 glabel _SsVmDoAllocate
     /* 14020 80146B54 21280000 */  addu       $a1, $zero, $zero
@@ -119,6 +119,6 @@ glabel _SsVmDoAllocate
     /* 141DC 80146D10 21082300 */  addu       $at, $at, $v1
     /* 141E0 80146D14 0800E003 */  jr         $ra
     /* 141E4 80146D18 C0F822A0 */   sb        $v0, %lo(D_801CF8C0)($at)
-endlabel _SsVmDoAllocate
     /* 141E8 80146D1C 00000000 */  nop
     /* 141EC 80146D20 00000000 */  nop
+endlabel _SsVmDoAllocate

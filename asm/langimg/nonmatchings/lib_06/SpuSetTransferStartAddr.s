@@ -1,4 +1,4 @@
-nonmatching SpuSetTransferStartAddr, 0x5C
+nonmatching SpuSetTransferStartAddr, 0x60
 
 glabel SpuSetTransferStartAddr
     /* A2AE4 800B42D4 E8FFBD27 */  addiu      $sp, $sp, -0x18
@@ -26,5 +26,5 @@ glabel SpuSetTransferStartAddr
     /* A2B34 800B4324 1800BD27 */  addiu      $sp, $sp, 0x18
     /* A2B38 800B4328 0800E003 */  jr         $ra
     /* A2B3C 800B432C 00000000 */   nop
-endlabel SpuSetTransferStartAddr
     /* A2B40 800B4330 00000000 */  nop
+endlabel SpuSetTransferStartAddr

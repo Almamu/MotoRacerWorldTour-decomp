@@ -1,4 +1,4 @@
-nonmatching _SpuSetAnyVoice, 0x2BC
+nonmatching _SpuSetAnyVoice, 0x2C0
 
 glabel _SpuSetAnyVoice
     /* 146C0 801471F4 21488000 */  addu       $t1, $a0, $zero
@@ -189,5 +189,5 @@ glabel _SpuSetAnyVoice
   .L801474A8:
     /* 14974 801474A8 0800E003 */  jr         $ra
     /* 14978 801474AC 24104201 */   and       $v0, $t2, $v0
-endlabel _SpuSetAnyVoice
     /* 1497C 801474B0 00000000 */  nop
+endlabel _SpuSetAnyVoice

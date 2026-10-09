@@ -1,4 +1,4 @@
-nonmatching _SsSndCrescendo, 0x208
+nonmatching _SsSndCrescendo, 0x210
 
 glabel _SsSndCrescendo
     /* 11A6C 801445A0 C8FFBD27 */  addiu      $sp, $sp, -0x38
@@ -144,6 +144,6 @@ glabel _SsSndCrescendo
     /* 11C68 8014479C 1800B08F */  lw         $s0, 0x18($sp)
     /* 11C6C 801447A0 0800E003 */  jr         $ra
     /* 11C70 801447A4 3800BD27 */   addiu     $sp, $sp, 0x38
-endlabel _SsSndCrescendo
     /* 11C74 801447A8 00000000 */  nop
     /* 11C78 801447AC 00000000 */  nop
+endlabel _SsSndCrescendo

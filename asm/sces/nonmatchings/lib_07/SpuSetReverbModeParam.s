@@ -1,4 +1,4 @@
-nonmatching SpuSetReverbModeParam, 0x4D4
+nonmatching SpuSetReverbModeParam, 0x4E0
 
 glabel SpuSetReverbModeParam
     /* 13254 80145D88 78FFBD27 */  addiu      $sp, $sp, -0x88
@@ -340,7 +340,7 @@ glabel SpuSetReverbModeParam
     /* 1371C 80146250 6000B08F */  lw         $s0, 0x60($sp)
     /* 13720 80146254 0800E003 */  jr         $ra
     /* 13724 80146258 8800BD27 */   addiu     $sp, $sp, 0x88
-endlabel SpuSetReverbModeParam
     /* 13728 8014625C 00000000 */  nop
     /* 1372C 80146260 00000000 */  nop
     /* 13730 80146264 00000000 */  nop
+endlabel SpuSetReverbModeParam

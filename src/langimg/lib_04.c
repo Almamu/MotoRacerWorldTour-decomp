@@ -50,9 +50,9 @@ INCLUDE_ASM("asm/langimg/nonmatchings/lib_04", func_800B0804);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_04", func_800B086C);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_04", _padStartCom);
+INCLUDE_ASM("asm/langimg/nonmatchings/lib_04", PadStartCom);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_04", _padStopCom);
+INCLUDE_ASM("asm/langimg/nonmatchings/lib_04", PadStopCom);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_04", _padInitSioMode);
 

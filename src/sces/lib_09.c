@@ -24,8 +24,6 @@ INCLUDE_ASM("asm/sces/nonmatchings/lib_09", _spu_gcSPU);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_09", SsVabOpenHead);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_09", func_80149A0C);
-
 INCLUDE_ASM("asm/sces/nonmatchings/lib_09", SpuMalloc);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_09", _SsVabOpenHeadWithMode);

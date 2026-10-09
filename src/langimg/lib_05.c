@@ -56,20 +56,6 @@ INCLUDE_ASM("asm/langimg/nonmatchings/lib_05", func_800B1F68);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_05", PadInitDirect);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_05", func_800B244C);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_05", func_800B24B4);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_05", func_800B25A8);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_05", func_800B25B8);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_05", func_800B2674);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_05", func_800B28F0);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_05", func_800B2928);
-
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_05", _padInitDirSeq);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_05", func_800B2980);
@@ -84,7 +70,7 @@ INCLUDE_ASM("asm/langimg/nonmatchings/lib_05", setRC2wait);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_05", chkRC2wait);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_05", SsUtReverbOff);
+INCLUDE_ASM("asm/langimg/nonmatchings/lib_05", SpuInit);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_05", _SpuInit);
 

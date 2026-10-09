@@ -50,7 +50,7 @@ INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", ratan2);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", _patch_gte);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", func_800AE794);
+INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", func_800AE7C8);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", func_800AE800);
 

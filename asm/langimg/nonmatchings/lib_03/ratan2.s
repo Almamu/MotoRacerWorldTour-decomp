@@ -1,4 +1,4 @@
-nonmatching ratan2, 0x174
+nonmatching ratan2, 0x180
 
 glabel ratan2
     /* 9CD78 800AE568 21300000 */  addu       $a2, $zero, $zero
@@ -113,7 +113,7 @@ glabel ratan2
   .L800AE6D4:
     /* 9CEE4 800AE6D4 0800E003 */  jr         $ra
     /* 9CEE8 800AE6D8 00000000 */   nop
-endlabel ratan2
     /* 9CEEC 800AE6DC 00000000 */  nop
     /* 9CEF0 800AE6E0 00000000 */  nop
     /* 9CEF4 800AE6E4 00000000 */  nop
+endlabel ratan2

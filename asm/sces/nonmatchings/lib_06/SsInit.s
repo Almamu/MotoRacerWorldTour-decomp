@@ -5,7 +5,7 @@ glabel SsInit
     /* 10EC0 801439F4 1000BFAF */  sw         $ra, 0x10($sp)
     /* 10EC4 801439F8 A6EC040C */  jal        ResetCallback
     /* 10EC8 801439FC 00000000 */   nop
-    /* 10ECC 80143A00 8C0E050C */  jal        func_80143A30
+    /* 10ECC 80143A00 8C0E050C */  jal        SpuInit
     /* 10ED0 80143A04 00000000 */   nop
     /* 10ED4 80143A08 E20A050C */  jal        SpuClearReverbWorkArea
     /* 10ED8 80143A0C 07000424 */   addiu     $a0, $zero, 0x7

@@ -73,31 +73,57 @@ boot executable wasn't simply linked from the game's objects.
 Both executables link Sony's PsyQ libraries after their own code, starting
 with PsyQ's startup code (`__SN_ENTRY_POINT`: 0x800A7084 in the game,
 0x80136B4C in the boot executable). They aren't to be decompiled by hand
-(issue #97).
+(issue #97): where Sony's own object is what's linked, `make sdk` links it.
 
-`tools/psyq_sigs.py` finds them with the
+**Names.** `config/<target>/symbol_addrs.txt` has a generated block of
+library names. Lines marked `exact` are functions of an SDK object found
+whole in the executable (`tools/psyq_match.py`); the rest come from the
 [psx_psyq_signatures](https://github.com/lab313ru/psx_psyq_signatures)
-database (clone it anywhere): it matches each SDK object's code function by
-function, places each object where most of it matches over every SDK
-version, and writes the names into `config/<target>/symbol_addrs.txt`:
+database (`tools/psyq_sigs.py`), which matches function by function and
+places each object where most of it matches over every SDK version:
 
 ```sh
-tools/psyq_sigs.py ../psx_psyq_signatures objects   # where each object sits, and the versions that match
-tools/psyq_sigs.py ../psx_psyq_signatures symbols   # the symbol_addrs.txt block (replace the generated one)
+make sdk                                             # writes build/sdk/match.json
+tools/psyq_sigs.py ../psx_psyq_signatures symbols build/sdk/match.json   # the block to paste in
 ```
+
+**Sony's objects.** `tools/fetch_psyq.sh` downloads the runtime libraries
+4.3, 4.4 (with Sony's `patches/`) and 4.7 from archive.org's `ps1_sdks`
+collection, and decomp.me's `psyq-obj-parser`, into `tools/psyq/` (ignored;
+nothing of it is committed), checking everything against
+`tools/psyq.sha256`. Then `make sdk`:
+
+1. `tools/psyq_match.py` converts every object to ELF and looks for its
+   whole `.text` in the library code, every byte equal except what its
+   relocations fill in, and where its calls and address loads of a known
+   symbol land on that symbol. libds, libgs, libhmd, libmcx and libcomb
+   are skipped: they carry copies of other libraries' code, and the
+   executables use libcd (its strings are there).
+2. `tools/psyq_link.py` rewrites the linker script: each library chunk
+   becomes one object per function, and the functions that a matched
+   object without data of its own covers are replaced by that object's
+   `.text`. Symbols the objects need that this build doesn't define get
+   their addresses from the original executable's relocated instructions.
+3. `tools/sdk_build.sh` assembles, links and compares the result
+   (`build/sdk/*.bin`), and records the replaced functions, which
+   `tools/chunks.py` then counts as done.
+
+The normal build stays on the tracked asm, so it needs none of this.
 
 | | Game | Boot executable |
 |---|---|---|
-| Library functions named | 193 of 350 (53% of the bytes) | 209 of 367 (65%) |
-| Code matched by an SDK object | 55 KB of 65 KB | 78 KB of 87 KB |
-| SDK versions | libpad only 4.3; libcard's `PATCH.OBJ` only 4.5+; the rest 4.1-4.7 | libpad and libgpu 4.4-4.5 |
+| Library functions named | 194 of 325 | 213 of 339 |
+| SDK objects found whole | 103 (23 KB of 66 KB) | 122 (44 KB of 88 KB) |
+| Linked by `make sdk` | 76 objects, 8.2 KB, 80 functions | 88 objects, 21.9 KB, 97 functions |
+| SDK release | 4.3 (several objects are only in 4.3); one libpad object only in 4.7 | 4.4 (several only in 4.4); a libpad and a libsnd object only in 4.7 |
 
-The unnamed rest is static functions (the signatures label them
-`text_XXX`) and functions whose code differs from every version in the
-database. The game's libraries don't all come from one SDK release, so
-linking Sony's objects will mean picking each one's version; the
-`objects` output has them. The RCS strings in both executables (libcd
-`bios.c` 1.86, `intr.c` 1.75, libgpu `sys.c` 1.140) agree with this era.
+The other found objects have data of their own, which is still in the data
+disassembly; they can be linked once the data is split by chunk (#101).
+The rest of the library code matches no release: libcd's `BIOS.OBJ`, for
+one, is 4.3/4.4's for its first 0x1100 bytes, but the game's `CD_init` has
+debug `printf` calls that no released version has, so the game linked a
+library build Sony shipped some other way. That code stays asm (and could
+be decompiled, with the SDK's objects as a reference).
 
 Splat finds the library functions' boundaries itself; `symbol_addrs.txt`
 gives sizes only for one-function objects (the BIOS call stubs, which
@@ -112,6 +138,7 @@ spimdisasm, rabbitizer, m2c and objdiff. Then:
 make setup   # tools/gcc-2.95.2-psx and tools/gcc-2.91.66-psx (checksummed downloads), the maspsx submodule
 make         # split with splat, build, compare with config/checksums.sha1
 make NON_MATCHING=1 build   # use the C of parked functions instead of their asm
+tools/fetch_psyq.sh && make sdk   # optional: Sony's own library objects, see "Libraries"
 ```
 
 `make` reruns splat when `config/*.yaml` or `config/*/symbol_addrs.txt`

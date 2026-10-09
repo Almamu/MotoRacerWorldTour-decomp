@@ -1,4 +1,4 @@
-nonmatching _SsVmKeyOnNow, 0x4C8
+nonmatching _SsVmKeyOnNow, 0x4D0
 
 glabel _SsVmKeyOnNow
     /* 15E64 80148998 1D80023C */  lui        $v0, %hi(D_801CFB9C)
@@ -321,6 +321,6 @@ glabel _SsVmKeyOnNow
     /* 16320 80148E54 1D80013C */  lui        $at, %hi(D_801CFAAA)
     /* 16324 80148E58 0800E003 */  jr         $ra
     /* 16328 80148E5C AAFA22A4 */   sh        $v0, %lo(D_801CFAAA)($at)
-endlabel _SsVmKeyOnNow
     /* 1632C 80148E60 00000000 */  nop
     /* 16330 80148E64 00000000 */  nop
+endlabel _SsVmKeyOnNow

@@ -1,4 +1,5 @@
-nonmatching _patch_gte, 0xAC
+/* Handwritten function */
+nonmatching _patch_gte, 0xE0
 
 glabel _patch_gte
     /* BCC0 8013E7F4 1D80013C */  lui        $at, %hi(D_801CE668)
@@ -13,8 +14,8 @@ glabel _patch_gte
     /* BCE4 8013E818 00000000 */  nop
     /* BCE8 8013E81C 28004224 */  addiu      $v0, $v0, 0x28
     /* BCEC 8013E820 21784000 */  addu       $t7, $v0, $zero
-    /* BCF0 8013E824 14800A3C */  lui        $t2, %hi(func_8013E8A0)
-    /* BCF4 8013E828 A0E84A25 */  addiu      $t2, $t2, %lo(func_8013E8A0)
+    /* BCF0 8013E824 14800A3C */  lui        $t2, %hi(D_8013E8A0)
+    /* BCF4 8013E828 A0E84A25 */  addiu      $t2, $t2, %lo(D_8013E8A0)
     /* BCF8 8013E82C 1480093C */  lui        $t1, %hi(D_8013E8B8)
     /* BCFC 8013E830 B8E82925 */  addiu      $t1, $t1, %lo(D_8013E8B8)
   .L8013E834:
@@ -47,4 +48,20 @@ glabel _patch_gte
     /* BD60 8013E894 00000000 */  nop
     /* BD64 8013E898 0800E003 */  jr         $ra
     /* BD68 8013E89C 00000000 */   nop
+  alabel D_8013E8A0
+    /* BD6C 8013E8A0 040041AF */  sw         $at, 0x4($k0) /* handwritten instruction */
+    /* BD70 8013E8A4 080042AF */  sw         $v0, 0x8($k0) /* handwritten instruction */
+    /* BD74 8013E8A8 0C0043AF */  sw         $v1, 0xC($k0) /* handwritten instruction */
+    /* BD78 8013E8AC 7C005FAF */  sw         $ra, 0x7C($k0) /* handwritten instruction */
+    /* BD7C 8013E8B0 00700340 */  mfc0       $v1, $14 /* handwritten instruction */
+    /* BD80 8013E8B4 00000000 */  nop
+  alabel D_8013E8B8
+    /* BD84 8013E8B8 040041AF */  sw         $at, 0x4($k0) /* handwritten instruction */
+    /* BD88 8013E8BC 080042AF */  sw         $v0, 0x8($k0) /* handwritten instruction */
+    /* BD8C 8013E8C0 00680240 */  mfc0       $v0, $13 /* handwritten instruction */
+    /* BD90 8013E8C4 0C0043AF */  sw         $v1, 0xC($k0) /* handwritten instruction */
+    /* BD94 8013E8C8 00700340 */  mfc0       $v1, $14 /* handwritten instruction */
+    /* BD98 8013E8CC 7C005FAF */  sw         $ra, 0x7C($k0) /* handwritten instruction */
+  alabel D_8013E8D0
+    /* BD9C 8013E8D0 00000000 */  nop
 endlabel _patch_gte

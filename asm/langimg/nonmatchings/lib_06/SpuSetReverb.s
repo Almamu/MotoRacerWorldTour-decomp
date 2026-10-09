@@ -1,4 +1,4 @@
-nonmatching SpuSetReverb, 0xCC
+nonmatching SpuSetReverb, 0xD0
 
 glabel SpuSetReverb
     /* A22D4 800B3AC4 E8FFBD27 */  addiu      $sp, $sp, -0x18
@@ -57,5 +57,5 @@ glabel SpuSetReverb
     /* A2394 800B3B84 1000B08F */  lw         $s0, 0x10($sp)
     /* A2398 800B3B88 0800E003 */  jr         $ra
     /* A239C 800B3B8C 1800BD27 */   addiu     $sp, $sp, 0x18
-endlabel SpuSetReverb
     /* A23A0 800B3B90 00000000 */  nop
+endlabel SpuSetReverb

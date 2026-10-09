@@ -1,4 +1,4 @@
-nonmatching strcat, 0xA4
+nonmatching strcat, 0xB0
 
 glabel strcat
     /* A4B58 800B6348 E0FFBD27 */  addiu      $sp, $sp, -0x20
@@ -47,7 +47,7 @@ glabel strcat
     /* A4BF0 800B63E0 1000B08F */  lw         $s0, 0x10($sp)
     /* A4BF4 800B63E4 0800E003 */  jr         $ra
     /* A4BF8 800B63E8 2000BD27 */   addiu     $sp, $sp, 0x20
-endlabel strcat
     /* A4BFC 800B63EC 00000000 */  nop
     /* A4C00 800B63F0 00000000 */  nop
     /* A4C04 800B63F4 00000000 */  nop
+endlabel strcat

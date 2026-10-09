@@ -12,14 +12,6 @@ INCLUDE_ASM("asm/sces/nonmatchings/lib_00", StSetRing);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_00", CdInit);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_00", func_80136D68);
-
-INCLUDE_ASM("asm/sces/nonmatchings/lib_00", func_80136DA4);
-
-INCLUDE_ASM("asm/sces/nonmatchings/lib_00", func_80136DCC);
-
-INCLUDE_ASM("asm/sces/nonmatchings/lib_00", func_80136DF4);
-
 INCLUDE_ASM("asm/sces/nonmatchings/lib_00", func_80136E28);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_00", func_80136E38);

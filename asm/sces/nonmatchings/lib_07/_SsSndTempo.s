@@ -1,4 +1,4 @@
-nonmatching _SsSndTempo, 0x21C
+nonmatching _SsSndTempo, 0x220
 
 glabel _SsSndTempo
     /* 12C4C 80145780 00140400 */  sll        $v0, $a0, 16
@@ -149,5 +149,5 @@ glabel _SsSndTempo
   .L80145994:
     /* 12E60 80145994 0800E003 */  jr         $ra
     /* 12E64 80145998 00000000 */   nop
-endlabel _SsSndTempo
     /* 12E68 8014599C 00000000 */  nop
+endlabel _SsSndTempo

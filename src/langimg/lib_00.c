@@ -20,14 +20,6 @@ INCLUDE_ASM("asm/langimg/nonmatchings/lib_00", CdGetToc2);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_00", CdInit);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_00", func_800A7554);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_00", func_800A7590);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_00", func_800A75B8);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_00", func_800A75E0);
-
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_00", func_800A7614);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_00", func_800A7624);

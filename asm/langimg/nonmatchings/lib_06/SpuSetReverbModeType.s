@@ -1,4 +1,4 @@
-nonmatching SpuSetReverbModeType, 0x1CC
+nonmatching SpuSetReverbModeType, 0x1D0
 
 glabel SpuSetReverbModeType
     /* A3400 800B4BF0 98FFBD27 */  addiu      $sp, $sp, -0x68
@@ -127,5 +127,5 @@ glabel SpuSetReverbModeType
     /* A35C0 800B4DB0 5800B08F */  lw         $s0, 0x58($sp)
     /* A35C4 800B4DB4 0800E003 */  jr         $ra
     /* A35C8 800B4DB8 6800BD27 */   addiu     $sp, $sp, 0x68
-endlabel SpuSetReverbModeType
     /* A35CC 800B4DBC 00000000 */  nop
+endlabel SpuSetReverbModeType

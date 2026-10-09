@@ -19,7 +19,7 @@ glabel func_80135F84
     /* 3454 80135F88 1000BFAF */  sw         $ra, 0x10($sp)
     /* 3458 80135F8C 7C0E050C */  jal        SsInit
     /* 345C 80135F90 00000000 */   nop
-    /* 3460 80135F94 291A050C */  jal        func_801468A4
+    /* 3460 80135F94 291A050C */  jal        SsUtReverbOff
     /* 3464 80135F98 00000000 */   nop
     /* 3468 80135F9C E20A050C */  jal        SpuClearReverbWorkArea
     /* 346C 80135FA0 05000424 */   addiu     $a0, $zero, 0x5

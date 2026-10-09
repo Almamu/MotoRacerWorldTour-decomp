@@ -1,4 +1,4 @@
-nonmatching strcat, 0xA4
+nonmatching strcat, 0xB0
 
 glabel strcat
     /* 182BC 8014ADF0 E0FFBD27 */  addiu      $sp, $sp, -0x20
@@ -47,7 +47,7 @@ glabel strcat
     /* 18354 8014AE88 1000B08F */  lw         $s0, 0x10($sp)
     /* 18358 8014AE8C 0800E003 */  jr         $ra
     /* 1835C 8014AE90 2000BD27 */   addiu     $sp, $sp, 0x20
-endlabel strcat
     /* 18360 8014AE94 00000000 */  nop
     /* 18364 8014AE98 00000000 */  nop
     /* 18368 8014AE9C 00000000 */  nop
+endlabel strcat

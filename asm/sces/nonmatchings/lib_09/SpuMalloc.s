@@ -1,4 +1,4 @@
-nonmatching SpuMalloc, 0x2C4
+nonmatching SpuMalloc, 0x2D0
 
 glabel SpuMalloc
     /* 16F44 80149A78 1C80023C */  lui        $v0, %hi(D_801BFF8C)
@@ -189,7 +189,7 @@ glabel SpuMalloc
     /* 171FC 80149D30 1000B08F */  lw         $s0, 0x10($sp)
     /* 17200 80149D34 0800E003 */  jr         $ra
     /* 17204 80149D38 2800BD27 */   addiu     $sp, $sp, 0x28
-endlabel SpuMalloc
     /* 17208 80149D3C 00000000 */  nop
     /* 1720C 80149D40 00000000 */  nop
     /* 17210 80149D44 00000000 */  nop
+endlabel SpuMalloc

@@ -50,11 +50,11 @@ INCLUDE_ASM("asm/sces/nonmatchings/lib_06", SsEnd);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_06", SsInit);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_06", func_80143A30);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_06", SpuInit);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_06", _SsInit);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_06", func_80143AF0);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_06", SsQuit);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_06", SpuQuit);
 

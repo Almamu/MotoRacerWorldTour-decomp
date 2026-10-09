@@ -1,4 +1,4 @@
-nonmatching SpuClearReverbWorkArea, 0x194
+nonmatching SpuClearReverbWorkArea, 0x1A0
 
 glabel SpuClearReverbWorkArea
     /* 10054 80142B88 C8FFBD27 */  addiu      $sp, $sp, -0x38
@@ -112,7 +112,7 @@ glabel SpuClearReverbWorkArea
     /* 101DC 80142D10 1800B08F */  lw         $s0, 0x18($sp)
     /* 101E0 80142D14 0800E003 */  jr         $ra
     /* 101E4 80142D18 3800BD27 */   addiu     $sp, $sp, 0x38
-endlabel SpuClearReverbWorkArea
     /* 101E8 80142D1C 00000000 */  nop
     /* 101EC 80142D20 00000000 */  nop
     /* 101F0 80142D24 00000000 */  nop
+endlabel SpuClearReverbWorkArea

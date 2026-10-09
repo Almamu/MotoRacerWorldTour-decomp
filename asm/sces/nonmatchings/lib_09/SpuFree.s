@@ -1,4 +1,4 @@
-nonmatching SpuFree, 0x7C
+nonmatching SpuFree, 0x80
 
 glabel SpuFree
     /* 16B24 80149658 E8FFBD27 */  addiu      $sp, $sp, -0x18
@@ -35,5 +35,5 @@ glabel SpuFree
     /* 16B94 801496C8 1800BD27 */  addiu      $sp, $sp, 0x18
     /* 16B98 801496CC 0800E003 */  jr         $ra
     /* 16B9C 801496D0 00000000 */   nop
-endlabel SpuFree
     /* 16BA0 801496D4 00000000 */  nop
+endlabel SpuFree

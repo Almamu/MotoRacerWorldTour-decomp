@@ -1,4 +1,4 @@
-nonmatching SpuSetKey, 0x1BC
+nonmatching SpuSetKey, 0x1C0
 
 glabel SpuSetKey
     /* 149B0 801474E4 FF00023C */  lui        $v0, (0xFFFFFF >> 16)
@@ -119,5 +119,5 @@ glabel SpuSetKey
   .L80147698:
     /* 14B64 80147698 0800E003 */  jr         $ra
     /* 14B68 8014769C 00000000 */   nop
-endlabel SpuSetKey
     /* 14B6C 801476A0 00000000 */  nop
+endlabel SpuSetKey
