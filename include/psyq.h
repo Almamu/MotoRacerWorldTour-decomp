@@ -67,6 +67,8 @@ int printf(const char *fmt, ...);
  * registers after the call come out differently. */
 int free(void *p);
 char *strcpy(char *dst, const char *src);
+char *strcat(char *dst, const char *src);
+int sprintf(char *buf, const char *fmt, ...);
 int bcmp(const void *a, const void *b, int n);
 
 /* libapi */
@@ -87,7 +89,11 @@ int CdControl(u_char com, u_char *param, u_char *result);
 int CdControlB(u_char com, u_char *param, u_char *result);
 int CdReady(int mode, u_char *result);
 int CdGetSector(void *madr, int size);
+int CdRead(int sectors, u_long *buf, int mode);
+int CdReadSync(int mode, u_char *result);
 int CdRead2(long mode);
+void (*CdDataCallback(void (*func)()))();
+int CdReadyCallback(void (*func)());
 CdlFILE *CdSearchFile(CdlFILE *fp, char *name);
 int CdPosToInt(CdlLOC *p);
 CdlLOC *CdIntToPos(int i, CdlLOC *p);

@@ -328,8 +328,8 @@ end:
 }
 
 #ifdef NON_MATCHING
-/* Equivalent; the original assigns several values to other registers
- * (hash in $t0, lo/hi/mid in $a2/$a3/$a1, e in $s0, count in $s1) */
+/* Equivalent; the control flow matches, but the original swaps the saved
+ * registers of arc and found, and of e and count */
 /* Looks an entry up by name: a leading backslash dropped, upper-cased,
  * CRC-32 hashed, then a binary search when the entries are sorted. */
 ArchiveEntry *FindEntry(Archive *arc, const char *name) {
@@ -344,7 +344,6 @@ ArchiveEntry *FindEntry(Archive *arc, const char *name) {
     u32 lo;
     u32 hi;
     u32 mid;
-    u32 h;
 
     if (arc) {
         esize = arc->entrySize;
@@ -353,10 +352,10 @@ ArchiveEntry *FindEntry(Archive *arc, const char *name) {
             esize = 0x30;
         }
         stride = esize;
+        count = arc->count;
         if (*name == '\\') {
             name++;
         }
-        count = arc->count;
         if (count) {
             strcpy(buf, name);
             StrUpper(buf);
@@ -365,29 +364,23 @@ ArchiveEntry *FindEntry(Archive *arc, const char *name) {
                 hi = count - 1;
                 lo = 0;
                 p = (ArchiveEntry *)((u8 *)e + hi * esize);
-                if (hash < e->hash) {
-                    goto end;
-                }
-                if (p->hash < hash) {
-                    return found;
-                }
-                mid = hi >> 1;
-                p = (ArchiveEntry *)((u8 *)e + mid * esize);
-                h = p->hash;
-                while (hash != h) {
-                    if (h < hash) {
-                        lo = mid + 1;
-                    } else {
-                        hi = mid - 1;
+                if (hash >= e->hash && p->hash >= hash) {
+                    mid = hi >> 1;
+                    p = (ArchiveEntry *)((u8 *)e + mid * esize);
+                    while (p->hash != hash) {
+                        if (p->hash < hash) {
+                            lo = mid + 1;
+                        } else {
+                            hi = mid - 1;
+                        }
+                        if (hi < lo) {
+                            goto end;
+                        }
+                        mid = lo + ((hi - lo) >> 1);
+                        p = (ArchiveEntry *)((u8 *)e + mid * stride);
                     }
-                    if (hi < lo) {
-                        goto end;
-                    }
-                    mid = lo + ((hi - lo) >> 1);
-                    p = (ArchiveEntry *)((u8 *)e + mid * stride);
-                    h = p->hash;
+                    found = p;
                 }
-                found = p;
             } else {
                 while (e->hash != hash) {
                     if (--count == 0) {
