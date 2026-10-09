@@ -77,6 +77,17 @@ jobs:
     - name: Build and compare
       run: make -j"$(nproc)" compare
 
+    # What was built, to see what differs (tools/diff_func.py, cmp).
+    - name: Upload the build on failure
+      if: failure()
+      uses: actions/upload-artifact@v7
+      with:
+        name: build
+        path: |
+          build/*.bin
+          build/*.elf
+          build/*.map
+
     # The parked functions' C has to keep building and linking.
     - name: Build with NON_MATCHING=1
       run: make -j"$(nproc)" NON_MATCHING=1 build
