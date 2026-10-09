@@ -7,15 +7,24 @@ or C as it is decompiled.
 
 What git holds and what it doesn't:
 
-- **Tracked:** the source (`src/`), and the disassembly of every function
-  not decompiled yet (`asm/<target>/nonmatchings/<chunk>/<function>.s`).
-  What's left is visible in the tree: a function is done when its `.s`
-  file is gone and its chunk's source has C for it.
-- **Not tracked:** the originals (`iso/`, `extracted/`), splat's
-  disassembly of the data (`asm/*/data/`, `asm/sces/header.s`), the other
-  binary pieces (`assets/`), the compilers (`tools/gcc-*/`) and the build.
-  splat regenerates them from your own copy of the disc (`make split`, run
-  by `make`).
+- **Tracked:** everything the build needs. The source (`src/`); the
+  disassembly of every function not decompiled yet
+  (`asm/<target>/nonmatchings/<chunk>/<function>.s`), so what's left is
+  visible in the tree (a function is done when its `.s` file is gone and
+  its chunk's source has C for it); splat's disassembly of the data
+  (`asm/*/data/`, `asm/sces/header.s`, `assets/`); and splat's linker
+  script and symbol lists (`linker/`). `make` builds both executables
+  from the repository alone and checks them against
+  `config/checksums.sha1`.
+- **Not tracked:** the disc (`iso/`) and the files extracted from it
+  (`extracted/`), the compilers (`tools/gcc-*/`), Sony's libraries
+  (`tools/psyq/`) and the build.
+- **Re-splitting** (after changing `config/<target>.yaml` or
+  `config/<target>/symbol_addrs.txt`) needs your copy of the game in
+  `extracted/`: `make split` (or `make`) runs splat then, rewrites `asm/`
+  and `linker/` and stamps `linker/<target>.stamp`; commit what changed.
+  Without the originals the tracked outputs are used as they are, and
+  `tools/chunks.py check` fails until someone re-splits.
 
 ## Compilers
 
@@ -160,9 +169,15 @@ make NON_MATCHING=1 build   # use the C of parked functions instead of their asm
 tools/fetch_psyq.sh && make sdk   # optional: Sony's own library objects, see "Libraries"
 ```
 
-`make` reruns splat when `config/*.yaml` or `config/*/symbol_addrs.txt`
-change. Objects are rebuilt when their source, a header, an included `.s`
-file or the compile flags change.
+`make objects` only compiles `src/`. Without the Nix devshell,
+`pip install -r requirements.txt` gives the Python tools (and
+clang-format), and the Makefile also finds Debian/Ubuntu's
+`binutils-mipsel-linux-gnu` (or set `CROSS`). CI runs the same build on
+every PR (CONTRIBUTING.md, "Continuous integration").
+
+With the game in `extracted/`, `make` reruns splat when `config/*.yaml` or
+`config/*/symbol_addrs.txt` change. Objects are rebuilt when their source,
+a header, an included `.s` file or the compile flags change.
 
 ## Chunks
 
@@ -193,6 +208,21 @@ tools/chunks.py issues /tmp/i     # each chunk's issue title and body, as files
 tools/chunks.py sync              # tick the functions done since, in the open issues
 tools/chunks.py cleanup-issues /tmp/c --naming 98 --headers 99   # the per-chunk cleanup follow-ups
 ```
+
+### Progress
+
+The README's two badges count bytes of code, over both executables:
+
+- **matching**: functions that rebuild byte for byte from C, plus the
+  library functions matched by Sony's own objects (`make sdk`) and the
+  hand-written asm (`config/sces/handwritten.txt`);
+- **non-matching**: those plus the parked functions, whose C builds with
+  `NON_MATCHING=1` but doesn't match yet.
+
+`tools/chunks.py badges DIR` draws them (after `make sdk`, or the Sony
+functions count as not done). CI draws them on every run and, on `main`
+once every check passed, replaces the single commit of the `badges`
+branch with them.
 
 ## Decompiling a function
 
@@ -271,13 +301,16 @@ vtables, which are still in the data disassembly.
 | Path                           | What                                                  |
 |--------------------------------|-------------------------------------------------------|
 | `config/<target>.yaml`         | splat config: the chunks, the `.rodata` split, the data |
+| `linker/`                      | splat's linker script, symbol lists and the stamp of the config they came from |
 | `config/<target>/symbol_addrs.txt` | known symbols                                     |
 | `config/checksums.sha1`        | SHA-1 of the originals, checked against `build/*.bin` |
 | `src/<target>/`                | one source file per chunk                             |
+| `asm/<target>/data/`, `assets/` | splat's disassembly of the data, and the headers     |
 | `asm/<target>/nonmatchings/`   | the functions not decompiled yet, one `.s` each       |
 | `include/`                     | headers; `include_asm.h` and the `.inc` files came from splat (`include_asm.h` is ours now) |
 | `tools/chunks.py`              | progress and the chunk issues                         |
-| `tools/diff_func.py`           | one function of the build against the original        |
+| `tools/diff_func.py`           | one function of the build against the original (needs `extracted/`) |
+| `tools/format.py`              | clang-format over `src/` and `include/` (`--check` in CI) |
 | `tools/get_compiler.sh`        | downloads a compiler, checked against `tools/compilers.sha256` |
 | `tools/maspsx`                 | git submodule                                         |
 

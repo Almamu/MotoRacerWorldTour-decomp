@@ -1,8 +1,9 @@
 # Matching decompilation build (see docs/decomp.md).
 #
 #   make setup    fetch the compilers (GCC 2.95.2 and 2.91.66 for the PlayStation) and maspsx
-#   make split    disassemble the executables with splat (needs extracted/)
+#   make split    re-run splat after config changes (needs the originals in extracted/)
 #   make          build and compare against the originals
+#   make objects  just compile src/ (needs neither the game files nor splat)
 #   make sdk      also link Sony's PsyQ objects in place of the library asm they
 #                 match, and compare that (needs tools/fetch_psyq.sh first)
 
@@ -14,7 +15,8 @@ SHELL := bash
 
 #### Tools ####
 
-CROSS    := mipsel-unknown-linux-gnu-
+# The binutils prefix: Nix's, or Debian/Ubuntu's (binutils-mipsel-linux-gnu).
+CROSS    ?= $(shell command -v mipsel-unknown-linux-gnu-as >/dev/null && echo mipsel-unknown-linux-gnu- || echo mipsel-linux-gnu-)
 AS       := $(CROSS)as
 LD       := $(CROSS)ld
 OBJCOPY  := $(CROSS)objcopy
@@ -47,6 +49,11 @@ CPPFLAGS    += -DNON_MATCHING
 endif
 MASPSXFLAGS := --aspsx-version=2.79 --expand-div
 ASFLAGS     := -EL -march=r3000 -mtune=r3000 -mabi=32 -no-pad-sections -O1 -G0 -I include
+# Every object's sections get 4-byte alignment (what the linker script's
+# SUBALIGN(4) means anyway). MIPS gas marks them 2**4, and some versions of
+# ld (2.42, say) then start an output section such as .bss on a 16-byte
+# boundary, which moves everything in it.
+ALIGN4      = $(OBJCOPY) $(foreach s,.text .data .bss .rodata,--set-section-alignment $(s)=4)
 LDFLAGS     := -EL --no-check-sections --no-warn-rwx-segments
 
 #### Files ####
@@ -55,11 +62,14 @@ BUILD    := build
 TARGETS  := langimg sces
 
 # langimg: data\LANGIMG.DAT (the game), sces: SCES_030.37 (the boot
-# executable). Their splat configs (config/<target>.yaml) read the originals
-# from extracted/.
+# executable). Everything the build needs is in the repository: the sources,
+# the disassembly splat wrote (asm/, assets/) and its linker script and
+# symbol lists (linker/). Only re-splitting needs the originals in extracted/.
+langimg_ORIGINAL := extracted/mr3dat/data/LANGIMG.DAT
+sces_ORIGINAL    := extracted/disc/SCES_030.37
 
 define target_vars
-$(1)_LD       := $(BUILD)/$(1).ld
+$(1)_LD       := linker/$(1).ld
 $(1)_ELF      := $(BUILD)/$(1).elf
 $(1)_BIN      := $(BUILD)/$(1).bin
 endef
@@ -75,7 +85,7 @@ $(shell mkdir -p $(BUILD); echo '$(FLAGS_NOW)' | cmp -s - $(FLAGS_STAMP) || echo
 
 #### Rules ####
 
-.PHONY: setup split build compare sdk clean distclean
+.PHONY: setup split build compare objects sdk clean
 
 COMPILERS := $(sort $(foreach t,$(TARGETS),$($(t)_GCC)))
 
@@ -89,8 +99,18 @@ tools/maspsx/maspsx.py:
 
 split: $(foreach t,$(TARGETS),$($(t)_LD))
 
-$(BUILD)/%.ld: config/%.yaml config/%/symbol_addrs.txt
-	$(SPLAT) $<
+# splat runs again when a target's config or symbols change, if the original
+# is in extracted/ (without it, the tracked outputs are used as they are, and
+# tools/chunks.py check reports them as out of date). It rewrites asm/ and
+# linker/; commit what changes, with linker/<target>.stamp.
+define split_rule
+ifneq ($$(wildcard $$($(1)_ORIGINAL)),)
+linker/$(1).ld: config/$(1).yaml config/$(1)/symbol_addrs.txt
+	$$(SPLAT) $$<
+	$$(PYTHON) tools/chunks.py stamp $(1)
+endif
+endef
+$(foreach t,$(TARGETS),$(eval $(call split_rule,$(t))))
 
 # The ELF rules read their object lists from the linker scripts, so the
 # scripts are (re)generated first and the build runs in a second make.
@@ -99,6 +119,11 @@ compare: split
 	sha1sum -c config/checksums.sha1
 
 build: $(foreach t,$(TARGETS),$($(t)_BIN))
+
+# Every source file compiled, without linking: what CI checks when it has
+# no copy of the game.
+SRC_OBJECTS := $(foreach t,$(TARGETS),$(patsubst %,$(BUILD)/$(t)/%.o,$(basename $(wildcard src/$(t)/*.c src/$(t)/*.cpp))))
+objects: $(SRC_OBJECTS)
 
 # The library code with Sony's own objects linked in where they match
 # (docs/decomp.md, "Libraries"); the normal build stays on the asm.
@@ -110,19 +135,15 @@ sdk: compare
 clean:
 	rm -rf $(BUILD)
 
-# Also what splat extracts that isn't tracked (the tracked function asm
-# under asm/*/nonmatchings/ stays).
-distclean: clean
-	rm -rf asm/*/data asm/*/header.s assets
-
-# Keep the ELFs (tools/diff_func.py and tools/chunks.py read them).
-.SECONDARY: $(foreach t,$(TARGETS),$($(t)_ELF))
+# Keep every intermediate file: the ELFs (tools/diff_func.py and
+# tools/chunks.py read them) and the objects make sdk links again.
+.SECONDARY:
 
 # The ELF links whatever objects the linker script lists; it is
 # re-evaluated after the script is (re)generated.
 .SECONDEXPANSION:
-$(BUILD)/%.elf: $(BUILD)/%.ld $$(call ld_objects,$(BUILD)/$$*.ld)
-	$(LD) $(LDFLAGS) -Map $(BUILD)/$*.map -T $< -T $(BUILD)/$*/undefined_syms_auto.txt -T $(BUILD)/$*/undefined_funcs_auto.txt -o $@
+$(BUILD)/%.elf: linker/%.ld $$(call ld_objects,linker/$$*.ld)
+	$(LD) $(LDFLAGS) -Map $(BUILD)/$*.map -T $< -T linker/$*/undefined_syms_auto.txt -T linker/$*/undefined_funcs_auto.txt -o $@
 
 # LANGIMG.DAT: the 16-byte header plus the image, padded to whole 2 KB
 # sectors (not counting the header).
@@ -147,6 +168,7 @@ $(BUILD)/$(1)/%.o: %.bin
 $(BUILD)/$(1)/%.o: %.s
 	@mkdir -p $$(dir $$@)
 	$(AS) $(ASFLAGS) -o $$@ $$<
+	$(ALIGN4) $$@
 
 # C and C++: preprocess, compile, fix up with maspsx (PsyQ's assembler
 # behaviour), assemble. cpp writes the header dependencies (<object>.d);
@@ -154,11 +176,13 @@ $(BUILD)/$(1)/%.o: %.s
 $(BUILD)/$(1)/%.o: %.cpp $(call gcc_dir,$($(1)_GCC))/cc1 $(FLAGS_STAMP)
 	@mkdir -p $$(dir $$@)
 	$(call gcc_dir,$($(1)_GCC))/cpp $(CPPFLAGS) $(call gcc_minor,$(1)) -MD $$(@:.o=.d) -lang-c++ -D__cplusplus -D__GNUG__=2 -D_LANGUAGE_C_PLUS_PLUS $$< | $(call gcc_dir,$($(1)_GCC))/cc1plus $(CC1FLAGS) -G$($(1)_G) $($(1)_CFLAGS) $(CXXFLAGS) | $(MASPSX) $(MASPSXFLAGS) -G$($(1)_G) | $(AS) $(ASFLAGS) -o $$@
+	$(ALIGN4) $$@
 	@sed -i 's|^[^:]*:|$$@:|' $$(@:.o=.d)
 
 $(BUILD)/$(1)/%.o: %.c $(call gcc_dir,$($(1)_GCC))/cc1 $(FLAGS_STAMP)
 	@mkdir -p $$(dir $$@)
 	$(call gcc_dir,$($(1)_GCC))/cpp $(CPPFLAGS) $(call gcc_minor,$(1)) -MD $$(@:.o=.d) $$< | $(call gcc_dir,$($(1)_GCC))/cc1 $(CC1FLAGS) -G$($(1)_G) $($(1)_CFLAGS) | $(MASPSX) $(MASPSXFLAGS) -G$($(1)_G) | $(AS) $(ASFLAGS) -o $$@
+	$(ALIGN4) $$@
 	@sed -i 's|^[^:]*:|$$@:|' $$(@:.o=.d)
 endef
 $(foreach t,$(TARGETS),$(eval $(call target_rules,$(t))))

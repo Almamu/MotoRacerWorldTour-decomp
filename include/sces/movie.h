@@ -51,16 +51,16 @@ extern int D_8014D340;
 extern u_short D_801C0A60[]; /* decoded slice buffer */
 extern DISPENV D_8014D260[2];
 extern DRAWENV D_8014D288[2];
-extern DECENV D_8014D22C;  /* the decoding environment */
-extern int D_801C646C;     /* libcd: StCdInterrupt is due (StCdIntrFlag in the sample) */
-extern u_long D_8014D0E4;  /* the furthest frame */
-extern u_long D_8014D0D4;  /* the current frame */
-extern int D_8014D0C8;     /* the movie's width */
-extern int D_8014D0CC;     /* and height */
-extern int D_8014D34C;     /* the CD audio volume, 16.16 */
-extern u_long D_8014D354;  /* the movie's last frame */
+extern DECENV D_8014D22C; /* the decoding environment */
+extern int D_801C646C;    /* libcd: StCdInterrupt is due (StCdIntrFlag in the sample) */
+extern u_long D_8014D0E4; /* the furthest frame */
+extern u_long D_8014D0D4; /* the current frame */
+extern int D_8014D0C8;    /* the movie's width */
+extern int D_8014D0CC;    /* and height */
+extern int D_8014D34C;    /* the CD audio volume, 16.16 */
+extern u_long D_8014D354; /* the movie's last frame */
 extern MovieEntry *D_8014D350;
-extern int D_8014D358;     /* the movie being played */
+extern int D_8014D358; /* the movie being played */
 extern int D_8014D0F0;
 extern int D_8014D348; /* the buffer being shown during a movie */
 extern int D_8014D0F4;

@@ -72,25 +72,66 @@ short:
 
 ### Verification
 
-Before every PR, from clean:
+Work on a branch and open a PR; nothing goes to `main` directly. Before
+every PR, from clean:
 
 ```sh
 make clean && make
+make NON_MATCHING=1 build    # parked C has to keep building and linking
+tools/format.py --check      # clang-format (tools/format.py fixes it)
+tools/chunks.py check        # every INCLUDE_ASM has its .s, no stale .s, linker/ up to date
 tools/chunks.py status
 ```
 
 `make` must end with `build/langimg.bin: OK` and `build/sces.bin: OK`
 (`sha1sum` translates the "OK" in other locales). `status` should show
-your functions as done.
+your functions as done. If you touched the library code or its names,
+`make sdk` too (after `tools/fetch_psyq.sh`).
 
-If your change makes something in [docs/decomp.md](docs/decomp.md) out of
-date (a compiler finding, a data section, a new convention), update it in
-the same PR.
+### Code style
+
+The C and C++ in `src/` and `include/` follow `.clang-format`: 4-space
+indent, 100 columns, braces on the same line, `type *name`, no one-line
+functions or `if` bodies. Format with the script, which only accepts
+clang-format 21 (other versions format some things differently):
+
+```sh
+tools/format.py              # format everything in place
+tools/format.py src/sces     # or just these files or directories
+tools/format.py --check      # what CI runs; changes nothing
+```
+
+The devshell has clang-format 21; elsewhere `pip install -r
+requirements.txt` gives the same version (or point `CLANG_FORMAT` at one).
+`git config core.hooksPath tools/hooks` makes git refuse commits with
+unformatted code.
+Formatting only moves whitespace and line breaks, so it can't change the
+build, but `make` still checks it. Where a layout matters (a table aligned
+in columns), wrap it in `// clang-format off` / `// clang-format on`.
+
+### Continuous integration
+
+CI (`.github/workflows/build.yml`) runs on every PR, forks included, and
+on `main`. The repository holds everything the build needs, so it needs
+no secrets and no copy of the game:
+
+- **Format and bookkeeping:** `tools/format.py --check` and
+  `tools/chunks.py check`.
+- **Build and compare:** `make compare` rebuilds both executables and
+  checks them byte for byte, then `make NON_MATCHING=1 build`; the run
+  summary shows `tools/chunks.py status`.
+- **Build with Sony's libraries:** `make sdk` (it downloads them; cached).
+
+Don't merge a PR with a red check (GitHub can't enforce it on this
+private repository's plan, so it's on the reviewer). Changes to `config/<target>.yaml` or the
+symbols need a re-split with your copy of the game (docs/decomp.md);
+`tools/chunks.py check` fails until the regenerated `asm/` and `linker/`
+are committed.
 
 ## Opening the PR
 
 Say which functions you decompiled, which you parked and why, and which
-you left alone, and that `make` passed from clean. Reference the issue
+you left alone, and that `make` passed from clean. Wait for CI to pass. Reference the issue
 with `Refs #N`. Use `Closes #N` only in the PR that decompiles every
 function of the chunk; parked functions keep the issue open.
 

@@ -13,8 +13,10 @@ options:
   src_path: src/sces
   asset_path: assets/sces
   build_path: build/sces
-  ld_script_path: build/sces.ld
-  ld_dependencies: True
+  # splat's outputs for the link are tracked (linker/), so the build needs no
+  # copy of the game; make re-splits when the game files are in extracted/
+  ld_script_path: linker/sces.ld
+  ld_dependencies: False
   create_asm_dependencies: True
 
   find_file_boundaries: True
@@ -32,8 +34,8 @@ options:
 
   symbol_addrs_path:
     - config/sces/symbol_addrs.txt
-  undefined_funcs_auto_path: build/sces/undefined_funcs_auto.txt
-  undefined_syms_auto_path: build/sces/undefined_syms_auto.txt
+  undefined_funcs_auto_path: linker/sces/undefined_funcs_auto.txt
+  undefined_syms_auto_path: linker/sces/undefined_syms_auto.txt
 
   subalign: 4
 

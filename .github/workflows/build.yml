@@ -1,0 +1,182 @@
+# Verification for every push to main and every pull request, forks
+# included. The repository has everything the build needs (no copy of the
+# game, no secrets): each job builds from it and checks the result.
+#
+# - Format and bookkeeping: clang-format (tools/format.py), and the tree's
+#   bookkeeping (tools/chunks.py check: INCLUDE_ASMs and .s files agree,
+#   linker/ is up to date with config/, no machine-specific paths).
+# - Build and compare: both executables rebuilt and checked byte for byte
+#   (config/checksums.sha1), then the NON_MATCHING build, whose parked C has
+#   to keep building and linking. The progress goes in the run summary.
+# - Sony's libraries: `make sdk`, the build with Sony's own PsyQ objects in
+#   place of the library asm they match (docs/decomp.md, "Libraries"). It
+#   also draws the progress badges (tools/chunks.py badges), which need to
+#   know which library functions Sony's objects cover.
+# - Badges: on main, once everything passed, the badges replace the single
+#   commit of the `badges` branch, which the README shows.
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  CROSS: mipsel-linux-gnu-
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    name: Format and bookkeeping
+    steps:
+    - uses: actions/checkout@v7
+
+    - uses: actions/setup-python@v7
+      with:
+        python-version: "3.12"
+        cache: pip
+
+    - name: Install Python packages
+      run: pip install -r requirements.txt
+
+    - name: Check the formatting
+      run: python3 tools/format.py --check
+
+    - name: Check the bookkeeping
+      run: python3 tools/chunks.py check
+
+  build:
+    runs-on: ubuntu-24.04
+    name: Build and compare
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        submodules: true
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get -o Acquire::Retries=5 update
+        sudo apt-get -o Acquire::Retries=5 install -y --no-install-recommends binutils-mipsel-linux-gnu
+
+    - uses: actions/setup-python@v7
+      with:
+        python-version: "3.12"
+        cache: pip
+
+    - name: Install Python packages
+      run: pip install -r requirements.txt
+
+    - name: Cache the compilers
+      uses: actions/cache@v6
+      with:
+        path: tools/gcc-*
+        key: compilers-${{ hashFiles('tools/compilers.sha256') }}
+
+    - name: Fetch the compilers
+      run: make setup
+
+    # Rebuilds both executables and runs `sha1sum -c config/checksums.sha1`,
+    # which fails on any byte that differs.
+    - name: Build and compare
+      run: make -j"$(nproc)" compare
+
+    # What was built, to see what differs (tools/diff_func.py, cmp).
+    - name: Upload the build on failure
+      if: failure()
+      uses: actions/upload-artifact@v7
+      with:
+        name: build
+        path: |
+          build/*.bin
+          build/*.elf
+          build/*.map
+
+    # The parked functions' C has to keep building and linking.
+    - name: Build with NON_MATCHING=1
+      run: make -j"$(nproc)" NON_MATCHING=1 build
+
+    - name: Progress
+      run: |
+        make -j"$(nproc)" build
+        {
+          echo '```'
+          python3 tools/chunks.py status
+          echo '```'
+        } >> "$GITHUB_STEP_SUMMARY"
+
+  sdk:
+    runs-on: ubuntu-24.04
+    name: Build with Sony's libraries
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        submodules: true
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get -o Acquire::Retries=5 update
+        sudo apt-get -o Acquire::Retries=5 install -y --no-install-recommends binutils-mipsel-linux-gnu 7zip
+
+    - uses: actions/setup-python@v7
+      with:
+        python-version: "3.12"
+        cache: pip
+
+    - name: Install Python packages
+      run: pip install -r requirements.txt
+
+    - name: Cache the compilers
+      uses: actions/cache@v6
+      with:
+        path: tools/gcc-*
+        key: compilers-${{ hashFiles('tools/compilers.sha256') }}
+
+    - name: Fetch the compilers
+      run: make setup
+
+    # About 370 MB from archive.org on a cache miss (tools/fetch_psyq.sh).
+    - name: Cache Sony's libraries
+      uses: actions/cache@v6
+      with:
+        path: tools/psyq
+        key: psyq-${{ hashFiles('tools/psyq.sha256') }}
+
+    - name: Fetch Sony's libraries
+      run: tools/fetch_psyq.sh
+
+    - name: Build with Sony's objects and compare
+      run: make -j"$(nproc)" sdk
+
+    - name: Draw the progress badges
+      run: python3 tools/chunks.py badges build/badges
+
+    - uses: actions/upload-artifact@v7
+      with:
+        name: badges
+        path: build/badges
+
+  badges:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [ check, build, sdk ]
+    runs-on: ubuntu-24.04
+    name: Publish the progress badges
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/download-artifact@v8
+      with:
+        name: badges
+        path: badges
+
+    # One commit, replaced each time, so the branch doesn't grow.
+    - name: Replace the badges branch
+      working-directory: badges
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        git init -q -b badges
+        git add .
+        git -c user.name=github-actions -c user.email=41898282+github-actions[bot]@users.noreply.github.com \
+          commit -q -m "Progress badges for $GITHUB_SHA"
+        git push -f "https://x-access-token:$GH_TOKEN@github.com/$GITHUB_REPOSITORY" badges
