@@ -145,7 +145,45 @@ void func_80014130(SndWorld *w, int i) {
     w->unk1C84--;
 }
 
+#ifdef NON_MATCHING
+/* Equivalent; registers only: the original has the emitter index in $t0,
+ * the serial number in $a2 and the emitter in $a3 */
+/* Takes an emitter for the note at i of the map; returns its handle, or
+ * -1. */
+u32 func_80014188(SndWorld *w, int i) {
+    u32 h = -1;
+
+    if (i != -1) {
+        int k = func_800140CC(w);
+
+        if (k != -1) {
+            SndEmitter *e = &w->emitters[k];
+            int serial = w->unk1CC8;
+            int note = w->notes[i];
+            int old;
+            int flags;
+
+            e->unk28 = 0;
+            e->unkC = i;
+            e->unk4 = serial;
+            e->unkE = note;
+            old = e->flags;
+            if (*(u16 *)(D_800C4744 + note * 44 + 4) & 0x10) {
+                flags = old | 0x400000;
+            } else {
+                flags = old;
+            }
+            h = k | (i << 6) | (serial << 14);
+            serial++;
+            e->flags = flags;
+            w->unk1CC8 = serial & 0x3FFFF;
+        }
+    }
+    return h;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_01", func_80014188);
+#endif
 
 #ifdef NON_MATCHING
 /* Equivalent; the original masks the id before computing the emitter's
@@ -170,9 +208,9 @@ SndEmitter *func_8001427C(SndWorld *w, u32 handle) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_01", func_8001427C);
 #endif
 
-/* Marks an emitter as changed: flag 0x100, and 0x100000 as the world's
- * unk3 says. */
-static inline void Changed(SndWorld *w, SndEmitter *e) {
+/* Marks an emitter as changed (bits; 0x100 and more), and 0x100000 as
+ * the world's unk3 says. */
+static inline void Changed(SndWorld *w, SndEmitter *e, int bits) {
     int flags = e->flags;
 
     if (w->unk3) {
@@ -180,7 +218,7 @@ static inline void Changed(SndWorld *w, SndEmitter *e) {
     } else {
         flags &= ~0x100000;
     }
-    e->flags = flags | 0x100;
+    e->flags = flags | bits;
 }
 
 /* Sets an emitter's volume and unk24. */
@@ -190,7 +228,7 @@ void func_800142E0(SndWorld *w, u32 handle, int vol, int x) {
     if (e) {
         func_80013BA0(e, vol);
         e->unk24 = x;
-        Changed(w, e);
+        Changed(w, e, 0x100);
     }
 }
 
@@ -200,7 +238,7 @@ void func_80014368(SndWorld *w, u32 handle, int vol) {
 
     if (e) {
         func_80013BA0(e, vol);
-        Changed(w, e);
+        Changed(w, e, 0x100);
     }
 }
 
@@ -209,7 +247,7 @@ void func_800143E0(SndWorld *w, u32 handle, int x) {
 
     if (e) {
         e->unk24 = x;
-        Changed(w, e);
+        Changed(w, e, 0x100);
     }
 }
 
@@ -218,7 +256,7 @@ void func_8001444C(SndWorld *w, u32 handle, int x) {
 
     if (e) {
         e->unk28 = x;
-        Changed(w, e);
+        Changed(w, e, 0x100);
     }
 }
 
@@ -228,7 +266,7 @@ void func_800144B8(SndWorld *w, u32 handle, SndParams *p) {
 
     if (e) {
         func_80013BD4(e, p);
-        Changed(w, e);
+        Changed(w, e, 0x100);
     }
 }
 
@@ -333,13 +371,40 @@ void func_8001480C(SndWorld *w) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_01", func_8001483C);
+/* func_800148D8 on every emitter in use playing note id. */
+void func_8001483C(SndWorld *w, int id, int flags) {
+    SndEmitter *e = w->emitters;
+    int i;
+
+    for (i = 64; i != 0; i--) {
+        if ((e->flags & 1) && e->unk1E == id) {
+            func_800148D8(w, e, flags);
+        }
+        e++;
+    }
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_01", func_800148D8);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_01", func_80014A98);
+/* Plays the note at i of the map; returns the emitter's handle. */
+u32 func_80014A98(SndWorld *w, int i, int flags) {
+    u32 h = -1;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_01", func_80014B18);
+    if (i != -1 && w->notes[i] != -1) {
+        flags |= 0x1001;
+        h = func_80014188(w, i);
+        func_800148D8(w, func_8001427C(w, h), flags);
+    }
+    return h;
+}
+
+void func_80014B18(SndWorld *w, u32 handle) {
+    SndEmitter *e = func_8001427C(w, handle);
+
+    if (e) {
+        Changed(w, e, 0x140);
+    }
+}
 
 /* Sets an emitter's flag 0x80. */
 void func_80014B74(SndWorld *w, u32 handle) {
@@ -379,4 +444,16 @@ u16 func_80014C24(SndWorld *w, int i) {
     return r;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_01", func_80014C70);
+/* The length of the note at i of the map (func_80012FEC), 0 for none. */
+u32 func_80014C70(SndWorld *w, int i) {
+    u32 r = 0;
+
+    if (i != -1) {
+        int n = w->notes[i];
+
+        if (n != -1) {
+            r = func_80012FEC(n);
+        }
+    }
+    return r;
+}

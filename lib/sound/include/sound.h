@@ -387,6 +387,11 @@ void func_8001444C(SndWorld *w, u32 handle, int x);
 void func_800144B8(SndWorld *w, u32 handle, SndParams *p);
 u32 func_8001467C(SndWorld *w, int a, int b, u32 other);
 u32 func_80014A98(SndWorld *w, int a, int b);
+u32 func_80014188(SndWorld *w, int i);
+void func_8001483C(SndWorld *w, int id, int flags);
+void func_800148D8(SndWorld *w, SndEmitter *e, int flags);
+void func_80014B18(SndWorld *w, u32 handle);
+u32 func_80014C70(SndWorld *w, int i);
 int func_800A60AC(const char *a, const char *b); /* strcmp */
 extern char D_800C48E0[];                        /* "Unknow Id" */
 extern char D_800C48EC[];                        /* "Null Id" */
