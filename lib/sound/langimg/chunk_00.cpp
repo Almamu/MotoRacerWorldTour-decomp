@@ -155,7 +155,32 @@ int func_80011F84(void) {
     return 1;
 }
 
+#ifdef NON_MATCHING
+/* Equivalent; the original compares sign-extended bytes after an unsigned
+ * range check (a tolower() macro, likely), and its loop is laid out
+ * differently */
+/* Compares a name with a directory entry's, ignoring case: 0 if equal. */
+#define LOWER(c) ((u8)((c) - 'A') < 26 ? (c) + 0x20 : (c))
+int func_80011FCC(const char *name, DirEntry *entry) {
+    const u8 *a = (const u8 *)name;
+    const u8 *b = (const u8 *)entry->name;
+    int r = 1;
+
+    while (*a && *b) {
+        if ((s8)LOWER(*a) != (s8)LOWER(*b)) {
+            break;
+        }
+        a++;
+        b++;
+    }
+    if (*a == 0 && *b == 0) {
+        r = 0;
+    }
+    return r;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_80011FCC);
+#endif
 
 /* The value of the directory entry called name, or -1. */
 int func_80012080(const char *name) {
@@ -249,7 +274,31 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_80012C18);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_80012D38);
 
+#ifdef NON_MATCHING
+/* Equivalent; the original keeps 0xFF in a saved register and jumps back
+ * to the top of the outer loop */
+/* Keys off the voices of a sound, and those of the notes chained after it
+ * while they're marked to follow. */
+void func_80012E58(SoundSlot *slot) {
+    u8 *note = D_800C4744 + slot->unk0 * 44;
+    int i;
+
+    while (1) {
+        for (i = 0; i < slot->unk4; i++) {
+            func_80011924(slot->voices[i].voice);
+        }
+        if (!(*(u16 *)(note + 4) & 1)) {
+            break;
+        }
+        if (note[3] == 0xFF) {
+            break;
+        }
+        note += note[3] * 44;
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_80012E58);
+#endif
 
 int func_80012F40(u32 handle) {
     int r = 0;
@@ -310,7 +359,7 @@ void func_80013098(u32 handle) {
     SoundSlot *p = func_80013348(handle);
 
     if (p) {
-        D_800C4724 = p->unkA;
+        D_800C4724 = p->voices[1].voice;
     }
 }
 
@@ -324,7 +373,41 @@ int func_800130CC(u32 handle) {
     return r;
 }
 
+#ifdef NON_MATCHING
+/* Equivalent; the slot loop, as in func_80012F7C (a pointer per field,
+ * each from its own la, and ~1 in a register) */
+/* Frees the slots whose voices have all stopped (unless kept) and returns
+ * the first free one, or -1. */
+int func_80013108(int unused) {
+    int r = -1;
+    int i;
+    int j;
+    int all;
+    SoundSlot *slot;
+
+    for (i = 0; i < 30; i++) {
+        slot = &D_800CA0F8[i];
+        if (!(slot->unk6 & 1)) {
+            all = -1;
+            for (j = 0; j < slot->unk4; j++) {
+                all &= slot->voices[j].voice;
+            }
+            if (all == -1) {
+                slot->unk4 = 0;
+                slot->unk0 = -1;
+                slot->unk6 &= ~1;
+            }
+            if (slot->unk0 == -1) {
+                r = i;
+                break;
+            }
+        }
+    }
+    return r;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_80013108);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_800131D0);
 

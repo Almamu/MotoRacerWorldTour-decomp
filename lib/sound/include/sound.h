@@ -24,16 +24,21 @@ typedef struct {
     u8 unkE[0x12];
 } VagAtr;
 
-/* A playing sound (D_800CA0F8, 30 of them, 20 bytes each). A handle is
- * the slot number in its low 5 bits and a serial number in its high 16. */
+/* A voice a sound plays on */
 typedef struct {
-    short unk0; /* -1: free */
+    s8 voice; /* -1: none */
+    u8 unk1;
+} SlotVoice;
+
+/* A playing sound (D_800CA0F8, 30 of them, 20 bytes each). A handle is
+ * the slot number in its low 5 bits, the sound in the next 10 and a
+ * serial number in the high 16. */
+typedef struct {
+    short unk0; /* the sound; -1: free */
     u16 unk2;   /* the serial number */
-    short unk4;
-    u16 unk6; /* bit 0: ... */
-    u8 unk8[2];
-    s8 unkA;
-    u8 unkB[9];
+    short unk4; /* voices */
+    u16 unk6;   /* bit 0: keep the slot when its voices stop */
+    SlotVoice voices[6];
 } SoundSlot;
 
 /* The sound bank's directory (D_800C472C) */
@@ -139,7 +144,7 @@ void func_80012504(int a, int b, int c, int left, int right);
 void func_80012A88(int a, int vol, int pan, int c, int d);
 int func_80012F7C(void);
 void func_800121C0(int mode);
-void func_80012E58(SoundSlot *p);
+void func_80012E58(SoundSlot *slot);
 int func_80012F40(u32 handle);
 void func_80013098(u32 handle);
 int func_800130CC(u32 handle);

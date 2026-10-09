@@ -80,7 +80,8 @@ def compile_cmd(target, src, out, defines, gcc=None, cflags=""):
         line = re.sub(r"tools/gcc-[0-9.]+-psx", f"tools/gcc-{gcc}-psx", line)
         line = re.sub(r"-D__GNUC_MINOR__=\d+", f"-D__GNUC_MINOR__={gcc.split('.')[1]}", line)
     if cflags:
-        line = re.sub(r"(/cc1(?:plus)?) ", rf"\1 {cflags} ", line, count=1)
+        # last on cc1's command line, so they win over the Makefile's (-O1 after -O2)
+        line = re.sub(r"(/cc1(?:plus)? [^|]*?)\s*\|", rf"\1 {cflags} |", line, count=1)
     return re.sub(r"-o \S+$", f"-o {shlex.quote(str(out))}", line)
 
 
