@@ -28,16 +28,14 @@ done:
     VSync(30);
 }
 
-#ifdef NON_MATCHING
-/* Equivalent; GCC folds 0x820 + 0xC into the load's offset, the original
- * adds 0x820 to the program's offset first */
-/* A field of a note's tone in the VAB: tone note[2] of program note[0]. */
+/* A field of a note's tone in the VAB: tone note[2] of program note[0]
+ * (the tones follow the header and the 128 programs, 16 to a program). */
 u16 func_80011898(u8 *note) {
-    return ((Vab *)D_800C4734)->tones[note[0]][note[2]].unkC;
+    VagAtr *t = (VagAtr *)(D_800C4734 + (note[0] * 0x200 + 0x820));
+
+    t += note[2];
+    return t->unkC;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_80011898);
-#endif
 
 #ifdef NON_MATCHING
 /* Equivalent; the original keeps i and walks the fields with three
