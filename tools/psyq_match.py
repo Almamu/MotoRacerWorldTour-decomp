@@ -27,6 +27,15 @@ ROOT = Path(__file__).resolve().parent.parent
 PSYQ = ROOT / "tools" / "psyq"
 PARSER = PSYQ / "psyq-obj-parser"
 # target: (file, file offset of vram 0, library code start, end)
+
+def image(target, path):
+    """The original executable's bytes: extracted/, or the build, which is
+    byte-identical once `make` says OK (CI has no copy of the game)."""
+    for p in (ROOT / path, ROOT / "build" / f"{target}.bin"):
+        if p.exists():
+            return p.read_bytes()
+    sys.exit(f"neither {path} nor build/{target}.bin is there: run make first")
+
 TARGETS = {
     "langimg": ("extracted/mr3dat/data/LANGIMG.DAT", -0x800117F0, 0x800A7084, 0x800B716C),
     "sces": ("extracted/disc/SCES_030.37", 0x800 - 0x80133334, 0x80136B4C, 0x8014C22C),
@@ -138,7 +147,7 @@ def main():
     objs = objects()
     result = {}
     for target, (path, delta, lo, hi) in TARGETS.items():
-        data = (ROOT / path).read_bytes()
+        data = image(target, path)
         blob = data[lo + delta:hi + delta]
         known = known_symbols(target)
         found = defaultdict(set)  # (address, LIB, module, size) -> versions

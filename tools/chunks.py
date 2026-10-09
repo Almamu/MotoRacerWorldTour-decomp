@@ -14,14 +14,18 @@ The function list comes from build/<target>.elf, so build first (make).
   tools/chunks.py issues DIR              write each chunk's issue (title + body) to DIR
   tools/chunks.py issues DIR --create     ...and open them on GitHub (gh)
   tools/chunks.py sync [--dry-run]        tick done functions in the open chunk issues
+  tools/chunks.py stamp TARGET            record the config splat's tracked outputs came from
+                                          (make does it after splitting)
   tools/chunks.py check                   the tree's bookkeeping (needs no build): every
                                           INCLUDE_ASM/INCLUDE_RODATA has its .s, every .s under
                                           asm/*/nonmatchings/ is included, handwritten.txt agrees,
-                                          no file has a path into this checkout
+                                          no file has a path into this checkout, linker/ is
+                                          up to date with config/
   tools/chunks.py cleanup-issues DIR --naming N --headers N [--create]
                                           a blocked cleanup follow-up per game chunk
 """
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -363,6 +367,22 @@ def cmd_cleanup_issues(args):
 INCLUDE_RE = re.compile(r'^\s*INCLUDE_(?:ASM|RODATA)\(\s*"([^"]*)"\s*,\s*([^\s)]+)\s*\)', re.M)
 
 
+def config_hash(target):
+    """What splat's outputs depend on: the target's config and symbols."""
+    h = hashlib.sha256()
+    for p in (ROOT / "config" / f"{target}.yaml", ROOT / "config" / target / "symbol_addrs.txt"):
+        h.update(p.read_bytes())
+    return h.hexdigest()
+
+
+def stamp_path(target):
+    return ROOT / "linker" / f"{target}.stamp"
+
+
+def cmd_stamp(args):
+    stamp_path(args.target).write_text(config_hash(args.target) + "\n")
+
+
 def cmd_check(args):
     errors = []
     for target in TARGETS:
@@ -382,6 +402,12 @@ def cmd_check(args):
         for name in sorted(handwritten(target)):
             if name not in names:
                 errors.append(f"config/{target}/handwritten.txt: {name} has no INCLUDE_ASM")
+    for target in TARGETS:
+        st = stamp_path(target)
+        if not st.exists() or st.read_text().strip() != config_hash(target):
+            errors.append(f"linker/{target}.stamp: config/{target}.yaml or its symbol_addrs.txt "
+                          "changed since the last split: run `make split` with the game in "
+                          "extracted/ and commit asm/ and linker/")
     # Paths into one machine's checkout (a tool run with an absolute path
     # writes them) break the build everywhere else.
     for d in ("src", "include", "config", "asm"):
@@ -406,6 +432,8 @@ def main():
     p = sub.add_parser("sync")
     p.add_argument("--dry-run", action="store_true")
     sub.add_parser("check")
+    p = sub.add_parser("stamp")
+    p.add_argument("target", choices=sorted(TARGETS))
     p = sub.add_parser("cleanup-issues")
     p.add_argument("dir")
     p.add_argument("--naming", type=int, required=True, help="the naming tracking issue")
@@ -413,6 +441,7 @@ def main():
     p.add_argument("--create", action="store_true")
     args = ap.parse_args()
     {"status": cmd_status, "issues": cmd_issues, "sync": cmd_sync, "check": cmd_check,
+     "stamp": cmd_stamp,
      "cleanup-issues": cmd_cleanup_issues}[args.cmd](args)
 
 

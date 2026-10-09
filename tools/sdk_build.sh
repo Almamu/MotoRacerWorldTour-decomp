@@ -26,7 +26,7 @@ for t in langimg sces; do
     done < "$d/objects.txt"
     $LD -EL --no-check-sections --no-warn-rwx-segments -Map "$d/$t.map" \
         -T "$d/${t}_syms.ld" -T "$d/$t.ld" \
-        -T "build/$t/undefined_syms_auto.txt" -T "build/$t/undefined_funcs_auto.txt" \
+        -T "linker/$t/undefined_syms_auto.txt" -T "linker/$t/undefined_funcs_auto.txt" \
         -o "$d/$t.elf"
     $OBJCOPY -O binary "$d/$t.elf" "$OUT/$t.bin"
 done

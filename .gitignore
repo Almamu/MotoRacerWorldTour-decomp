@@ -3,12 +3,8 @@ extracted/
 __pycache__/
 build/
 
-# Decompilation. The functions still to decompile (asm/*/nonmatchings/) are
-# tracked; splat's data disassembly, the headers and other binaries it
-# extracts, and the downloaded compilers are not.
-asm/*/data/
-asm/*/header.s
-assets/
+# Decompilation: the disassembly (asm/, assets/, linker/) is tracked, so the
+# build needs no copy of the game; the downloaded compilers are not.
 tools/gcc-*/
 # Sony's PsyQ libraries and psyq-obj-parser (tools/fetch_psyq.sh)
 tools/psyq/

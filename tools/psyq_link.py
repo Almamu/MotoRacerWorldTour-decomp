@@ -12,7 +12,7 @@ their own are used (their data is still part of the data disassembly; see
 docs/decomp.md, "Libraries").
 
 Writes, under OUTDIR:
-  <target>.ld          the linker script, from build/<target>.ld
+  <target>.ld          the linker script, from linker/<target>.ld
   <target>_syms.ld     the addresses of symbols the SDK objects refer to by
                        names this build doesn't define, read back from the
                        original executable at their relocations
@@ -113,7 +113,7 @@ def main():
         sys.exit(__doc__)
     target, match_json, outdir = sys.argv[1], Path(sys.argv[2]), Path(sys.argv[3])
     path, delta, lo, hi = psyq_match.TARGETS[target]
-    original = (ROOT / path).read_bytes()
+    original = psyq_match.image(target, path)
     found = json.loads(match_json.read_text())[target]
     psyq = ROOT / "tools" / "psyq" / "elf"
 
@@ -127,7 +127,7 @@ def main():
             continue
         sdk[o["address"]] = dict(o, path=obj)
 
-    ld = (ROOT / "build" / f"{target}.ld").read_text()
+    ld = (ROOT / "linker" / f"{target}.ld").read_text()
     chunks = sorted(set(re.findall(rf"build/{target}/src/{target}/(lib_\d+)\.o\(\.text\)", ld)))
     wrap = outdir / "wrap"
     entries = {c: chunk_entries(target, c) for c in chunks}

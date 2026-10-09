@@ -504,8 +504,7 @@ int func_80135D34(int arg) {
 
 /* CRC-32 of len bytes at p, continuing from crc: bytes up to a word
  * boundary, then whole words, then the rest of the last word. */
-u32 Crc32(u8 *p, s32 len, u32 crc)
-{
+u32 Crc32(u8 *p, s32 len, u32 crc) {
     u32 *table = Crc32Table;
     s32 n;
     s32 w;
@@ -750,4 +749,3 @@ void func_801365C0(void) {
 
 void func_801365F0(void) {
 }
-

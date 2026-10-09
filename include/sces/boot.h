@@ -63,8 +63,8 @@ extern "C" {
 #endif
 
 extern CPair D_8014D3F8;
-extern short D_8019D990; /* the menu sound bank's VAB id */
-extern u_char D_8019E8AC[]; /* its VAB body */
+extern short D_8019D990;        /* the menu sound bank's VAB id */
+extern u_char D_8019E8AC[];     /* its VAB body */
 extern const char D_8014C3C0[]; /* "VAB trans body failed\n" */
 extern int D_8019DA50;
 extern int D_8019DA54;
@@ -76,12 +76,12 @@ extern void *D_8019DB64;
 extern void *D_8019DB68;
 extern DRAWENV D_8019DA80[2];
 extern DISPENV D_8019DB38[2];
-extern int D_8019DB70; /* a CD read is going on */
+extern int D_8019DB70;                 /* a CD read is going on */
 extern void (**D_8019D48C)(void *buf); /* a hook on what func_80135780 reads */
-extern int D_8019DB60; /* 1: interlaced (h > 256) */
-extern int D_8019DB6C; /* the ordering table's size */
+extern int D_8019DB60;                 /* 1: interlaced (h > 256) */
+extern int D_8019DB6C;                 /* the ordering table's size */
 extern void *D_8019DA70;
-extern char D_8019D994[]; /* the libsnd sequence table */
+extern char D_8019D994[];   /* the libsnd sequence table */
 extern u_char D_8019DC88[]; /* the menu sound bank's VAB header */
 
 extern u32 Crc32Table[256];
@@ -128,17 +128,17 @@ void func_8013FA3C(void *a, Choice *choice);
 int func_80134948(CPair *buf, void *image, int mode, int x, int y); /* shows a BS picture */
 extern u8 D_8014D480[];
 extern u8 D_80175480[];
-extern u8 D_801A0514[]; /* the first picture */
-extern u8 D_801B1310[]; /* the last one */
-extern u8 D_8014D400[]; /* the intro movie */
+extern u8 D_801A0514[];          /* the first picture */
+extern u8 D_801B1310[];          /* the last one */
+extern u8 D_8014D400[];          /* the intro movie */
 extern void (*D_800117F0)(void); /* the game's entry point (LANGIMG.DAT's first word) */
 int func_80133334(int a, void *movie, int c, int d); /* plays a movie */
-void func_8013F188(int a, int b); /* libpad */
-void func_8013EB24(int a);        /* libpad */
-void func_8013F908(int a);        /* libpad */
-void func_8013F1D0(void);         /* libpad */
-int func_8013B35C(void);          /* libetc */
-extern u8 D_801A6C10[]; /* the language choice picture */
+void func_8013F188(int a, int b);                    /* libpad */
+void func_8013EB24(int a);                           /* libpad */
+void func_8013F908(int a);                           /* libpad */
+void func_8013F1D0(void);                            /* libpad */
+int func_8013B35C(void);                             /* libetc */
+extern u8 D_801A6C10[];                              /* the language choice picture */
 extern u8 D_8014D35C[];
 extern u32 *D_8014D3F4;
 int func_80136130(int x, int y, int w, int h, int mode, int otSize, int primCount, int clear);

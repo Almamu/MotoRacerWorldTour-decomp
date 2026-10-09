@@ -70,6 +70,7 @@ A placeholder is better than a guess.
 ```sh
 make clean && make               # both lines must say OK
 make NON_MATCHING=1 build        # parked C still builds and links
+tools/format.py --check          # clang-format (tools/format.py fixes it)
 tools/chunks.py check            # INCLUDE_ASMs and .s files agree
 tools/chunks.py status           # your functions show as done
 ```

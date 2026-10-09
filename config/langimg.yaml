@@ -14,8 +14,10 @@ options:
   src_path: src/langimg
   asset_path: assets/langimg
   build_path: build/langimg
-  ld_script_path: build/langimg.ld
-  ld_dependencies: True
+  # splat's outputs for the link are tracked (linker/), so the build needs no
+  # copy of the game; make re-splits when the game files are in extracted/
+  ld_script_path: linker/langimg.ld
+  ld_dependencies: False
   create_asm_dependencies: True
 
   find_file_boundaries: True
@@ -33,8 +35,8 @@ options:
 
   symbol_addrs_path:
     - config/langimg/symbol_addrs.txt
-  undefined_funcs_auto_path: build/langimg/undefined_funcs_auto.txt
-  undefined_syms_auto_path: build/langimg/undefined_syms_auto.txt
+  undefined_funcs_auto_path: linker/langimg/undefined_funcs_auto.txt
+  undefined_syms_auto_path: linker/langimg/undefined_syms_auto.txt
 
   subalign: 4
 

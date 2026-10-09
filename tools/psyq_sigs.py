@@ -38,6 +38,15 @@ STATIC_RE = re.compile(r"^text_[0-9A-Fa-f]+$")
 # the second (libcd's strings are in both executables).
 DUPLICATES = {"LIBDS.LIB": "LIBCD.LIB", "LIBMCX.LIB": "LIBPAD.LIB", "LIBHMD.LIB": "LIBETC.LIB",
               "LIBGS.LIB": "LIBETC.LIB"}
+
+def image(target, path):
+    """The original executable's bytes: extracted/, or the build, which is
+    byte-identical once `make` says OK (CI has no copy of the game)."""
+    for p in (ROOT / path, ROOT / "build" / f"{target}.bin"):
+        if p.exists():
+            return p.read_bytes()
+    sys.exit(f"neither {path} nor build/{target}.bin is there: run make first")
+
 # End of what each config's segments cover (bss included): data symbols
 # past it are absolute.
 IMAGE_END = {"langimg": 0x800DE7B0, "sces": 0x801CFDD8}
@@ -80,7 +89,7 @@ def load(sigs, version):
 
 def code(target):
     path, delta, lo, hi = TARGETS[target]
-    data = (ROOT / path).read_bytes()
+    data = image(target, path)
     return data[lo + delta:hi + delta], lo
 
 

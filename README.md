@@ -4,9 +4,11 @@ Reverse engineering of *Moto Racer World Tour* for the PlayStation (PAL,
 SCES-03037, 2000): disc layout, data archive, file formats, and the code that
 loads them.
 
-This repository contains **no game data**. You need your own copy of the
-disc; everything extracted from it stays out of git (`iso/` and `extracted/`
-are ignored).
+This repository doesn't contain the disc or its files: you need your own
+copy for the tools below, and everything extracted from it stays out of git
+(`iso/` and `extracted/` are ignored). The matching decompilation does track
+the two executables' disassembly (code and data), from which it rebuilds
+them.
 
 ## Documentation
 
@@ -17,7 +19,7 @@ file format worked out so far.
 
 The game code (`LANGIMG.DAT`, C++, GCC 2.95.2) and the boot executable
 (`SCES_030.37`, C++, GCC 2.91.66) rebuild byte for byte from this repository
-and your own copy of the disc: `make setup`, then `make`. Almost all of
+alone: `make setup`, then `make`. Almost all of
 the code is still assembly (`tools/chunks.py status` has the numbers).
 
 > **Want to help? Read [CONTRIBUTING.md](CONTRIBUTING.md) first.** The code

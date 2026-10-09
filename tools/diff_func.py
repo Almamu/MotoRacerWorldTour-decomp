@@ -67,6 +67,8 @@ def main():
     orig, delta = TARGETS[target]
     off = vram + delta
     built = (ROOT / "build" / f"{target}.bin").read_bytes()[off:off + size]
+    if not (ROOT / orig).exists():
+        sys.exit(f"{orig} is missing: this compares against your copy of the game")
     want = (ROOT / orig).read_bytes()[off:off + size]
     a, b = disasm(built, vram), disasm(want, vram)
     diffs = 0

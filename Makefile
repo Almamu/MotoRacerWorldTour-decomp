@@ -1,7 +1,7 @@
 # Matching decompilation build (see docs/decomp.md).
 #
 #   make setup    fetch the compilers (GCC 2.95.2 and 2.91.66 for the PlayStation) and maspsx
-#   make split    disassemble the executables with splat (needs extracted/)
+#   make split    re-run splat after config changes (needs the originals in extracted/)
 #   make          build and compare against the originals
 #   make objects  just compile src/ (needs neither the game files nor splat)
 #   make sdk      also link Sony's PsyQ objects in place of the library asm they
@@ -57,11 +57,14 @@ BUILD    := build
 TARGETS  := langimg sces
 
 # langimg: data\LANGIMG.DAT (the game), sces: SCES_030.37 (the boot
-# executable). Their splat configs (config/<target>.yaml) read the originals
-# from extracted/.
+# executable). Everything the build needs is in the repository: the sources,
+# the disassembly splat wrote (asm/, assets/) and its linker script and
+# symbol lists (linker/). Only re-splitting needs the originals in extracted/.
+langimg_ORIGINAL := extracted/mr3dat/data/LANGIMG.DAT
+sces_ORIGINAL    := extracted/disc/SCES_030.37
 
 define target_vars
-$(1)_LD       := $(BUILD)/$(1).ld
+$(1)_LD       := linker/$(1).ld
 $(1)_ELF      := $(BUILD)/$(1).elf
 $(1)_BIN      := $(BUILD)/$(1).bin
 endef
@@ -77,7 +80,7 @@ $(shell mkdir -p $(BUILD); echo '$(FLAGS_NOW)' | cmp -s - $(FLAGS_STAMP) || echo
 
 #### Rules ####
 
-.PHONY: setup split build compare objects sdk clean distclean
+.PHONY: setup split build compare objects sdk clean
 
 COMPILERS := $(sort $(foreach t,$(TARGETS),$($(t)_GCC)))
 
@@ -91,8 +94,18 @@ tools/maspsx/maspsx.py:
 
 split: $(foreach t,$(TARGETS),$($(t)_LD))
 
-$(BUILD)/%.ld: config/%.yaml config/%/symbol_addrs.txt
-	$(SPLAT) $<
+# splat runs again when a target's config or symbols change, if the original
+# is in extracted/ (without it, the tracked outputs are used as they are, and
+# tools/chunks.py check reports them as out of date). It rewrites asm/ and
+# linker/; commit what changes, with linker/<target>.stamp.
+define split_rule
+ifneq ($$(wildcard $$($(1)_ORIGINAL)),)
+linker/$(1).ld: config/$(1).yaml config/$(1)/symbol_addrs.txt
+	$$(SPLAT) $$<
+	$$(PYTHON) tools/chunks.py stamp $(1)
+endif
+endef
+$(foreach t,$(TARGETS),$(eval $(call split_rule,$(t))))
 
 # The ELF rules read their object lists from the linker scripts, so the
 # scripts are (re)generated first and the build runs in a second make.
@@ -117,19 +130,14 @@ sdk: compare
 clean:
 	rm -rf $(BUILD)
 
-# Also what splat extracts that isn't tracked (the tracked function asm
-# under asm/*/nonmatchings/ stays).
-distclean: clean
-	rm -rf asm/*/data asm/*/header.s assets
-
 # Keep the ELFs (tools/diff_func.py and tools/chunks.py read them).
 .SECONDARY: $(foreach t,$(TARGETS),$($(t)_ELF))
 
 # The ELF links whatever objects the linker script lists; it is
 # re-evaluated after the script is (re)generated.
 .SECONDEXPANSION:
-$(BUILD)/%.elf: $(BUILD)/%.ld $$(call ld_objects,$(BUILD)/$$*.ld)
-	$(LD) $(LDFLAGS) -Map $(BUILD)/$*.map -T $< -T $(BUILD)/$*/undefined_syms_auto.txt -T $(BUILD)/$*/undefined_funcs_auto.txt -o $@
+$(BUILD)/%.elf: linker/%.ld $$(call ld_objects,linker/$$*.ld)
+	$(LD) $(LDFLAGS) -Map $(BUILD)/$*.map -T $< -T linker/$*/undefined_syms_auto.txt -T linker/$*/undefined_funcs_auto.txt -o $@
 
 # LANGIMG.DAT: the 16-byte header plus the image, padded to whole 2 KB
 # sectors (not counting the header).

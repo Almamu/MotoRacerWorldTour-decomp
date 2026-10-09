@@ -11,24 +11,20 @@
 #ifndef INCLUDE_ASM
 #define INCLUDE_ASM(FOLDER, NAME) \
     void INCLUDE_ASM_CAT(__maspsx_include_asm_hack_, __LINE__)() { \
-        __asm__( \
-            ".text # maspsx-keep \n" \
-            "    .align 2 # maspsx-keep\n" \
-            "    .set noat # maspsx-keep\n" \
-            "    .set noreorder # maspsx-keep\n" \
-            "    .include \"" FOLDER "/" #NAME ".s\" # maspsx-keep\n" \
-            "    .set reorder # maspsx-keep\n" \
-            "    .set at # maspsx-keep\n" \
-        ); \
+        __asm__(".text # maspsx-keep \n" \
+                "    .align 2 # maspsx-keep\n" \
+                "    .set noat # maspsx-keep\n" \
+                "    .set noreorder # maspsx-keep\n" \
+                "    .include \"" FOLDER "/" #NAME ".s\" # maspsx-keep\n" \
+                "    .set reorder # maspsx-keep\n" \
+                "    .set at # maspsx-keep\n"); \
     }
 #endif
 #ifndef INCLUDE_RODATA
 #define INCLUDE_RODATA(FOLDER, NAME) \
-    __asm__( \
-        ".section .rodata\n" \
-        "    .include \"" FOLDER "/" #NAME ".s\"\n" \
-        ".section .text" \
-    )
+    __asm__(".section .rodata\n" \
+            "    .include \"" FOLDER "/" #NAME ".s\"\n" \
+            ".section .text")
 #endif
 
 #if INCLUDE_ASM_USE_MACRO_INC

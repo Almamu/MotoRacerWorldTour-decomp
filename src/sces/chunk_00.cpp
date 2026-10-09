@@ -62,7 +62,8 @@ void strCallback(void) {
     LoadImage(&D_8014D22C.slice, (u_long *)D_8014D22C.imgbuf);
     DrawSync(0);
     D_8014D22C.slice.x += D_8014D22C.slice.w;
-    if (D_8014D22C.slice.x < D_8014D22C.rect[D_8014D22C.rectid].x + D_8014D22C.rect[D_8014D22C.rectid].w) {
+    if (D_8014D22C.slice.x <
+        D_8014D22C.rect[D_8014D22C.rectid].x + D_8014D22C.rect[D_8014D22C.rectid].w) {
         DecDCTout((u_long *)D_8014D22C.imgbuf, D_8014D22C.slice.w * D_8014D22C.slice.h / 2);
     } else {
         D_8014D22C.isdone = 1;
@@ -117,9 +118,11 @@ u_long *strNext(DECENV *dec) {
     if (D_8014D0C8 != sector->width || D_8014D0CC != sector->height) {
         D_8014D0C8 = sector->width;
         D_8014D0CC = sector->height;
-        dec->rect[0].x = D_8014D288[0].ofs[0] + (D_8014D288[0].clip.w * 3 / 2 >> 1) - (D_8014D0C8 * 3 / 2 >> 1);
+        dec->rect[0].x =
+            D_8014D288[0].ofs[0] + (D_8014D288[0].clip.w * 3 / 2 >> 1) - (D_8014D0C8 * 3 / 2 >> 1);
         dec->rect[0].y = D_8014D288[0].ofs[1] + (D_8014D288[0].clip.h >> 1) - (D_8014D0CC >> 1);
-        dec->rect[1].x = D_8014D288[1].ofs[0] + (D_8014D288[1].clip.w * 3 / 2 >> 1) - (D_8014D0C8 * 3 / 2 >> 1);
+        dec->rect[1].x =
+            D_8014D288[1].ofs[0] + (D_8014D288[1].clip.w * 3 / 2 >> 1) - (D_8014D0C8 * 3 / 2 >> 1);
         dec->rect[1].y = D_8014D288[1].ofs[1] + (D_8014D288[1].clip.h >> 1) - (D_8014D0CC >> 1);
     }
     dec->rect[0].w = dec->rect[1].w = D_8014D0C8 * 3 / 2;

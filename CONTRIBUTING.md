@@ -78,7 +78,8 @@ every PR, from clean:
 ```sh
 make clean && make
 make NON_MATCHING=1 build    # parked C has to keep building and linking
-tools/chunks.py check        # every INCLUDE_ASM has its .s, no stale .s
+tools/format.py --check      # clang-format (tools/format.py fixes it)
+tools/chunks.py check        # every INCLUDE_ASM has its .s, no stale .s, linker/ up to date
 tools/chunks.py status
 ```
 
@@ -87,37 +88,42 @@ tools/chunks.py status
 your functions as done. If you touched the library code or its names,
 `make sdk` too (after `tools/fetch_psyq.sh`).
 
-### Continuous integration
+### Code style
 
-CI (`.github/workflows/`) runs the same checks on every PR and on `main`:
-
-- **Compile (no game files)**, on every PR, forks included:
-  `tools/chunks.py check`, then `make objects` (every source file, no
-  linking) as written and with `NON_MATCHING=1`.
-- **Build and compare**: splits, builds and compares both executables,
-  builds with `NON_MATCHING=1`, `make sdk`, and puts `tools/chunks.py
-  status` in the run summary. It needs the original executables, which
-  come from a private archive named by repository secrets (never the
-  repository). Without the secrets it warns and skips those steps.
-- **Fork PRs** get no secrets, so `fork-rom-check.yml` runs the build
-  for them in the `fork-pr-rom` environment, after a maintainer
-  approves it. It compares against `main`'s checksums, so a PR can't
-  change them to pass. Review a fork's changes to the Makefile and
-  `tools/` before approving: that code runs with the game files.
-
-A red check blocks the merge. Maintainers set it up once:
+The C and C++ in `src/` and `include/` follow `.clang-format`: 4-space
+indent, 100 columns, braces on the same line, `type *name`, no one-line
+functions or `if` bodies. Format with the script, which only accepts
+clang-format 21 (other versions format some things differently):
 
 ```sh
-tools/baserom.sh pack                       # build/baserom.tar.gz: SCES_030.37 + LANGIMG.DAT
-# upload it somewhere private, then:
-gh secret set BASEROM_URL                   # where CI downloads it from
-gh secret set BASEROM_USERNAME              # only if the URL needs basic auth
-gh secret set BASEROM_PASSWORD
+tools/format.py              # format everything in place
+tools/format.py src/sces     # or just these files or directories
+tools/format.py --check      # what CI runs; changes nothing
 ```
 
-If your change makes something in [docs/decomp.md](docs/decomp.md) out of
-date (a compiler finding, a data section, a new convention), update it in
-the same PR.
+The devshell has clang-format 21; elsewhere `pip install -r
+requirements.txt` gives the same version (or point `CLANG_FORMAT` at one).
+Formatting only moves whitespace and line breaks, so it can't change the
+build, but `make` still checks it. Where a layout matters (a table aligned
+in columns), wrap it in `// clang-format off` / `// clang-format on`.
+
+### Continuous integration
+
+CI (`.github/workflows/build.yml`) runs on every PR, forks included, and
+on `main`. The repository holds everything the build needs, so it needs
+no secrets and no copy of the game:
+
+- **Format and bookkeeping:** `tools/format.py --check` and
+  `tools/chunks.py check`.
+- **Build and compare:** `make compare` rebuilds both executables and
+  checks them byte for byte, then `make NON_MATCHING=1 build`; the run
+  summary shows `tools/chunks.py status`.
+- **Build with Sony's libraries:** `make sdk` (it downloads them; cached).
+
+A red check blocks the merge. Changes to `config/<target>.yaml` or the
+symbols need a re-split with your copy of the game (docs/decomp.md);
+`tools/chunks.py check` fails until the regenerated `asm/` and `linker/`
+are committed.
 
 ## Opening the PR
 

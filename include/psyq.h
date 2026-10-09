@@ -96,8 +96,8 @@ int StGetNext(u_long **addr, u_long **header);
 
 /* libcd streaming */
 void StSetRing(u_long *ring_addr, u_long ring_size);
-void StSetStream(u_long mode, u_long start_frame, u_long end_frame,
-                 void (*func1)(), void (*func2)());
+void StSetStream(u_long mode, u_long start_frame, u_long end_frame, void (*func1)(),
+                 void (*func2)());
 void StFreeRing(u_long *base);
 
 /* libgpu */
@@ -123,8 +123,8 @@ void SsSetTableSize(char *table, short s_max, short t_max);
 void SsSetTickMode(long tick_mode);
 void SsStart(void);
 short SsVabOpenHead(u_char *addr, short vabid);
-short SsUtKeyOn(short vabId, short prog, short tone, short note, short fine,
-                short voll, short volr);
+short SsUtKeyOn(short vabId, short prog, short tone, short note, short fine, short voll,
+                short volr);
 void SsSetMVol(short voll, short volr);
 void SsVabClose(short vab_id);
 void SsEnd(void);
