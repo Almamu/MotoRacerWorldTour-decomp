@@ -1196,8 +1196,12 @@ list as it reaches it; the riding pose 8 is applied with the list at
 and the footpegs. The rider's stance comes from the blends: pose **5** is
 the **left** lean and pose **3** the **right** lean (zeroing pose 5 makes
 the rider take a left corner sitting upright with arms out; riding
-straight blends in a little of pose 3). Poses 1, 2, 7 and 11–15 had no
-effect while riding (other states: crashes, wheelies, the start?).
+straight blends in a little of pose 3). By the same test, pose **1** is
+the full-throttle tuck, pose **2** braking, pose **11** (with a little of
+7) waiting at the start line; zeroing poses 1–15 changed nothing during a
+crash into a wall. Poses 4, 6, 9 and 10 aren't referenced by the blend
+code (0x80021154, 0x80022454, 0x80022A68), and 12–15 didn't show in these
+situations (jumps or wheelies, presumably).
 
 The rider **models** (+0x290) are rigs: `{s16 part count, …, +0x0A s16
 type (draw-function pair from 0x800C8D34), …, +0x28 Part** parts}`; their 31
@@ -1251,5 +1255,5 @@ a flag bit: an 8-bit value, a 16-bit button mask (1 = accelerate), another
 
 ## Next steps
 
-- Riders: when poses 1, 2, 7 and 11–15 are used.
+- Riders: when poses 12–15 are used; the crash animation.
 

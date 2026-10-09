@@ -78,7 +78,7 @@ byte-identical (checked on all 70 levels and menu/end scenes).
 | Move gate edge ends | position, direction and half-widths of the gate are rewritten; the list's distances are recomputed from the first moved gate on |
 | Move racing-line points / edit their attributes | lane offset = the point's sideways distance from its gate (16-unit steps); target speed, flags and steer from the attributes. Checked in the emulator: lowering Sachsenring's target speeds in Blender slows the AI bikes as expected |
 | Move rider mesh vertices (rest pose) | written back part-local to the model's vertex buffer (vertex count fixed). In the emulator the change shows on every rider, the player's included (scaling part 10 enlarges the chest/head); distant bikes use the low-detail model 1, which isn't imported |
-| Edit a pose action's keys | the pose record's packed rotations (and translations of parts with flag 0x40) are rewritten; joints can't be added. Poses 5 and 3 are the left and right cornering stances (visible while steering); pose 8 only drives the bike body and footpegs; 1, 2, 7 and 11–15 belong to other states |
+| Edit a pose action's keys | the pose record's packed rotations (and translations of parts with flag 0x40) are rewritten; joints can't be added. Poses 5 / 3 are the left / right cornering stances, 1 the full-throttle tuck, 2 braking, 11 waiting at the start; pose 8 only drives the bike body and footpegs |
 | Move collision vertices | the faces using them are re-encoded (edges, planes, height); moves under 2.5 units are ignored |
 
 **The bikes ride on the collision surface, not on the ground mesh.** Its
