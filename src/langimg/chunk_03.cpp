@@ -3,7 +3,7 @@
 #include "gte.h"
 #include "langimg/ui.h"
 
-/* The game's code built with GCC 2.91.66 and -G0
+/* The game's code built with GCC 2.91.66, -G8, split addresses
  * (docs/matching/issue-4-langimg-chunk03.md). */
 
 /* Cobjet's constructor and destructor, called by the subclasses below by

@@ -71,12 +71,14 @@ matched with the second form tried
 ([issue-1-langimg-sound.md](matching/issue-1-langimg-sound.md)). Such code
 goes in `lib/` with its own settings ([libraries.md](libraries.md)).
 
-The game itself is two languages from two compilers: its C++ classes are
-2.95.2's, and its plain C functions 2.91.66's. **Case:** in chunk_02,
+The game itself comes from two compilers: its classes are 2.95.2's, and
+the plain functions between them 2.91.66's (C++ too: they use `new[]`
+and call methods). **Case:** in chunk_02,
 `CName::Equals` only matches with 2.95.2, and the functions after the
-classes (`func_80016914`, `func_800169B8`) only with 2.91.66. A run of C
-functions next to C++ is a reason to try the other compiler; the chunk
-is cut where the language changes and the C part gets per-chunk settings
+classes (`func_80016914`, `func_800169B8`) only with 2.91.66. A run of
+plain functions next to class methods is a reason to try the other
+compiler; the chunk is cut where the compiler changes and gets per-chunk
+settings
 ([issue-3-langimg-chunk02.md](matching/issue-3-langimg-chunk02.md)).
 
 | Code | Compiler | `-G` | Flags | maspsx |
@@ -85,8 +87,8 @@ is cut where the language changes and the C part gets per-chunk settings
 | `lib/sound` chunk_00 (in `LANGIMG.DAT`) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks` |
 | `lib/sound` chunk_01 | GCC 2.91.66 | 0 | `-mno-split-addresses` | `--expand-div --div-no-checks` |
 | `lib/cdaudio` chunk_01b | GCC 2.91.66 | 0 | (split addresses) | `--expand-div` |
-| `src/langimg` chunk_02 (the game's C) | GCC 2.91.66 | 0 | `-mno-split-addresses` | `--expand-div` |
-| `src/langimg` chunk_02b (the game's C) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
+| `src/langimg` chunk_02, chunk_03 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --small-externs=...` |
+| `src/langimg` chunk_02b (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `SCES_030.37` (`src/sces`) | GCC 2.91.66 | 0 | `-fsigned-char` | `--expand-div` |
 
 All at `-O2`, C++ with `-fno-exceptions -fno-rtti`, through maspsx
@@ -120,11 +122,16 @@ not as an array of unknown size. Arrays and structs over 8 bytes are
 reached with `lui`/`addiu` as before. **Case:** `func_80011924`,
 `func_80011E08`.
 
-Not every file was assembled that way. The game's C helpers in chunk_02b
+Not every file was assembled that way. The 2.91.66 helpers in chunk_02b
 reach most of the game's small globals with `lui` + `lw`, although they
 are in `.sdata` and the file is `-G8`, and only two (`D_800C493C`,
 `D_800C4944`) with `%gp_rel`: their assembler knew only the sizes of what
-the file defined. `--small-externs=D_800C493C,D_800C4944` (a per-chunk
+the file defined. chunk_03 is the same with `D_800C4988` and `D_800CA778`.
+`-G8` matters even where nothing is small: GCC then emits a global it
+might reach through `$gp` as one `lw` macro, so the loads look unsplit
+whatever the address mode, and only `-G8` with split addresses matched
+all of chunk_03 (`func_800188CC`'s jump table needs split addresses;
+`-G0` with split addresses broke the global loads). `--small-externs=D_800C493C,D_800C4944` (a per-chunk
 maspsx flag) makes only those small. Both GCC versions emit `.extern`
 with sizes, so this isn't the compiler's doing.
 
@@ -220,6 +227,15 @@ globals), a script that tries every order is quicker than guessing:
   ...; j++; if (o->m_3D == -1) goto top; }`, is a `goto`: a `while` with a
   `break`, a `for` with both tests and a `do` were 27 to 48 instructions
   off (`func_80016144`).
+- **A `goto` loop isn't a loop to the loop pass.** It hoists nothing out
+  of one. Constants the original keeps in registers across such a loop are
+  locals set before the label (`func_80017FB4`, `func_80018048`).
+- **A constant compared with a variable.** A `switch`'s case values are
+  literals and stay in the loop; compared with a loop-local constant
+  (`kind == two`) the `2` is hoisted with the others (`func_8001865C`).
+- **Empty loops count from one more.** `i = 10; while (i--);` compiles to a
+  count from 9 with the decrement first: the original's constant is one
+  less than the source's (`func_80018814`).
 - **Loop shape under 2.91.66.** 2.91.66 keeps an up-counting `i` and walks
   the fields with separate pointers where 2.95.2 makes one count-down
   pointer. A loop compiled the "wrong" way is a hint to check the
@@ -292,6 +308,20 @@ globals), a script that tries every order is quicker than guessing:
 - **A multiplication written as shifts.** `x * 0x3000` is `(x * 3) << 12`
   to GCC; the original's `(x << 12) + (x << 13)` (and `<< 14`, `<< 15`
   for `0xC000`) is written so (`func_80016A8C`, `func_80016C3C`).
+- **`do { } while (0)` around statements.** Twice the permuter's whole
+  fix: around `i = 0` before a loop (`func_80017FB4`, its order against
+  the loads) and around a loop's body (`func_8001865C`, its registers: the
+  statements inside count as one loop deeper). A workaround; say so at the
+  use.
+- **A second pointer against cross-jumping.** Two identical statement
+  runs that end at the same label are merged into one; the original's
+  separate copies came from a second pointer for the loop
+  (`func_80017E64`).
+- **A value tested twice, a field read again.** `func_800194E4` keeps the
+  prim in `$a0` and a copy in `$a2` for its second call: `page = prim[1];
+  if (o->m_page) page = o->m_page ? o->m_page : prim[1];` and the calls
+  taking `o->m_prim` again, not `prim` (found by the permuter; each half
+  alone doesn't). The same brought `func_80016C3C` from 94 to 42.
 - **Through an inline function.** A value returned by an inline function
   can survive where the same constant written inline is folded: in
   `func_80012F7C`, `ClearFlags(&f, 1)` keeps `~1` in a register as the
@@ -358,6 +388,11 @@ assignments were further off.
   engine's `|x|` is `sra`, `xor`, `subu`: `ABS(x)` in
   `lib/sound/include/sound.h`, `((x) ^ ((x) >> 31)) - ((x) >> 31)`
   (`func_80012504`).
+- **Bitfields as the original reads them.** A signed bitfield compared
+  with -1 is a mask test (`(x & 0xFFF000) == 0xFFF000`), and one read as a
+  value is `sll`/`sra` (`SeqEntry`, `func_80019578`). Where the original
+  extracts with shifts but only tests for zero, GCC turns a bitfield into
+  an `andi`: write the shifts (`(e->m_94 << 16) >> 28`, `func_80017B88`).
 - **Signed compares need signed types.** `slti` vs `sltiu`: the movie
   loop's frame counter is compared as `(int)D_8014D0D4 > 60`.
 - **A struct for data read from a file.** The movie loop reads the DPS
@@ -402,6 +437,16 @@ assignments were further off.
   `va_start` takes the address of the last named argument, which keeps
   the named arguments in their stack slots as the original does. GCC's own
   (`__builtin_next_arg`) didn't (`func_80016144`).
+- **A function may take more than its body uses.** `CName::Equals`
+  matched with one parameter, but it passes `$a2` and `$a3` on to its
+  callee untouched, and a caller sets both: its real signature has them
+  (`Equals(const char *, int, int)`). Look at callers before settling a
+  signature.
+- **Calling a C++ symbol by hand.** A constructor or destructor whose
+  class has no name yet is called through an `asm`-labelled declaration,
+  `extern void CobjetDtor(Cobjet *, int) asm("_._6Cobjet");` (chunk_03's
+  subclasses), and a virtual call through the vtable entry
+  (`{ short delta; short index; void (*func)(); }`, `DRAW_SET`).
 - **C linkage for placeholder names.** A function in a `.cpp` chunk whose
   real name isn't known is declared `extern "C"` (`lib/sound/include/sound.h`),
   so its symbol is the plain `func_XXXXXXXX` the asm calls.
@@ -535,7 +580,8 @@ files (issue-1-langimg-sound.md, "The flags, function by function").
   `func_80011A68`) don't have the problem. The slot loops also keep `~1`
   in a register (`ClearFlags`, above).
 - **Stack addresses kept in registers** (chunk_02b: `func_80016268`,
-  `func_80016434`, `func_80016600`, `func_80016E34`): the original
+  `func_80016434`, `func_80016600`, `func_80016E34`; chunk_03:
+  `func_80018954`, though `func_80016C3C`'s original keeps `&rot`): the original
   computes a local's address anew (`addiu $a0, $sp, 0x20`) for each call
   it's passed to; GCC keeps every local's address but the first one's in
   a saved register, so the frame and registers differ. Not the compiler

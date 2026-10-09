@@ -4,7 +4,7 @@
 #include "gte.h"
 
 /* Functions on Cobjet with C linkage, built with GCC 2.91.66 like the
- * game's other C files (docs/matching/issue-3-langimg-chunk02.md). */
+ * game's other plain functions (docs/matching/issue-3-langimg-chunk02.md). */
 
 /* Sets up the object's parts (func_800178DC) and the n part numbers that
  * follow; m_3D is the first that isn't -1. */
