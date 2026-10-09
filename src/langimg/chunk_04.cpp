@@ -1,5 +1,6 @@
 #include "common.h"
 #include "langimg/seq.h"
+#include "langimg/race.h"
 #include "langimg/ui.h"
 #include "gte.h"
 
@@ -94,37 +95,7 @@ void func_8001AD9C(void *self, int t, SVECTOR *a, SVECTOR *b, SVECTOR *out);
 int func_8001ACE4(void *self, int *plane, SVECTOR *a, SVECTOR *b, long *d);
 int func_8001AE40(void *self, int *plane, SVECTOR *a, SVECTOR *b, SVECTOR *out);
 
-// A race entry (0x568 bytes; Race::m_entries)
-struct RaceEntryX {
-    u8 m_00[0x474];
-    int m_474; // its kind's index
-};
-struct RaceEntry {
-    int m_flags; // & 0x7E: its kind
-    u8 m_04[0x2C];
-    RaceEntryX *m_30;
-    u8 m_34[0x534];
-};
-struct Race {
-    u8 m_00[0x2E8];
-    RaceEntry m_entries[5];
-};
-struct RaceWorld {
-    u8 m_00[0x378];
-    Race *m_race;
-};
-// The race's entries of kind 0x44 sorted by their m_474, 5 per kind
-struct RaceSort {
-    int m_00;
-    u8 m_04[0x8C];
-    int m_count[7];         // 0x90
-    RaceEntryX *m_by[7][5]; // 0xAC
-};
 void func_8001B6B4(RaceSort *t, RaceWorld *w);
-
-static inline RaceEntry *RaceGetEntry(Race *r, int i) {
-    return i < 0 ? 0 : &r->m_entries[i];
-}
 }
 
 #ifdef NON_MATCHING

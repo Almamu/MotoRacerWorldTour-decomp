@@ -18,3 +18,4 @@ issue it worked on, and add it below.
 | [issue-3-langimg-chunk02.md](issue-3-langimg-chunk02.md) | The game's chunk_02: its C and C++ from two compilers, 2D items, the object tree, the GTE |
 | [issue-4-langimg-chunk03.md](issue-4-langimg-chunk03.md) | The game's chunk_03: object lists and trees, 2D drawing; the 2.91.66 code is `-G8` with split addresses |
 | [issue-5-langimg-chunk04.md](issue-5-langimg-chunk04.md) | The game's chunk_04: sequences, ranges, grids; bitfields read into locals, loops calling in their condition |
+| [issue-6-langimg-chunk05.md](issue-6-langimg-chunk05.md) | The game's chunk_05: race positions, the ring of entries by distance |
