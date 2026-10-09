@@ -1,6 +1,7 @@
 #include "common.h"
 #include "langimg/cobjet.h"
 #include "gte.h"
+#include "langimg/ui.h"
 
 /* The game's code built with GCC 2.91.66 and -G0
  * (docs/matching/issue-4-langimg-chunk03.md). */
@@ -13,8 +14,6 @@ extern void CobjetDtor(Cobjet *o, int flags) asm("_._6Cobjet");
 #define SET_VTABLE(o, vt) (*(void **)((char *)(o) + 0x50) = (vt))
 
 extern "C" {
-struct UiList;
-void func_80015CF4(UiList *l);
 void *func_80096240(int id);
 extern int D_800CBE80;
 extern int D_800CBE84;
@@ -55,6 +54,31 @@ struct Seq {
     unsigned m_mode : 6;
 };
 int func_80019578(Seq *s, int a, int back, int c);
+
+// The 2D drawing state (D_800C886C): a C++ object, its vtable pointer at
+// 0x68
+struct DrawState {
+    u8 m_00[0x64];
+    int m_64; // the current setting of the virtual call at 0x70
+};
+// A GCC 2 vtable entry
+struct VtEntry {
+    short m_delta;
+    short m_index;
+    void (*m_func)(void *self, int v);
+};
+// The virtual function at vtable + 0x70 (entry 14)
+#define DRAW_SET(g, v) \
+    do { \
+        VtEntry *_vt = *(VtEntry **)((char *)(g) + 0x68); \
+        _vt[14].m_func((char *)(g) + _vt[14].m_delta, v); \
+    } while (0)
+extern DrawState *D_800C886C;
+extern u8 D_800C885C;
+extern u8 D_800C885D;
+extern int D_800C8860;
+void func_80077BE4(void *tex, int align, int x, int y);
+
 void func_80018954(MATRIX *view, Cobjet *o, long *sxy);
 /* The subclasses' vtables: one entry each, their destructor */
 extern int D_800C4948[];
@@ -790,7 +814,97 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_03", func_80018954);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_03", func_80018AEC);
 
+#ifdef NON_MATCHING
+/* Equivalent; scheduling: the original stores D_800C885C and D_800C885D
+ * before halving the colour, and its branches are laid out otherwise */
+/* Draws a prim's 2D item at (x, y) if on screen: a texture (with a white
+ * frame for kind 6), or a list of items; page is its colour, halved. */
+void func_80019114(int *prim, int page, int x, int y) {
+    int saved;
+    int align;
+    u8 *c;
+
+    saved = D_800C886C->m_64;
+    if ((prim[0] & 0xF8) != 0xF8) {
+        DRAW_SET(D_800C886C, (prim[0] << 24) >> 27);
+    }
+    if (x >= D_800C8D90->x && y >= D_800C8D90->y && x < D_800C8D90->x1 && y < D_800C8D90->y1) {
+        D_800C885C = !(prim[0] & 0x380000) ? 8 : (((prim[0] << 10) >> 29) - 1) | 0xC;
+        D_800C885D = 0x80;
+        c = (u8 *)&page;
+        c[0] >>= 1;
+        c[1] >>= 1;
+        c[2] >>= 1;
+        c[3] >>= 1;
+        D_800C8860 = page;
+        align = func_800188CC(prim);
+        if (!(prim[0] & 7)) {
+            UiTexture *t = (UiTexture *)prim[2];
+
+            if (t) {
+                func_80077BE4(t, align, x, y);
+                if ((prim[0] & 0x1E000000) == 0x6000000) {
+                    int x0 = x;
+                    int y0 = y;
+                    int w = t->u1 - t->u0 + 1;
+                    int h = t->v2 - t->v0 + 1;
+                    u_long *p;
+                    int code;
+
+                    switch (align & 0xF0) {
+                    case 0x10:
+                        w /= 2;
+                        x0 = x - 1 - w;
+                        break;
+                    case 0x20:
+                        x0 = x - 1 - w;
+                        w = 0;
+                        break;
+                    case 0:
+                        x0 = x - 1;
+                        break;
+                    }
+                    switch (align & 0xF00) {
+                    case 0x100:
+                        h /= 2;
+                        y0 = y - 1 - h;
+                        break;
+                    case 0x200:
+                        y0 = y - 1 - h;
+                        h = 0;
+                        break;
+                    case 0:
+                        y0 = y - 1;
+                        break;
+                    }
+                    code = 0x40FFFFFF;
+                    p = (u_long *)D_800C8C70;
+                    p[0] = 0x03000000;
+                    p[1] = code;
+                    p[2] = XY(x0, y0);
+                    p[3] = XY(x + w, y0);
+                    ADD_PRIM(D_800CBDC0 + 1, D_800C8C70);
+                    p = (u_long *)(D_800C8C70 += 0x10);
+                    p[0] = 0x06000000;
+                    p[1] = 0x4CFFFFFF;
+                    p[2] = XY(x0, y0);
+                    p[3] = XY(x0, y + h);
+                    p[4] = XY(x + w, y + h);
+                    p[5] = XY(x + w, y0);
+                    p[6] = 0x55555555;
+                    ADD_PRIM(D_800CBDC0 + 1, D_800C8C70);
+                    D_800C8C70 += 0x1C;
+                }
+            }
+        } else {
+            func_80015798((UiList *)prim[2], x, y, align);
+        }
+    }
+    DRAW_SET(D_800C886C, saved);
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_03", func_80019114);
+#endif
 
 /* Draws a 2D object's prim at its position. */
 void func_800194E4(Obj2D *o) {
