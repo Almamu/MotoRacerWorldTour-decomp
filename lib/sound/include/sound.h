@@ -2,6 +2,7 @@
 #define LANGIMG_SOUND_H
 
 #include "common.h"
+#include "psyq.h"
 
 /* The game's sound code (chunk_00): the SPU, the voices, the VAB banks.
  * The functions keep their placeholder names, so they're declared with C
@@ -86,16 +87,66 @@ typedef struct {
 typedef struct {
     u8 unk0[0x10];
     int flags; /* 0x400: follows unk3C/unk40; 0x200: moves (unk44 its last place) */
-    u8 unk14[0x18];
+    short unk14;
+    short unk16;
+    short unk18;
+    short unk1A;
+    short unk1C; /* scales unk14 when flags & 0x4000 (1.0 = 0x1000) */
+    short unk1E;
+    int unk20;
+    int unk24;
+    int unk28;
     int volume; /* by where the listener faces */
     SndListener *listener;
-    u8 unk34[8];
+    int unk34;
+    int unk38;
     SndVector *unk3C; /* where it is */
     SndVector *unk40; /* its direction */
     SndVector unk44;
     SndVector unk50;
     SndVector unk5C;
 } SndEmitter;
+
+/* The 3D sounds: emitters and listeners (func_80013CFC) */
+typedef struct {
+    u8 unk0;
+    u8 unk1;
+    u8 unk2;
+    u8 unk3[0x205];
+    int unk208;
+    SndEmitter emitters[64];
+    SndListener listeners[2];
+    short unk1C84;
+    short nFree;
+    u8 free[64]; /* the free emitters, a stack */
+    int unk1CC8;
+    u8 unk1CCC[0x28];
+    short unk1CF4;
+    short unk1CF6;
+    int unk1CF8;
+} SndWorld;
+
+/* Note numbers by index (func_80013DB8 clears them to -1) */
+typedef struct {
+    u8 unk0[6];
+    short notes[256];
+} NoteMap;
+
+/* What func_80013BD4 sets on an emitter, each field when its bit is in
+ * mask */
+typedef struct {
+    short mask;
+    short unk2; /* 1 */
+    u16 unk4;   /* 2 */
+    u8 unk6[2];
+    int unk8; /* 4 */
+    int unkC; /* 8 */
+    u8 unk10[4];
+    int unk14; /* 0x80, with unk18 */
+    int unk18;
+    SndVector unk1C; /* 0x20 */
+    SndVector unk28; /* 0x40 */
+} SndParams;
 
 /* The sound bank's directory (D_800C472C) */
 typedef struct {
@@ -192,7 +243,6 @@ void SpuSetCommonCDMix(long cd_mix);
 void *memset(void *p, int c, size_t n);
 char *strncpy(char *dst, const char *src, size_t n);
 int VSync(int mode);
-void free(void *p);
 long ratan2(long y, long x);
 int func_80097AC8(int x);                           /* a square root */
 Dir *func_800A06AC(const char *name, int a, int b); /* loads a file */
@@ -294,9 +344,15 @@ int func_80012F40(u32 handle);
 void func_80013098(u32 handle);
 int func_800130CC(u32 handle);
 SoundSlot *func_80013348(u32 handle);
-void func_80013440(void);
-void func_80013448(void);
+void func_80013440(SndWorld *w);
+void func_80013448(SndListener *l);
 void func_80013554(void);
+
+/* chunk_01: the 3D sounds' emitters and listeners */
+void func_80013BA0(SndEmitter *e, int v);
+void func_80013BD4(SndEmitter *e, SndParams *p);
+void func_80013CFC(SndWorld *w);
+u16 func_80014C24(NoteMap *map, int i);
 void func_8001355C(SndEmitter *e, SndVector *pos, SndVector *dir);
 void func_8001363C(SndEmitter *e, SndVector *pos, SndVector *dir, int dt);
 

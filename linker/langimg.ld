@@ -24,7 +24,8 @@ SECTIONS
         main_TEXT_START = .;
         build/langimg/asm/langimg/data/text_table.o(.text);
         build/langimg/lib/sound/langimg/chunk_00.o(.text);
-        build/langimg/src/langimg/chunk_01.o(.text);
+        build/langimg/lib/sound/langimg/chunk_01.o(.text);
+        build/langimg/lib/cdaudio/langimg/chunk_01b.o(.text);
         build/langimg/src/langimg/chunk_02.o(.text);
         build/langimg/src/langimg/chunk_03.o(.text);
         build/langimg/src/langimg/chunk_04.o(.text);
@@ -111,8 +112,9 @@ SECTIONS
         main_RODATA_START = .;
         build/langimg/asm/langimg/data/text_table.o(.rodata);
         build/langimg/lib/sound/langimg/chunk_00.o(.rodata);
+        build/langimg/lib/sound/langimg/chunk_01.o(.rodata);
         build/langimg/asm/langimg/data/ctors.rodata.o(.rodata);
-        build/langimg/src/langimg/chunk_01.o(.rodata);
+        build/langimg/lib/cdaudio/langimg/chunk_01b.o(.rodata);
         build/langimg/src/langimg/chunk_02.o(.rodata);
         build/langimg/src/langimg/chunk_03.o(.rodata);
         build/langimg/src/langimg/chunk_04.o(.rodata);
@@ -199,7 +201,8 @@ SECTIONS
         main_DATA_START = .;
         build/langimg/asm/langimg/data/text_table.o(.data);
         build/langimg/lib/sound/langimg/chunk_00.o(.data);
-        build/langimg/src/langimg/chunk_01.o(.data);
+        build/langimg/lib/sound/langimg/chunk_01.o(.data);
+        build/langimg/lib/cdaudio/langimg/chunk_01b.o(.data);
         build/langimg/src/langimg/chunk_02.o(.data);
         build/langimg/src/langimg/chunk_03.o(.data);
         build/langimg/src/langimg/chunk_04.o(.data);
@@ -293,7 +296,8 @@ SECTIONS
         main_BSS_START = .;
         build/langimg/asm/langimg/data/text_table.o(.bss);
         build/langimg/lib/sound/langimg/chunk_00.o(.bss);
-        build/langimg/src/langimg/chunk_01.o(.bss);
+        build/langimg/lib/sound/langimg/chunk_01.o(.bss);
+        build/langimg/lib/cdaudio/langimg/chunk_01b.o(.bss);
         build/langimg/src/langimg/chunk_02.o(.bss);
         build/langimg/src/langimg/chunk_03.o(.bss);
         build/langimg/src/langimg/chunk_04.o(.bss);

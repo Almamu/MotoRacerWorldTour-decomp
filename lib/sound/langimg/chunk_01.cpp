@@ -1,12 +1,71 @@
 #include "common.h"
+#include "psyq.h"
+#include "sound.h"
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_01", func_80013764);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_01", func_80013BA0);
+void func_80013BA0(SndEmitter *e, int v) {
+    if (e->flags & 0x4000) {
+        v = v * e->unk1C >> 12;
+    }
+    e->unk14 = v;
+    e->unk1A = v;
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_01", func_80013BD4);
+void func_80013BD4(SndEmitter *e, SndParams *p) {
+    int mask = p->mask;
+    int flags = e->flags;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_01", func_80013CFC);
+    if (mask & 1) {
+        func_80013BA0(e, p->unk2);
+    }
+    if (mask & 2) {
+        e->unk16 = p->unk4;
+    }
+    if (mask & 8) {
+        e->unk24 = p->unkC;
+    }
+    if (mask & 4) {
+        e->unk28 = p->unk8;
+    }
+    if (mask & 0x20) {
+        flags |= 8;
+        CopyVector(&e->unk50, &p->unk1C);
+    }
+    if (mask & 0x40) {
+        flags |= 8;
+        CopyVector(&e->unk5C, &p->unk28);
+    }
+    if (mask & 0x80) {
+        e->unk34 = p->unk14;
+        e->unk38 = p->unk18;
+        flags |= 0x8008;
+    }
+    e->flags = flags | 0x100;
+}
+
+void func_80013CFC(SndWorld *w) {
+    int i;
+
+    func_80013440(w);
+    w->unk1 = 0;
+    w->unk1C84 = 0;
+    w->unk208 = 0;
+    w->unk2 = 0;
+    w->unk1CC8 = 0;
+    w->unk1CF4 = 64;
+    w->unk1CF8 = 0;
+    for (i = 0; i < 2; i++) {
+        func_80013448(&w->listeners[i]);
+    }
+    for (i = 0; i < 64; i++) {
+        w->emitters[i].flags = 0;
+    }
+    w->nFree = 64;
+    for (i = 0; i < 64; i++) {
+        w->free[i] = 63 - i;
+    }
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_01", func_80013DB8);
 
@@ -68,40 +127,18 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_01", func_80014B74);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_01", func_80014BB0);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_01", func_80014C24);
+/* A note's 0x6 field, through a table of note numbers; 0 for none. */
+u16 func_80014C24(NoteMap *map, int i) {
+    u16 r = 0;
+
+    if (i != -1) {
+        int n = map->notes[i];
+
+        if (n != -1) {
+            r = *(u16 *)(D_800C4744 + n * 44 + 6);
+        }
+    }
+    return r;
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_01", func_80014C70);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_01", func_80014CB8);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_01", func_800150E4);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_01", func_800151F0);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_01", func_80015200);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_01", func_80015210);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_01", func_800152E4);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_01", func_800153FC);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_01", func_80015438);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_01", func_80015458);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_01", func_800154D4);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_01", func_800155CC);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_01", func_80015650);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_01", func_80015678);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_01", func_80015684);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_01", func_800156DC);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_01", func_80015730);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_01", func_80015764);

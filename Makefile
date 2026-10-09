@@ -42,13 +42,23 @@ sces_CFLAGS    := -fsigned-char
 
 # Libraries (lib/<name>/<target>/, docs/libraries.md) built with another
 # compiler or flags than the rest of their target (a setting that's set,
-# even to nothing, replaces the target's): LIB_<name>_GCC and
-# LIB_<name>_CFLAGS, and maspsx's flags from LIB_<name>_MASPSXFLAGS. The
-# game's sound engine is GCC 2.91.66's, its divisions without checks.
+# even to nothing, replaces the target's): LIB_<name>_GCC, LIB_<name>_CFLAGS,
+# LIB_<name>_G (-G), and maspsx's flags from LIB_<name>_MASPSXFLAGS.
 LIBS             := $(notdir $(wildcard lib/*))
+# The game's sound engine: GCC 2.91.66, divisions without checks.
 LIB_sound_GCC    := 2.91.66-psx
 LIB_sound_CFLAGS := -mno-split-addresses
 LIB_sound_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks
+# The game's CD audio: GCC 2.91.66, split addresses, no $gp.
+LIB_cdaudio_GCC    := 2.91.66-psx
+LIB_cdaudio_CFLAGS :=
+LIB_cdaudio_G      := 0
+
+# A chunk built unlike the rest of its library (another source file with
+# other options): <target>.<chunk>_GCC, _CFLAGS, _G and _MASPSXFLAGS replace
+# its library's or target's, the same way.
+langimg.chunk_01_G := 0
+CHUNK_SETTINGS := langimg.chunk_01
 
 # -O2; the C++ has no exceptions and no RTTI.
 CC1FLAGS    := -O2 -quiet
@@ -90,7 +100,7 @@ ld_objects = $(shell grep -o 'build/[A-Za-z0-9_/.-]*\.o' $(1) 2>/dev/null | sort
 
 # Objects are rebuilt when the compile flags change (NON_MATCHING=1 and back).
 FLAGS_STAMP := $(BUILD)/flags.txt
-FLAGS_NOW   := $(CPPFLAGS) $(CC1FLAGS) $(CXXFLAGS) $(MASPSXFLAGS) $(langimg_G) $(sces_G) $(langimg_CFLAGS) $(sces_CFLAGS) $(foreach l,$(LIBS),$(l):$(LIB_$(l)_GCC):$(LIB_$(l)_CFLAGS):$(LIB_$(l)_MASPSXFLAGS))
+FLAGS_NOW   := $(CPPFLAGS) $(CC1FLAGS) $(CXXFLAGS) $(MASPSXFLAGS) $(langimg_G) $(sces_G) $(langimg_CFLAGS) $(sces_CFLAGS) $(foreach l,$(LIBS),$(l):$(LIB_$(l)_GCC):$(LIB_$(l)_CFLAGS):$(LIB_$(l)_G):$(LIB_$(l)_MASPSXFLAGS)) $(foreach c,$(CHUNK_SETTINGS),$(c):$($(c)_GCC):$($(c)_CFLAGS):$($(c)_G):$($(c)_MASPSXFLAGS))
 $(shell mkdir -p $(BUILD); echo '$(FLAGS_NOW)' | cmp -s - $(FLAGS_STAMP) || echo '$(FLAGS_NOW)' > $(FLAGS_STAMP))
 
 #### Rules ####
@@ -169,11 +179,13 @@ $(BUILD)/sces.bin: $(BUILD)/sces.elf
 gcc_minor = -D__GNUC_MINOR__=$(word 2,$(subst ., ,$(1)))
 
 # Objects of each target live under build/<target>/ (splat's build_path).
-# OBJ_GCC and OBJ_CFLAGS are each object's compiler and flags: its target's,
-# or its library's (LIB_<name>_GCC, _CFLAGS, _MASPSXFLAGS).
+# OBJ_GCC, OBJ_CFLAGS, OBJ_G and OBJ_MASPSXFLAGS are each object's compiler
+# and flags: its target's, its library's (LIB_<name>_*) or its chunk's
+# (<target>.<chunk>_*).
 define target_rules
 $(BUILD)/$(1)/%.o: OBJ_GCC = $($(1)_GCC)
 $(BUILD)/$(1)/%.o: OBJ_CFLAGS = $($(1)_CFLAGS)
+$(BUILD)/$(1)/%.o: OBJ_G = $($(1)_G)
 $(BUILD)/$(1)/%.o: OBJ_MASPSXFLAGS = $(MASPSXFLAGS)
 
 # Binary pieces splat extracted to assets/ (the header).
@@ -191,13 +203,13 @@ $(BUILD)/$(1)/%.o: %.s
 # splat writes the INCLUDE_ASM ones (<object>.asmproc.d).
 $(BUILD)/$(1)/%.o: %.cpp $(call gcc_dir,$($(1)_GCC))/cc1 $(FLAGS_STAMP)
 	@mkdir -p $$(dir $$@)
-	$$(call gcc_dir,$$(OBJ_GCC))/cpp $(CPPFLAGS) $$(call gcc_minor,$$(OBJ_GCC)) -MD $$(@:.o=.d) -lang-c++ -D__cplusplus -D__GNUG__=2 -D_LANGUAGE_C_PLUS_PLUS $$< | $$(call gcc_dir,$$(OBJ_GCC))/cc1plus $(CC1FLAGS) -G$($(1)_G) $$(OBJ_CFLAGS) $(CXXFLAGS) | $(MASPSX) $$(OBJ_MASPSXFLAGS) -G$($(1)_G) | $(AS) $(ASFLAGS) -o $$@
+	$$(call gcc_dir,$$(OBJ_GCC))/cpp $(CPPFLAGS) $$(call gcc_minor,$$(OBJ_GCC)) -MD $$(@:.o=.d) -lang-c++ -D__cplusplus -D__GNUG__=2 -D_LANGUAGE_C_PLUS_PLUS $$< | $$(call gcc_dir,$$(OBJ_GCC))/cc1plus $(CC1FLAGS) -G$$(OBJ_G) $$(OBJ_CFLAGS) $(CXXFLAGS) | $(MASPSX) $$(OBJ_MASPSXFLAGS) -G$$(OBJ_G) | $(AS) $(ASFLAGS) -o $$@
 	$(ALIGN4) $$@
 	@sed -i 's|^[^:]*:|$$@:|' $$(@:.o=.d)
 
 $(BUILD)/$(1)/%.o: %.c $(call gcc_dir,$($(1)_GCC))/cc1 $(FLAGS_STAMP)
 	@mkdir -p $$(dir $$@)
-	$$(call gcc_dir,$$(OBJ_GCC))/cpp $(CPPFLAGS) $$(call gcc_minor,$$(OBJ_GCC)) -MD $$(@:.o=.d) $$< | $$(call gcc_dir,$$(OBJ_GCC))/cc1 $(CC1FLAGS) -G$($(1)_G) $$(OBJ_CFLAGS) | $(MASPSX) $$(OBJ_MASPSXFLAGS) -G$($(1)_G) | $(AS) $(ASFLAGS) -o $$@
+	$$(call gcc_dir,$$(OBJ_GCC))/cpp $(CPPFLAGS) $$(call gcc_minor,$$(OBJ_GCC)) -MD $$(@:.o=.d) $$< | $$(call gcc_dir,$$(OBJ_GCC))/cc1 $(CC1FLAGS) -G$$(OBJ_G) $$(OBJ_CFLAGS) | $(MASPSX) $$(OBJ_MASPSXFLAGS) -G$$(OBJ_G) | $(AS) $(ASFLAGS) -o $$@
 	$(ALIGN4) $$@
 	@sed -i 's|^[^:]*:|$$@:|' $$(@:.o=.d)
 endef
@@ -205,6 +217,13 @@ $(foreach t,$(TARGETS),$(eval $(call target_rules,$(t))))
 $(foreach t,$(TARGETS),$(foreach l,$(LIBS),\
   $(if $(filter-out undefined,$(origin LIB_$(l)_GCC)),$(eval $(BUILD)/$(t)/lib/$(l)/%.o: OBJ_GCC = $(LIB_$(l)_GCC)))\
   $(if $(filter-out undefined,$(origin LIB_$(l)_CFLAGS)),$(eval $(BUILD)/$(t)/lib/$(l)/%.o: OBJ_CFLAGS = $(LIB_$(l)_CFLAGS)))\
-  $(if $(filter-out undefined,$(origin LIB_$(l)_MASPSXFLAGS)),$(eval $(BUILD)/$(t)/lib/$(l)/%.o: OBJ_MASPSXFLAGS = $(LIB_$(l)_MASPSXFLAGS)))))
+  $(if $(filter-out undefined,$(origin LIB_$(l)_MASPSXFLAGS)),$(eval $(BUILD)/$(t)/lib/$(l)/%.o: OBJ_MASPSXFLAGS = $(LIB_$(l)_MASPSXFLAGS)))\
+  $(if $(filter-out undefined,$(origin LIB_$(l)_G)),$(eval $(BUILD)/$(t)/lib/$(l)/%.o: OBJ_G = $(LIB_$(l)_G)))))
+# A chunk's own settings, on its object's exact path (which wins over the
+# patterns above).
+chunk_objects = $(foreach s,$(wildcard src/$(1)/$(2).c src/$(1)/$(2).cpp lib/*/$(1)/$(2).c lib/*/$(1)/$(2).cpp),$(BUILD)/$(1)/$(basename $(s)).o)
+$(foreach c,$(CHUNK_SETTINGS),$(foreach v,GCC CFLAGS G MASPSXFLAGS,\
+  $(if $(filter-out undefined,$(origin $(c)_$(v))),$(foreach o,$(call chunk_objects,$(word 1,$(subst ., ,$(c))),$(word 2,$(subst ., ,$(c)))),\
+    $(eval $(o): OBJ_$(v) = $($(c)_$(v)))))))
 
 -include $(shell find $(BUILD) -name '*.d' 2>/dev/null)

@@ -993,10 +993,10 @@ int func_800133A0(int id) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_800133A0);
 #endif
 
-void func_80013440(void) {
+void func_80013440(SndWorld *w) {
 }
 
-void func_80013448(void) {
+void func_80013448(SndListener *l) {
 }
 
 /* Places the listener; its angle is the facing direction's (c) on the
