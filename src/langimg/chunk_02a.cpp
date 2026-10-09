@@ -30,8 +30,8 @@ char *CName::Get() {
     return m_str;
 }
 
-int CName::Equals(const char *str) {
-    return func_800A6100(str, m_str) == 0;
+int CName::Equals(const char *str, int n, int x) {
+    return func_800A6100(str, m_str, n) == 0;
 }
 
 CNamed::CNamed() {

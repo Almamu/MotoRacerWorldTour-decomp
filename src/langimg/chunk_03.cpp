@@ -1,6 +1,9 @@
 #include "common.h"
 #include "langimg/cobjet.h"
 
+/* The game's code built with GCC 2.91.66 and -G0
+ * (docs/matching/issue-4-langimg-chunk03.md). */
+
 /* Draws the list's objects from start on, n of them: their drawn flags
  * cleared first, then each top object's tree. */
 void func_800177E8(CobjetList *l, int start, int n) {
@@ -153,19 +156,182 @@ int func_80017B88(Cobjet *o, CobjetLinkedPos *e) {
     return r;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_03", func_80017CF0);
+/* Puts an object in the list's slot i, the one there removed first. */
+int func_80017CF0(CobjetList *l, int i, Cobjet *o) {
+    int r = 0;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_03", func_80017D74);
+    if (l->m_items && i >= 0 && i < l->m_count) {
+        func_80017D74(l, i);
+        r = 1;
+        l->m_items[i] = o;
+    }
+    return r;
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_03", func_80017E10);
+/* Deletes the object in the list's slot i. */
+void func_80017D74(CobjetList *l, int i) {
+    if (l->m_items && i >= 0 && i < l->m_count && l->m_items[i]) {
+        delete l->m_items[i];
+        l->m_items[i] = 0;
+    }
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_03", func_80017E64);
+/* The list's object of that name, or 0. */
+Cobjet *func_80017E10(CobjetList *l, const char *name, int len) {
+    Cobjet *r = 0;
+    int i = func_80017E64(l, name, len);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_03", func_80017FB4);
+    if (i != -1) {
+        r = l->m_items[i];
+    }
+    return r;
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_03", func_80018008);
+/* The slot of the list's last object of that name (lower-cased, at most
+ * len characters; -1: whole), or -1. */
+int func_80017E64(CobjetList *l, const char *name, int len) {
+    char buf[32];
+    int r = -1;
+    int count = l->m_count;
+    int n;
+    int i;
+    char *p;
+    u8 c;
+    Cobjet **o;
+    const char *q;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_03", func_80018048);
+    if (name && count > 0) {
+        p = buf;
+        q = name;
+        n = 31;
+        if (len > 0 && n < len) {
+            n = len;
+        }
+        c = *name;
+        *p = c;
+        goto lower;
+    next:
+        q++;
+        c = *q;
+        if (!*(s8 *)q) {
+            goto end;
+        }
+        *p = c;
+    lower:
+        if (c >= 'A' && c <= 'Z') {
+            *p = c + 0x20;
+        }
+        p++;
+        if (--n > 0) {
+            goto next;
+        }
+    end:
+        i = count - 1;
+        *p = 0;
+        o = &l->m_items[i];
+        if (o) {
+            if (len != -1) {
+                do {
+                    if (*o && (*o)->Equals(buf, len, 1)) {
+                        r = i;
+                        break;
+                    }
+                    i--;
+                    o--;
+                } while (i >= 0);
+            } else {
+                do {
+                    if (*o && (*o)->Equals(buf, 0x20, 1)) {
+                        r = i;
+                        break;
+                    }
+                    i--;
+                    o--;
+                } while (i >= 0);
+            }
+        }
+    }
+    return r;
+}
+
+/* The list's first free slot, or -1. */
+int func_80017FB4(CobjetList *l) {
+    int r = -1;
+    int i;
+    Cobjet **p;
+
+    if (l->m_items) {
+        int n;
+        int none;
+
+        /* an empty loop keeps i = 0 before the loads (found by the permuter) */
+        do {
+            i = 0;
+        } while (0);
+        n = l->m_count;
+        p = l->m_items;
+        none = -1;
+    top:
+        if (i < n) {
+            if (!*p) {
+                r = i;
+            }
+            p++;
+            i++;
+            if (r == none) {
+                goto top;
+            }
+        }
+    }
+    return r;
+}
+
+/* The list's object whose tree has child first or next (func_80018048). */
+Cobjet *func_80018008(CobjetList *l, Cobjet *child, int *first) {
+    int i = func_80018048(l, child, first);
+    Cobjet *r = 0;
+
+    if (i >= 0) {
+        r = l->m_items[i];
+    }
+    return r;
+}
+
+/* The slot of the list's object whose tree has child as its first child
+ * (*first = 1) or next sibling (*first = 0), or -1. */
+int func_80018048(CobjetList *l, Cobjet *child, int *first) {
+    int r = -1;
+    int i;
+
+    *first = 1;
+    if (child && l->m_items) {
+        int one;
+        int none;
+
+        i = 0;
+        one = 1;
+        none = -1;
+    top:
+        if (i < l->m_count) {
+            Cobjet *o = l->m_items[i];
+
+            if (o && o->m_40) {
+                if (o->m_40->m_first == child) {
+                    r = i;
+                    *first = one;
+                } else if (o->m_40->m_next == child) {
+                    r = i;
+                    *first = 0;
+                }
+            }
+            i++;
+            if (r == none) {
+                goto top;
+            }
+        }
+    }
+    return r;
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_03", func_800180F4);
 

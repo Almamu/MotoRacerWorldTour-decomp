@@ -20,7 +20,9 @@ public:
     ~CName();
     void Set(const char *str);
     char *Get();
-    int Equals(const char *str);
+    // The first n characters, case folded; x is passed along unused (the
+    // name finder, func_80017E64, passes 1)
+    int Equals(const char *str, int n, int x);
 };
 
 class CNamed : public CName {
@@ -202,6 +204,13 @@ void func_8006E004(Cobjet *o);
 void func_8006E02C(Cobjet *o);
 extern int D_800C8904;
 extern Cobjet *D_800C8740;
+int func_80017CF0(CobjetList *l, int i, Cobjet *o);
+void func_80017D74(CobjetList *l, int i);
+Cobjet *func_80017E10(CobjetList *l, const char *name, int len);
+int func_80017E64(CobjetList *l, const char *name, int len);
+int func_80017FB4(CobjetList *l);
+Cobjet *func_80018008(CobjetList *l, Cobjet *child, int *first);
+int func_80018048(CobjetList *l, Cobjet *child, int *first);
 void func_80017A9C(Cobjet *o, int id);
 int func_80017B88(Cobjet *o, CobjetLinkedPos *e);
 void func_800747A8(CobjetLinked *e, int a, int b, int c);
