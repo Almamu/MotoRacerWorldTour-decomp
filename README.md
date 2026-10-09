@@ -1,5 +1,9 @@
 # Moto Racer World Tour (PS1) — reverse engineering
 
+[![Build and compare](https://github.com/Almamu/MotoRacerWorldTour-decomp/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/Almamu/MotoRacerWorldTour-decomp/actions/workflows/build.yml)
+[![Matching decompilation](https://github.com/Almamu/MotoRacerWorldTour-decomp/blob/badges/matching.svg?raw=true)](docs/decomp.md#progress)
+[![Non-matching decompilation](https://github.com/Almamu/MotoRacerWorldTour-decomp/blob/badges/nonmatching.svg?raw=true)](docs/decomp.md#progress)
+
 Reverse engineering of *Moto Racer World Tour* for the PlayStation (PAL,
 SCES-03037, 2000): disc layout, data archive, file formats, and the code that
 loads them.

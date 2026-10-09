@@ -209,6 +209,21 @@ tools/chunks.py sync              # tick the functions done since, in the open i
 tools/chunks.py cleanup-issues /tmp/c --naming 98 --headers 99   # the per-chunk cleanup follow-ups
 ```
 
+### Progress
+
+The README's two badges count bytes of code, over both executables:
+
+- **matching**: functions that rebuild byte for byte from C, plus the
+  library functions matched by Sony's own objects (`make sdk`) and the
+  hand-written asm (`config/sces/handwritten.txt`);
+- **non-matching**: those plus the parked functions, whose C builds with
+  `NON_MATCHING=1` but doesn't match yet.
+
+`tools/chunks.py badges DIR` draws them (after `make sdk`, or the Sony
+functions count as not done). CI draws them on every run and, on `main`
+once every check passed, replaces the single commit of the `badges`
+branch with them.
+
 ## Decompiling a function
 
 1. Read `asm/<target>/nonmatchings/<chunk>/<function>.s`. `m2c` gives a

@@ -11,6 +11,8 @@ doesn't match yet.
 The function list comes from build/<target>.elf, so build first (make).
 
   tools/chunks.py status [--all]          progress per chunk (--all: every chunk)
+  tools/chunks.py badges DIR              the README's progress badges, as SVG (CI publishes
+                                          them to the badges branch)
   tools/chunks.py issues DIR              write each chunk's issue (title + body) to DIR
   tools/chunks.py issues DIR --create     ...and open them on GitHub (gh)
   tools/chunks.py sync [--dry-run]        tick done functions in the open chunk issues
@@ -190,6 +192,51 @@ def cmd_status(args):
         total["f"] += tf; total["fd"] += td; total["b"] += tb; total["bd"] += tbd
     print(f"total: {total['fd']}/{total['f']} functions, "
           f"{100 * total['bd'] / total['b']:.2f}% of the code")
+
+
+# Shields.io's flat style, drawn here so the badges need no external service
+# (the repository is private). Widths are Verdana 11px, roughly.
+BADGE_COLORS = ((90, "#4c1"), (60, "#97ca00"), (40, "#a4a61d"), (20, "#dfb317"),
+                (10, "#fe7d37"), (0, "#e05d44"))
+
+
+def text_width(text):
+    narrow, wide = "fijlrt.:,;!|' ()", "mwMW%@"
+    return sum(4 if ch in narrow else 10 if ch in wide else 7 for ch in text) + 10
+
+
+def badge(label, value, pct):
+    color = next(c for limit, c in BADGE_COLORS if pct >= limit)
+    lw, vw = text_width(label), text_width(value)
+    w = lw + vw
+    return f"""<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="20" role="img" aria-label="{label}: {value}">
+<title>{label}: {value}</title>
+<linearGradient id="s" x2="0" y2="100%"><stop offset="0" stop-color="#bbb" stop-opacity=".1"/><stop offset="1" stop-opacity=".1"/></linearGradient>
+<clipPath id="r"><rect width="{w}" height="20" rx="3" fill="#fff"/></clipPath>
+<g clip-path="url(#r)"><rect width="{lw}" height="20" fill="#555"/><rect x="{lw}" width="{vw}" height="20" fill="{color}"/><rect width="{w}" height="20" fill="url(#s)"/></g>
+<g fill="#fff" text-anchor="middle" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="11">
+<text x="{lw / 2}" y="15" fill="#010101" fill-opacity=".3">{label}</text><text x="{lw / 2}" y="14">{label}</text>
+<text x="{lw + vw / 2}" y="15" fill="#010101" fill-opacity=".3">{value}</text><text x="{lw + vw / 2}" y="14">{value}</text>
+</g>
+</svg>
+"""
+
+
+def cmd_badges(args):
+    """Matching: the code that rebuilds byte for byte from C (or is Sony's
+    or hand-written asm). Non-matching: that plus the parked functions,
+    whose C builds with NON_MATCHING=1. Both by bytes, both executables."""
+    funcs = [f for t in TARGETS for c in survey(t) for f in c["funcs"]]
+    total = sum(f["size"] for f in funcs)
+    matching = sum(f["size"] for f in funcs if f["state"] in DONE)
+    parked = sum(f["size"] for f in funcs if f["state"] == "parked")
+    out = Path(args.dir)
+    out.mkdir(parents=True, exist_ok=True)
+    for name, label, done in (("matching", "matching", matching),
+                              ("nonmatching", "non-matching", matching + parked)):
+        pct = 100 * done / total
+        (out / f"{name}.svg").write_text(badge(label, f"{pct:.2f}%", pct))
+        print(f"{label}: {pct:.2f}% ({done:,}/{total:,} bytes)")
 
 
 def issue_title(c):
@@ -432,6 +479,8 @@ def main():
     p = sub.add_parser("sync")
     p.add_argument("--dry-run", action="store_true")
     sub.add_parser("check")
+    p = sub.add_parser("badges")
+    p.add_argument("dir")
     p = sub.add_parser("stamp")
     p.add_argument("target", choices=sorted(TARGETS))
     p = sub.add_parser("cleanup-issues")
@@ -440,7 +489,7 @@ def main():
     p.add_argument("--headers", type=int, required=True, help="the headers issue")
     p.add_argument("--create", action="store_true")
     args = ap.parse_args()
-    {"status": cmd_status, "issues": cmd_issues, "sync": cmd_sync, "check": cmd_check,
+    {"status": cmd_status, "badges": cmd_badges, "issues": cmd_issues, "sync": cmd_sync, "check": cmd_check,
      "stamp": cmd_stamp,
      "cleanup-issues": cmd_cleanup_issues}[args.cmd](args)
 

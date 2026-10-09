@@ -9,7 +9,11 @@
 #   (config/checksums.sha1), then the NON_MATCHING build, whose parked C has
 #   to keep building and linking. The progress goes in the run summary.
 # - Sony's libraries: `make sdk`, the build with Sony's own PsyQ objects in
-#   place of the library asm they match (docs/decomp.md, "Libraries").
+#   place of the library asm they match (docs/decomp.md, "Libraries"). It
+#   also draws the progress badges (tools/chunks.py badges), which need to
+#   know which library functions Sony's objects cover.
+# - Badges: on main, once everything passed, the badges replace the single
+#   commit of the `badges` branch, which the README shows.
 on:
   push:
     branches: [ main ]
@@ -143,3 +147,36 @@ jobs:
 
     - name: Build with Sony's objects and compare
       run: make -j"$(nproc)" sdk
+
+    - name: Draw the progress badges
+      run: python3 tools/chunks.py badges build/badges
+
+    - uses: actions/upload-artifact@v7
+      with:
+        name: badges
+        path: build/badges
+
+  badges:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [ check, build, sdk ]
+    runs-on: ubuntu-24.04
+    name: Publish the progress badges
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/download-artifact@v8
+      with:
+        name: badges
+        path: badges
+
+    # One commit, replaced each time, so the branch doesn't grow.
+    - name: Replace the badges branch
+      working-directory: badges
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        git init -q -b badges
+        git add .
+        git -c user.name=github-actions -c user.email=41898282+github-actions[bot]@users.noreply.github.com \
+          commit -q -m "Progress badges for $GITHUB_SHA"
+        git push -f "https://x-access-token:$GH_TOKEN@github.com/$GITHUB_REPOSITORY" badges
