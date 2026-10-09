@@ -1,17 +1,25 @@
 # The game's chunk_02: 2D items, names, objects (#3)
 
-The chunk mixes the game's two languages, and it took finding that out
-to get anywhere: the C++ classes (`CName`, `Cobjet`) match only with GCC
-2.95.2, and the plain functions around them only with GCC 2.91.66. The game's C
-and C++ were built with different compilers. The chunk was cut in three:
+The chunk mixes code from two compilers, and it took finding that out to
+get anywhere: the classes (`CName`, `Cobjet`) match only with GCC 2.95.2,
+and the plain functions around them only with GCC 2.91.66. The chunk was
+cut in three:
 
 | Chunk | What | Where | Settings |
 |---|---|---|---|
-| `src/langimg/chunk_02.cpp` | C: the 2D item lists (quads, sprites) | 0x80015798-0x80015EAC | GCC 2.91.66, `-G0` (`langimg.chunk_02_*`) |
+| `src/langimg/chunk_02.cpp` | the 2D item lists (quads, sprites) | 0x80015798-0x80015EAC | GCC 2.91.66, `-G8`, split addresses, no small externs (`langimg.chunk_02_*`) |
 | `src/langimg/chunk_02a.cpp` | C++: `CName`, `CNamed`, `Cobjet`'s constructor, destructor, `Init` | 0x80015EAC-0x80016144 | the game's (2.95.2, `-G8`) |
-| `src/langimg/chunk_02b.cpp` | C: the objects' helpers, the scene tree's draw | 0x80016144-0x800177E8 | GCC 2.91.66, `-G8`, divisions without checks, `--small-externs` (`langimg.chunk_02b_*`) |
+| `src/langimg/chunk_02b.cpp` | the objects' helpers, the scene tree's draw | 0x80016144-0x800177E8 | GCC 2.91.66, `-G8`, divisions without checks, `--small-externs` (`langimg.chunk_02b_*`) |
 
 3 + 9 + 22 functions: 23 match, 11 are parked.
+
+**Revised in #4** ([issue-4-langimg-chunk03.md](issue-4-langimg-chunk03.md)):
+the 2.91.66 code isn't C. It allocates with `new[]` and calls `Cobjet`'s
+constructor, and `CName::Equals` takes the arguments chunk_03 passes it, so
+it's C++ built with the other compiler, and called "the 2.91.66 code"
+below. And chunk_02 is built as chunk_03 is: `-G8` with split addresses,
+small externs limited (here to none). Everything matched still matches,
+and `func_80015E04`'s table addresses (`la` + `addu`) now do.
 
 ## How the settings were found
 
@@ -20,8 +28,9 @@ and C++ were built with different compilers. The chunk was cut in three:
    The C++ part lies between 0x80015EAC and 0x80016144, so the chunk was
    cut there (docs/libraries.md, "Moving a chunk into a library", for the
    steps; the chunks stay in `src/`, being the game's own code).
-2. **`-G0` before the classes.** `func_80015CF4` reads its globals with
-   `lui`; it matches with 2.91.66 and `-G0`.
+2. **`-G0` before the classes** (first found; revised in #4).
+   `func_80015CF4` reads its globals with `lui`; it matches with 2.91.66
+   and `-G0`, and as well with `-G8` once no extern is taken as small.
 3. **chunk_02b's assembler.** Its divisions are bare `div`/`mflo`, as in
    the sound engine (`--div-no-checks`, `func_80017574`). It reaches two
    small globals through `$gp` (`D_800C493C`, `D_800C4944`) and the
@@ -41,7 +50,7 @@ texture's block until `func_80015CF4` resolves it to the address of its
 |---|---|---|
 | `func_80015798` | parked | draws a list: GPU packets, linked in by a hand-written `addPrim` |
 | `func_80015CF4` | matches | loop-local constants (`two`, `magic`, `one`) |
-| `func_80015E04` | parked | the tables' addresses as `la` + `addu`, a copy into `$a2`, registers |
+| `func_80015E04` | parked | registers and scheduling (10 off); its `la` + `addu` match with split addresses |
 
 - **`addPrim` in assembly.** The original links each packet into the
   ordering table with `lwl`, `sll`, `swl`, `swl` on the 24-bit links.
@@ -78,7 +87,7 @@ twice, and GCC drops the first pair.
 | `func_80016998` ... `func_800169B0` | match | empty |
 | `func_800169B8`, `func_80016A38` | match | |
 | `func_80016A8C` | parked | draw at a level of detail; registers only (20 off) |
-| `func_80016C3C` | parked | a point projected with the GTE; a copy of `prim` in `$a2` |
+| `func_80016C3C` | parked | a point projected with the GTE; registers (42 off) |
 | `func_80016E34` | parked | the scene tree's draw; stack addresses |
 | `func_80017574`, `func_80017730` | match | |
 
@@ -112,9 +121,10 @@ twice, and GCC drops the first pair.
   `mfc2`/`cfc2` get a load's delay in maspsx_plus (the original has a
   `nop` after `mfc2 $v0, $24` before the `blez` that reads it). The
   transformed vector goes into the matrix's own `t` (`rot.t`), as in the
-  rotation setters. Left: the original keeps `prim` in `$a0` and a copy in
-  `$a2` for the second call; reading `o->m_prim` twice, a ternary or an
-  `if` for the texture page didn't give it.
+  rotation setters. The original's copy of `prim` in `$a2` came with the
+  texture page tested twice and the prim read again (found on
+  `func_800194E4` in #4): 94 to 42 off. Left: the matrix and the camera
+  in each other's saved registers.
 - **`func_80016E34`** walks the object tree: each matrix composed onto the
   matrix stack (`D_800CA350[depth]`) with its parent's, or the camera's for
   an object attached to the camera (flag 0x20000), the object drawn as its

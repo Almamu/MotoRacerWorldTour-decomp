@@ -1,80 +1,11 @@
 #include "common.h"
 #include "langimg/cobjet.h"
+#include "langimg/ui.h"
 
-/* C, GCC 2.91.66 with -G0 (docs/matching/issue-3-langimg-chunk02.md). */
+/* The game's code built with GCC 2.91.66, -G8, split addresses
+ * (docs/matching/issue-3-langimg-chunk02.md, issue-4-langimg-chunk03.md). */
 
 extern "C" {
-
-// A sprite's texture: the UVs, CLUT and texture page of a textured quad
-struct UiTexture {
-    u8 u0, v0;
-    u16 clut;
-    u8 u1, v1;
-    u16 tpage;
-    u8 u2, v2;
-    u16 pad0;
-    u8 u3, v3;
-    u16 pad1;
-};
-
-// A 2D item: a flat or gouraud quad, or a sprite
-struct UiItem {
-    int kind; // 0 flat quad, 1 gouraud quad, 2 sprite
-    short x;
-    short y;
-    int color;  // 0x08: and the first corner's
-    short semi; // 0x0C: semi-transparency mode + 1; 0 opaque
-    short done; // 0x0E: (sprites) the texture resolved
-    union {
-        struct {
-            short w;
-            short h;
-        } size; // quads
-        int id; // sprites: the texture's block, then its address
-        UiTexture *tex;
-    };
-    int color1; // 0x14: the other corners' (gouraud)
-    int color3;
-    int color2;
-};
-
-struct UiList {
-    UiItem **items;
-    int w;
-    int h;
-    int count;
-};
-
-struct UiOrigin {
-    int x;
-    int y;
-};
-
-// The ordering table's
-struct OtInfo {
-    u_long *ot;
-    int len;
-};
-
-extern UiOrigin *D_800C8D90;
-extern u8 *D_800C8C70;     // the next free GPU packet
-extern u_long *D_800CBDC0; // the ordering table
-extern OtInfo *D_800CBDC4;
-
-// Links packet p in at ordering table entry ot: p takes the entry's link
-// (24 bits), the entry then points at p. Hand-written: its loads and stores
-// are lwl/swl on the links' 3 bytes.
-#define ADD_PRIM(ot, p) \
-    do { \
-        u_long _l, _p; \
-        __asm__ volatile("lwl %0, 2(%2)\n\tsll %1, %3, 8\n\tswl %0, 2(%3)\n\tswl %1, 2(%2)" \
-                         : "=&r"(_l), "=&r"(_p) \
-                         : "r"(ot), "r"(p)); \
-    } while (0)
-
-#define XY(x, y) (((x) & 0xFFFF) | ((y) << 16))
-// The ordering table entry z, or the last one
-#define OT_Z(z) ((z) < D_800CBDC4->len ? (z) : D_800CBDC4->len - 1)
 
 #ifdef NON_MATCHING
 /* Equivalent; the original keeps all its constants (1, the packets' tags
@@ -232,8 +163,8 @@ struct Thing15E04 {
 };
 
 #ifdef NON_MATCHING
-/* Equivalent; the original forms the tables' addresses with la + addu,
- * moves p to $a2, and keeps the 0x40 case's value in $v0 */
+/* Registers and scheduling (10 off) around the tables' index; with chunk_02
+ * built like chunk_03 (split addresses) the tables' la + addu now match */
 void func_80015E04(Thing15E04 *p) {
     u16 v = p->unk12;
     int f = p->unk18;
@@ -246,7 +177,8 @@ void func_80015E04(Thing15E04 *p) {
 
         p->unk12 = ((t & 0x100) >> 4) | 0x102 | ((t & 0x200) << 2);
     } else if (v < 14) {
-        u8 *e = D_800CC030[D_800C4900[v]];
+        int i = D_800C4900[v];
+        u8 *e = D_800CC030[i];
 
         if (e) {
             p->unk12 = *(u16 *)(e + 6) + (f & 0x60);
