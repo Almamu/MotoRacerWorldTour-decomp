@@ -128,10 +128,13 @@ void func_8013FA3C(void *a, Choice *choice);
 int func_80134948(CPair *buf, void *image, int mode, int x, int y); /* shows a BS picture */
 extern u8 D_8014D480[];
 extern u8 D_80175480[];
-extern u8 D_801A0514[];          /* the first picture */
-extern u8 D_801B1310[];          /* the last one */
-extern u8 D_8014D400[];          /* the intro movie */
-extern void (*D_800117F0)(void); /* the game's entry point (LANGIMG.DAT's first word) */
+extern u8 D_801A0514[]; /* the first picture */
+extern u8 D_801B1310[]; /* the last one */
+extern u8 D_8014D400[]; /* the intro movie */
+/* The game's entry point: LANGIMG.DAT's first word. The game loads at a
+ * fixed address and main reads it through a literal pointer (a declared
+ * symbol puts the address in another register). */
+#define GAME_ENTRY (*(void (**)(void))0x800117F0)
 int func_80133334(int a, void *movie, int c, int d); /* plays a movie */
 void func_8013F188(int a, int b);                    /* libpad */
 void func_8013EB24(int a);                           /* libpad */

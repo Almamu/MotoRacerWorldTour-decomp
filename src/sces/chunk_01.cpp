@@ -45,9 +45,6 @@ void func_801351D4(int *key, int *done) {
     }
 }
 
-#ifdef NON_MATCHING
-/* Equivalent; at the end the original loads the game's entry point into
- * $v1, this build into $a0 */
 /* Initialises the hardware, shows two pictures and plays the intro movie
  * (again if the first try fails), runs the language choice (Startup, which
  * also loads the game), shuts everything down and jumps to the game's entry
@@ -98,12 +95,9 @@ int main(void) {
     SsQuit();
     func_8013F1D0();
     func_8013B35C();
-    D_800117F0();
+    GAME_ENTRY();
     return 0;
 }
-#else
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", main);
-#endif
 
 inline void *operator new(unsigned int, void *p) {
     return p;
