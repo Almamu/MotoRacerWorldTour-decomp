@@ -61,13 +61,16 @@ void func_801354D4(void) {
     D_8014D3F8.~CPair();
 }
 
-void func_801354FC(void) {
+/* Empty in this build; the caller (func_80135D34) tests what it returns. */
+int func_801354FC(void) {
 }
 
-void func_80135504(void) {
+/* Empty in this build; the caller (func_80135D34) tests what it returns. */
+int func_80135504(void) {
 }
 
-void func_8013550C(void) {
+/* Empty in this build. */
+void func_8013550C(int arg) {
 }
 
 INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", LzssDecompress);
@@ -80,9 +83,49 @@ INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", FindEntry);
 
 INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", OpenArchive);
 
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", func_80135C54);
+/* Reads an entry of arc into dest (allocated when 0), checking its CRC;
+ * one retry. */
+void *LoadEntry(Archive *arc, const char *name, void *dest, u32 *size) {
+    ArchiveEntry *e;
+    int retries;
+    int allocated;
 
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", func_80135D34);
+    e = FindEntry(arc, name);
+    retries = 1;
+    if (e) {
+        allocated = dest == 0;
+    retry:
+        dest = func_80135780(0, (CdlLOC *)&e->loc, e->size, dest);
+        if (e->crc != Crc32((u8 *)dest, e->size, 0)) {
+            if (retries) {
+                if (allocated) {
+                    free(dest);
+                    dest = 0;
+                }
+                retries--;
+                goto retry;
+            }
+            printf("Unrecoverable CRC error on block load.\n");
+        }
+        if (size) {
+            *size = e->size;
+        }
+    }
+    return dest;
+}
+
+int func_80135D34(int arg) {
+    CdInit();
+    func_80136E74(0);
+    func_8013550C(arg);
+    if (func_80135504() == 0) {
+        return -1;
+    }
+    if (func_801354FC() == 0) {
+        return -1;
+    }
+    return 1;
+}
 
 /* CRC-32 of len bytes at p, continuing from crc: bytes up to a word
  * boundary, then whole words, then the rest of the last word. */
@@ -126,9 +169,32 @@ u32 Crc32(u8 *p, s32 len, u32 crc)
     return crc;
 }
 
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", StrUpper);
+/* Upper-cases s in place. */
+char *StrUpper(char *s) {
+    char *p = s;
 
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", func_80135F10);
+    while (*p) {
+        if (*p >= 'a' && *p <= 'z') {
+            *p -= 0x20;
+        }
+        p++;
+    }
+    return s;
+}
+
+/* Sound off: reverb, master volume, the menu bank, then libsnd. */
+void func_80135F10(void) {
+    SsUtReverbOff();
+    SpuClearReverbWorkArea(5);
+    SsUtSetReverbType(0);
+    SsUtSetReverbDepth(0, 0);
+    SsSetMVol(0, 0);
+    if (D_8019D990 != -1) {
+        SsVabClose(D_8019D990);
+    }
+    SsEnd();
+    SsQuit();
+}
 
 INCLUDE_RODATA("asm/sces/nonmatchings/chunk_01", D_8014C3C0);
 

@@ -18,6 +18,7 @@ strInit = 0x80134298; // type:func
 
 // Library functions the signatures don't name, from how they're used
 PutDrawEnv = 0x8013C74C; // type:func (func_801343A0 calls it after PutDispEnv with a DRAWENV)
+LoadEntry = 0x80135C54; // type:func
 
 // PsyQ library functions: library/object and the SDK versions whose code
 // matches there. "exact" ones are Sony's object itself (tools/psyq_match.py),

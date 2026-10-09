@@ -21,6 +21,23 @@ public:
     void Set(int a, int b);
 };
 
+/* MR3.DAT, the archive (docs/formats/mr3dat.md) */
+struct ArchiveEntry {
+    u32 crc;  /* of the stored data */
+    u32 size; /* stored size */
+    u32 loc;  /* offset in the archive; a CdlLOC once opened */
+    u32 hash; /* of the upper-cased name */
+};
+
+struct Archive {
+    u32 count;
+    u16 flags;     /* bit 3: entries sorted by hash */
+    u16 entrySize; /* 0: 0x30 */
+    u32 unk8;
+    u32 unkC;
+    ArchiveEntry entries[1];
+};
+
 /* What the option callbacks (func_80135024...) step. */
 struct Options {
     int unk0;
@@ -46,10 +63,23 @@ extern void *D_8019DB64;
 extern void *D_8019DB68;
 extern DRAWENV D_8019DA80[2];
 extern DISPENV D_8019DB38[2];
+extern int D_8019DB70;
 
 extern u32 Crc32Table[256];
 
+extern Archive *D_8019D480; /* MR3.DAT */
+
 u32 Crc32(u8 *p, s32 len, u32 crc);
+char *StrUpper(char *s);
+ArchiveEntry *FindEntry(Archive *arc, const char *name);
+Archive *OpenArchive(char *path, void *dest);
+u8 *LoadFile(const char *name, u8 *dest, u32 *sizeOut);
+void *LoadEntry(Archive *arc, const char *name, void *dest, u32 *size);
+void *func_80135780(int mode, CdlLOC *loc, u32 size, void *dest); /* reads from the CD */
+void LzssDecompress(u8 *src, u8 *dest);
+int func_80135D34(int arg);
+void func_80135F10(void);
+void func_80136E74(int mode); /* libcd, near CdInit */
 void func_80135024(int *key, Options *opt);
 void func_80135090(int *key, Options *opt);
 void func_801350FC(int *key, Options *opt);
@@ -57,9 +87,9 @@ void func_80135168(int *key, Options *opt);
 void func_801351D4(int *key, int *done);
 void func_801354B0(void);
 void func_801354D4(void);
-void func_801354FC(void);
-void func_80135504(void);
-void func_8013550C(void);
+int func_801354FC(void);
+int func_80135504(void);
+void func_8013550C(int arg);
 void func_80136028(void);
 void func_8013604C(void);
 void func_80136090(void);

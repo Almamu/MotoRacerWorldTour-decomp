@@ -26,6 +26,12 @@ typedef struct {
     u_short pad;
 } CdlFILTER;
 
+typedef struct {
+    CdlLOC pos;
+    u_long size;
+    char name[16];
+} CdlFILE;
+
 /* libgpu display and drawing environments */
 typedef struct {
     RECT disp;
@@ -48,6 +54,7 @@ extern "C" {
 
 int printf(const char *fmt, ...);
 void free(void *p);
+char *strcpy(char *dst, const char *src);
 
 /* libapi */
 void EnterCriticalSection(void);
@@ -58,8 +65,12 @@ int VSync(int mode);
 int VSyncCallback(void (*f)());
 
 /* libcd */
+int CdInit(void);
 int CdControlB(u_char com, u_char *param, u_char *result);
 int CdRead2(long mode);
+CdlFILE *CdSearchFile(CdlFILE *fp, char *name);
+int CdPosToInt(CdlLOC *p);
+CdlLOC *CdIntToPos(int i, CdlLOC *p);
 
 /* libcd streaming */
 void StSetRing(u_long *ring_addr, u_long ring_size);
@@ -79,6 +90,9 @@ int MoveImage(RECT *rect, int x, int y);
 short SsUtKeyOn(short vabId, short prog, short tone, short note, short fine,
                 short voll, short volr);
 void SsSetMVol(short voll, short volr);
+void SsVabClose(short vab_id);
+void SsEnd(void);
+void SsQuit(void);
 void SsUtReverbOn(void);
 void SsUtReverbOff(void);
 void SsUtSetReverbType(short type);
