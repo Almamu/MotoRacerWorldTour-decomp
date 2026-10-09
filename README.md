@@ -48,7 +48,7 @@ What can be edited:
 | Collision surface (`.sdf`) | Blender | corner moves re-encode the faces; "Snap Collision to Ground" after ground edits |
 | Anything else in `MR3.DAT` | raw file | replace it under `ws/mr3dat` |
 
-Not supported yet: animation edits, new ground or collision topology, new textures/palettes (only existing ones can be changed), movies (`.DPS`). None of this has been tested in an emulator or on hardware yet.
+Not supported yet: new ground or collision topology, new sprites (HUD `BLKS`), movies (`.DPS`). None of this has been tested in an emulator or on hardware yet.
 
 ## Tools
 
@@ -97,6 +97,7 @@ python3 tools/sdf_mesh.py extracted/mr3dat/data/final/Usa_PS.sdf extracted/sdf/U
 | `sdf_collision.py`     | level `.sdf`      | collision surface (root 5): decode, export OBJ, re-encode faces |
 | `psxrun.py`            | cue + BIOS        | deterministic libretro runner: frame-exact input, RAM, save states (experiments) |
 | `autopilot.py`         | (emulator RAM)    | drives the player round the track along the AI racing line (regression `lap` scenario, experiments) |
+| `vram_usage.py`        | `.Vrm` + scenes   | texture-bank usage map, free space, adding 4-bit textures with new palettes |
 | `regress.py`           | rebuilt track 01  | regression test: scripted menu/race scenarios vs references, hang/black detection |
 | `emutest.py`           | data track + cue  | boots it in Mednafen headless, presses buttons, saves frames; see `docs/testing.md` |
 

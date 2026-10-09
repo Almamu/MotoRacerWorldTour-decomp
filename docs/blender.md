@@ -81,6 +81,7 @@ byte-identical (checked on all 70 levels and menu/end scenes).
 | Move rider mesh vertices (rest pose) | written back part-local to the model's vertex buffer (vertex count fixed). In the emulator the change shows on every rider, the player's included (scaling part 10 enlarges the chest/head); distant bikes use the low-detail model 1, which isn't imported |
 | Edit a pose action's keys | the pose record's packed rotations (and translations of parts with flag 0x40) are rewritten; joints can't be added. Poses 5 / 3 are the left / right cornering stances, 1 the full-throttle tuck, 2 braking, 11 waiting at the start; pose 8 only drives the bike body and footpegs |
 | Edit an animation action's key values | written back to that key (key times, count and joint lists are fixed). Checked in the emulator on the wall-crash animation `XMUR3` |
+| **New textures**: give faces a material with your own image (an Image Texture node) | on export the image is reduced to 16 colours (alpha < 128 = transparent) and placed in free texture-bank VRAM with a new 16-colour palette (`tools/vram_usage.py`); the faces get that texture page / palette and their UVs mapped into it, and the changed bank (`<code>.Vrm`) is written next to the exported scene. The placement is stored on the material (`mrwt_alloc`), so later exports reuse it. Checked in the emulator: Sachsenring's start gantry banner with a new striped texture |
 | Move collision vertices | the faces using them are re-encoded (edges, planes, height); moves under 2.5 units are ignored |
 
 **The bikes ride on the collision surface, not on the ground mesh.** Its
@@ -102,6 +103,15 @@ objects are ignored (the lines are resampled from the old ones); edit the
 lines after re-importing. On Stade de France, Barcelona and Reygades the
 game also uses hard-coded gate numbers (0x46, 0xE8, 0x1CD) for the branch
 crossings, so inserting or removing gates before those points breaks them.
+
+Free space for new textures is limited: a bank is mostly used. On
+Sachsenring about 5% is free, mainly two blocks in the first texture page
+(room for 256 × 71 and 256 × 40 four-bit texels); `vram_usage.py <bank>
+<scenes…> --png map.png` shows what's left. Free means "not referenced
+by the bank's sprites/fonts, any textured polygon of the scenes that load
+the bank (both the 1- and 2-player files), or the rider texture atlases";
+filling all of it with noise on Sachsenring changed nothing in the
+regression scenarios.
 
 Not supported: new objects or duplicated placements, changing which mesh
 an object uses, new textures or palettes (paint them in the workspace PNGs

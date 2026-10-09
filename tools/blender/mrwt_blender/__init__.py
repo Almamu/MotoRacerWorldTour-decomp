@@ -577,6 +577,8 @@ def import_scene(context, path, vrm_path, s):
     textures = Textures(vrm_path, name)
     root = bpy.data.collections.new(name)
     root["mrwt_source"] = str(Path(path).resolve())
+    if vrm_path:
+        root["mrwt_vrm"] = str(Path(vrm_path).resolve())
     root["mrwt_scale"] = s
     context.scene.collection.children.link(root)
     items_col = bpy.data.collections.new(f"{name} items")
@@ -643,9 +645,14 @@ def mesh_item(me, s, matrix=None):
         loops = list(p.loop_indices)
         mat = me.materials[p.material_index] if me.materials else None
         key = mat.get("mrwt_material", "") if mat else ""
-        textured = key.startswith("page_")
-        uvs = [(min(255, max(0, round(uv[l].uv[0] * 256))), min(255, max(0, round((1 - uv[l].uv[1]) * 256))))
-               for l in loops] if (uv and textured) else None
+        if not key and mat is not None and material_image(mat) is not None:
+            key = "new:" + mat.name   # your own image: allocated in the bank on export
+        textured = key.startswith("page_") or key.startswith("new:")
+        if uv and key.startswith("new:"):
+            uvs = [(uv[l].uv[0], uv[l].uv[1]) for l in loops]  # image space; mapped after allocation
+        else:
+            uvs = [(min(255, max(0, round(uv[l].uv[0] * 256))), min(255, max(0, round((1 - uv[l].uv[1]) * 256))))
+                   for l in loops] if (uv and textured) else None
         if col and col.domain == "CORNER":
             colors = [tuple(round(c * 255) for c in col.data[l].color_srgb[:3]) for l in loops]
         elif mat is not None and not textured:
@@ -653,12 +660,15 @@ def mesh_item(me, s, matrix=None):
         else:
             colors = [(128, 128, 128)] * len(loops)
         tpage = clut = 0
-        if textured:
+        if key.startswith("page_"):
             _, tp, cl = key.split("_")
             tpage, clut = int(tp, 16), int(cl, 16)
         idx = [me.loops[l].vertex_index for l in loops]
-        faces.append(sc.Face(outline(idx), ptype[k], outline(uvs) if uvs else None, tpage, clut,
-                             outline(colors), poly[k] - 1))
+        face = sc.Face(outline(idx), ptype[k], outline(uvs) if uvs else None, tpage, clut,
+                       outline(colors), poly[k] - 1)
+        if key.startswith("new:"):
+            face.new_texture = key[4:]
+        faces.append(face)
     return sc.Item(-1, verts, faces)
 
 
@@ -683,6 +693,88 @@ def object_placement(ob, s):
 def to_game_float(v, s):
     x, y, z = v
     return (x / s, -z / s, y / s)
+
+
+def material_image(mat):
+    nt = getattr(mat, "node_tree", None)
+    if nt is None:
+        return None
+    for n in nt.nodes:
+        if n.type == "TEX_IMAGE" and n.image is not None:
+            return n.image
+    return None
+
+
+def image_rgba(img):
+    """Blender image -> uint8 RGBA, top row first."""
+    w, h = img.size
+    px = np.empty(w * h * 4, np.float32)
+    img.pixels.foreach_get(px)
+    return np.flipud((px.reshape(h, w, 4) * 255 + 0.5).clip(0, 255).astype(np.uint8))
+
+
+def bank_scenes(vrm_path, source):
+    """Scene files next to `source` that load the same texture bank."""
+    folder = Path(source).parent
+    out = []
+    for f in sorted(folder.iterdir()):
+        if f.suffix.lower() == ".sdf" and not f.name.lower().startswith("db_"):
+            v = find_vrm(f)
+            if v is not None and Path(v).resolve() == Path(vrm_path).resolve():
+                out.append(f)
+    return out or [Path(source)]
+
+
+def allocate_textures(root, items, out, log):
+    """Faces with your own image materials: put each image into free texture
+    bank VRAM (4-bit, 16 colours), point the faces at it and write the bank
+    next to `out`. An image keeps its place across exports (stored on the
+    material as mrwt_alloc) while its size doesn't change."""
+    new_faces = [f for it in items.values() for f in it.faces if getattr(f, "new_texture", None)]
+    if not new_faces:
+        return
+    if "mrwt_vrm" not in root:
+        raise ValueError("new textures need the scene's texture bank (import it with one)")
+    import vram_usage
+    import vrm as V
+    from sdf import parse
+    bank_path = Path(root["mrwt_vrm"])
+    out_bank = Path(out).parent / bank_path.name
+    src_bank = out_bank if out_bank.exists() else bank_path
+    bank = V.Vrm(src_bank.read_bytes())
+    scenes = [parse(p.read_bytes()) for p in bank_scenes(bank_path, root["mrwt_source"])]
+    used = vram_usage.usage(src_bank.read_bytes(), scenes)
+    placed = {}
+    for name in sorted({f.new_texture for f in new_faces}):
+        mat = bpy.data.materials[name]
+        img = material_image(mat)
+        rgba = image_rgba(img)
+        h, w = rgba.shape[:2]
+        if w > 256 or h > 256:
+            raise ValueError(f"{name}: textures can be at most 256 x 256 (is {w} x {h})")
+        prev = mat.get("mrwt_alloc")
+        if prev is not None and (prev["w"], prev["h"]) == (w, h):
+            t = dict(prev)
+            idx, words = vram_usage.quantize(rgba)
+            vw = -(-w // 4)
+            x, y = (t["tpage"] & 0xF) * 64 - vram_usage.BANK_X + t["u"] // 4, ((t["tpage"] >> 4) & 1) * 256 + t["v"]
+            padded = np.zeros((h, vw * 4), np.uint16)
+            padded[:, :w] = idx
+            bank.vram[y:y + h, x:x + vw] = padded[:, 0::4] | padded[:, 1::4] << 4 | padded[:, 2::4] << 8 | padded[:, 3::4] << 12
+            cx, cy = (t["clut"] & 0x3F) * 16 - vram_usage.BANK_X, t["clut"] >> 6
+            bank.vram[cy, cx:cx + 16] = np.array(words, np.uint16)
+        else:
+            t = vram_usage.add_texture(bank, used, rgba)
+            mat["mrwt_alloc"] = t
+        placed[name] = t
+        log.append(f"texture {name}: {w}x{h} at tpage {t['tpage']:04x} clut {t['clut']:04x} uv ({t['u']}, {t['v']})")
+    for f in new_faces:
+        t = placed[f.new_texture]
+        f.tpage, f.clut = t["tpage"], t["clut"]
+        f.uv = [(min(255, t["u"] + round(u * (t["w"] - 1))), min(255, t["v"] + round((1 - v) * (t["h"] - 1))))
+                for u, v in f.uv] if f.uv else [(t["u"], t["v"])] * len(f.idx)
+    out_bank.write_bytes(bank.to_bytes())
+    log.append(f"texture bank -> {out_bank}")
 
 
 def find_root(context):
@@ -715,7 +807,9 @@ def export_scene(root, out, base=None):
         if me.get("mrwt_collision"):
             collision = collision_faces(ob, s)
     rider = rider_from_blender(bpy.context, root, base or root["mrwt_source"])
-    return sc.save(base or root["mrwt_source"], out, items, ground, objects, collision, track, rider)
+    log = []
+    allocate_textures(root, items, out, log)
+    return log + sc.save(base or root["mrwt_source"], out, items, ground, objects, collision, track, rider)
 
 
 # --- operators ---------------------------------------------------------------

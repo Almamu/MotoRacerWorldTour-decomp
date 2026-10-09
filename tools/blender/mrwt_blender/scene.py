@@ -189,9 +189,13 @@ def load(path):
 # --- writing -----------------------------------------------------------------
 
 def same_topology(old, new):
+    """Same vertices and faces, and no face changed texture page / palette
+    (or between textured and flat): those can be written in place."""
     if len(old.verts) != len(new.verts) or len(old.faces) != len(new.faces):
         return False
-    return all(a.poly == b.poly and len(a.idx) == len(b.idx) for a, b in zip(old.faces, new.faces))
+    kind = lambda f: f.material if f.textured else "flat"
+    return all(a.poly == b.poly and len(a.idx) == len(b.idx) and kind(a) == kind(b)
+               for a, b in zip(old.faces, new.faces))
 
 
 def update_item(sdf, item, old, new):
