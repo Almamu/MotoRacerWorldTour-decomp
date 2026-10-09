@@ -254,19 +254,33 @@ def gate_ends(g):
 
 
 def build_track(name, track, s, coll):
-    """One mesh per gate list (an edge across the track per gate) and one
-    polyline per racing line, with editable attributes."""
+    """Per gate list: a path object (one vertex per gate centre, in order,
+    with float attributes width_pos / width_neg in game units and orig =
+    original index + 1) that can be edited freely (move, subdivide, delete,
+    extrude), a preview of the gates as edges across the track (not
+    exported), and one polyline per racing line."""
     for gl in track:
-        verts, edges = [], []
-        for i, g in enumerate(gl.gates):
-            a, b = gate_ends(g)
-            verts += [to_blender(a, s), to_blender(b, s)]
-            edges.append((2 * i, 2 * i + 1))
+        verts = [to_blender((g.x, g.y, g.z), s) for g in gl.gates]
         me = bpy.data.meshes.new(f"{name}_gates_{gl.index}")
-        me.from_pydata(verts, edges, [])
+        me.from_pydata(verts, [(i, i + 1) for i in range(len(verts) - 1)], [])
+        for attr, vals in (("width_pos", [g.width_pos * sc.WIDTH_UNIT for g in gl.gates]),
+                           ("width_neg", [g.width_neg * sc.WIDTH_UNIT for g in gl.gates]),
+                           ("orig", [i + 1 for i in range(len(gl.gates))])):
+            a = me.attributes.new(attr, "FLOAT", "POINT")
+            a.data.foreach_set("value", vals)
         me["mrwt_gates"] = gl.index
         ob = bpy.data.objects.new(f"{name} gates {gl.index}", me)
         coll.objects.link(ob)
+        pv, pe = [], []
+        for i, g in enumerate(gl.gates):
+            a, b = gate_ends(g)
+            pv += [to_blender(a, s), to_blender(b, s)]
+            pe.append((2 * i, 2 * i + 1))
+        pm = bpy.data.meshes.new(f"{name}_gates_{gl.index}_preview")
+        pm.from_pydata(pv, pe, [])
+        po = bpy.data.objects.new(f"{name} gates {gl.index} widths (preview)", pm)
+        po.hide_select = True
+        coll.objects.link(po)
         for j, line in enumerate(gl.lines):
             pts = []
             for g, p in zip(gl.gates, line):
@@ -284,42 +298,83 @@ def build_track(name, track, s, coll):
             coll.objects.link(lo)
 
 
+def _path_order(me):
+    """Vertex indices along the path, starting at the original gate 0 (or an end)."""
+    nbr = {v.index: [] for v in me.vertices}
+    for e in me.edges:
+        a, b = e.vertices
+        nbr[a].append(b)
+        nbr[b].append(a)
+    orig = [0.0] * len(me.vertices)
+    if "orig" in me.attributes:
+        me.attributes["orig"].data.foreach_get("value", orig)
+    ends = [v for v, n in nbr.items() if len(n) <= 1]
+    start = next((v for v in nbr if orig[v] == 1.0), None)
+    if start is None or (ends and start not in ends and len(nbr[start]) > 1):
+        start = min(ends, key=lambda v: (orig[v] if orig[v] >= 1 else 1e9)) if ends else 0
+    order, prev = [start], None
+    while True:
+        nxt = [v for v in nbr[order[-1]] if v != prev and v not in order[-2:]]
+        if not nxt or nxt[0] == start:
+            break
+        prev = order[-1]
+        order.append(nxt[0])
+    if len(order) != len(me.vertices):
+        raise ValueError(f"{me.name}: gates must form one unbranched path")
+    return order, orig
+
+
 def track_from_blender(root, s, old):
     """Gate lists and racing lines from the Blender objects (game units)."""
     import copy
     new = copy.deepcopy(old)
     by_list = {gl.index: gl for gl in new}
+    olds = {gl.index: gl for gl in old}
     for ob in root.all_objects:
-        if ob.type != "MESH":
+        if ob.type != "MESH" or "mrwt_gates" not in ob.data:
             continue
         me = ob.data
-        if "mrwt_gates" in me:
-            gl = by_list[me["mrwt_gates"]]
-            if len(me.vertices) != 2 * len(gl.gates):
-                raise ValueError(f"{ob.name}: gates can't be added or removed")
-            for i, g in enumerate(gl.gates):
-                a = to_game_float(ob.matrix_world @ me.vertices[2 * i].co, s)
-                b = to_game_float(ob.matrix_world @ me.vertices[2 * i + 1].co, s)
-                orig = old[[x.index for x in old].index(gl.index)].gates[i]
-                oa, ob_ = gate_ends(orig)
-                if all(abs(u - v) < 0.5 for p, q in ((a, oa), (b, ob_)) for u, v in zip(p, q)):
-                    continue  # untouched (float noise)
-                px, pz = b[0] - a[0], b[2] - a[2]
-                length = math.hypot(px, pz) or 1.0
-                px, pz = px / length, pz / length
-                g.angle = round(math.atan2(px, -pz) * 4096 / (2 * math.pi)) & 0xFFF
-                half = length / 2 / sc.WIDTH_UNIT
-                g.width_pos = g.width_neg = max(0, min(255, round(half)))
-                g.x, g.y, g.z = (a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2
+        gl, before = by_list[me["mrwt_gates"]], olds[me["mrwt_gates"]]
+        order, orig = _path_order(me)
+        wpos = [0.0] * len(me.vertices)
+        wneg = [0.0] * len(me.vertices)
+        me.attributes["width_pos"].data.foreach_get("value", wpos)
+        me.attributes["width_neg"].data.foreach_get("value", wneg)
+        pts = [to_game_float(ob.matrix_world @ me.vertices[v].co, s) for v in order]
+        seen, origs = set(), []
+        for v in order:
+            o = orig[v]
+            k = int(round(o)) - 1
+            ok = abs(o - round(o)) < 1e-4 and 0 <= k < len(before.gates) and k not in seen
+            origs.append(k if ok else None)
+            if ok:
+                seen.add(k)
+        gates = []
+        for i, v in enumerate(order):
+            x, y, z = pts[i]
+            k = origs[i]
+            g = copy.copy(before.gates[k]) if k is not None else sc.Gate(x, y, z, 0, 0, 0, 0)
+            moved = k is None or any(abs(a - b) > 0.5 for a, b in zip((x, y, z), (g.x, g.y, g.z)))
+            if moved:
+                a, b = pts[max(0, i - 1)], pts[min(len(pts) - 1, i + 1)]
+                g.x, g.y, g.z = x, y, z
+                g.angle = round(math.atan2(b[2] - a[2], b[0] - a[0]) * 4096 / (2 * math.pi)) & 0xFFF
+            g.width_pos = max(0, min(255, round(wpos[v] / sc.WIDTH_UNIT)))
+            g.width_neg = max(0, min(255, round(wneg[v] / sc.WIDTH_UNIT)))
+            gates.append(g)
+        gl.gates = gates
+        gl.orig = origs
     for ob in root.all_objects:
         if ob.type != "MESH" or "mrwt_line" not in ob.data:
             continue
         me = ob.data
         k, j = me["mrwt_line"]
         gl = by_list[k]
+        if gl.orig is not None and gl.orig != list(range(len(olds[k].gates))):
+            continue  # the gate count changed: lines are resampled from the old ones on export
         pts = gl.lines[j]
         if len(me.vertices) != len(pts):
-            raise ValueError(f"{ob.name}: racing-line points can't be added or removed")
+            raise ValueError(f"{ob.name}: racing-line points follow the gates; change the gates instead")
         vals = {}
         for attr in ("speed", "flags", "steer"):
             buf = [0] * len(me.vertices)
@@ -333,7 +388,6 @@ def track_from_blender(root, s, old):
             if "speed" in vals:
                 p.speed, p.flags, p.steer = vals["speed"][i], vals["flags"][i], vals["steer"][i]
     return new
-
 
 def rig_matrix(s):
     """Rig space (Y up) -> Blender: (x, y, z) -> (-x, z, y) * scale."""

@@ -367,6 +367,7 @@ class GateList:
     gates: list
     lines: list         # [[LinePoint] per line]
     rejoin: int
+    orig: list = None   # with a changed gate count: old index of each new gate, None = new
 
 
 def _s8(v):
@@ -406,17 +407,109 @@ def read_track(sdf):
     return out
 
 
+def _encode_gate(g, dist):
+    return struct.pack("<3iIHBB", round(g.x * 32), round(g.y * 32), round(g.z * 32), dist & 0xFFFFFFFF,
+                       g.angle & 0xFFFF, max(0, min(255, g.width_pos)), max(0, min(255, g.width_neg)))
+
+
+def _resample(sdf, old_list, new_list, lists_at):
+    """Rebuild a gate list with a different gate count: new gate and line
+    arrays appended to the file. Untouched gates keep their records; new
+    gates get racing-line records interpolated between their neighbours.
+    Returns {old index: new index} for the kept gates."""
+    L = lists_at + 20 * old_list.index
+    old_g = sdf.u32(L + 4)
+    orig = new_list.orig
+    n = len(new_list.gates)
+    dists = [0] * n
+    dists[0] = old_list.gates[orig[0]].dist if orig[0] is not None else 0
+    for i in range(1, n):
+        a, b = new_list.gates[i - 1], new_list.gates[i]
+        dists[i] = dists[i - 1] + round(math.dist((a.x, a.y, a.z), (b.x, b.y, b.z)) * 32)
+    gates = bytearray()
+    for i, g in enumerate(new_list.gates):
+        o = orig[i]
+        if o is not None and old_list.gates[o] == g and dists[i] == old_list.gates[o].dist:
+            gates += sdf.data[old_g + GATE_SIZE * o:old_g + GATE_SIZE * (o + 1)]
+        else:
+            gates += _encode_gate(g, dists[i])
+    gates_at = sdf.append(bytes(gates))
+    sdf.set_pointer(L + 4, gates_at)
+    data = bytearray(sdf.data)
+    struct.pack_into("<I", data, L, n)
+    sdf.data = bytes(data)
+    # racing lines: copy kept records, interpolate new ones between kept neighbours
+    kept = [i for i in range(n) if orig[i] is not None]
+    p = sdf.u32(L + 8)
+    for j in range(len(old_list.lines)):
+        line_at = sdf.u32(p + 4 * j)
+        rec = lambda k: bytearray(sdf.data[line_at + LINE_REC * k:line_at + LINE_REC * (k + 1)])
+        out = bytearray()
+        for i in range(n):
+            if orig[i] is not None:
+                out += rec(orig[i])
+                continue
+            before = max((k for k in kept if k < i), default=None)
+            after = min((k for k in kept if k > i), default=None)
+            a = rec(orig[before if before is not None else after])
+            b = rec(orig[after if after is not None else before])
+            t = 0.5 if before is None or after is None else (i - before) / (after - before)
+            r = bytearray(a if t < 0.5 else b)
+            r[7] = round(_s8(a[7]) + (_s8(b[7]) - _s8(a[7])) * t) & 0xFF
+            r[0x0E] = round(a[0x0E] + (b[0x0E] - a[0x0E]) * t)
+            out += r
+        sdf.set_pointer(p + 4 * j, sdf.append(bytes(out)))
+    return {o: i for i, o in enumerate(orig) if o is not None}
+
+
+def _remap_gate_refs(sdf, list_index, mapping, n_old, n_new, lists_at, n_lists):
+    """Gate indices stored elsewhere: other lists' rejoin gate (+0x10, into
+    list 0) and the track-section visibility ranges (level root 48)."""
+    def new_index(i):
+        while i < n_old and i not in mapping:
+            i += 1          # deleted: the next kept gate
+        return mapping.get(i, n_new - 1)
+    data = bytearray(sdf.data)
+    if list_index == 0:
+        for k in range(1, n_lists):
+            at = lists_at + 20 * k + 0x10
+            j = struct.unpack_from("<i", data, at)[0]
+            if j >= 0:
+                struct.pack_into("<i", data, at, new_index(j))
+        r48 = sdf.roots[48] if len(sdf.roots) > 48 else None
+        relocs = set(sdf.relocs)
+        if r48 is not None and r48 in relocs:
+            node, seen, nodes = sdf.u32(r48), set(), []
+            while node and node not in seen:
+                seen.add(node)
+                nodes.append(node)
+                node = sdf.u32(node + 4) if (node + 4) in relocs else 0
+            for node in nodes:
+                lo, hi = struct.unpack_from("<2h", data, node + 0xC)
+                struct.pack_into("<2h", data, node + 0xC, new_index(lo) if lo > 0 else 0,
+                                 n_new - 1 if hi >= n_old - 1 else new_index(hi + 1) - 1)
+    sdf.data = bytes(data)
+
+
 def write_track(sdf, old, new):
     """Write moved gates (position, direction, widths; distances recomputed
     for lists with moved gates) and changed racing-line bytes. Gate and line
     counts are fixed. Returns (gates changed, line points changed)."""
     r = sdf.roots[ROOT_GATES]
     lists = sdf.u32(r + 0x28)
-    data = bytearray(sdf.data)
     ng = nl = 0
     for o, nw in zip(old, new):
+        if nw.orig is not None and (len(nw.gates) != len(o.gates) or nw.orig != list(range(len(o.gates)))):
+            mapping = _resample(sdf, o, nw, lists)
+            _remap_gate_refs(sdf, o.index, mapping, len(o.gates), len(nw.gates), lists, len(old))
+            ng += len(nw.gates)
+            continue
+    data = bytearray(sdf.data)
+    for o, nw in zip(old, new):
+        if nw.orig is not None and (len(nw.gates) != len(o.gates) or nw.orig != list(range(len(o.gates)))):
+            continue
         if len(o.gates) != len(nw.gates) or len(o.lines) != len(nw.lines):
-            raise ValueError(f"gate list {o.index}: gate and racing-line counts are fixed")
+            raise ValueError(f"gate list {o.index}: gate and racing-line counts don't match")
         L = lists + 20 * o.index
         g = sdf.u32(L + 4)
         moved = [round(a.x * 32) != round(b.x * 32) or round(a.y * 32) != round(b.y * 32)

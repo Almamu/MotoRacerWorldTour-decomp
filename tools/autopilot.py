@@ -51,9 +51,10 @@ def find_level(psx):
 
 
 class Autopilot:
-    def __init__(self, psx, lookahead=4, speed_scale=0.55):
+    def __init__(self, psx, lookahead=3200.0, speed_lookahead=2400.0, speed_scale=0.55):
         self.psx = psx
-        self.lookahead, self.speed_scale = lookahead, speed_scale
+        # distances along the line (game units), so gate spacing doesn't matter
+        self.lookahead, self.speed_lookahead, self.speed_scale = lookahead, speed_lookahead, speed_scale
         self.level = self._find_level()
         self._read_track()
         self.bike = self._find_bike()
@@ -88,6 +89,18 @@ class Autopilot:
             px, pz = math.sin(a), -math.cos(a)
             off = lane * 16
             self.points.append((x / 32 + px * off, z / 32 + pz * off, rec[0x0E]))
+        self.ahead = []  # per point: index `lookahead` / `speed_lookahead` units further on
+        n = len(self.points)
+        for i in range(n):
+            out = []
+            for dist in (self.lookahead, self.speed_lookahead):
+                j, d = i, 0.0
+                while d < dist and j < i + n:
+                    a, b = self.points[j % n], self.points[(j + 1) % n]
+                    d += math.hypot(b[0] - a[0], b[1] - a[1])
+                    j += 1
+                out.append(j % n)
+            self.ahead.append(out)
 
     def _find_bike(self):
         coll = self.u32(self.level + 0xC6C)
@@ -141,8 +154,9 @@ class Autopilot:
             if delta < n // 4:
                 passed += delta
                 gi = g
-            tx, tz, _ = self.points[(gi + self.lookahead) % n]
-            want = self.points[(gi + self.lookahead - 1) % n][2] * self.speed_scale
+            target, speed_at = self.ahead[gi]
+            tx, tz, _ = self.points[target]
+            want = self.points[speed_at][2] * self.speed_scale
             vx, vz = x - prev[0], z - prev[1]
             prev = (x, z)
             v = math.hypot(vx, vz) / step

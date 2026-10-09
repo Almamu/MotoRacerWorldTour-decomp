@@ -41,7 +41,7 @@ Game coordinates (Y down) become Blender's Z up: game (x, y, z) → Blender
 | `<name> objects` | every placed `Cobjet` (game name), using its LOD 0 item's mesh, with its matrix |
 | `<name> ground` | levels: the track ground, one vertex per stored vertex |
 | `<name> collision` | levels: the collision surface the bikes ride on (wireframe, coloured by surface type; corners shared by faces are welded) |
-| `<name> track` / `gates K` | levels: one mesh per gate list (list 0 = the lap): each gate is an edge across the track, from its negative to its positive side; the gate sits at the edge's midpoint, faces along the edge's normal, and its half-widths are half the edge length |
+| `<name> track` / `gates K` | levels: one path per gate list (list 0 = the lap): a vertex per gate centre, in order, with float attributes `width_pos` / `width_neg` (half-widths, game units) and `orig` (original index + 1). `gates K widths (preview)` draws each gate as an edge across the track (not exported) |
 | `<name> rider` (hidden) | levels: the rider rig (root 9): an armature with one bone per part (31, rider and bike; bones keep identity rest orientations, Euler mode `ZYX` = the game's Rx·Ry·Rz) and the rider mesh skinned to it (one vertex per vertex-buffer entry). Each pose record is an action `<name>_pose_NN` keyed at frame 1, each rider animation an action `<name>_anim_<NAME>` with linear keys at frame 1 + ms / 20 (PAL, 50 fps) |
 | `<name> track` / `line K.J` | the AI racing lines of list K: one point per gate; point attributes `speed` (target speed), `flags` (allowed line changes; bit 7 clear = jump section) and `steer` |
 
@@ -75,7 +75,8 @@ byte-identical (checked on all 70 levels and menu/end scenes).
 | Change a mesh's topology (add/delete faces or vertices) | the item gets a new mesh appended to the file: faces with a `page_*` material become textured (types 13/15), others flat (5/9) using `Col` (or the material's viewport colour); tris and quads only, ≤ 13 polygon groups of ≤ 1023 |
 | Move / rotate / scale a placed object | its matrix and translation are rewritten |
 | Move ground vertices | written in place (block-relative); topology is fixed |
-| Move gate edge ends | position, direction and half-widths of the gate are rewritten; the list's distances are recomputed from the first moved gate on |
+| Move gate vertices / edit widths | position and widths rewritten; a moved gate's direction comes from its neighbours; distances recomputed from the first moved gate on |
+| **Add or remove gates** (subdivide, extrude, delete; the path must stay one unbranched line from gate 0) | new gate and racing-line arrays are appended to the file: kept gates keep their records, new ones get interpolated racing-line records (lane, target speed), distances are recomputed, and gate indices stored elsewhere are remapped (track-section visibility, root 48; branch lists' rejoin gate). Checked in the emulator: Sachsenring with its 550 gates subdivided to 1099 still counts the lap, the AI races on the resampled lines, and the regression `lap` scenario finishes |
 | Move racing-line points / edit their attributes | lane offset = the point's sideways distance from its gate (16-unit steps); target speed, flags and steer from the attributes. Checked in the emulator: lowering Sachsenring's target speeds in Blender slows the AI bikes as expected |
 | Move rider mesh vertices (rest pose) | written back part-local to the model's vertex buffer (vertex count fixed). In the emulator the change shows on every rider, the player's included (scaling part 10 enlarges the chest/head); distant bikes use the low-detail model 1, which isn't imported |
 | Edit a pose action's keys | the pose record's packed rotations (and translations of parts with flag 0x40) are rewritten; joints can't be added. Poses 5 / 3 are the left / right cornering stances, 1 the full-throttle tuck, 2 braking, 11 waiting at the start; pose 8 only drives the bike body and footpegs |
@@ -96,8 +97,11 @@ large moves stretch the faces around them.
 After reshaping a track, move the gates and racing lines with it: the
 gates count laps and race positions (a bike must pass every gate plane in
 order), and the AI drives along the racing lines and is kept off the edges
-by the gate widths. Gates and racing-line points can't be added or removed
-yet.
+by the gate widths. When the gate count changes, edits to the racing-line
+objects are ignored (the lines are resampled from the old ones); edit the
+lines after re-importing. On Stade de France, Barcelona and Reygades the
+game also uses hard-coded gate numbers (0x46, 0xE8, 0x1CD) for the branch
+crossings, so inserting or removing gates before those points breaks them.
 
 Not supported: new objects or duplicated placements, changing which mesh
 an object uses, new textures or palettes (paint them in the workspace PNGs
