@@ -183,28 +183,34 @@ if __name__ == "__main__":
 
 # --- adding textures ---------------------------------------------------------
 
-def find_rect(used, w, h, page_w=64):
-    """Top-left (x, y) bank coordinates of a free w x h block inside one
-    texture page (64 x 256 VRAM pixels), or None."""
+# texels per VRAM word and page window width (VRAM words a page's u = 0..255 spans)
+DEPTHS = {4: (4, 64, 0), 8: (2, 128, 1), 15: (1, 256, 2)}   # bpp: (texels/word, window, mode)
+
+
+def find_rect(used, w, h, window=64):
+    """Top-left (x, y) bank coordinates of a free w x h block that a texture
+    page can address: inside a `window`-wide span (64 VRAM pixels for 4-bit,
+    128 for 8-bit, 256 for 15-bit) starting at a page boundary (multiple of
+    64) and inside one 256-row half. None if there is none."""
+    if h > 256 or w > window:
+        return None
+    ii_all = np.pad(used.astype(np.int32).cumsum(0).cumsum(1), ((1, 0), (1, 0)))
     for py in (0, 256):
-        for px in range(0, BANK_W, page_w):
-            if w > page_w or h > 256:
-                return None
-            block = used[py:py + 256, px:px + page_w]
-            # integral image for O(1) box sums
-            ii = np.pad(block.astype(np.int32).cumsum(0).cumsum(1), ((1, 0), (1, 0)))
-            for y in range(0, 256 - h + 1):
-                for x in range(0, page_w - w + 1):
-                    if ii[y + h, x + w] - ii[y, x + w] - ii[y + h, x] + ii[y, x] == 0:
-                        return px + x, py + y
+        for px in range(0, BANK_W, 64):
+            for y in range(py, py + 256 - h + 1):
+                for x in range(px, min(px + window, BANK_W) - w + 1):
+                    if ii_all[y + h, x + w] - ii_all[y, x + w] - ii_all[y + h, x] + ii_all[y, x] == 0:
+                        return x, y
     return None
 
 
-def find_clut(used):
-    """Bank coordinates of a free 16-pixel run starting at a multiple of 16."""
+def find_clut(used, n=16):
+    """Bank coordinates of a free run of n palette entries starting at a
+    multiple of 16 (an 8-bit texture with fewer than 256 colours only needs
+    the entries it uses)."""
     for y in range(BANK_H - 1, -1, -1):          # from the bottom, away from textures
-        for x in range(0, BANK_W, 16):
-            if not used[y, x:x + 16].any():
+        for x in range(0, BANK_W - n + 1, 16):
+            if not used[y, x:x + n].any():
                 return x, y
     return None
 
@@ -241,41 +247,69 @@ def quantize(rgba, colours=16):
     return idx, words
 
 
-def add_texture(bank_vrm, used, rgba):
-    """Put a 4-bit texture (<= 256 x 256) and its 16-colour palette into free
-    bank VRAM. Returns {tpage, clut, u, v, w, h} (u, v: texel origin in the
-    page) and marks the space used. Raises ValueError when it doesn't fit."""
+def add_texture(bank_vrm, used, rgba, bpp=4, colours=None):
+    """Put a texture (<= 256 x 256) and its palette into free bank VRAM.
+    bpp 4: 16 colours; 8: `colours` (default: as many as the longest free
+    palette run allows, at most 256); 15: direct colour, no palette (twice
+    the space of 8-bit). Index / colour 0 is transparent. Returns {tpage,
+    clut, u, v, w, h, bpp, colours} (u, v: texel origin in the page) and
+    marks the space used; raises ValueError when it doesn't fit."""
     rgba = np.asarray(rgba, np.uint8)
     h, w = rgba.shape[:2]
-    vw = -(-w // 4)
-    spot = find_rect(used, vw, h)
+    per_word, window, mode = DEPTHS[bpp]
+    vw = -(-w // per_word)
+    if bpp == 4:
+        colours = 16
+    elif bpp == 8:
+        colours = min(256, colours or 256)
+        while colours > 16 and find_clut(used, colours) is None:
+            colours -= 16
+    else:
+        colours = 0
+    spot = find_rect(used, vw, h, window)
     if spot is None:
-        raise ValueError(f"no free {w}x{h} (4-bit) area in the texture bank")
+        raise ValueError(f"no free {w}x{h} ({bpp}-bit) area in the texture bank")
     x, y = spot
     used[y:y + h, x:x + vw] = True
-    cl = find_clut(used)
-    if cl is None:
-        raise ValueError("no free palette slot in the texture bank")
-    cx, cy = cl
-    used[cy, cx:cx + 16] = True
+    clut = 0
+    if colours:
+        cl = find_clut(used, colours)
+        if cl is None:
+            raise ValueError("no free palette slot in the texture bank")
+        cx, cy = cl
+        used[cy, cx:cx + colours] = True
+        clut = ((BANK_X + cx) // 16) | ((BANK_Y + cy) << 6)
     vx, vy = BANK_X + x, BANK_Y + y
-    tpage = (vx // 64) | ((vy // 256) << 4)      # 4-bit colour, no blending
-    clut = ((BANK_X + cx) // 16) | ((BANK_Y + cy) << 6)
-    t = {"tpage": tpage, "clut": clut, "u": (vx % 64) * 4, "v": vy % 256, "w": w, "h": h}
+    px = vx - vx % 64     # find_rect keeps the block inside this page's window
+    tpage = (px // 64) | ((vy // 256) << 4) | (mode << 7)   # no blending
+    t = {"tpage": tpage, "clut": clut, "u": (vx - px) * per_word, "v": vy % 256, "w": w, "h": h,
+         "bpp": bpp, "colours": colours}
     if bank_vrm is not None:
         write_texture(bank_vrm, t, rgba)
     return t
 
 
 def write_texture(bank_vrm, t, rgba):
-    """Write a texture placed by add_texture (t) into another bank too."""
-    idx, words = quantize(rgba)
-    h, w = idx.shape
-    vw = -(-w // 4)
-    x = (t["tpage"] & 0xF) * 64 - BANK_X + t["u"] // 4
+    """Write a texture placed by add_texture (t) into a bank (the same
+    placement works in every bank that has the space free)."""
+    import vrm as V
+    rgba = np.asarray(rgba, np.uint8)
+    bpp = t.get("bpp", 4)
+    per_word, _, _ = DEPTHS[bpp]
+    h, w = rgba.shape[:2]
+    vw = -(-w // per_word)
+    x = (t["tpage"] & 0xF) * 64 - BANK_X + t["u"] // per_word
     y = ((t["tpage"] >> 4) & 1) * 256 - BANK_Y + t["v"]
-    padded = np.zeros((h, vw * 4), np.uint16)
+    if bpp == 15:
+        bank_vrm.vram[y:y + h, x:x + w] = V.rgba_to_palette(rgba.reshape(-1, 4)).reshape(h, w)
+        return
+    idx, words = quantize(rgba, t.get("colours", 16))
+    padded = np.zeros((h, vw * per_word), np.uint16)
     padded[:, :w] = idx
-    bank_vrm.vram[y:y + h, x:x + vw] = padded[:, 0::4] | padded[:, 1::4] << 4 | padded[:, 2::4] << 8 | padded[:, 3::4] << 12
+    if bpp == 4:
+        packed = padded[:, 0::4] | padded[:, 1::4] << 4 | padded[:, 2::4] << 8 | padded[:, 3::4] << 12
+    else:
+        packed = padded[:, 0::2] | padded[:, 1::2] << 8
+    bank_vrm.vram[y:y + h, x:x + vw] = packed
     cx, cy = (t["clut"] & 0x3F) * 16 - BANK_X, (t["clut"] >> 6) - BANK_Y
-    bank_vrm.vram[cy, cx:cx + 16] = np.array(words, np.uint16)
+    bank_vrm.vram[cy, cx:cx + len(words)] = np.array(words, np.uint16)

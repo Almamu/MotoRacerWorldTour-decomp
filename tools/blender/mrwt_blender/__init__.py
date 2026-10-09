@@ -761,16 +761,21 @@ def allocate_textures(root, items, out, log, scene_files):
         h, w = rgba.shape[:2]
         if w > 256 or h > 256:
             raise ValueError(f"{name}: textures can be at most 256 x 256 (is {w} x {h})")
+        bpp = int(mat.get("mrwt_bpp", 4))
+        if bpp not in vram_usage.DEPTHS:
+            raise ValueError(f"{name}: mrwt_bpp must be 4, 8 or 15")
         prev = mat.get("mrwt_alloc")
-        if prev is not None and (prev["w"], prev["h"]) == (w, h):
+        if prev is not None and (prev["w"], prev["h"], prev.get("bpp", 4)) == (w, h, bpp):
             t = {k: prev[k] for k in ("tpage", "clut", "u", "v", "w", "h")}
+            t["bpp"], t["colours"] = prev.get("bpp", 4), prev.get("colours", 16)
         else:
-            t = vram_usage.add_texture(None, used, rgba)
+            t = vram_usage.add_texture(None, used, rgba, bpp)
             mat["mrwt_alloc"] = t
         for bank in banks.values():
             vram_usage.write_texture(bank, t, rgba)
         placed[name] = t
-        log.append(f"texture {name}: {w}x{h} at tpage {t['tpage']:04x} clut {t['clut']:04x} "
+        log.append(f"texture {name}: {w}x{h} {t['bpp']}-bit"
+                   f"{' ' + str(t['colours']) + ' colours' if t['colours'] else ''} at tpage {t['tpage']:04x} clut {t['clut']:04x} "
                    f"uv ({t['u']}, {t['v']}) in {', '.join(banks)}")
     for f in new_faces:
         t = placed[f.new_texture]
