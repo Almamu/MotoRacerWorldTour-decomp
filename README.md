@@ -15,9 +15,46 @@ file format worked out so far.
 
 ## Matching decompilation
 
-The game code and the boot executable rebuild byte for byte (`make setup`,
-then `make`). The game was compiled with GCC 2.95.2 for the PlayStation; see
-[`docs/decomp.md`](docs/decomp.md).
+The game code (`LANGIMG.DAT`, C++, GCC 2.95.2) and the boot executable
+(`SCES_030.37`, C, GCC 2.91.66) rebuild byte for byte from this repository
+and your own copy of the disc: `make setup`, then `make`. Almost all of
+the code is still assembly (`tools/chunks.py status` has the numbers).
+
+> **Want to help? Read [CONTRIBUTING.md](CONTRIBUTING.md) first.** The code
+> is split into chunks of about 8 KB, each a
+> [GitHub issue](https://github.com/Almamu/MotoRacerWorldTour-decomp/issues?q=is%3Aopen%20is%3Aissue%20label%3Adecomp-chunk)
+> listing its functions, which you claim by commenting. Every change has to
+> keep both executables byte-identical.
+
+[`docs/decomp.md`](docs/decomp.md) has the compilers and the evidence for
+them, the chunks, how to decompile a function, and the memory maps.
+
+## AI-assisted decompilation
+
+A large part of this project's work (the file formats, the tools, the
+decompilation setup and the decompiled code) has been done with AI coding
+agents (Claude Code), under human supervision and review. That's the main
+way the project makes progress and it's expected to stay that way. What
+follows from it:
+
+- **Nothing is trusted on the AI's say-so.** A function counts as
+  decompiled only when a clean `make` rebuilds both executables
+  byte-identical, whoever (or whatever) wrote it.
+- **Contributions from AI-assisted work are welcome**, including with
+  your own AI tooling, as long as they meet the same standard: both
+  executables stay byte-identical, and nothing is presented as more
+  certain than it is. [CONTRIBUTING.md](CONTRIBUTING.md) and
+  [docs/decomp.md](docs/decomp.md) are written so that a fresh agent
+  session (or a person) has the context it needs.
+- **Names stay honest.** A placeholder (`func_8001B778`, `D_800C4A10`,
+  `m_04`) is a valid name. Replace it only when the meaning is clear; an
+  invented name is worse than a placeholder.
+- **People make the calls that matter:** what gets merged, how the
+  project is organised, and any judgement that isn't mechanical
+  verification.
+
+If that makes this a project you'd rather not contribute to, that's a
+reasonable position; just know it going in.
 
 ## Modding workflow
 

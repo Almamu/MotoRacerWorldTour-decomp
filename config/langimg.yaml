@@ -44,6 +44,8 @@ options:
   data_string_guesser_level: 2
 
   include_asm_macro_style: maspsx_hack
+  # include/include_asm.h is ours (it takes C++ names with dots)
+  generate_asm_macros_files: False
 
 segments:
   - [0x0, bin, header] # entry point, load address, size, unused word
@@ -54,12 +56,137 @@ segments:
     bss_size: 0x14868 # 0x800C9F48-0x800DE7B0, cleared by the entry point
     subsegments:
       - [0x10, textbin, text_table] # 8 words of data at the start of .text
-      - [0x30, asm, text]
-      - [0x46BC, cpp, cobjet]
-      - [0x48C0, asm, text_800160B0]
+      # Code in chunks of about 8 KB (docs/decomp.md, "Chunks"): chunk_* is
+      # the game, lib_* the libraries from the startup code on.
+      - [0x30, cpp, chunk_00] # 80011820
+      - [0x1F74, cpp, chunk_01] # 80013764
+      - [0x3FA8, cpp, chunk_02] # 80015798
+      - [0x5FF8, cpp, chunk_03] # 800177E8
+      - [0x804C, cpp, chunk_04] # 8001983C
+      - [0x9F88, cpp, chunk_05] # 8001B778
+      - [0xBF70, cpp, chunk_06] # 8001D760
+      - [0xDFF4, cpp, chunk_07] # 8001F7E4
+      - [0xF964, cpp, chunk_08] # 80021154
+      - [0x11F00, cpp, chunk_09] # 800236F0
+      - [0x13E24, cpp, chunk_10] # 80025614
+      - [0x15E24, cpp, chunk_11] # 80027614
+      - [0x17FC4, cpp, chunk_12] # 800297B4
+      - [0x1A010, cpp, chunk_13] # 8002B800
+      - [0x1BF10, cpp, chunk_14] # 8002D700
+      - [0x1DCF4, cpp, chunk_15] # 8002F4E4
+      - [0x1FD10, cpp, chunk_16] # 80031500
+      - [0x21F30, cpp, chunk_17] # 80033720
+      - [0x23D28, cpp, chunk_18] # 80035518
+      - [0x25E3C, cpp, chunk_19] # 8003762C
+      - [0x27CE8, cpp, chunk_20] # 800394D8
+      - [0x29E10, cpp, chunk_21] # 8003B600
+      - [0x2BE1C, cpp, chunk_22] # 8003D60C
+      - [0x2DEC8, cpp, chunk_23] # 8003F6B8
+      - [0x3005C, cpp, chunk_24] # 8004184C
+      - [0x3197C, cpp, chunk_25] # 8004316C
+      - [0x33ACC, cpp, chunk_26] # 800452BC
+      - [0x3573C, cpp, chunk_27] # 80046F2C
+      - [0x37F1C, cpp, chunk_28] # 8004970C
+      - [0x39CC0, cpp, chunk_29] # 8004B4B0
+      - [0x3BD70, cpp, chunk_30] # 8004D560
+      - [0x3DED8, cpp, chunk_31] # 8004F6C8
+      - [0x3FD04, cpp, chunk_32] # 800514F4
+      - [0x41F04, cpp, chunk_33] # 800536F4
+      - [0x43CF0, cpp, chunk_34] # 800554E0
+      - [0x45CFC, cpp, chunk_35] # 800574EC
+      - [0x47BDC, cpp, chunk_36] # 800593CC
+      - [0x49F98, cpp, chunk_37] # 8005B788
+      - [0x4B96C, cpp, chunk_38] # 8005D15C
+      - [0x4DC74, cpp, chunk_39] # 8005F464
+      - [0x4FC94, cpp, chunk_40] # 80061484
+      - [0x51C38, cpp, chunk_41] # 80063428
+      - [0x53C04, cpp, chunk_42] # 800653F4
+      - [0x55BDC, cpp, chunk_43] # 800673CC
+      - [0x57AFC, cpp, chunk_44] # 800692EC
+      - [0x59BC0, cpp, chunk_45] # 8006B3B0
+      - [0x5BB98, cpp, chunk_46] # 8006D388
+      - [0x5DAAC, cpp, chunk_47] # 8006F29C
+      - [0x5FC3C, cpp, chunk_48] # 8007142C
+      - [0x61C6C, cpp, chunk_49] # 8007345C
+      - [0x63C50, cpp, chunk_50] # 80075440
+      - [0x65BF8, cpp, chunk_51] # 800773E8
+      - [0x67AEC, cpp, chunk_52] # 800792DC
+      - [0x69BD0, cpp, chunk_53] # 8007B3C0
+      - [0x6B940, cpp, chunk_54] # 8007D130
+      - [0x6DAA4, cpp, chunk_55] # 8007F294
+      - [0x6FA80, cpp, chunk_56] # 80081270
+      - [0x719CC, cpp, chunk_57] # 800831BC
+      - [0x73A68, cpp, chunk_58] # 80085258
+      - [0x75C78, cpp, chunk_59] # 80087468
+      - [0x77A10, cpp, chunk_60] # 80089200
+      - [0x79A18, cpp, chunk_61] # 8008B208
+      - [0x7B978, cpp, chunk_62] # 8008D168
+      - [0x7DB78, cpp, chunk_63] # 8008F368
+      - [0x7F8FC, cpp, chunk_64] # 800910EC
+      - [0x81960, cpp, chunk_65] # 80093150
+      - [0x838C0, cpp, chunk_66] # 800950B0
+      - [0x85938, cpp, chunk_67] # 80097128
+      - [0x878F8, cpp, chunk_68] # 800990E8
+      - [0x8998C, cpp, chunk_69] # 8009B17C
+      - [0x8B8F4, cpp, chunk_70] # 8009D0E4
+      - [0x8D990, cpp, chunk_71] # 8009F180
+      - [0x8F920, cpp, chunk_72] # 800A1110
+      - [0x91AB0, cpp, chunk_73] # 800A32A0
+      - [0x93D00, cpp, chunk_74] # 800A54F0
+      - [0x95894, c, lib_00] # 800A7084
+      - [0x978F4, c, lib_01] # 800A90E4
+      - [0x998B4, c, lib_02] # 800AB0A4
+      - [0x9B894, c, lib_03] # 800AD084
+      - [0x9D920, c, lib_04] # 800AF110
+      - [0x9F8CC, c, lib_05] # 800B10BC
+      - [0xA182C, c, lib_06] # 800B301C
+      - [0xA3AA0, c, lib_07] # 800B5290
       - [0xA597C, rodata, ctors] # __CTOR_LIST__ / __DTOR_LIST__
-      - [0xA59E8, rodata, rodata]
-      - [0xB2F00, data, data] # 0x800C46F0 = $gp
+      # .rodata, each piece with the chunk whose functions use it
+      - [0xA59E8, .rodata, chunk_01] # 800B71D8
+      - [0xA5AA8, .rodata, chunk_03] # 800B7298
+      - [0xA5AE8, .rodata, chunk_15] # 800B72D8
+      - [0xA5B00, .rodata, chunk_19] # 800B72F0
+      - [0xA5B18, .rodata, chunk_20] # 800B7308
+      - [0xA5BD8, .rodata, chunk_21] # 800B73C8
+      - [0xA5BF0, .rodata, chunk_22] # 800B73E0
+      - [0xA5C9C, .rodata, chunk_25] # 800B748C
+      - [0xA5CC4, .rodata, chunk_26] # 800B74B4
+      - [0xA5CE8, .rodata, chunk_28] # 800B74D8
+      - [0xA5D58, .rodata, chunk_29] # 800B7548
+      - [0xA5D80, .rodata, chunk_30] # 800B7570
+      - [0xA5DC0, .rodata, chunk_31] # 800B75B0
+      - [0xA5DF8, .rodata, chunk_32] # 800B75E8
+      - [0xA5E84, .rodata, chunk_33] # 800B7674
+      - [0xA5EB8, .rodata, chunk_35] # 800B76A8
+      - [0xA5EF8, .rodata, chunk_36] # 800B76E8
+      - [0xA5F10, .rodata, chunk_37] # 800B7700
+      - [0xA5F58, .rodata, chunk_38] # 800B7748
+      - [0xA5F6C, .rodata, chunk_41] # 800B775C
+      - [0xA5FA4, .rodata, chunk_43] # 800B7794
+      - [0xA5FC4, .rodata, chunk_48] # 800B77B4
+      - [0xA5FF0, .rodata, chunk_51] # 800B77E0
+      - [0xA6068, .rodata, chunk_56] # 800B7858
+      - [0xA60AC, .rodata, chunk_57] # 800B789C
+      - [0xA60CC, .rodata, chunk_58] # 800B78BC
+      - [0xA60F8, .rodata, chunk_59] # 800B78E8
+      - [0xA610C, .rodata, chunk_65] # 800B78FC
+      - [0xA6150, .rodata, chunk_66] # 800B7940
+      - [0xA6154, .rodata, chunk_67] # 800B7944
+      - [0xA61A0, .rodata, chunk_69] # 800B7990
+      - [0xA61B4, .rodata, chunk_70] # 800B79A4
+      - [0xA6318, .rodata, chunk_71] # 800B7B08
+      - [0xA6330, .rodata, chunk_72] # 800B7B20
+      - [0xA63AC, .rodata, chunk_73] # 800B7B9C
+      - [0xA64D4, .rodata, lib_00] # 800B7CC4
+      - [0xA67A4, .rodata, lib_01] # 800B7F94
+      - [0xA6AB4, .rodata, lib_02] # 800B82A4
+      - [0xA6D64, .rodata, lib_03] # 800B8554
+      - [0xA6DA4, .rodata, lib_04] # 800B8594
+      - [0xA6DC4, .rodata, lib_06] # 800B85B4
+      - [0xA6E54, .rodata, lib_07] # 800B8644
+      - [0xA6F44, data, data] # 800B8734
+      - [0xB2F00, data, sdata] # 800C46F0 = $gp
       - { start: 0xB8758, type: bss, vram: 0x800C9F48, name: bss }
   # 0xB8758-0xB8810: zeros up to the end of the 2 KB sector, added by the Makefile
   - [0xB8758]

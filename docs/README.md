@@ -15,7 +15,7 @@ in hex. "VRAM" means the PS1 GPU's 1024x512 16-bit frame buffer.
 | [formats/dps.md](formats/dps.md)       | `.DPS` movies (STR)                                  |
 | [formats/dxr.md](formats/dxr.md)       | `.dxr` relocatable code modules                      |
 | [ghidra.md](ghidra.md)                 | Decompiling the game code with Ghidra (headless)     |
-| [decomp.md](decomp.md)                 | Matching decompilation: compiler, build, layout      |
+| [decomp.md](decomp.md)                 | Matching decompilation: compilers, chunks, workflow  |
 | [testing.md](testing.md)               | Booting rebuilt discs in Mednafen (headless)         |
 | [blender.md](blender.md)               | Blender add-on: import/export levels and scenes      |
 

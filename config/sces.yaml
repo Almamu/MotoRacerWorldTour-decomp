@@ -43,6 +43,8 @@ options:
   data_string_guesser_level: 2
 
   include_asm_macro_style: maspsx_hack
+  # include/include_asm.h is ours (it takes C++ names with dots)
+  generate_asm_macros_files: False
 
 segments:
   - name: header
@@ -54,6 +56,32 @@ segments:
     start: 0x800
     vram: 0x80133334
     subsegments:
-      - [0x800, asm, text]
-      - [0x196F8, data, data]
+      # Code in chunks of about 8 KB (docs/decomp.md, "Chunks"): chunk_* is
+      # the boot code, lib_* the libraries from the startup code on.
+      - [0x800, c, chunk_00] # 80133334
+      - [0x24F0, c, chunk_01] # 80135024
+      - [0x4018, c, lib_00] # 80136B4C
+      - [0x5F14, c, lib_01] # 80138A48
+      - [0x7E74, c, lib_02] # 8013A9A8
+      - [0x9CD8, c, lib_03] # 8013C80C
+      - [0xBCC0, c, lib_04] # 8013E7F4
+      - [0xDC18, c, lib_05] # 8014074C
+      - [0xFB08, c, lib_06] # 8014263C
+      - [0x11A6C, c, lib_07] # 801445A0
+      - [0x13734, c, lib_08] # 80146268
+      - [0x157E4, c, lib_09] # 80148318
+      - [0x177B4, c, lib_10] # 8014A2E8
+      # .rodata, each piece with the chunk whose functions use it
+      - [0x196F8, .rodata, chunk_00] # 8014C22C
+      - [0x19864, .rodata, chunk_01] # 8014C398
+      - [0x198BC, .rodata, lib_00] # 8014C3F0
+      - [0x19B4C, .rodata, lib_01] # 8014C680
+      - [0x19D8C, .rodata, lib_02] # 8014C8C0
+      - [0x1A114, .rodata, lib_03] # 8014CC48
+      - [0x1A16C, .rodata, lib_04] # 8014CCA0
+      - [0x1A18C, .rodata, lib_06] # 8014CCC0
+      - [0x1A21C, .rodata, lib_07] # 8014CD50
+      - [0x1A23C, .rodata, lib_08] # 8014CD70
+      - [0x1A27C, .rodata, lib_10] # 8014CDB0
+      - [0x1A58C, data, data] # 8014D0C0
   - [0x8E000]

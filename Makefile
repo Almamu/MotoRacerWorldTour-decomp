@@ -1,6 +1,6 @@
 # Matching decompilation build (see docs/decomp.md).
 #
-#   make setup    fetch the compiler (GCC 2.95.2 for the PlayStation) and maspsx
+#   make setup    fetch the compilers (GCC 2.95.2 and 2.91.66 for the PlayStation) and maspsx
 #   make split    disassemble the executables with splat (needs extracted/)
 #   make          build and compare against the originals
 
@@ -16,20 +16,21 @@ CROSS    := mipsel-unknown-linux-gnu-
 AS       := $(CROSS)as
 LD       := $(CROSS)ld
 OBJCOPY  := $(CROSS)objcopy
-CPP      = $(GCC_DIR)/cpp
 PYTHON   := python3
-
-GCC_VERSION := 2.95.2-psx
-GCC_DIR  := tools/gcc-$(GCC_VERSION)
-CC1PLUS  := $(GCC_DIR)/cc1plus
-CC1      := $(GCC_DIR)/cc1
 MASPSX   := $(PYTHON) tools/maspsx/maspsx.py
 SPLAT    := $(PYTHON) -m splat split
 
-# The game was built with -O2, small data up to 8 bytes in $gp-relative
-# sections, no exceptions and no RTTI (docs/decomp.md).
-CC1FLAGS    := -O2 -G8 -quiet -fno-exceptions -fno-rtti
-CPPFLAGS    := -nostdinc -D__GNUC__=2 -D__GNUC_MINOR__=95 -Dmips -D__mips__ -I include -I src
+# Each executable has its own compiler (docs/decomp.md): the game GCC 2.95.2,
+# the boot executable GCC 2.91.66 (egcs 1.1.2), both PlayStation builds.
+langimg_GCC := 2.95.2-psx
+sces_GCC    := 2.91.66-psx
+gcc_dir      = tools/gcc-$(1)
+
+# -O2, small data up to 8 bytes in $gp-relative sections; the game's C++
+# has no exceptions and no RTTI.
+CC1FLAGS    := -O2 -G8 -quiet
+CXXFLAGS    := -fno-exceptions -fno-rtti
+CPPFLAGS    := -nostdinc -D__GNUC__=2 -Dmips -D__mips__ -I include -I src
 ifeq ($(NON_MATCHING),1)
 CPPFLAGS    += -DNON_MATCHING
 endif
@@ -56,14 +57,21 @@ $(foreach t,$(TARGETS),$(eval $(call target_vars,$(t))))
 # Every object the linker script names (asm/, src/ and assets).
 ld_objects = $(shell grep -o 'build/[A-Za-z0-9_/.-]*\.o' $(1) 2>/dev/null | sort -u)
 
+# Objects are rebuilt when the compile flags change (NON_MATCHING=1 and back).
+FLAGS_STAMP := $(BUILD)/flags.txt
+FLAGS_NOW   := $(CPPFLAGS) $(CC1FLAGS) $(CXXFLAGS) $(MASPSXFLAGS)
+$(shell mkdir -p $(BUILD); echo '$(FLAGS_NOW)' | cmp -s - $(FLAGS_STAMP) || echo '$(FLAGS_NOW)' > $(FLAGS_STAMP))
+
 #### Rules ####
 
 .PHONY: setup split build compare clean distclean
 
-setup: $(CC1PLUS) tools/maspsx/maspsx.py
+COMPILERS := $(sort $(foreach t,$(TARGETS),$($(t)_GCC)))
 
-$(CC1PLUS):
-	tools/get_compiler.sh $(GCC_VERSION) $(GCC_DIR)
+setup: $(foreach v,$(COMPILERS),$(call gcc_dir,$(v))/cc1) tools/maspsx/maspsx.py
+
+tools/gcc-%/cc1:
+	tools/get_compiler.sh $* tools/gcc-$*
 
 tools/maspsx/maspsx.py:
 	git submodule update --init tools/maspsx
@@ -81,11 +89,15 @@ compare: split
 
 build: $(foreach t,$(TARGETS),$($(t)_BIN))
 
+# The whole build, splat's linker scripts included, so the next make
+# re-splits.
 clean:
-	rm -rf $(foreach t,$(TARGETS),$(BUILD)/$(t)) $(BUILD)/*.elf $(BUILD)/*.bin $(BUILD)/*.map
+	rm -rf $(BUILD)
 
+# Also what splat extracts that isn't tracked (the tracked function asm
+# under asm/*/nonmatchings/ stays).
 distclean: clean
-	rm -rf asm $(BUILD)/*.ld $(BUILD)/*.d
+	rm -rf asm/*/data asm/*/header.s assets
 
 # The ELF links whatever objects the linker script lists; it is
 # re-evaluated after the script is (re)generated.
@@ -103,6 +115,9 @@ $(BUILD)/langimg.bin: $(BUILD)/langimg.elf
 $(BUILD)/sces.bin: $(BUILD)/sces.elf
 	$(OBJCOPY) -O binary $< $@
 
+# __GNUC_MINOR__ of a target's compiler (95, 91).
+gcc_minor = -D__GNUC_MINOR__=$(word 2,$(subst ., ,$($(1)_GCC)))
+
 # Objects of each target live under build/<target>/ (splat's build_path).
 define target_rules
 # Binary pieces splat extracted to assets/ (the header).
@@ -114,14 +129,19 @@ $(BUILD)/$(1)/%.o: %.s
 	@mkdir -p $$(dir $$@)
 	$(AS) $(ASFLAGS) -o $$@ $$<
 
-# C++: preprocess, compile with cc1plus, fix up with maspsx (PsyQ's
-# assembler behaviour), assemble.
-$(BUILD)/$(1)/%.o: %.cpp $(CC1PLUS)
+# C and C++: preprocess, compile, fix up with maspsx (PsyQ's assembler
+# behaviour), assemble. cpp writes the header dependencies (<object>.d);
+# splat writes the INCLUDE_ASM ones (<object>.asmproc.d).
+$(BUILD)/$(1)/%.o: %.cpp $(call gcc_dir,$($(1)_GCC))/cc1 $(FLAGS_STAMP)
 	@mkdir -p $$(dir $$@)
-	$(CPP) $(CPPFLAGS) -lang-c++ -D__cplusplus -D__GNUG__=2 -D_LANGUAGE_C_PLUS_PLUS $$< | $(CC1PLUS) $(CC1FLAGS) | $(MASPSX) $(MASPSXFLAGS) | $(AS) $(ASFLAGS) -o $$@
+	$(call gcc_dir,$($(1)_GCC))/cpp $(CPPFLAGS) $(call gcc_minor,$(1)) -MD $$(@:.o=.d) -lang-c++ -D__cplusplus -D__GNUG__=2 -D_LANGUAGE_C_PLUS_PLUS $$< | $(call gcc_dir,$($(1)_GCC))/cc1plus $(CC1FLAGS) $(CXXFLAGS) | $(MASPSX) $(MASPSXFLAGS) | $(AS) $(ASFLAGS) -o $$@
+	@sed -i 's|^[^:]*:|$$@:|' $$(@:.o=.d)
 
-$(BUILD)/$(1)/%.o: %.c $(CC1)
+$(BUILD)/$(1)/%.o: %.c $(call gcc_dir,$($(1)_GCC))/cc1 $(FLAGS_STAMP)
 	@mkdir -p $$(dir $$@)
-	$(CPP) $(CPPFLAGS) $$< | $(CC1) $(CC1FLAGS) | $(MASPSX) $(MASPSXFLAGS) | $(AS) $(ASFLAGS) -o $$@
+	$(call gcc_dir,$($(1)_GCC))/cpp $(CPPFLAGS) $(call gcc_minor,$(1)) -MD $$(@:.o=.d) $$< | $(call gcc_dir,$($(1)_GCC))/cc1 $(CC1FLAGS) | $(MASPSX) $(MASPSXFLAGS) | $(AS) $(ASFLAGS) -o $$@
+	@sed -i 's|^[^:]*:|$$@:|' $$(@:.o=.d)
 endef
 $(foreach t,$(TARGETS),$(eval $(call target_rules,$(t))))
+
+-include $(shell find $(BUILD) -name '*.d' 2>/dev/null)

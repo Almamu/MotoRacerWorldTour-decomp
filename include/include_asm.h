@@ -3,9 +3,14 @@
 
 #if !defined(M2CTX) && !defined(PERMUTER)
 
+/* The wrapper function is named after the line, not the function: GCC 2.95's
+ * C++ names can contain dots (_._6Cobjet), which can't be pasted into an
+ * identifier. maspsx finds the wrapper by its prefix. */
+#define INCLUDE_ASM_CAT2(A, B) A##B
+#define INCLUDE_ASM_CAT(A, B) INCLUDE_ASM_CAT2(A, B)
 #ifndef INCLUDE_ASM
 #define INCLUDE_ASM(FOLDER, NAME) \
-    void __maspsx_include_asm_hack_##NAME() { \
+    void INCLUDE_ASM_CAT(__maspsx_include_asm_hack_, __LINE__)() { \
         __asm__( \
             ".text # maspsx-keep \n" \
             "    .align 2 # maspsx-keep\n" \
@@ -27,9 +32,9 @@
 #endif
 
 #if INCLUDE_ASM_USE_MACRO_INC
-__asm__(".include \"include/macro.inc\"\n");
+__asm__(".include \"/home/almamu/Development/Projects/MotoRacerWorldTour/include/macro.inc\"\n");
 #else
-__asm__(".include \"include/labels.inc\"\n");
+__asm__(".include \"/home/almamu/Development/Projects/MotoRacerWorldTour/include/labels.inc\"\n");
 #endif
 
 #else

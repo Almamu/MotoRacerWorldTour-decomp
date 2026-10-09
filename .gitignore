@@ -3,8 +3,10 @@ extracted/
 __pycache__/
 build/
 
-# Decompilation: disassembly and binaries extracted from the game, the
-# downloaded compiler
-asm/
+# Decompilation. The functions still to decompile (asm/*/nonmatchings/) are
+# tracked; splat's data disassembly, the headers and other binaries it
+# extracts, and the downloaded compilers are not.
+asm/*/data/
+asm/*/header.s
 assets/
 tools/gcc-*/

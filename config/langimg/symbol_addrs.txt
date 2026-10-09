@@ -11,7 +11,8 @@ strcmp = 0x800A6100; // type:func
 strlen = 0x800B64B8; // type:func
 memcpy = 0x800B6578; // type:func
 
-// src/langimg/cobjet.cpp (CName, CNamed and CobjetLink are placeholder names)
+// Cobjet and the classes it builds on (include/langimg/cobjet.h; CName,
+// CNamed and CobjetLink are placeholder names)
 __5CName = 0x80015EAC; // type:func
 _._5CName = 0x80015EB8; // type:func
 Set__5CNamePCc = 0x80015F10; // type:func
@@ -23,3 +24,6 @@ _._6Cobjet = 0x8001603C; // type:func
 Init__6Cobjet = 0x800160B0; // type:func
 _._10CobjetLink = 0x80074A84; // type:func
 _vt.6Cobjet = 0x800C4978; // size:0x10
+
+// Sizes splat gets wrong
+func_8004AF0C = 0x8004AF0C; // type:func size:0xB0 (switch cases end in jr $ra)

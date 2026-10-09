@@ -6,3 +6,4 @@ FindEntry = 0x8013598C; // type:func
 OpenArchive = 0x80135B1C; // type:func
 Crc32 = 0x80135D98; // type:func
 StrUpper = 0x80135EC8; // type:func
+Crc32Table = 0x8019D590; // size:0x400

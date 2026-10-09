@@ -1,22 +1,37 @@
 # Matching decompilation
 
-Goal: C++ source that compiles to the exact bytes of the game code
-(`data\LANGIMG.DAT`) and the boot executable (`SCES_030.37`). Both currently
-rebuild byte for byte from disassembly; functions move to `src/` as they are
-decompiled.
+Goal: source that compiles to the exact bytes of the game code
+(`data\LANGIMG.DAT`) and the boot executable (`SCES_030.37`). Both rebuild
+byte for byte today; each function starts as disassembly and moves to C++
+or C as it is decompiled.
 
-Nothing extracted from the game goes into git. The originals are read from
-`extracted/`, and splat's disassembly (`asm/`), binary pieces (`assets/`) and
-the build (`build/`) are all ignored.
+What git holds and what it doesn't:
 
-## Compiler
+- **Tracked:** the source (`src/`), and the disassembly of every function
+  not decompiled yet (`asm/<target>/nonmatchings/<chunk>/<function>.s`).
+  What's left is visible in the tree: a function is done when its `.s`
+  file is gone and its chunk's source has C for it.
+- **Not tracked:** the originals (`iso/`, `extracted/`), splat's
+  disassembly of the data (`asm/*/data/`, `asm/sces/header.s`), the other
+  binary pieces (`assets/`), the compilers (`tools/gcc-*/`) and the build.
+  splat regenerates them from your own copy of the disc (`make split`, run
+  by `make`).
 
-The game code is C++ built with **GCC 2.95.2** for the PlayStation (the
-`gcc-2.95.2-psx` build from [decompals/old-gcc](https://github.com/decompals/old-gcc)),
-`-O2`, with PsyQ's assembler behaviour emulated by
-[maspsx](https://github.com/mkst/maspsx).
+## Compilers
 
-How it was identified:
+| Code                          | Compiler                           | Language |
+|-------------------------------|------------------------------------|----------|
+| `LANGIMG.DAT` (`chunk_*`)     | GCC 2.95.2, PlayStation build      | C++      |
+| `SCES_030.37` (`chunk_*`)     | GCC 2.91.66 (egcs 1.1.2), PlayStation build | C |
+| Libraries in both (`lib_*`)   | not identified yet (see "Libraries") | C      |
+
+Both compilers are the `-psx` builds from
+[decompals/old-gcc](https://github.com/decompals/old-gcc), run at `-O2`
+with `-G8`, and PsyQ's assembler behaviour is emulated by
+[maspsx](https://github.com/mkst/maspsx). `-G8` is confirmed for the game
+only; the boot executable's first matching function has no small data.
+
+### The game: GCC 2.95.2
 
 - **GCC 2.x C++.** Vtables use GCC 2.x's layout without thunks: 8-byte
   entries `{s16 delta, s16 index, void *pfn}`, with a null first entry
@@ -36,50 +51,133 @@ How it was identified:
     the `-psx` build fits.
 - **Small data.** Small globals are `$gp`-relative (`$gp` = 0x800C46F0, set
   by the entry point), so the default `-G8` is used.
-- **Libraries.** Both executables link the same PsyQ libraries: libcd
-  `bios.c` 1997-03-28, `intr.c` 1997-02-07 and libgpu `sys.c` 1998-01-12.
 
-`src/langimg/cobjet.cpp` is the proof: seven functions compiled from C++
-(`CName`'s constructor, destructor, `Get` and `Equals`, `CNamed`'s
-constructor, `Cobjet`'s constructor and destructor) give the original
-bytes. The eighth, `CName::Set`, differs by one register; its C++ is kept
-under `NON_MATCHING` and the build uses the original asm.
+`src/langimg/chunk_02.cpp` has the proof: seven functions of `CName`,
+`CNamed` and `Cobjet` give the original bytes. The eighth, `CName::Set`,
+differs by one register and is parked (see "Decompiling a function").
 
-The boot executable is C; its compiler hasn't been pinned down yet (its
-`StrUpper` compiles the same way under every candidate).
+### The boot executable: GCC 2.91.66
+
+`Crc32` (`src/sces/chunk_01.c`) compiles to the original instructions,
+registers included, only with 2.91.66. With the same source, 2.95.2 adds
+two instructions and picks other registers, and 2.7.2 and 2.8.x differ
+throughout. (`StrUpper`, tried first, compiles the same way
+under every candidate, so it couldn't tell them apart.) The game's copy
+of the same routine (`func_800A645C`) is slightly different code, so the
+boot executable wasn't simply linked from the game's objects.
+
+### Libraries
+
+Both executables link the same PsyQ libraries: libcd `bios.c` 1997-03-28,
+`intr.c` 1997-02-07 and libgpu `sys.c` 1998-01-12, among others. They
+start with PsyQ's startup code (`EntryPoint` in the game, 0x80136B4C in the
+boot executable). Sony built these with its own compiler, so it may be
+neither of the above; nobody has tested yet. Until then the `lib_*`
+chunks build their `INCLUDE_ASM`s with their executable's compiler (that
+doesn't matter for asm), and the first person to decompile one should
+find out which compiler matches and give the libraries their own entry in
+the Makefile.
 
 ## Setup
 
 Tools come from the Nix devshell (`direnv exec .`): mipsel binutils, splat,
-spimdisasm, m2c and objdiff. Then:
+spimdisasm, rabbitizer, m2c and objdiff. Then:
 
 ```sh
-make setup   # tools/gcc-2.95.2-psx (checksummed download) and the maspsx submodule
+make setup   # tools/gcc-2.95.2-psx and tools/gcc-2.91.66-psx (checksummed downloads), the maspsx submodule
 make         # split with splat, build, compare with config/checksums.sha1
-make NON_MATCHING=1 build   # use the C++ of functions that don't match yet
+make NON_MATCHING=1 build   # use the C of parked functions instead of their asm
 ```
 
-`make` regenerates the linker scripts and disassembly from `config/*.yaml`
-and `config/*/symbol_addrs.txt` whenever those change.
+`make` reruns splat when `config/*.yaml` or `config/*/symbol_addrs.txt`
+change. Objects are rebuilt when their source, a header, an included `.s`
+file or the compile flags change.
+
+## Chunks
+
+Each executable's code is split into chunks of about 8 KB, cut at
+function boundaries, so several people (or agents) can work at once
+without touching the same file. The chunks are not the original source
+files: those boundaries only matter for the cleanup phase, once the code
+is decompiled.
+
+- `chunk_NN` is the executable's own code: `src/langimg/chunk_00.cpp` to
+  `chunk_74.cpp` (C++), `src/sces/chunk_00.c` and `chunk_01.c` (C).
+- `lib_NN` is the library code after it: `src/langimg/lib_00.c` to
+  `lib_07.c`, `src/sces/lib_00.c` to `lib_10.c`.
+- The chunk list is the subsegment list in `config/<target>.yaml`. Each
+  chunk also owns the `.rodata` its functions use (strings, jump tables),
+  so a function's strings and jump tables move with it when it is
+  decompiled. They are in the function's `.s` file, or in an
+  `INCLUDE_RODATA` when several functions share them.
+
+Each chunk has a GitHub issue (label `decomp-chunk`) listing its
+functions; see [CONTRIBUTING.md](../CONTRIBUTING.md). `tools/chunks.py`
+reports progress and maintains those issues:
+
+```sh
+tools/chunks.py status            # functions and bytes done, per chunk with any done
+tools/chunks.py status --all      # every chunk
+tools/chunks.py issues /tmp/i     # each chunk's issue title and body, as files
+tools/chunks.py sync              # tick the functions done since, in the open issues
+```
+
+## Decompiling a function
+
+1. Read `asm/<target>/nonmatchings/<chunk>/<function>.s`. `m2c` gives a
+   C draft: `m2c asm/langimg/nonmatchings/chunk_05/func_8001B778.s`.
+2. In `src/<target>/<chunk>.cpp` (or `.c`), replace the function's
+   `INCLUDE_ASM(...)` line with the code, where the line was. The order of
+   the functions in the file is their order in the executable.
+3. Delete the function's `.s` file.
+4. `make`. Both lines must say `OK`. `tools/diff_func.py <function>` shows
+   the instructions that differ.
+5. If a name or type became known, add it to
+   `config/<target>/symbol_addrs.txt` (C++ functions with their GCC 2.95
+   mangled name, see below). `make` then re-splits.
+
+A function that's understood but doesn't match after a real effort is
+**parked**: its C goes under `#ifdef NON_MATCHING` with a comment saying
+what differs, and its `INCLUDE_ASM` stays under `#else`
+(`CName::Set` in `chunk_02.cpp` is an example). Keep its `.s` file.
+`make NON_MATCHING=1` builds the C instead; the result differs from the
+original only in those functions.
+
+Data stays in splat's disassembly for now. A decompiled function refers to
+a global by the symbol splat gave it (`extern u32 D_800C4A10;`, or a name
+from `symbol_addrs.txt`), declared in a header.
+
+### C++ names
+
+The game's functions have GCC 2.95 mangled names in `symbol_addrs.txt`:
+`__6Cobjet` (constructor), `_._6Cobjet` (destructor), `Set__5CNamePCc`
+(`CName::Set(const char *)`), `_vt.6Cobjet` (vtable). Once a function's
+class and signature are known, name it that way, so the C++ that replaces
+it gets the same symbol. `INCLUDE_ASM` takes any of these names, dots
+included. Class names are only known where the game shows them (`Cobjet`
+is from its class table); otherwise keep a placeholder.
+
+Headers with classes use `#pragma interface`, so GCC doesn't emit the
+vtables, which are still in the data disassembly.
 
 ## Layout
 
 | Path                           | What                                                  |
 |--------------------------------|-------------------------------------------------------|
-| `config/langimg.yaml`          | splat config for `LANGIMG.DAT`                        |
-| `config/sces.yaml`             | splat config for `SCES_030.37`                        |
-| `config/<target>/symbol_addrs.txt` | known symbols; C++ functions use GCC 2.95 mangled names (`__6Cobjet`, `_._6Cobjet`, `Set__5CNamePCc`, `_vt.6Cobjet`) |
+| `config/<target>.yaml`         | splat config: the chunks, the `.rodata` split, the data |
+| `config/<target>/symbol_addrs.txt` | known symbols                                     |
 | `config/checksums.sha1`        | SHA-1 of the originals, checked against `build/*.bin` |
-| `src/langimg/*.cpp`            | decompiled game code; `INCLUDE_ASM` for functions not done yet |
-| `include/`                     | headers; `include_asm.h`, `macro.inc` and the other `.inc` files come from splat |
-| `tools/get_compiler.sh`        | downloads the compiler, checked against `tools/compilers.sha256` |
+| `src/<target>/`                | one source file per chunk                             |
+| `asm/<target>/nonmatchings/`   | the functions not decompiled yet, one `.s` each       |
+| `include/`                     | headers; `include_asm.h` and the `.inc` files came from splat (`include_asm.h` is ours now) |
+| `tools/chunks.py`              | progress and the chunk issues                         |
+| `tools/diff_func.py`           | one function of the build against the original        |
+| `tools/get_compiler.sh`        | downloads a compiler, checked against `tools/compilers.sha256` |
 | `tools/maspsx`                 | git submodule                                         |
 
 The C++ pipeline is GCC's own `cpp` (`-lang-c++ -D__cplusplus`), then
-`cc1plus -O2 -G8 -fno-exceptions -fno-rtti`, then maspsx, then GNU `as`.
-`INCLUDE_ASM` takes the function's mangled name. When the name contains a
-`.` (destructors), the C++ for that function has to match before the file
-can be used, because the macro can't build its wrapper name from it.
+`cc1plus -O2 -G8 -fno-exceptions -fno-rtti`, then maspsx, then GNU `as`;
+C is the same with `cc1`.
 
 ## LANGIMG.DAT memory map
 
@@ -87,27 +185,39 @@ can be used, because the macro can't build its wrapper name from it.
 |-----------------------|-------------|-------------------------------------------------------|
 | –                     | 0x0         | 16-byte header (`assets/langimg/header.bin`)          |
 | 0x80011800–0x80011820 | 0x10        | 8 words of data at the start of `.text`               |
-| 0x80011820–0x800B716C | 0x30        | code                                                  |
+| 0x80011820–0x800A7084 | 0x30        | game code (`chunk_00`–`chunk_74`)                     |
+| 0x800A7084–0x800B716C | 0x95894     | startup code and libraries (`lib_00`–`lib_07`)        |
 | 0x800B716C–0x800B71D8 | 0xA597C     | constructor list (20 static initialisers) and destructor list (8) |
-| 0x800B71D8–0x800C9F48 | 0xA59E8     | read-only data, data and small data (see below)        |
-| 0x800C9F48–0x800DE7B0 | –           | bss (cleared by the entry point)                       |
+| 0x800B71D8–0x800B8734 | 0xA59E8     | `.rodata`: strings and jump tables, split by chunk    |
+| 0x800B8734–0x800C46F0 | 0xA6F44     | data                                                  |
+| 0x800C46F0–0x800C9F48 | 0xB2F00     | small data (`$gp` = 0x800C46F0)                       |
+| 0x800C9F48–0x800DE7B0 | –           | bss (cleared by the entry point)                      |
 | –                     | 0xB8758     | zeros to the end of the 2 KB sector (added by the Makefile) |
 
 Each constructor-list entry is a `_GLOBAL_.I.*` static initialiser. GCC
 emits it at the end of its source file, so each one marks the end of an
 original translation unit.
 
+## SCES_030.37 memory map
+
+| Address               | File offset | Contents                                    |
+|-----------------------|-------------|---------------------------------------------|
+| –                     | 0x0         | PS-X EXE header                             |
+| 0x80133334–0x80136B4C | 0x800       | boot code (`chunk_00`, `chunk_01`)          |
+| 0x80136B4C–0x8014C22C | 0x4018      | startup code and libraries (`lib_00`–`lib_10`) |
+| 0x8014C22C–0x8014D0C0 | 0x196F8     | `.rodata`, split by chunk                   |
+| 0x8014D0C0–           | 0x1A58C     | data                                        |
+
 ## Open questions
 
-- **Data sections.** Writes reach most of 0x800B71D8–0x800C9F48, including
-  next to the vtables (e.g. `Cobjet`'s at 0x800C4978). The original
-  `.rdata`/`.data`/`.sdata` boundaries aren't known yet, so splat treats the
-  area as three generic pieces. Until they are, vtables stay in the
-  disassembled data: the headers use `#pragma interface` so GCC doesn't
-  emit them.
+- **Data sections.** The `.rodata` end and the start of small data are
+  known; the `.data`/`.sdata` contents (vtables included, e.g. `Cobjet`'s at
+  0x800C4978) are still one block each. Decompiled data will need them
+  split by chunk like `.rodata`.
+- **Library compiler.** See "Libraries".
 - **maspsx options.** `--aspsx-version=2.79 --expand-div` haven't been
   checked against code that divides.
-- **Translation-unit boundaries.** Only the static initialisers and splat's
-  jump-table alignment hints are known so far.
+- **Translation-unit boundaries.** Only the static initialisers and
+  splat's jump-table alignment hints are known so far.
 - **Class names.** `Cobjet` comes from the game's class table. `CName`,
   `CNamed` and `CobjetLink` are placeholders.

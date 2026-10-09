@@ -1,6 +1,6 @@
 #!/bin/sh
-# Fetch the game's compiler: GCC 2.95.2 built for the PlayStation by
-# decompals/old-gcc (static Linux binaries: cpp, cc1, cc1plus, gcc, g++).
+# Fetch one of the compilers (GCC 2.95.2 or 2.91.66 built for the PlayStation by
+# decompals/old-gcc: static Linux binaries cpp, cc1, cc1plus, gcc, g++).
 # Usage: tools/get_compiler.sh <version> <dest dir>
 set -eu
 version=$1
