@@ -103,6 +103,8 @@ tools/format.py --check      # what CI runs; changes nothing
 
 The devshell has clang-format 21; elsewhere `pip install -r
 requirements.txt` gives the same version (or point `CLANG_FORMAT` at one).
+`git config core.hooksPath tools/hooks` makes git refuse commits with
+unformatted code.
 Formatting only moves whitespace and line breaks, so it can't change the
 build, but `make` still checks it. Where a layout matters (a table aligned
 in columns), wrap it in `// clang-format off` / `// clang-format on`.
@@ -120,7 +122,8 @@ no secrets and no copy of the game:
   summary shows `tools/chunks.py status`.
 - **Build with Sony's libraries:** `make sdk` (it downloads them; cached).
 
-A red check blocks the merge. Changes to `config/<target>.yaml` or the
+Don't merge a PR with a red check (GitHub can't enforce it on this
+private repository's plan, so it's on the reviewer). Changes to `config/<target>.yaml` or the
 symbols need a re-split with your copy of the game (docs/decomp.md);
 `tools/chunks.py check` fails until the regenerated `asm/` and `linker/`
 are committed.

@@ -1,0 +1,11 @@
+#!/bin/sh
+# Refuses a commit whose C/C++ isn't clang-formatted (CONTRIBUTING.md,
+# "Code style"). Enable it once per clone: git config core.hooksPath tools/hooks
+files=$(git diff --cached --name-only --diff-filter=ACM -- 'src/*.c' 'src/*.cpp' 'include/*.h')
+[ -z "$files" ] && exit 0
+command -v python3 >/dev/null || { echo "pre-commit: needs python3 (use the devshell)" >&2; exit 1; }
+# shellcheck disable=SC2086
+python3 tools/format.py --check $files || {
+    echo "pre-commit: run tools/format.py, then add the changes" >&2
+    exit 1
+}
