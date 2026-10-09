@@ -23,6 +23,9 @@ for t in langimg sces; do
     while read -r src obj; do
         mkdir -p "$(dirname "$obj")"
         $AS $ASFLAGS -o "$obj" "$src"
+        # 4-byte sections, as in the Makefile (ALIGN4)
+        $OBJCOPY --set-section-alignment .text=4 --set-section-alignment .data=4 \
+            --set-section-alignment .bss=4 --set-section-alignment .rodata=4 "$obj"
     done < "$d/objects.txt"
     $LD -EL --no-check-sections --no-warn-rwx-segments -Map "$d/$t.map" \
         -T "$d/${t}_syms.ld" -T "$d/$t.ld" \

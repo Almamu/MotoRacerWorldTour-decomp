@@ -49,6 +49,11 @@ CPPFLAGS    += -DNON_MATCHING
 endif
 MASPSXFLAGS := --aspsx-version=2.79 --expand-div
 ASFLAGS     := -EL -march=r3000 -mtune=r3000 -mabi=32 -no-pad-sections -O1 -G0 -I include
+# Every object's sections get 4-byte alignment (what the linker script's
+# SUBALIGN(4) means anyway). MIPS gas marks them 2**4, and some versions of
+# ld (2.42, say) then start an output section such as .bss on a 16-byte
+# boundary, which moves everything in it.
+ALIGN4      = $(OBJCOPY) $(foreach s,.text .data .bss .rodata,--set-section-alignment $(s)=4)
 LDFLAGS     := -EL --no-check-sections --no-warn-rwx-segments
 
 #### Files ####
@@ -162,6 +167,7 @@ $(BUILD)/$(1)/%.o: %.bin
 $(BUILD)/$(1)/%.o: %.s
 	@mkdir -p $$(dir $$@)
 	$(AS) $(ASFLAGS) -o $$@ $$<
+	$(ALIGN4) $$@
 
 # C and C++: preprocess, compile, fix up with maspsx (PsyQ's assembler
 # behaviour), assemble. cpp writes the header dependencies (<object>.d);
@@ -169,11 +175,13 @@ $(BUILD)/$(1)/%.o: %.s
 $(BUILD)/$(1)/%.o: %.cpp $(call gcc_dir,$($(1)_GCC))/cc1 $(FLAGS_STAMP)
 	@mkdir -p $$(dir $$@)
 	$(call gcc_dir,$($(1)_GCC))/cpp $(CPPFLAGS) $(call gcc_minor,$(1)) -MD $$(@:.o=.d) -lang-c++ -D__cplusplus -D__GNUG__=2 -D_LANGUAGE_C_PLUS_PLUS $$< | $(call gcc_dir,$($(1)_GCC))/cc1plus $(CC1FLAGS) -G$($(1)_G) $($(1)_CFLAGS) $(CXXFLAGS) | $(MASPSX) $(MASPSXFLAGS) -G$($(1)_G) | $(AS) $(ASFLAGS) -o $$@
+	$(ALIGN4) $$@
 	@sed -i 's|^[^:]*:|$$@:|' $$(@:.o=.d)
 
 $(BUILD)/$(1)/%.o: %.c $(call gcc_dir,$($(1)_GCC))/cc1 $(FLAGS_STAMP)
 	@mkdir -p $$(dir $$@)
 	$(call gcc_dir,$($(1)_GCC))/cpp $(CPPFLAGS) $(call gcc_minor,$(1)) -MD $$(@:.o=.d) $$< | $(call gcc_dir,$($(1)_GCC))/cc1 $(CC1FLAGS) -G$($(1)_G) $($(1)_CFLAGS) | $(MASPSX) $(MASPSXFLAGS) -G$($(1)_G) | $(AS) $(ASFLAGS) -o $$@
+	$(ALIGN4) $$@
 	@sed -i 's|^[^:]*:|$$@:|' $$(@:.o=.d)
 endef
 $(foreach t,$(TARGETS),$(eval $(call target_rules,$(t))))
