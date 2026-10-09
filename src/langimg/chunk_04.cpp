@@ -4,6 +4,43 @@
 /* The game's code built with GCC 2.91.66, -G8, split addresses
  * (docs/matching/issue-5-langimg-chunk04.md). */
 
+extern "C" {
+
+// A range's definition (0x34 bytes)
+struct RangeDef {
+    int m_00;
+    short m_04;
+    short m_06; // the value at 0
+    short m_08; // the value at 1 (4.12)
+    u16 m_0A;
+    u16 m_0C;
+    u16 m_0E;
+    int m_10[9];
+};
+
+// A range: its definition and its state
+struct Range {
+    RangeDef m_def;
+    short m_34;
+    short m_36;
+    short m_38; // the position, 4.12
+    short m_3A; // the value there
+    short m_3C;
+    short m_3E;
+    short m_40;
+    short m_42;
+    short m_44;
+    short m_46;
+    u8 m_48;
+    u8 m_49;
+};
+
+void func_80019F0C(Range *r, RangeDef *def);
+void func_80019FA4(Range *r, int a, int b);
+void func_80019FB0(Range *r, int a, int b);
+void func_80019FBC(Range *r, int pos);
+}
+
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_8001983C);
 
 /* Sets and clears flags on the sequence's objects. Returns whether it has
@@ -112,15 +149,54 @@ void func_80019DC0(SeqSet *set, int mode) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_80019E30);
+/* A frame of the set's sequences: the stopped ones' flags cleared, the
+ * running ones stepped (func_8001983C). Returns their results, or'ed. */
+int func_80019E30(SeqSet *set) {
+    Seq *s;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_80019F0C);
+    for (s = set->m_first; s; s = s->m_next) {
+        if (SeqRunning(s)) {
+            func_80019A98(s, 0, 0x200);
+        }
+    }
+    set->m_0C = set->m_08;
+    set->m_08 = 0;
+    for (s = set->m_first; s; s = s->m_next) {
+        s->m_prev = s->m_state;
+        if (SeqRunning(s)) {
+            set->m_08 |= func_8001983C(s);
+        }
+    }
+    return set->m_08;
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_80019FA4);
+/* Sets a range up from its definition. */
+void func_80019F0C(Range *r, RangeDef *def) {
+    r->m_def = *def;
+    r->m_34 = r->m_def.m_0A - r->m_def.m_0C;
+    r->m_36 = r->m_def.m_0A - r->m_def.m_0E;
+    func_80019FBC(r, 0);
+    r->m_44 = 0;
+    r->m_48 = 0;
+    r->m_46 = 0;
+    r->m_49 = 0;
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_80019FB0);
+void func_80019FA4(Range *r, int a, int b) {
+    r->m_40 = a;
+    r->m_42 = b;
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_80019FBC);
+void func_80019FB0(Range *r, int a, int b) {
+    r->m_3C = a;
+    r->m_3E = b;
+}
+
+/* Moves the range to pos (4.12): its value goes from m_06 towards m_08. */
+void func_80019FBC(Range *r, int pos) {
+    r->m_38 = pos;
+    r->m_3A = r->m_def.m_06 - (r->m_def.m_06 - r->m_def.m_08) * pos / 4096;
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_80019FF8);
 
