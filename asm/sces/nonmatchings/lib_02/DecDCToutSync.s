@@ -1,6 +1,6 @@
-nonmatching func_8013AC58, 0x3C
+nonmatching DecDCToutSync, 0x3C
 
-glabel func_8013AC58
+glabel DecDCToutSync
     /* 8124 8013AC58 E8FFBD27 */  addiu      $sp, $sp, -0x18
     /* 8128 8013AC5C 05008014 */  bnez       $a0, .L8013AC74
     /* 812C 8013AC60 1000BFAF */   sw        $ra, 0x10($sp)
@@ -18,4 +18,4 @@ glabel func_8013AC58
     /* 8154 8013AC88 1800BD27 */  addiu      $sp, $sp, 0x18
     /* 8158 8013AC8C 0800E003 */  jr         $ra
     /* 815C 8013AC90 00000000 */   nop
-endlabel func_8013AC58
+endlabel DecDCToutSync

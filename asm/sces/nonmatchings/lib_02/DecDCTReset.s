@@ -1,6 +1,6 @@
-nonmatching func_8013AB7C, 0x34
+nonmatching DecDCTReset, 0x34
 
-glabel func_8013AB7C
+glabel DecDCTReset
     /* 8048 8013AB7C E8FFBD27 */  addiu      $sp, $sp, -0x18
     /* 804C 8013AB80 1000B0AF */  sw         $s0, 0x10($sp)
     /* 8050 8013AB84 21808000 */  addu       $s0, $a0, $zero
@@ -15,4 +15,4 @@ glabel func_8013AB7C
     /* 8070 8013ABA4 1000B08F */  lw         $s0, 0x10($sp)
     /* 8074 8013ABA8 0800E003 */  jr         $ra
     /* 8078 8013ABAC 1800BD27 */   addiu     $sp, $sp, 0x18
-endlabel func_8013AB7C
+endlabel DecDCTReset

@@ -56,7 +56,13 @@ short:
   work doesn't conflict. The shared files are the headers in `include/`
   and `config/<target>/symbol_addrs.txt`: keep `symbol_addrs.txt` in
   address order and change only the lines you need.
-- **Names:** C++ functions take their GCC 2.95 mangled names
+- **Matching notes:** docs/decomp.md, "Matching notes", lists what made
+  the trickier functions match (declarations, `char` signedness, statement
+  order, ...). Read it before parking anything.
+- **Hand-written assembly** isn't decompiled: list the function in
+  `config/<target>/handwritten.txt` with a word on what it is.
+- **Names:** `tools/rename.py TARGET OLD NEW` renames a symbol everywhere.
+  C++ functions take their GCC 2.95 mangled names
   (docs/decomp.md, "C++ names"). Rename only what you understand. An
   honest placeholder (`func_8001B778`, `D_800C4A10`, `m_04`) is better
   than a wrong name.

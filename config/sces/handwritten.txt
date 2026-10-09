@@ -1,0 +1,3 @@
+# Functions written in assembly in the original, which stay asm (they aren't
+# decompiled; tools/chunks.py counts them as done). One name per line.
+func_80134444  # 16 to 24-bit pixel strips through the scratchpad (the movie player's)

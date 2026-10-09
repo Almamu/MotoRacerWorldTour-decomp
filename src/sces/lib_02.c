@@ -1,14 +1,14 @@
 #include "common.h"
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_02", func_8013AB7C);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_02", DecDCTReset);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_02", func_8013ABB0);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_02", DecDCTBufSize);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_02", DecDCTin);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_02", DecDCTout);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_02", func_8013AC58);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_02", DecDCToutSync);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_02", DecDCToutCallback);
 

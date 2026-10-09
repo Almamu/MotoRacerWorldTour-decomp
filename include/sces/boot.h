@@ -125,7 +125,7 @@ void func_80134CA0(int x, int y, int color);
 void Startup(void);
 void func_8013C6F0(void *prim); /* libgpu: DrawPrim, by its use */
 void func_8013FA3C(void *a, Choice *choice);
-int func_80134948(CPair *p, void *image, int a, int x, int y); /* shows a picture */
+int func_80134948(CPair *buf, void *image, int mode, int x, int y); /* shows a BS picture */
 extern u8 D_8014D480[];
 extern u8 D_80175480[];
 extern u8 D_801A0514[]; /* the first picture */

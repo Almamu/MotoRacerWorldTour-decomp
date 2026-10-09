@@ -53,14 +53,14 @@ glabel func_80134948
     /* 1E7C 801349B0 02B90300 */  srl        $s7, $v1, 4
     /* 1E80 801349B4 80101700 */  sll        $v0, $s7, 2
     /* 1E84 801349B8 21105500 */  addu       $v0, $v0, $s5
-    /* 1E88 801349BC DFEA040C */  jal        func_8013AB7C
+    /* 1E88 801349BC DFEA040C */  jal        DecDCTReset
     /* 1E8C 801349C0 0C005224 */   addiu     $s2, $v0, 0xC
     /* 1E90 801349C4 7ED9040C */  jal        func_801365F8
     /* 1E94 801349C8 00000000 */   nop
     /* 1E98 801349CC 9700E012 */  beqz       $s7, .L80134C2C
     /* 1E9C 801349D0 2110C002 */   addu      $v0, $s6, $zero
   .L801349D4:
-    /* 1EA0 801349D4 ECEA040C */  jal        func_8013ABB0
+    /* 1EA0 801349D4 ECEA040C */  jal        DecDCTBufSize
     /* 1EA4 801349D8 21204002 */   addu      $a0, $s2, $zero
     /* 1EA8 801349DC 4800AA8F */  lw         $t2, 0x48($sp)
     /* 1EAC 801349E0 0600A396 */  lhu        $v1, 0x6($s5)
@@ -97,7 +97,7 @@ glabel func_80134948
     /* 1F28 80134A5C 1000A3A7 */  sh         $v1, 0x10($sp)
     /* 1F2C 80134A60 0EEB040C */  jal        DecDCTout
     /* 1F30 80134A64 1600A2A7 */   sh        $v0, 0x16($sp)
-    /* 1F34 80134A68 16EB040C */  jal        func_8013AC58
+    /* 1F34 80134A68 16EB040C */  jal        DecDCToutSync
     /* 1F38 80134A6C 21200000 */   addu      $a0, $zero, $zero
     /* 1F3C 80134A70 4800AA8F */  lw         $t2, 0x48($sp)
     /* 1F40 80134A74 00000000 */  nop
@@ -159,7 +159,7 @@ glabel func_80134948
     /* 2000 80134B34 0BD30408 */  j          .L80134C2C
     /* 2004 80134B38 2110C002 */   addu      $v0, $s6, $zero
   .L80134B3C:
-    /* 2008 80134B3C ECEA040C */  jal        func_8013ABB0
+    /* 2008 80134B3C ECEA040C */  jal        DecDCTBufSize
     /* 200C 80134B40 2120C003 */   addu      $a0, $fp, $zero
     /* 2010 80134B44 80100200 */  sll        $v0, $v0, 2
     /* 2014 80134B48 0000838E */  lw         $v1, 0x0($s4)
@@ -173,7 +173,7 @@ glabel func_80134948
     /* 2034 80134B68 2A104300 */  slt        $v0, $v0, $v1
     /* 2038 80134B6C 2C004010 */  beqz       $v0, .L80134C20
     /* 203C 80134B70 1580043C */   lui       $a0, %hi(D_8014C348)
-    /* 2040 80134B74 DFEA040C */  jal        func_8013AB7C
+    /* 2040 80134B74 DFEA040C */  jal        DecDCTReset
     /* 2044 80134B78 21200000 */   addu      $a0, $zero, $zero
     /* 2048 80134B7C 7ED9040C */  jal        func_801365F8
     /* 204C 80134B80 00000000 */   nop
@@ -197,7 +197,7 @@ glabel func_80134948
     /* 2090 80134BC4 21200002 */  addu       $a0, $s0, $zero
     /* 2094 80134BC8 0EEB040C */  jal        DecDCTout
     /* 2098 80134BCC 21282002 */   addu      $a1, $s1, $zero
-    /* 209C 80134BD0 16EB040C */  jal        func_8013AC58
+    /* 209C 80134BD0 16EB040C */  jal        DecDCToutSync
     /* 20A0 80134BD4 21200000 */   addu      $a0, $zero, $zero
     /* 20A4 80134BD8 1000A427 */  addiu      $a0, $sp, 0x10
     /* 20A8 80134BDC 5EF1040C */  jal        LoadImage

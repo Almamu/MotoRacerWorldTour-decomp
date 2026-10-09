@@ -48,8 +48,9 @@ LIB_NOTE = (
     "source instead."
 )
 
-# Decompiled, or linked from Sony's own PsyQ object by make sdk.
-DONE = ("done", "sdk")
+# Decompiled, linked from Sony's own PsyQ object by make sdk, or written in
+# assembly in the original (config/<target>/handwritten.txt).
+DONE = ("done", "sdk", "asm")
 INCLUDE_ASM_RE = re.compile(r'^\s*INCLUDE_ASM\(\s*"[^"]*"\s*,\s*([^\s)]+)\s*\)')
 COMMENT_RE = re.compile(r"//.*?$|/\*.*?\*/", re.S | re.M)
 
@@ -110,6 +111,15 @@ def remaining(path):
     return todo, parked
 
 
+def handwritten(target):
+    """Functions written in assembly in the original (config/<target>/
+    handwritten.txt): they stay asm and count as done."""
+    p = ROOT / "config" / target / "handwritten.txt"
+    if not p.exists():
+        return set()
+    return {l.split("#")[0].strip() for l in p.read_text().splitlines()} - {""}
+
+
 def sdk_functions(target):
     """Functions that a verified make sdk links from Sony's own objects."""
     p = ROOT / "build" / "sdk" / f"{target}.sdk_functions.txt"
@@ -119,6 +129,7 @@ def sdk_functions(target):
 def survey(target):
     funcs = functions(target)
     sdk = sdk_functions(target)
+    hand = handwritten(target)
     out = []
     for name, ext, lo, hi in chunks(target):
         src = ROOT / "src" / target / f"{name}.{ext}"
@@ -130,7 +141,7 @@ def survey(target):
             "funcs": [
                 {"addr": a, "name": n, "size": sz,
                  "state": "parked" if n in parked else "sdk" if n in sdk
-                          else "todo" if n in todo else "done"}
+                          else "asm" if n in hand else "todo" if n in todo else "done"}
                 for a, n, sz in fs
             ],
         })
@@ -189,7 +200,8 @@ def issue_body(c):
     for f in c["funcs"]:
         box = "x" if f["state"] in DONE else " "
         note = {"parked": " (parked: C doesn't match yet)",
-                "sdk": " (Sony's object, `make sdk`)"}.get(f["state"], "")
+                "sdk": " (Sony's object, `make sdk`)",
+                "asm": " (hand-written assembly, stays asm)"}.get(f["state"], "")
         lines.append(f"- [{box}] `{f['name']}` `{f['addr']:08X}` {f['size']:#x} bytes{note}")
     lines += [
         "",

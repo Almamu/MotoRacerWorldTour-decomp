@@ -2,6 +2,7 @@
 #define SCES_MOVIE_H
 
 #include "psyq.h"
+#include "sces/boot.h"
 
 /* The movie player (CINE\*.DPS, docs/formats/dps.md). It's Sony's
  * cd/MOVIE sample adapted: the functions keep the sample's names, and its
@@ -61,6 +62,7 @@ extern u_long D_8014D354;  /* the movie's last frame */
 extern MovieEntry *D_8014D350;
 extern int D_8014D358;     /* the movie being played */
 extern int D_8014D0F0;
+extern int D_8014D348; /* the buffer being shown during a movie */
 extern int D_8014D0F4;
 
 void strKickCD(CdlLOC *loc, int mode);
@@ -76,9 +78,11 @@ void func_801343A0(int id);
 u_long *strNext(DECENV *dec);
 void strCallback(void);
 void func_80134404(int *key);
+void func_80133AE4(int w, int h);
+void func_80134444(CPair *buf, u_long *p, int w, int h); /* hand-written: 16 to 24-bit strips */
 void func_80134424(int *key);
 void func_80136644(u_long *in, u_long *out);
-void func_8013AB7C(int mode);
+void DecDCTReset(int mode);
 void func_801365F8(void);
 
 #ifdef __cplusplus

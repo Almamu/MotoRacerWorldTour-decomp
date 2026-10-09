@@ -220,6 +220,39 @@ Data stays in splat's disassembly for now. A decompiled function refers to
 a global by the symbol splat gave it (`extern u32 D_800C4A10;`, or a name
 from `symbol_addrs.txt`), declared in a header.
 
+### Matching notes
+
+What it took to match the boot executable so far (likely to apply to the
+game too; check before assuming):
+
+- **Declarations matter, not only code.** The original was built against
+  declarations where `free()`, `DecDCToutCallback()` and the heap
+  allocator return `int`. With `void` (or pointer) returns, the
+  registers right after the call come out differently, even when the
+  result isn't used. When a register differs right after a call, try an
+  `int` return on the callee first.
+- **Signed `char`.** The boot executable's compiler had signed plain
+  `char`; decompals' builds default to unsigned (`sces_CFLAGS` in the
+  Makefile adds `-fsigned-char`).
+- **`-G0`** for the boot executable, `-G8` for the game.
+- **Statement order** decides the scheduling when nothing else does;
+  reorder before rewriting.
+- **Orphan literals.** Identical string literals are merged within a
+  source file, so an unreferenced copy of a string belongs to the next
+  file. Until the chunks follow the original files such data is spelled
+  out (`D_8014C38C` after `Startup`).
+- **Static object init/fini** (GCC's `_GLOBAL_.I`/`.D` functions) come at
+  the end of the file that defines the object; inside a chunk they're
+  written as plain functions that construct or destroy it.
+- **Hand-written assembly** stays assembly: a run of it at the end of a
+  chunk becomes its own `asm` segment (`asm/sces/vlc.s`); a single
+  function inside a chunk is listed in `config/<target>/handwritten.txt`
+  (it keeps its `INCLUDE_ASM` and counts as done).
+- **[decomp-permuter](https://github.com/simonlindholm/decomp-permuter)**
+  helps with what's left after that (register choices). It parses C, not
+  C++: give it the function as plain C, compiled through `cc1plus`
+  inside `extern "C" { }`.
+
 ### C++ names
 
 The game's functions have GCC 2.95 mangled names in `symbol_addrs.txt`:

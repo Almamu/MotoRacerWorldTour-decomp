@@ -67,6 +67,7 @@ int printf(const char *fmt, ...);
  * registers after the call come out differently. */
 int free(void *p);
 char *strcpy(char *dst, const char *src);
+int bcmp(const void *a, const void *b, int n);
 
 /* libapi */
 void EnterCriticalSection(void);
@@ -143,6 +144,10 @@ long SpuClearReverbWorkArea(long rev_mode);
 /* libpress */
 int DecDCToutCallback(void (*func)());
 void DecDCTout(u_long *buf, int size);
+void DecDCTReset(int mode);
+int DecDCTBufSize(u_long *bs);
+void DecDCTin(u_long *buf, int mode);
+int DecDCToutSync(int mode);
 
 #ifdef __cplusplus
 }
