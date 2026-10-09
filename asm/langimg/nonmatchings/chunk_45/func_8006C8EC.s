@@ -17,7 +17,7 @@ glabel func_8006C8EC
     /* 5B130 8006C920 1000A427 */   addiu     $a0, $sp, 0x10
     /* 5B134 8006C924 0000068E */  lw         $a2, 0x0($s0)
     /* 5B138 8006C928 0C80053C */  lui        $a1, %hi(D_800C7F48)
-    /* 5B13C 8006C92C 96D9020C */  jal        func_800B6658
+    /* 5B13C 8006C92C 96D9020C */  jal        sprintf
     /* 5B140 8006C930 487FA524 */   addiu     $a1, $a1, %lo(D_800C7F48)
     /* 5B144 8006C934 0D80033C */  lui        $v1, %hi(D_800D11D0)
     /* 5B148 8006C938 D0117124 */  addiu      $s1, $v1, %lo(D_800D11D0)

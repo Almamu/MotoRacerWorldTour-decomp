@@ -40,7 +40,7 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_74", func_800A6000);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_74", func_800A60AC);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_74", strcmp);
+INCLUDE_ASM("asm/langimg/nonmatchings/chunk_74", func_800A6100);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_74", func_800A6168);
 

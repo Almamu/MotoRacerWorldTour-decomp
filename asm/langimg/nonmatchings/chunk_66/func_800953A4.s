@@ -114,11 +114,11 @@ glabel func_800953A4
     /* 83D60 80095550 0030C848 */  ctc2       $t0, $6 /* handwritten instruction */
     /* 83D64 80095554 0038C948 */  ctc2       $t1, $7 /* handwritten instruction */
     /* 83D68 80095558 801F043C */  lui        $a0, (0x1F8003F0 >> 16)
-    /* 83D6C 8009555C E8D6020C */  jal        func_800B5BA0
+    /* 83D6C 8009555C E8D6020C */  jal        SetSp
     /* 83D70 80095560 F0038434 */   ori       $a0, $a0, (0x1F8003F0 & 0xFFFF)
     /* 83D74 80095564 3B52020C */  jal        func_800948EC
     /* 83D78 80095568 21804000 */   addu      $s0, $v0, $zero
-    /* 83D7C 8009556C E8D6020C */  jal        func_800B5BA0
+    /* 83D7C 8009556C E8D6020C */  jal        SetSp
     /* 83D80 80095570 21200002 */   addu      $a0, $s0, $zero
     /* 83D84 80095574 0000D148 */  ctc2       $s1, $0 /* handwritten instruction */
     /* 83D88 80095578 0008D248 */  ctc2       $s2, $1 /* handwritten instruction */

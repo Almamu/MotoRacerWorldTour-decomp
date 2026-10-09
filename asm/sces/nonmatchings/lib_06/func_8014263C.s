@@ -48,14 +48,14 @@ glabel func_8014263C
     /* FBB0 801426E4 00000000 */   nop
   .L801426E8:
     /* FBB4 801426E8 21200002 */  addu       $a0, $s0, $zero
-    /* FBB8 801426EC 3306050C */  jal        func_801418CC
+    /* FBB8 801426EC 3306050C */  jal        _padCmdParaMode
     /* FBBC 801426F0 01000524 */   addiu     $a1, $zero, 0x1
     /* FBC0 801426F4 CF090508 */  j          .L8014273C
     /* FBC4 801426F8 21100000 */   addu      $v0, $zero, $zero
   .L801426FC:
     /* FBC8 801426FC 21200002 */  addu       $a0, $s0, $zero
   .L80142700:
-    /* FBCC 80142700 3306050C */  jal        func_801418CC
+    /* FBCC 80142700 3306050C */  jal        _padCmdParaMode
     /* FBD0 80142704 21280000 */   addu      $a1, $zero, $zero
     /* FBD4 80142708 CF090508 */  j          .L8014273C
     /* FBD8 8014270C 21100000 */   addu      $v0, $zero, $zero
@@ -69,7 +69,7 @@ glabel func_8014263C
     /* FBF4 80142728 CF090508 */  j          .L8014273C
     /* FBF8 8014272C 21100000 */   addu      $v0, $zero, $zero
   .L80142730:
-    /* FBFC 80142730 6503050C */  jal        func_80140D94
+    /* FBFC 80142730 6503050C */  jal        _padSendAtLoadInfo
     /* FC00 80142734 21200002 */   addu      $a0, $s0, $zero
     /* FC04 80142738 21100000 */  addu       $v0, $zero, $zero
   .L8014273C:

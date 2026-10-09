@@ -58,7 +58,7 @@ glabel func_800A32A0
     /* 91B08 800A32F8 D860678C */  lw         $a3, %lo(D_800D60D8)($v1)
     /* 91B0C 800A32FC B000B58F */  lw         $s5, 0xB0($sp)
     /* 91B10 800A3300 B400B48F */  lw         $s4, 0xB4($sp)
-    /* 91B14 800A3304 96D9020C */  jal        func_800B6658
+    /* 91B14 800A3304 96D9020C */  jal        sprintf
     /* 91B18 800A3308 607BA524 */   addiu     $a1, $a1, %lo(D_800B7B60)
     /* 91B1C 800A330C 0F008332 */  andi       $v1, $s4, 0xF
     /* 91B20 800A3310 AF006014 */  bnez       $v1, .L800A35D0
@@ -70,7 +70,7 @@ glabel func_800A32A0
     /* 91B38 800A3328 9C7BA524 */  addiu      $a1, $a1, %lo(D_800B7B9C)
     /* 91B3C 800A332C 0D80023C */  lui        $v0, %hi(D_800D608C)
     /* 91B40 800A3330 8C60468C */  lw         $a2, %lo(D_800D608C)($v0)
-    /* 91B44 800A3334 96D9020C */  jal        func_800B6658
+    /* 91B44 800A3334 96D9020C */  jal        sprintf
     /* 91B48 800A3338 21380002 */   addu      $a3, $s0, $zero
     /* 91B4C 800A333C D88C0208 */  j          .L800A3360
     /* 91B50 800A3340 3800B127 */   addiu     $s1, $sp, 0x38
@@ -79,7 +79,7 @@ glabel func_800A32A0
     /* 91B58 800A3348 0D80023C */  lui        $v0, %hi(D_800D608C)
     /* 91B5C 800A334C 8C60468C */  lw         $a2, %lo(D_800D608C)($v0)
     /* 91B60 800A3350 0B80053C */  lui        $a1, %hi(D_800B7BA4)
-    /* 91B64 800A3354 96D9020C */  jal        func_800B6658
+    /* 91B64 800A3354 96D9020C */  jal        sprintf
     /* 91B68 800A3358 A47BA524 */   addiu     $a1, $a1, %lo(D_800B7BA4)
     /* 91B6C 800A335C 3800B127 */  addiu      $s1, $sp, 0x38
   .L800A3360:
@@ -238,7 +238,7 @@ glabel func_800A32A0
     /* 91DA8 800A3598 03004582 */  lb         $a1, 0x3($s2)
     /* 91DAC 800A359C 1800A427 */  addiu      $a0, $sp, 0x18
     /* 91DB0 800A35A0 002C0500 */  sll        $a1, $a1, 16
-    /* 91DB4 800A35A4 ECD6020C */  jal        func_800B5BB0
+    /* 91DB4 800A35A4 ECD6020C */  jal        open
     /* 91DB8 800A35A8 0002A534 */   ori       $a1, $a1, 0x200
     /* 91DBC 800A35AC FFFF1024 */  addiu      $s0, $zero, -0x1
     /* 91DC0 800A35B0 03005014 */  bne        $v0, $s0, .L800A35C0
@@ -246,7 +246,7 @@ glabel func_800A32A0
     /* 91DC8 800A35B8 7A8D0208 */  j          .L800A35E8
     /* 91DCC 800A35BC 08000224 */   addiu     $v0, $zero, 0x8
   .L800A35C0:
-    /* 91DD0 800A35C0 FCD6020C */  jal        func_800B5BF0
+    /* 91DD0 800A35C0 FCD6020C */  jal        close
     /* 91DD4 800A35C4 21204000 */   addu      $a0, $v0, $zero
     /* 91DD8 800A35C8 07005010 */  beq        $v0, $s0, .L800A35E8
     /* 91DDC 800A35CC 0B000224 */   addiu     $v0, $zero, 0xB

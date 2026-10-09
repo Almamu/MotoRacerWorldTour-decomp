@@ -17,16 +17,16 @@ glabel func_80096538
     /* 84D7C 8009656C 1800B327 */  addiu      $s3, $sp, 0x18
     /* 84D80 80096570 21306002 */  addu       $a2, $s3, $zero
     /* 84D84 80096574 3C00BFAF */  sw         $ra, 0x3C($sp)
-    /* 84D88 80096578 4B9E020C */  jal        func_800A792C
+    /* 84D88 80096578 4B9E020C */  jal        CdControlB
     /* 84D8C 8009657C 1000A2A3 */   sb        $v0, 0x10($sp)
     /* 84D90 80096580 0A004010 */  beqz       $v0, .L800965AC
     /* 84D94 80096584 21200002 */   addu      $a0, $s0, $zero
     /* 84D98 80096588 2000B027 */  addiu      $s0, $sp, 0x20
-    /* 84D9C 8009658C C79E020C */  jal        func_800A7B1C
+    /* 84D9C 8009658C C79E020C */  jal        CdIntToPos
     /* 84DA0 80096590 21280002 */   addu      $a1, $s0, $zero
     /* 84DA4 80096594 06000424 */  addiu      $a0, $zero, 0x6
     /* 84DA8 80096598 21280002 */  addu       $a1, $s0, $zero
-    /* 84DAC 8009659C 4B9E020C */  jal        func_800A792C
+    /* 84DAC 8009659C 4B9E020C */  jal        CdControlB
     /* 84DB0 800965A0 21306002 */   addu      $a2, $s3, $zero
     /* 84DB4 800965A4 03004014 */  bnez       $v0, .L800965B4
     /* 84DB8 800965A8 05001324 */   addiu     $s3, $zero, 0x5
@@ -37,14 +37,14 @@ glabel func_80096538
     /* 84DC4 800965B4 01001024 */  addiu      $s0, $zero, 0x1
     /* 84DC8 800965B8 21200000 */  addu       $a0, $zero, $zero
   .L800965BC:
-    /* 84DCC 800965BC 9D9D020C */  jal        func_800A7674
+    /* 84DCC 800965BC 9D9D020C */  jal        CdReady
     /* 84DD0 800965C0 1800A527 */   addiu     $a1, $sp, 0x18
     /* 84DD4 800965C4 F9FF5310 */  beq        $v0, $s3, .L800965AC
     /* 84DD8 800965C8 00000000 */   nop
     /* 84DDC 800965CC 08005014 */  bne        $v0, $s0, .L800965F0
     /* 84DE0 800965D0 2A103402 */   slt       $v0, $s1, $s4
     /* 84DE4 800965D4 21204002 */  addu       $a0, $s2, $zero
-    /* 84DE8 800965D8 A69E020C */  jal        func_800A7A98
+    /* 84DE8 800965D8 A69E020C */  jal        CdGetSector
     /* 84DEC 800965DC 00020524 */   addiu     $a1, $zero, 0x200
     /* 84DF0 800965E0 F2FF4010 */  beqz       $v0, .L800965AC
     /* 84DF4 800965E4 00085226 */   addiu     $s2, $s2, 0x800
@@ -55,7 +55,7 @@ glabel func_80096538
     /* 84E04 800965F4 21200000 */   addu      $a0, $zero, $zero
     /* 84E08 800965F8 09000424 */  addiu      $a0, $zero, 0x9
     /* 84E0C 800965FC 21280000 */  addu       $a1, $zero, $zero
-    /* 84E10 80096600 4B9E020C */  jal        func_800A792C
+    /* 84E10 80096600 4B9E020C */  jal        CdControlB
     /* 84E14 80096604 1800A627 */   addiu     $a2, $sp, 0x18
     /* 84E18 80096608 2B100200 */  sltu       $v0, $zero, $v0
   .L8009660C:

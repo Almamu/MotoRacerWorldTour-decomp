@@ -20,7 +20,7 @@ glabel func_8006FA30
     /* 5E278 8006FA68 06000224 */   addiu     $v0, $zero, 0x6
     /* 5E27C 8006FA6C 80251000 */  sll        $a0, $s0, 22
     /* 5E280 8006FA70 03240400 */  sra        $a0, $a0, 16
-    /* 5E284 8006FA74 DCD2020C */  jal        func_800B4B70
+    /* 5E284 8006FA74 DCD2020C */  jal        SpuSetCommonMasterVolume
     /* 5E288 8006FA78 21288000 */   addu      $a1, $a0, $zero
     /* 5E28C 8006FA7C AEBE0108 */  j          .L8006FAB8
     /* 5E290 8006FA80 40101100 */   sll       $v0, $s1, 1

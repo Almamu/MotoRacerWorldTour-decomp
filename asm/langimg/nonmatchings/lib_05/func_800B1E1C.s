@@ -28,7 +28,7 @@ glabel func_800B1E1C
     /* A0688 800B1E78 0C80053C */  lui        $a1, %hi(D_800C3CD4)
     /* A068C 800B1E7C D43CA58C */  lw         $a1, %lo(D_800C3CD4)($a1)
   .L800B1E80:
-    /* A0690 800B1E80 2FC4020C */  jal        func_800B10BC
+    /* A0690 800B1E80 2FC4020C */  jal        _padSioRW2
     /* A0694 800B1E84 21200002 */   addu      $a0, $s0, $zero
     /* A0698 800B1E88 21184000 */  addu       $v1, $v0, $zero
     /* A069C 800B1E8C 0F006004 */  bltz       $v1, .L800B1ECC

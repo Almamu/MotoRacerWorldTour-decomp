@@ -10,7 +10,7 @@ glabel func_80015684
     /* 3EAC 8001569C 1000A2A3 */  sb         $v0, 0x10($sp)
     /* 3EB0 800156A0 1100A0A3 */  sb         $zero, 0x11($sp)
     /* 3EB4 800156A4 1200A2A3 */  sb         $v0, 0x12($sp)
-    /* 3EB8 800156A8 9E9E020C */  jal        func_800A7A78
+    /* 3EB8 800156A8 9E9E020C */  jal        CdMix
     /* 3EBC 800156AC 1300A0A3 */   sb        $zero, 0x13($sp)
     /* 3EC0 800156B0 0D80033C */  lui        $v1, %hi(D_800CC4E8)
     /* 3EC4 800156B4 0C80043C */  lui        $a0, %hi(D_800B8784)

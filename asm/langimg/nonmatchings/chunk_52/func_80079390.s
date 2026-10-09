@@ -3,7 +3,7 @@ nonmatching func_80079390, 0x30
 glabel func_80079390
     /* 67BA0 80079390 E8FFBD27 */  addiu      $sp, $sp, -0x18
     /* 67BA4 80079394 1000BFAF */  sw         $ra, 0x10($sp)
-    /* 67BA8 80079398 B4AA020C */  jal        func_800AAAD0
+    /* 67BA8 80079398 B4AA020C */  jal        VSync
     /* 67BAC 8007939C 01000424 */   addiu     $a0, $zero, 0x1
     /* 67BB0 800793A0 0C80033C */  lui        $v1, %hi(D_800B8870)
     /* 67BB4 800793A4 0C80053C */  lui        $a1, %hi(D_800B886C)

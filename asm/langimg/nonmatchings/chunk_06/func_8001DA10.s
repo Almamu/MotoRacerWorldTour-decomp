@@ -8,7 +8,7 @@ glabel func_8001DA10
     /* C230 8001DA20 0400C010 */  beqz       $a2, .L8001DA34
     /* C234 8001DA24 21280000 */   addu      $a1, $zero, $zero
     /* C238 8001DA28 0000848C */  lw         $a0, 0x0($a0)
-    /* C23C 8001DA2C 56D8020C */  jal        func_800B6158
+    /* C23C 8001DA2C 56D8020C */  jal        memset
     /* C240 8001DA30 80300600 */   sll       $a2, $a2, 2
   .L8001DA34:
     /* C244 8001DA34 1000BF8F */  lw         $ra, 0x10($sp)

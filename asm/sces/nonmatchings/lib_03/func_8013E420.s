@@ -21,7 +21,7 @@ nonmatching func_8013E420, 0x144
 glabel func_8013E420
     /* B8EC 8013E420 E0FFBD27 */  addiu      $sp, $sp, -0x20
     /* B8F0 8013E424 1800BFAF */  sw         $ra, 0x18($sp)
-    /* B8F4 8013E428 22EC040C */  jal        func_8013B088
+    /* B8F4 8013E428 22EC040C */  jal        VSync
     /* B8F8 8013E42C FFFF0424 */   addiu     $a0, $zero, -0x1
     /* B8FC 8013E430 1C80033C */  lui        $v1, %hi(D_801BFD74)
     /* B900 8013E434 74FD638C */  lw         $v1, %lo(D_801BFD74)($v1)
@@ -59,9 +59,9 @@ glabel func_8013E420
     /* B97C 8013E4B0 4CFD428C */  lw         $v0, %lo(D_801BFD4C)($v0)
     /* B980 8013E4B4 0000C68C */  lw         $a2, 0x0($a2)
     /* B984 8013E4B8 0000478C */  lw         $a3, 0x0($v0)
-    /* B988 8013E4BC 082C050C */  jal        func_8014B020
+    /* B988 8013E4BC 082C050C */  jal        printf
     /* B98C 8013E4C0 3F00A530 */   andi      $a1, $a1, 0x3F
-    /* B990 8013E4C4 E7EC040C */  jal        func_8013B39C
+    /* B990 8013E4C4 E7EC040C */  jal        SetIntrMask
     /* B994 8013E4C8 21200000 */   addu      $a0, $zero, $zero
     /* B998 8013E4CC 1C80013C */  lui        $at, %hi(D_801BFD64)
     /* B99C 8013E4D0 64FD20AC */  sw         $zero, %lo(D_801BFD64)($at)
@@ -92,7 +92,7 @@ glabel func_8013E420
     /* BA00 8013E534 000062AC */  sw         $v0, 0x0($v1)
     /* BA04 8013E538 1C80043C */  lui        $a0, %hi(D_801BFD70)
     /* BA08 8013E53C 70FD848C */  lw         $a0, %lo(D_801BFD70)($a0)
-    /* BA0C 8013E540 E7EC040C */  jal        func_8013B39C
+    /* BA0C 8013E540 E7EC040C */  jal        SetIntrMask
     /* BA10 8013E544 00000000 */   nop
     /* BA14 8013E548 55F90408 */  j          .L8013E554
     /* BA18 8013E54C FFFF0224 */   addiu     $v0, $zero, -0x1

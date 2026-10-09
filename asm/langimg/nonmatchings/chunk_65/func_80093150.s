@@ -67,7 +67,7 @@ glabel func_80093150
     /* 819FC 800931EC 00000000 */  nop
     /* 81A00 800931F0 1300AFAB */  swl        $t7, 0x13($sp)
     /* 81A04 800931F4 1000AFBB */  swr        $t7, 0x10($sp)
-    /* 81A08 800931F8 3EB2020C */  jal        func_800AC8F8
+    /* 81A08 800931F8 3EB2020C */  jal        SetDrawOffset
     /* 81A0C 800931FC 1000A527 */   addiu     $a1, $sp, 0x10
     /* 81A10 80093200 0D80023C */  lui        $v0, %hi(D_800CBDC0)
     /* 81A14 80093204 C0BD428C */  lw         $v0, %lo(D_800CBDC0)($v0)
@@ -382,7 +382,7 @@ glabel func_80093150
     /* 81EB4 800936A4 03341700 */  sra        $a2, $s7, 16
     /* 81EB8 800936A8 21186600 */  addu       $v1, $v1, $a2
     /* 81EBC 800936AC 1000A2A7 */  sh         $v0, 0x10($sp)
-    /* 81EC0 800936B0 3EB2020C */  jal        func_800AC8F8
+    /* 81EC0 800936B0 3EB2020C */  jal        SetDrawOffset
     /* 81EC4 800936B4 1200A3A7 */   sh        $v1, 0x12($sp)
     /* 81EC8 800936B8 0D80023C */  lui        $v0, %hi(D_800CBDC0)
     /* 81ECC 800936BC C0BD428C */  lw         $v0, %lo(D_800CBDC0)($v0)

@@ -30,7 +30,7 @@ glabel func_8013DC50
     /* B17C 8013DCB0 3F004230 */  andi       $v0, $v0, 0x3F
     /* B180 8013DCB4 F3FF4310 */  beq        $v0, $v1, .L8013DC84
     /* B184 8013DCB8 00000000 */   nop
-    /* B188 8013DCBC E7EC040C */  jal        func_8013B39C
+    /* B188 8013DCBC E7EC040C */  jal        SetIntrMask
     /* B18C 8013DCC0 21200000 */   addu      $a0, $zero, $zero
     /* B190 8013DCC4 1C80043C */  lui        $a0, %hi(D_801BFC38)
     /* B194 8013DCC8 38FC8424 */  addiu      $a0, $a0, %lo(D_801BFC38)
@@ -74,14 +74,14 @@ glabel func_8013DC50
     /* B224 8013DD58 21284002 */   addu      $a1, $s2, $zero
     /* B228 8013DD5C 1C80043C */  lui        $a0, %hi(D_801BFD68)
     /* B22C 8013DD60 68FD848C */  lw         $a0, %lo(D_801BFD68)($a0)
-    /* B230 8013DD64 E7EC040C */  jal        func_8013B39C
+    /* B230 8013DD64 E7EC040C */  jal        SetIntrMask
     /* B234 8013DD68 00000000 */   nop
     /* B238 8013DD6C B9F70408 */  j          .L8013DEE4
     /* B23C 8013DD70 21100000 */   addu      $v0, $zero, $zero
   .L8013DD74:
     /* B240 8013DD74 1480053C */  lui        $a1, %hi(func_8013DF00)
     /* B244 8013DD78 00DFA524 */  addiu      $a1, $a1, %lo(func_8013DF00)
-    /* B248 8013DD7C BEEC040C */  jal        func_8013B2F8
+    /* B248 8013DD7C BEEC040C */  jal        DMACallback
     /* B24C 8013DD80 02000424 */   addiu     $a0, $zero, 0x2
     /* B250 8013DD84 2A002012 */  beqz       $s1, .L8013DE30
     /* B254 8013DD88 21300000 */   addu      $a2, $zero, $zero
@@ -165,7 +165,7 @@ glabel func_8013DC50
     /* B378 8013DEAC 01004224 */  addiu      $v0, $v0, 0x1
     /* B37C 8013DEB0 3F004230 */  andi       $v0, $v0, 0x3F
     /* B380 8013DEB4 1C80013C */  lui        $at, %hi(D_801BFD60)
-    /* B384 8013DEB8 E7EC040C */  jal        func_8013B39C
+    /* B384 8013DEB8 E7EC040C */  jal        SetIntrMask
     /* B388 8013DEBC 60FD22AC */   sw        $v0, %lo(D_801BFD60)($at)
     /* B38C 8013DEC0 C0F7040C */  jal        func_8013DF00
     /* B390 8013DEC4 00000000 */   nop

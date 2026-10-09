@@ -3,7 +3,7 @@ nonmatching func_80139D14, 0x20
 glabel func_80139D14
     /* 71E0 80139D14 E8FFBD27 */  addiu      $sp, $sp, -0x18
     /* 71E4 80139D18 1000BFAF */  sw         $ra, 0x10($sp)
-    /* 71E8 80139D1C 23E8040C */  jal        func_8013A08C
+    /* 71E8 80139D1C 23E8040C */  jal        StCdInterrupt
     /* 71EC 80139D20 00000000 */   nop
     /* 71F0 80139D24 1000BF8F */  lw         $ra, 0x10($sp)
     /* 71F4 80139D28 1800BD27 */  addiu      $sp, $sp, 0x18

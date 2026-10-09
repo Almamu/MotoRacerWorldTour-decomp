@@ -31,15 +31,15 @@ glabel func_800A6650
     /* 94ECC 800A66BC 21202002 */   addu      $a0, $s1, $zero
     /* 94ED0 800A66C0 69AB020C */  jal        func_800AADA4
     /* 94ED4 800A66C4 00000000 */   nop
-    /* 94ED8 800A66C8 A8D6020C */  jal        func_800B5AA0
+    /* 94ED8 800A66C8 A8D6020C */  jal        FlushCache
     /* 94EDC 800A66CC 00000000 */   nop
     /* 94EE0 800A66D0 0800028E */  lw         $v0, 0x8($s0)
     /* 94EE4 800A66D4 00000000 */  nop
     /* 94EE8 800A66D8 09F84000 */  jalr       $v0
     /* 94EEC 800A66DC 00000000 */   nop
-    /* 94EF0 800A66E0 38AB020C */  jal        func_800AACE0
+    /* 94EF0 800A66E0 38AB020C */  jal        ResetCallback
     /* 94EF4 800A66E4 00000000 */   nop
-    /* 94EF8 800A66E8 F5AE020C */  jal        func_800ABBD4
+    /* 94EF8 800A66E8 F5AE020C */  jal        ResetGraph
     /* 94EFC 800A66EC 03000424 */   addiu     $a0, $zero, 0x3
     /* 94F00 800A66F0 F0E4010C */  jal        func_800793C0
     /* 94F04 800A66F4 21202002 */   addu      $a0, $s1, $zero
@@ -51,11 +51,11 @@ glabel func_800A6650
     /* 94F18 800A6708 21200000 */  addu       $a0, $zero, $zero
     /* 94F1C 800A670C FCBA020C */  jal        func_800AEBF0
     /* 94F20 800A6710 02000524 */   addiu     $a1, $zero, 0x2
-    /* 94F24 800A6714 319D020C */  jal        func_800A74C4
+    /* 94F24 800A6714 319D020C */  jal        CdInit
     /* 94F28 800A6718 00000000 */   nop
     /* 94F2C 800A671C A155000C */  jal        func_80015684
     /* 94F30 800A6720 21200000 */   addu      $a0, $zero, $zero
-    /* 94F34 800A6724 81AF020C */  jal        func_800ABE04
+    /* 94F34 800A6724 81AF020C */  jal        SetDispMask
     /* 94F38 800A6728 21200000 */   addu      $a0, $zero, $zero
     /* 94F3C 800A672C 6800238E */  lw         $v1, 0x68($s1)
     /* 94F40 800A6730 00000000 */  nop
@@ -71,7 +71,7 @@ glabel func_800A6650
     /* 94F68 800A6758 00000000 */  nop
     /* 94F6C 800A675C 09F84000 */  jalr       $v0
     /* 94F70 800A6760 21202402 */   addu      $a0, $s1, $a0
-    /* 94F74 800A6764 81AF020C */  jal        func_800ABE04
+    /* 94F74 800A6764 81AF020C */  jal        SetDispMask
     /* 94F78 800A6768 01000424 */   addiu     $a0, $zero, 0x1
     /* 94F7C 800A676C D4B1010C */  jal        func_8006C750
     /* 94F80 800A6770 00000000 */   nop

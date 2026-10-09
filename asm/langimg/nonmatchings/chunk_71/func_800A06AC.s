@@ -71,7 +71,7 @@ glabel func_800A06AC
     /* 8EFBC 800A07AC 09008012 */  beqz       $s4, .L800A07D4
     /* 8EFC0 800A07B0 21206002 */   addu      $a0, $s3, $zero
     /* 8EFC4 800A07B4 21284002 */  addu       $a1, $s2, $zero
-    /* 8EFC8 800A07B8 46D8020C */  jal        func_800B6118
+    /* 8EFC8 800A07B8 46D8020C */  jal        memcpy
     /* 8EFCC 800A07BC 21302002 */   addu      $a2, $s1, $zero
   .L800A07C0:
     /* 8EFD0 800A07C0 04008012 */  beqz       $s4, .L800A07D4

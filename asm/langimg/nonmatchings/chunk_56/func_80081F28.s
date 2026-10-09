@@ -30,7 +30,7 @@ glabel func_80081F28
     /* 707A0 80081F90 1C0004AE */  sw         $a0, 0x1C($s0)
     /* 707A4 80081F94 21204002 */  addu       $a0, $s2, $zero
     /* 707A8 80081F98 140002AE */  sw         $v0, 0x14($s0)
-    /* 707AC 80081F9C 56D8020C */  jal        func_800B6158
+    /* 707AC 80081F9C 56D8020C */  jal        memset
     /* 707B0 80081FA0 180003AE */   sw        $v1, 0x18($s0)
     /* 707B4 80081FA4 FFFF0324 */  addiu      $v1, $zero, -0x1
     /* 707B8 80081FA8 040043AE */  sw         $v1, 0x4($s2)

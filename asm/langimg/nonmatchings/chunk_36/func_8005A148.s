@@ -152,7 +152,7 @@ glabel func_8005A148
     /* 48B80 8005A370 21280002 */  addu       $a1, $s0, $zero
     /* 48B84 8005A374 0D80063C */  lui        $a2, %hi(D_800D5FC0)
     /* 48B88 8005A378 C05FC68C */  lw         $a2, %lo(D_800D5FC0)($a2)
-    /* 48B8C 8005A37C 96D9020C */  jal        func_800B6658
+    /* 48B8C 8005A37C 96D9020C */  jal        sprintf
     /* 48B90 8005A380 21884000 */   addu      $s1, $v0, $zero
     /* 48B94 8005A384 21282002 */  addu       $a1, $s1, $zero
     /* 48B98 8005A388 0C80063C */  lui        $a2, %hi(D_800C6920)
@@ -163,7 +163,7 @@ glabel func_8005A148
     /* 48BAC 8005A39C 1000A427 */  addiu      $a0, $sp, 0x10
     /* 48BB0 8005A3A0 0D80063C */  lui        $a2, %hi(D_800D5FC4)
     /* 48BB4 8005A3A4 C45FC68C */  lw         $a2, %lo(D_800D5FC4)($a2)
-    /* 48BB8 8005A3A8 96D9020C */  jal        func_800B6658
+    /* 48BB8 8005A3A8 96D9020C */  jal        sprintf
     /* 48BBC 8005A3AC 21280002 */   addu      $a1, $s0, $zero
     /* 48BC0 8005A3B0 21282002 */  addu       $a1, $s1, $zero
     /* 48BC4 8005A3B4 0C80063C */  lui        $a2, %hi(D_800C692C)

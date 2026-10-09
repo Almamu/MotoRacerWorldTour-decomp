@@ -4,7 +4,7 @@ glabel func_80135D34
     /* 3200 80135D34 E8FFBD27 */  addiu      $sp, $sp, -0x18
     /* 3204 80135D38 1000B0AF */  sw         $s0, 0x10($sp)
     /* 3208 80135D3C 1400BFAF */  sw         $ra, 0x14($sp)
-    /* 320C 80135D40 36DB040C */  jal        func_80136CD8
+    /* 320C 80135D40 36DB040C */  jal        CdInit
     /* 3210 80135D44 21808000 */   addu      $s0, $a0, $zero
     /* 3214 80135D48 9DDB040C */  jal        func_80136E74
     /* 3218 80135D4C 21200000 */   addu      $a0, $zero, $zero

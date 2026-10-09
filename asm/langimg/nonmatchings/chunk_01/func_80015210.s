@@ -27,10 +27,10 @@ glabel func_80015210
     /* 3A44 80015234 FF000332 */  andi       $v1, $s0, 0xFF
     /* 3A48 80015238 1400BFAF */  sw         $ra, 0x14($sp)
     /* 3A4C 8001523C 8CC640AC */  sw         $zero, %lo(D_800CC68C)($v0)
-    /* 3A50 80015240 E0D6020C */  jal        func_800B5B80
+    /* 3A50 80015240 E0D6020C */  jal        EnterCriticalSection
     /* 3A54 80015244 CCC483AC */   sw        $v1, %lo(D_800CC4CC)($a0)
     /* 3A58 80015248 0180043C */  lui        $a0, %hi(func_800150E4)
-    /* 3A5C 8001524C AA9D020C */  jal        func_800A76A8
+    /* 3A5C 8001524C AA9D020C */  jal        CdReadyCallback
     /* 3A60 80015250 E4508424 */   addiu     $a0, $a0, %lo(func_800150E4)
     /* 3A64 80015254 0B80043C */  lui        $a0, %hi(D_800B71D8)
     /* 3A68 80015258 D8718424 */  addiu      $a0, $a0, %lo(D_800B71D8)
@@ -64,7 +64,7 @@ glabel func_80015210
     /* 3AD0 800152C0 09000224 */  addiu      $v0, $zero, 0x9
     /* 3AD4 800152C4 448762AC */  sw         $v0, %lo(D_800B8744)($v1)
   .L800152C8:
-    /* 3AD8 800152C8 E4D6020C */  jal        func_800B5B90
+    /* 3AD8 800152C8 E4D6020C */  jal        ExitCriticalSection
     /* 3ADC 800152CC 00000000 */   nop
     /* 3AE0 800152D0 1400BF8F */  lw         $ra, 0x14($sp)
     /* 3AE4 800152D4 1000B08F */  lw         $s0, 0x10($sp)

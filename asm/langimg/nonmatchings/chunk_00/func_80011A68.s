@@ -52,7 +52,7 @@ glabel func_80011A68
     /* 330 80011B20 FEFF6230 */   andi      $v0, $v1, 0xFFFE
     /* 334 80011B24 0A0002A6 */  sh         $v0, 0xA($s0)
     /* 338 80011B28 21200000 */  addu       $a0, $zero, $zero
-    /* 33C 80011B2C 05D1020C */  jal        func_800B4414
+    /* 33C 80011B2C 05D1020C */  jal        SpuSetPitchLFOVoice
     /* 340 80011B30 04283302 */   sllv      $a1, $s3, $s1
   .L80011B34:
     /* 344 80011B34 10005226 */  addiu      $s2, $s2, 0x10
@@ -70,10 +70,10 @@ glabel func_80011A68
     /* 370 80011B60 00000000 */  nop
     /* 374 80011B64 0700A010 */  beqz       $a1, .L80011B84
     /* 378 80011B68 00000000 */   nop
-    /* 37C 80011B6C 2DD0020C */  jal        func_800B40B4
+    /* 37C 80011B6C 2DD0020C */  jal        SpuSetKey
     /* 380 80011B70 21200000 */   addu      $a0, $zero, $zero
     /* 384 80011B74 6458858F */  lw         $a1, %gp_rel(D_800C9F54)($gp)
-    /* 388 80011B78 09CF020C */  jal        func_800B3C24
+    /* 388 80011B78 09CF020C */  jal        SpuSetReverbVoice
     /* 38C 80011B7C 21200000 */   addu      $a0, $zero, $zero
     /* 390 80011B80 645880AF */  sw         $zero, %gp_rel(D_800C9F54)($gp)
   .L80011B84:

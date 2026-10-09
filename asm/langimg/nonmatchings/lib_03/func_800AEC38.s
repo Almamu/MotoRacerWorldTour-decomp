@@ -8,7 +8,7 @@ glabel func_800AEC38
     /* 9D458 800AEC48 00000000 */  nop
     /* 9D45C 800AEC4C 08004010 */  beqz       $v0, .L800AEC70
     /* 9D460 800AEC50 1400BFAF */   sw        $ra, 0x14($sp)
-    /* 9D464 800AEC54 4EBB020C */  jal        func_800AED38
+    /* 9D464 800AEC54 4EBB020C */  jal        StopCARD
     /* 9D468 800AEC58 00000000 */   nop
     /* 9D46C 800AEC5C 17C1020C */  jal        func_800B045C
     /* 9D470 800AEC60 00000000 */   nop

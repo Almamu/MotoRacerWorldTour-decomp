@@ -56,7 +56,7 @@ glabel func_8002D700
     /* 1BFD8 8002D7C8 0C80053C */  lui        $a1, %hi(D_800C4D54)
     /* 1BFDC 8002D7CC 544DA524 */  addiu      $a1, $a1, %lo(D_800C4D54)
   .L8002D7D0:
-    /* 1BFE0 8002D7D0 96D9020C */  jal        func_800B6658
+    /* 1BFE0 8002D7D0 96D9020C */  jal        sprintf
     /* 1BFE4 8002D7D4 21300002 */   addu      $a2, $s0, $zero
     /* 1BFE8 8002D7D8 0600022A */  slti       $v0, $s0, 0x6
   .L8002D7DC:

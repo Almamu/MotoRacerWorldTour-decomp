@@ -23,7 +23,7 @@ glabel func_80135090
     /* 25A4 801350D8 71000724 */  addiu      $a3, $zero, 0x71
     /* 25A8 801350DC 1000A0AF */  sw         $zero, 0x10($sp)
     /* 25AC 801350E0 1400A3AF */  sw         $v1, 0x14($sp)
-    /* 25B0 801350E4 6816050C */  jal        func_801459A0
+    /* 25B0 801350E4 6816050C */  jal        SsUtKeyOn
     /* 25B4 801350E8 1800A3AF */   sw        $v1, 0x18($sp)
   .L801350EC:
     /* 25B8 801350EC 2000BF8F */  lw         $ra, 0x20($sp)

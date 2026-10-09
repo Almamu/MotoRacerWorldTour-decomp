@@ -1115,7 +1115,7 @@ glabel func_8005A59C
     /* 49D9C 8005B58C A06720AC */  sw         $zero, %lo(D_800C67A0)($at)
     /* 49DA0 8005B590 0C80013C */  lui        $at, %hi(D_800C679C)
     /* 49DA4 8005B594 9C6720AC */  sw         $zero, %lo(D_800C679C)($at)
-    /* 49DA8 8005B598 56D8020C */  jal        func_800B6158
+    /* 49DA8 8005B598 56D8020C */  jal        memset
     /* 49DAC 8005B59C 08000624 */   addiu     $a2, $zero, 0x8
     /* 49DB0 8005B5A0 1F00033C */  lui        $v1, (0x1FFFFF >> 16)
     /* 49DB4 8005B5A4 9804848E */  lw         $a0, 0x498($s4)

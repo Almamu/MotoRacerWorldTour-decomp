@@ -17,7 +17,7 @@ glabel OpenArchive
     /* 301C 80135B50 4400BFAF */  sw         $ra, 0x44($sp)
     /* 3020 80135B54 2C00B1AF */  sw         $s1, 0x2C($sp)
     /* 3024 80135B58 2800B0AF */  sw         $s0, 0x28($sp)
-    /* 3028 80135B5C 22EC040C */  jal        func_8013B088
+    /* 3028 80135B5C 22EC040C */  jal        VSync
     /* 302C 80135B60 70DBA2AE */   sw        $v0, %lo(D_8019DB70)($s5)
     /* 3030 80135B64 DDD60408 */  j          .L80135B74
     /* 3034 80135B68 02001024 */   addiu     $s0, $zero, 0x2
@@ -26,14 +26,14 @@ glabel OpenArchive
     /* 303C 80135B70 00000000 */   nop
   .L80135B74:
     /* 3040 80135B74 21206002 */  addu       $a0, $s3, $zero
-    /* 3044 80135B78 C8E2040C */  jal        func_80138B20
+    /* 3044 80135B78 C8E2040C */  jal        CdSearchFile
     /* 3048 80135B7C 21288002 */   addu      $a1, $s4, $zero
     /* 304C 80135B80 21884000 */  addu       $s1, $v0, $zero
     /* 3050 80135B84 F9FF2012 */  beqz       $s1, .L80135B6C
     /* 3054 80135B88 FFFF1026 */   addiu     $s0, $s0, -0x1
   .L80135B8C:
     /* 3058 80135B8C 70DBA0AE */  sw         $zero, %lo(D_8019DB70)($s5)
-    /* 305C 80135B90 22EC040C */  jal        func_8013B088
+    /* 305C 80135B90 22EC040C */  jal        VSync
     /* 3060 80135B94 21200000 */   addu      $a0, $zero, $zero
     /* 3064 80135B98 21002012 */  beqz       $s1, .L80135C20
     /* 3068 80135B9C 1000A527 */   addiu     $a1, $sp, 0x10
@@ -57,14 +57,14 @@ glabel OpenArchive
     /* 30AC 80135BE0 21880000 */   addu      $s1, $zero, $zero
     /* 30B0 80135BE4 08009024 */  addiu      $s0, $a0, 0x8
   .L80135BE8:
-    /* 30B4 80135BE8 05DD040C */  jal        func_80137414
+    /* 30B4 80135BE8 05DD040C */  jal        CdPosToInt
     /* 30B8 80135BEC 1000A427 */   addiu     $a0, $sp, 0x10
     /* 30BC 80135BF0 21280002 */  addu       $a1, $s0, $zero
     /* 30C0 80135BF4 0000048E */  lw         $a0, 0x0($s0)
     /* 30C4 80135BF8 21801302 */  addu       $s0, $s0, $s3
     /* 30C8 80135BFC FF078424 */  addiu      $a0, $a0, 0x7FF
     /* 30CC 80135C00 C2220400 */  srl        $a0, $a0, 11
-    /* 30D0 80135C04 C4DC040C */  jal        func_80137310
+    /* 30D0 80135C04 C4DC040C */  jal        CdIntToPos
     /* 30D4 80135C08 21204400 */   addu      $a0, $v0, $a0
     /* 30D8 80135C0C 0000438E */  lw         $v1, 0x0($s2)
     /* 30DC 80135C10 01003126 */  addiu      $s1, $s1, 0x1

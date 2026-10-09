@@ -8,19 +8,19 @@ glabel func_80133CCC
     /* 11A8 80133CDC 1800BFAF */  sw         $ra, 0x18($sp)
     /* 11AC 80133CE0 04004010 */  beqz       $v0, .L80133CF4
     /* 11B0 80133CE4 1400B1AF */   sw        $s1, 0x14($sp)
-    /* 11B4 80133CE8 23E8040C */  jal        func_8013A08C
+    /* 11B4 80133CE8 23E8040C */  jal        StCdInterrupt
     /* 11B8 80133CEC 00000000 */   nop
     /* 11BC 80133CF0 6C6400AE */  sw         $zero, %lo(D_801C646C)($s0)
   .L80133CF4:
-    /* 11C0 80133CF4 D9F0040C */  jal        func_8013C364
+    /* 11C0 80133CF4 D9F0040C */  jal        DrawSync
     /* 11C4 80133CF8 21200000 */   addu      $a0, $zero, $zero
     /* 11C8 80133CFC 1580033C */  lui        $v1, %hi(D_8014D250)
     /* 11CC 80133D00 50D27124 */  addiu      $s1, $v1, %lo(D_8014D250)
     /* 11D0 80133D04 DCFF3026 */  addiu      $s0, $s1, -0x24
     /* 11D4 80133D08 0C00058E */  lw         $a1, 0xC($s0)
-    /* 11D8 80133D0C 5EF1040C */  jal        func_8013C578
+    /* 11D8 80133D0C 5EF1040C */  jal        LoadImage
     /* 11DC 80133D10 21202002 */   addu      $a0, $s1, $zero
-    /* 11E0 80133D14 D9F0040C */  jal        func_8013C364
+    /* 11E0 80133D14 D9F0040C */  jal        DrawSync
     /* 11E4 80133D18 21200000 */   addu      $a0, $zero, $zero
     /* 11E8 80133D1C ECFF2926 */  addiu      $t1, $s1, -0x14
     /* 11EC 80133D20 24000396 */  lhu        $v1, 0x24($s0)
@@ -46,7 +46,7 @@ glabel func_80133CCC
     /* 123C 80133D70 12280000 */  mflo       $a1
     /* 1240 80133D74 C2170500 */  srl        $v0, $a1, 31
     /* 1244 80133D78 2128A200 */  addu       $a1, $a1, $v0
-    /* 1248 80133D7C 0EEB040C */  jal        func_8013AC38
+    /* 1248 80133D7C 0EEB040C */  jal        DecDCTout
     /* 124C 80133D80 43280500 */   sra       $a1, $a1, 1
     /* 1250 80133D84 6FCF0408 */  j          .L80133DBC
     /* 1254 80133D88 00000000 */   nop

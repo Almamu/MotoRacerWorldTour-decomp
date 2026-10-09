@@ -13,7 +13,7 @@ glabel func_80141978
     /* EE68 8014199C FEFF0524 */  addiu      $a1, $zero, -0x2
     /* EE6C 801419A0 1C80013C */  lui        $at, %hi(D_801BFEDC)
     /* EE70 801419A4 DCFE22AC */  sw         $v0, %lo(D_801BFEDC)($at)
-    /* EE74 801419A8 0F02050C */  jal        func_8014083C
+    /* EE74 801419A8 0F02050C */  jal        _padSioRW
     /* EE78 801419AC 000060A0 */   sb        $zero, 0x0($v1)
     /* EE7C 801419B0 1400BF8F */  lw         $ra, 0x14($sp)
     /* EE80 801419B4 1000B08F */  lw         $s0, 0x10($sp)

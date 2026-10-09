@@ -15,7 +15,7 @@ glabel func_8013E90C
     /* BE04 8013E938 2000BFAF */  sw         $ra, 0x20($sp)
     /* BE08 8013E93C 1000B0AF */  sw         $s0, 0x10($sp)
     /* BE0C 8013E940 0000448E */  lw         $a0, 0x0($s2)
-    /* BE10 8013E944 91FF040C */  jal        func_8013FE44
+    /* BE10 8013E944 91FF040C */  jal        PadInfoMode
     /* BE14 8013E948 21300000 */   addu      $a2, $zero, $zero
     /* BE18 8013E94C 21804000 */  addu       $s0, $v0, $zero
     /* BE1C 8013E950 0E000012 */  beqz       $s0, .L8013E98C
@@ -23,11 +23,11 @@ glabel func_8013E90C
   .L8013E958:
     /* BE24 8013E958 0000448E */  lw         $a0, 0x0($s2)
     /* BE28 8013E95C 21286002 */  addu       $a1, $s3, $zero
-    /* BE2C 8013E960 1200050C */  jal        func_80140048
+    /* BE2C 8013E960 1200050C */  jal        PadSetMainMode
     /* BE30 8013E964 21300000 */   addu      $a2, $zero, $zero
     /* BE34 8013E968 08004014 */  bnez       $v0, .L8013E98C
     /* BE38 8013E96C 21100002 */   addu      $v0, $s0, $zero
-    /* BE3C 8013E970 22EC040C */  jal        func_8013B088
+    /* BE3C 8013E970 22EC040C */  jal        VSync
     /* BE40 8013E974 0A000424 */   addiu     $a0, $zero, 0xA
     /* BE44 8013E978 FFFF3126 */  addiu      $s1, $s1, -0x1
     /* BE48 8013E97C F6FF2106 */  bgez       $s1, .L8013E958

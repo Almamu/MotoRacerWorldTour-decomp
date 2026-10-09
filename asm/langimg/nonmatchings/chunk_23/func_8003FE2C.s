@@ -6,7 +6,7 @@ glabel func_8003FE2C
     /* 2E644 8003FE34 21808000 */  addu       $s0, $a0, $zero
     /* 2E648 8003FE38 1C000426 */  addiu      $a0, $s0, 0x1C
     /* 2E64C 8003FE3C 1400BFAF */  sw         $ra, 0x14($sp)
-    /* 2E650 8003FE40 5ED9020C */  jal        memcpy
+    /* 2E650 8003FE40 5ED9020C */  jal        strncpy
     /* 2E654 8003FE44 3F000624 */   addiu     $a2, $zero, 0x3F
     /* 2E658 8003FE48 1400BF8F */  lw         $ra, 0x14($sp)
     /* 2E65C 8003FE4C 5B0000A2 */  sb         $zero, 0x5B($s0)

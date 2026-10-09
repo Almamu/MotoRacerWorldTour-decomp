@@ -57,7 +57,7 @@ glabel func_80135C54
     /* 31B4 80135CE8 25D70408 */  j          .L80135C94
     /* 31B8 80135CEC FFFF5226 */   addiu     $s2, $s2, -0x1
   .L80135CF0:
-    /* 31BC 80135CF0 082C050C */  jal        func_8014B020
+    /* 31BC 80135CF0 082C050C */  jal        printf
     /* 31C0 80135CF4 98C38424 */   addiu     $a0, $a0, %lo(D_8014C398)
   .L80135CF8:
     /* 31C4 80135CF8 0500A012 */  beqz       $s5, .L80135D10

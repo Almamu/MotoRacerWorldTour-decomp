@@ -25,7 +25,7 @@ glabel func_8003D674
     /* 2BECC 8003D6BC 0C80053C */  lui        $a1, %hi(D_800C4E14)
     /* 2BED0 8003D6C0 F8FFE68C */  lw         $a2, -0x8($a3)
     /* 2BED4 8003D6C4 FCFFF18C */  lw         $s1, -0x4($a3)
-    /* 2BED8 8003D6C8 96D9020C */  jal        func_800B6658
+    /* 2BED8 8003D6C8 96D9020C */  jal        sprintf
     /* 2BEDC 8003D6CC 144EA524 */   addiu     $a1, $a1, %lo(D_800C4E14)
     /* 2BEE0 8003D6D0 21200002 */  addu       $a0, $s0, $zero
     /* 2BEE4 8003D6D4 A4EA000C */  jal        func_8003AA90

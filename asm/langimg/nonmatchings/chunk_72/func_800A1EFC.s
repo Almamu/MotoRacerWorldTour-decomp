@@ -25,7 +25,7 @@ glabel func_800A1EFC
   .L800A1F50:
     /* 90760 800A1F50 40002012 */  beqz       $s1, .L800A2054
     /* 90764 800A1F54 1000A427 */   addiu     $a0, $sp, 0x10
-    /* 90768 800A1F58 1AD9020C */  jal        func_800B6468
+    /* 90768 800A1F58 1AD9020C */  jal        strcpy
     /* 9076C 800A1F5C 21284002 */   addu      $a1, $s2, $zero
     /* 90770 800A1F60 D198020C */  jal        func_800A6344
     /* 90774 800A1F64 1000A427 */   addiu     $a0, $sp, 0x10

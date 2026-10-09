@@ -196,7 +196,7 @@ glabel func_8008E70C
     /* 7D208 8008E9F8 0D80013C */  lui        $at, %hi(D_800C8C70)
     /* 7D20C 8008E9FC 708C22AC */  sw         $v0, %lo(D_800C8C70)($at)
     /* 7D210 8008EA00 12800000 */  mflo       $s0
-    /* 7D214 8008EA04 72B0020C */  jal        func_800AC1C8
+    /* 7D214 8008EA04 72B0020C */  jal        ClearOTagR
     /* 7D218 8008EA08 03831000 */   sra       $s0, $s0, 12
     /* 7D21C 8008EA0C FF00063C */  lui        $a2, (0xFFFFFF >> 16)
     /* 7D220 8008EA10 80101200 */  sll        $v0, $s2, 2

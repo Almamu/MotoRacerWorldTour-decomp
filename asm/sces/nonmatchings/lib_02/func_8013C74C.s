@@ -59,7 +59,7 @@ glabel func_8013C74C
     /* 9CA8 8013C7DC 21380000 */   addu      $a3, $zero, $zero
     /* 9CAC 8013C7E0 0E004426 */  addiu      $a0, $s2, 0xE
     /* 9CB0 8013C7E4 21282002 */  addu       $a1, $s1, $zero
-    /* 9CB4 8013C7E8 6C2B050C */  jal        func_8014ADB0
+    /* 9CB4 8013C7E8 6C2B050C */  jal        memcpy
     /* 9CB8 8013C7EC 5C000624 */   addiu     $a2, $zero, 0x5C
     /* 9CBC 8013C7F0 21102002 */  addu       $v0, $s1, $zero
     /* 9CC0 8013C7F4 1C00BF8F */  lw         $ra, 0x1C($sp)

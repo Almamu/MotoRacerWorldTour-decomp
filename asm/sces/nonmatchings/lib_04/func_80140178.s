@@ -63,7 +63,7 @@ glabel func_80140178
     /* D724 80140258 A0FE20AC */  sw         $zero, %lo(D_801BFEA0)($at)
     /* D728 8014025C 1C80013C */  lui        $at, %hi(D_801BFE9C)
     /* D72C 80140260 9CFE23AC */  sw         $v1, %lo(D_801BFE9C)($at)
-    /* D730 80140264 0601050C */  jal        func_80140418
+    /* D730 80140264 0601050C */  jal        _padInitSioMode
     /* D734 80140268 21204400 */   addu      $a0, $v0, $a0
     /* D738 8014026C 06004014 */  bnez       $v0, .L80140288
     /* D73C 80140270 00000000 */   nop

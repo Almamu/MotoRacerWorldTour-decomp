@@ -35,7 +35,7 @@ glabel func_8003B600
     /* 29E88 8003B678 9C0A22AE */  sw         $v0, 0xA9C($s1)
     /* 29E8C 8003B67C 2130C300 */  addu       $a2, $a2, $v1
     /* 29E90 8003B680 0200C624 */  addiu      $a2, $a2, 0x2
-    /* 29E94 8003B684 56D8020C */  jal        func_800B6158
+    /* 29E94 8003B684 56D8020C */  jal        memset
     /* 29E98 8003B688 80300600 */   sll       $a2, $a2, 2
     /* 29E9C 8003B68C 959C020C */  jal        __builtin_vec_new
     /* 29EA0 8003B690 21200002 */   addu      $a0, $s0, $zero
@@ -46,7 +46,7 @@ glabel func_8003B600
     /* 29EB4 8003B6A4 A40A22AE */  sw         $v0, 0xAA4($s1)
     /* 29EB8 8003B6A8 2130C300 */  addu       $a2, $a2, $v1
     /* 29EBC 8003B6AC 0200C624 */  addiu      $a2, $a2, 0x2
-    /* 29EC0 8003B6B0 56D8020C */  jal        func_800B6158
+    /* 29EC0 8003B6B0 56D8020C */  jal        memset
     /* 29EC4 8003B6B4 80300600 */   sll       $a2, $a2, 2
     /* 29EC8 8003B6B8 B00A238E */  lw         $v1, 0xAB0($s1)
   .L8003B6BC:
@@ -62,7 +62,7 @@ glabel func_8003B600
   .L8003B6E0:
     /* 29EF0 8003B6E0 AC0A268E */  lw         $a2, 0xAAC($s1)
     /* 29EF4 8003B6E4 21288002 */  addu       $a1, $s4, $zero
-    /* 29EF8 8003B6E8 46D8020C */  jal        func_800B6118
+    /* 29EF8 8003B6E8 46D8020C */  jal        memcpy
     /* 29EFC 8003B6EC 80300600 */   sll       $a2, $a2, 2
   .L8003B6F0:
     /* 29F00 8003B6F0 B00A248E */  lw         $a0, 0xAB0($s1)
@@ -72,7 +72,7 @@ glabel func_8003B600
     /* 29F10 8003B700 02008424 */  addiu      $a0, $a0, 0x2
     /* 29F14 8003B704 80200400 */  sll        $a0, $a0, 2
     /* 29F18 8003B708 21204400 */  addu       $a0, $v0, $a0
-    /* 29F1C 8003B70C 46D8020C */  jal        func_800B6118
+    /* 29F1C 8003B70C 46D8020C */  jal        memcpy
     /* 29F20 8003B710 80300600 */   sll       $a2, $a2, 2
     /* 29F24 8003B714 2400BF8F */  lw         $ra, 0x24($sp)
     /* 29F28 8003B718 2000B48F */  lw         $s4, 0x20($sp)

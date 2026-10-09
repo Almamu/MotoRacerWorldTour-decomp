@@ -9,7 +9,7 @@ glabel func_800955C4
     /* 83DE8 800955D8 2801BFAF */  sw         $ra, 0x128($sp)
     /* 83DEC 800955DC 2401B3AF */  sw         $s3, 0x124($sp)
     /* 83DF0 800955E0 1C01B1AF */  sw         $s1, 0x11C($sp)
-    /* 83DF4 800955E4 5ED9020C */  jal        memcpy
+    /* 83DF4 800955E4 5ED9020C */  jal        strncpy
     /* 83DF8 800955E8 1801B0AF */   sw        $s0, 0x118($sp)
     /* 83DFC 800955EC 1000A427 */  addiu      $a0, $sp, 0x10
     /* 83E00 800955F0 D198020C */  jal        func_800A6344

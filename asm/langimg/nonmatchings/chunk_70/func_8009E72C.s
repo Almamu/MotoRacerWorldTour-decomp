@@ -13,7 +13,7 @@ glabel func_8009E72C
     /* 8CF60 8009E750 1C00B3AF */  sw         $s3, 0x1C($sp)
     /* 8CF64 8009E754 1800B2AF */  sw         $s2, 0x18($sp)
     /* 8CF68 8009E758 0000048E */  lw         $a0, 0x0($s0)
-    /* 8CF6C 8009E75C 4098020C */  jal        strcmp
+    /* 8CF6C 8009E75C 4098020C */  jal        func_800A6100
     /* 8CF70 8009E760 05000624 */   addiu     $a2, $zero, 0x5
     /* 8CF74 8009E764 69004014 */  bnez       $v0, .L8009E90C
     /* 8CF78 8009E768 00000000 */   nop

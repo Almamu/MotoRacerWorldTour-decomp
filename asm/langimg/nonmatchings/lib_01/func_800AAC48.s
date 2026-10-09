@@ -39,12 +39,12 @@ glabel func_800AAC48
     /* 99498 800AAC88 0B004314 */  bne        $v0, $v1, .L800AACB8
     /* 9949C 800AAC8C 00000000 */   nop
     /* 994A0 800AAC90 0C80043C */  lui        $a0, %hi(D_800B8224)
-    /* 994A4 800AAC94 E6DB020C */  jal        func_800B6F98
+    /* 994A4 800AAC94 E6DB020C */  jal        puts
     /* 994A8 800AAC98 24828424 */   addiu     $a0, $a0, %lo(D_800B8224)
-    /* 994AC 800AAC9C 0CD7020C */  jal        func_800B5C30
+    /* 994AC 800AAC9C 0CD7020C */  jal        ChangeClearPAD
     /* 994B0 800AACA0 21200000 */   addu      $a0, $zero, $zero
     /* 994B4 800AACA4 03000424 */  addiu      $a0, $zero, 0x3
-    /* 994B8 800AACA8 18D7020C */  jal        func_800B5C60
+    /* 994B8 800AACA8 18D7020C */  jal        ChangeClearRCnt
     /* 994BC 800AACAC 21280000 */   addu      $a1, $zero, $zero
     /* 994C0 800AACB0 34AB0208 */  j          .L800AACD0
     /* 994C4 800AACB4 00000000 */   nop

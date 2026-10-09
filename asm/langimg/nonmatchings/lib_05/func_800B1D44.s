@@ -53,7 +53,7 @@ glabel func_800B1D44
   .L800B1E00:
     /* A0610 800B1E00 36000592 */  lbu        $a1, 0x36($s0)
   .L800B1E04:
-    /* A0614 800B1E04 2FC4020C */  jal        func_800B10BC
+    /* A0614 800B1E04 2FC4020C */  jal        _padSioRW2
     /* A0618 800B1E08 00000000 */   nop
     /* A061C 800B1E0C 1400BF8F */  lw         $ra, 0x14($sp)
     /* A0620 800B1E10 1000B08F */  lw         $s0, 0x10($sp)

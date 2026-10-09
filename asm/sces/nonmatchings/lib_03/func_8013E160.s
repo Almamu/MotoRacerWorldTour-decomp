@@ -5,7 +5,7 @@ glabel func_8013E160
     /* B630 8013E164 1000B0AF */  sw         $s0, 0x10($sp)
     /* B634 8013E168 21808000 */  addu       $s0, $a0, $zero
     /* B638 8013E16C 1400BFAF */  sw         $ra, 0x14($sp)
-    /* B63C 8013E170 E7EC040C */  jal        func_8013B39C
+    /* B63C 8013E170 E7EC040C */  jal        SetIntrMask
     /* B640 8013E174 21200000 */   addu      $a0, $zero, $zero
     /* B644 8013E178 1C80013C */  lui        $at, %hi(D_801BFD64)
     /* B648 8013E17C 64FD20AC */  sw         $zero, %lo(D_801BFD64)($at)
@@ -78,7 +78,7 @@ glabel func_8013E160
   .L8013E27C:
     /* B748 8013E27C 1C80043C */  lui        $a0, %hi(D_801BFD70)
     /* B74C 8013E280 70FD848C */  lw         $a0, %lo(D_801BFD70)($a0)
-    /* B750 8013E284 E7EC040C */  jal        func_8013B39C
+    /* B750 8013E284 E7EC040C */  jal        SetIntrMask
     /* B754 8013E288 00000000 */   nop
     /* B758 8013E28C 07000232 */  andi       $v0, $s0, 0x7
     /* B75C 8013E290 03004014 */  bnez       $v0, .L8013E2A0

@@ -117,7 +117,7 @@ glabel func_80046F2C
     /* 358FC 800470EC 24000624 */  addiu      $a2, $zero, 0x24
     /* 35900 800470F0 0C80033C */  lui        $v1, %hi(D_800C5CB8)
     /* 35904 800470F4 B85C6324 */  addiu      $v1, $v1, %lo(D_800C5CB8)
-    /* 35908 800470F8 56D8020C */  jal        func_800B6158
+    /* 35908 800470F8 56D8020C */  jal        memset
     /* 3590C 800470FC 500063AE */   sw        $v1, 0x50($s3)
     /* 35910 80047100 9401A427 */  addiu      $a0, $sp, 0x194
     /* 35914 80047104 21280000 */  addu       $a1, $zero, $zero
@@ -135,13 +135,13 @@ glabel func_80046F2C
     /* 35944 80047134 8C01AFBB */  swr        $t7, 0x18C($sp)
     /* 35948 80047138 9301B8AB */  swl        $t8, 0x193($sp)
     /* 3594C 8004713C 9001B8BB */  swr        $t8, 0x190($sp)
-    /* 35950 80047140 56D8020C */  jal        func_800B6158
+    /* 35950 80047140 56D8020C */  jal        memset
     /* 35954 80047144 14000624 */   addiu     $a2, $zero, 0x14
     /* 35958 80047148 AC01A427 */  addiu      $a0, $sp, 0x1AC
     /* 3595C 8004714C 21280000 */  addu       $a1, $zero, $zero
     /* 35960 80047150 3400A38E */  lw         $v1, 0x34($s5)
     /* 35964 80047154 24000624 */  addiu      $a2, $zero, 0x24
-    /* 35968 80047158 56D8020C */  jal        func_800B6158
+    /* 35968 80047158 56D8020C */  jal        memset
     /* 3596C 8004715C A801A3AF */   sw        $v1, 0x1A8($sp)
     /* 35970 80047160 B601A427 */  addiu      $a0, $sp, 0x1B6
     /* 35974 80047164 21280000 */  addu       $a1, $zero, $zero
@@ -160,13 +160,13 @@ glabel func_80046F2C
     /* 359A8 80047198 09002E83 */  lb         $t6, 0x9($t9)
     /* 359AC 8004719C 00000000 */  nop
     /* 359B0 800471A0 B501AEA3 */  sb         $t6, 0x1B5($sp)
-    /* 359B4 800471A4 56D8020C */  jal        func_800B6158
+    /* 359B4 800471A4 56D8020C */  jal        memset
     /* 359B8 800471A8 16000624 */   addiu     $a2, $zero, 0x16
     /* 359BC 800471AC D001A427 */  addiu      $a0, $sp, 0x1D0
     /* 359C0 800471B0 21280000 */  addu       $a1, $zero, $zero
     /* 359C4 800471B4 3400438E */  lw         $v1, 0x34($s2)
     /* 359C8 800471B8 24000624 */  addiu      $a2, $zero, 0x24
-    /* 359CC 800471BC 56D8020C */  jal        func_800B6158
+    /* 359CC 800471BC 56D8020C */  jal        memset
     /* 359D0 800471C0 CC01A3AF */   sw        $v1, 0x1CC($sp)
     /* 359D4 800471C4 E001A427 */  addiu      $a0, $sp, 0x1E0
     /* 359D8 800471C8 21280000 */  addu       $a1, $zero, $zero
@@ -189,13 +189,13 @@ glabel func_80046F2C
     /* 35A1C 8004720C 00000000 */  nop
     /* 35A20 80047210 DF01AEAB */  swl        $t6, 0x1DF($sp)
     /* 35A24 80047214 DC01AEBB */  swr        $t6, 0x1DC($sp)
-    /* 35A28 80047218 56D8020C */  jal        func_800B6158
+    /* 35A28 80047218 56D8020C */  jal        memset
     /* 35A2C 8004721C 10000624 */   addiu     $a2, $zero, 0x10
     /* 35A30 80047220 F401A427 */  addiu      $a0, $sp, 0x1F4
     /* 35A34 80047224 21280000 */  addu       $a1, $zero, $zero
     /* 35A38 80047228 3400C38E */  lw         $v1, 0x34($s6)
     /* 35A3C 8004722C 24000624 */  addiu      $a2, $zero, 0x24
-    /* 35A40 80047230 56D8020C */  jal        func_800B6158
+    /* 35A40 80047230 56D8020C */  jal        memset
     /* 35A44 80047234 F001A3AF */   sw        $v1, 0x1F0($sp)
     /* 35A48 80047238 FE01A427 */  addiu      $a0, $sp, 0x1FE
     /* 35A4C 8004723C 21280000 */  addu       $a1, $zero, $zero
@@ -214,13 +214,13 @@ glabel func_80046F2C
     /* 35A80 80047270 09002E83 */  lb         $t6, 0x9($t9)
     /* 35A84 80047274 00000000 */  nop
     /* 35A88 80047278 FD01AEA3 */  sb         $t6, 0x1FD($sp)
-    /* 35A8C 8004727C 56D8020C */  jal        func_800B6158
+    /* 35A8C 8004727C 56D8020C */  jal        memset
     /* 35A90 80047280 16000624 */   addiu     $a2, $zero, 0x16
     /* 35A94 80047284 1802A427 */  addiu      $a0, $sp, 0x218
     /* 35A98 80047288 21280000 */  addu       $a1, $zero, $zero
     /* 35A9C 8004728C 3400E38E */  lw         $v1, 0x34($s7)
     /* 35AA0 80047290 24000624 */  addiu      $a2, $zero, 0x24
-    /* 35AA4 80047294 56D8020C */  jal        func_800B6158
+    /* 35AA4 80047294 56D8020C */  jal        memset
     /* 35AA8 80047298 1402A3AF */   sw        $v1, 0x214($sp)
     /* 35AAC 8004729C 1F02A427 */  addiu      $a0, $sp, 0x21F
     /* 35AB0 800472A0 21280000 */  addu       $a1, $zero, $zero
@@ -237,14 +237,14 @@ glabel func_80046F2C
     /* 35ADC 800472CC 06002E83 */  lb         $t6, 0x6($t9)
     /* 35AE0 800472D0 00000000 */  nop
     /* 35AE4 800472D4 1E02AEA3 */  sb         $t6, 0x21E($sp)
-    /* 35AE8 800472D8 56D8020C */  jal        func_800B6158
+    /* 35AE8 800472D8 56D8020C */  jal        memset
     /* 35AEC 800472DC 19000624 */   addiu     $a2, $zero, 0x19
     /* 35AF0 800472E0 3C02A427 */  addiu      $a0, $sp, 0x23C
     /* 35AF4 800472E4 F802AE8F */  lw         $t6, 0x2F8($sp)
     /* 35AF8 800472E8 21280000 */  addu       $a1, $zero, $zero
     /* 35AFC 800472EC 5000C38D */  lw         $v1, 0x50($t6)
     /* 35B00 800472F0 24000624 */  addiu      $a2, $zero, 0x24
-    /* 35B04 800472F4 56D8020C */  jal        func_800B6158
+    /* 35B04 800472F4 56D8020C */  jal        memset
     /* 35B08 800472F8 3802A3AF */   sw        $v1, 0x238($sp)
     /* 35B0C 800472FC 4F02A427 */  addiu      $a0, $sp, 0x24F
     /* 35B10 80047300 21280000 */  addu       $a1, $zero, $zero
@@ -273,14 +273,14 @@ glabel func_80046F2C
     /* 35B6C 8004735C 1200CF81 */  lb         $t7, 0x12($t6)
     /* 35B70 80047360 00000000 */  nop
     /* 35B74 80047364 4E02AFA3 */  sb         $t7, 0x24E($sp)
-    /* 35B78 80047368 56D8020C */  jal        func_800B6158
+    /* 35B78 80047368 56D8020C */  jal        memset
     /* 35B7C 8004736C 0D000624 */   addiu     $a2, $zero, 0xD
     /* 35B80 80047370 6002A427 */  addiu      $a0, $sp, 0x260
     /* 35B84 80047374 FC02AF8F */  lw         $t7, 0x2FC($sp)
     /* 35B88 80047378 21280000 */  addu       $a1, $zero, $zero
     /* 35B8C 8004737C 5000E38D */  lw         $v1, 0x50($t7)
     /* 35B90 80047380 24000624 */  addiu      $a2, $zero, 0x24
-    /* 35B94 80047384 56D8020C */  jal        func_800B6158
+    /* 35B94 80047384 56D8020C */  jal        memset
     /* 35B98 80047388 5C02A3AF */   sw        $v1, 0x25C($sp)
     /* 35B9C 8004738C 7202A427 */  addiu      $a0, $sp, 0x272
     /* 35BA0 80047390 21280000 */  addu       $a1, $zero, $zero
@@ -306,14 +306,14 @@ glabel func_80046F2C
     /* 35BF0 800473E0 6C02B8BB */  swr        $t8, 0x26C($sp)
     /* 35BF4 800473E4 7002B9A3 */  sb         $t9, 0x270($sp)
     /* 35BF8 800473E8 7102AEA3 */  sb         $t6, 0x271($sp)
-    /* 35BFC 800473EC 56D8020C */  jal        func_800B6158
+    /* 35BFC 800473EC 56D8020C */  jal        memset
     /* 35C00 800473F0 0E000624 */   addiu     $a2, $zero, 0xE
     /* 35C04 800473F4 8402A427 */  addiu      $a0, $sp, 0x284
     /* 35C08 800473F8 0003B88F */  lw         $t8, 0x300($sp)
     /* 35C0C 800473FC 21280000 */  addu       $a1, $zero, $zero
     /* 35C10 80047400 5000038F */  lw         $v1, 0x50($t8)
     /* 35C14 80047404 24000624 */  addiu      $a2, $zero, 0x24
-    /* 35C18 80047408 56D8020C */  jal        func_800B6158
+    /* 35C18 80047408 56D8020C */  jal        memset
     /* 35C1C 8004740C 8002A3AF */   sw        $v1, 0x280($sp)
     /* 35C20 80047410 9402A427 */  addiu      $a0, $sp, 0x294
     /* 35C24 80047414 21280000 */  addu       $a1, $zero, $zero
@@ -336,13 +336,13 @@ glabel func_80046F2C
     /* 35C68 80047458 00000000 */  nop
     /* 35C6C 8004745C 9302B9AB */  swl        $t9, 0x293($sp)
     /* 35C70 80047460 9002B9BB */  swr        $t9, 0x290($sp)
-    /* 35C74 80047464 56D8020C */  jal        func_800B6158
+    /* 35C74 80047464 56D8020C */  jal        memset
     /* 35C78 80047468 10000624 */   addiu     $a2, $zero, 0x10
     /* 35C7C 8004746C A802A427 */  addiu      $a0, $sp, 0x2A8
     /* 35C80 80047470 21280000 */  addu       $a1, $zero, $zero
     /* 35C84 80047474 5000C38F */  lw         $v1, 0x50($fp)
     /* 35C88 80047478 24000624 */  addiu      $a2, $zero, 0x24
-    /* 35C8C 8004747C 56D8020C */  jal        func_800B6158
+    /* 35C8C 8004747C 56D8020C */  jal        memset
     /* 35C90 80047480 A402A3AF */   sw        $v1, 0x2A4($sp)
     /* 35C94 80047484 B502A427 */  addiu      $a0, $sp, 0x2B5
     /* 35C98 80047488 21280000 */  addu       $a1, $zero, $zero
@@ -363,13 +363,13 @@ glabel func_80046F2C
     /* 35CD4 800474C4 0C001983 */  lb         $t9, 0xC($t8)
     /* 35CD8 800474C8 00000000 */  nop
     /* 35CDC 800474CC B402B9A3 */  sb         $t9, 0x2B4($sp)
-    /* 35CE0 800474D0 56D8020C */  jal        func_800B6158
+    /* 35CE0 800474D0 56D8020C */  jal        memset
     /* 35CE4 800474D4 13000624 */   addiu     $a2, $zero, 0x13
     /* 35CE8 800474D8 CC02A427 */  addiu      $a0, $sp, 0x2CC
     /* 35CEC 800474DC 21280000 */  addu       $a1, $zero, $zero
     /* 35CF0 800474E0 5000238E */  lw         $v1, 0x50($s1)
     /* 35CF4 800474E4 24000624 */  addiu      $a2, $zero, 0x24
-    /* 35CF8 800474E8 56D8020C */  jal        func_800B6158
+    /* 35CF8 800474E8 56D8020C */  jal        memset
     /* 35CFC 800474EC C802A3AF */   sw        $v1, 0x2C8($sp)
     /* 35D00 800474F0 D902A427 */  addiu      $a0, $sp, 0x2D9
     /* 35D04 800474F4 21280000 */  addu       $a1, $zero, $zero
@@ -390,7 +390,7 @@ glabel func_80046F2C
     /* 35D40 80047530 0C001983 */  lb         $t9, 0xC($t8)
     /* 35D44 80047534 00000000 */  nop
     /* 35D48 80047538 D802B9A3 */  sb         $t9, 0x2D8($sp)
-    /* 35D4C 8004753C 56D8020C */  jal        func_800B6158
+    /* 35D4C 8004753C 56D8020C */  jal        memset
     /* 35D50 80047540 13000624 */   addiu     $a2, $zero, 0x13
     /* 35D54 80047544 2000A327 */  addiu      $v1, $sp, 0x20
     /* 35D58 80047548 5000628E */  lw         $v0, 0x50($s3)
@@ -615,7 +615,7 @@ glabel func_80046F2C
   .L80047870:
     /* 36080 80047870 685AA524 */  addiu      $a1, $a1, %lo(D_800C5A68)
   .L80047874:
-    /* 36084 80047874 96D9020C */  jal        func_800B6658
+    /* 36084 80047874 96D9020C */  jal        sprintf
     /* 36088 80047878 00000000 */   nop
     /* 3608C 8004787C C801A427 */  addiu      $a0, $sp, 0x1C8
     /* 36090 80047880 8801A527 */  addiu      $a1, $sp, 0x188

@@ -134,7 +134,7 @@ glabel func_8008BCB0
     /* 7A6BC 8008BEAC 8F64020C */  jal        func_8009923C
     /* 7A6C0 8008BEB0 21200002 */   addu      $a0, $s0, $zero
     /* 7A6C4 8008BEB4 00500424 */  addiu      $a0, $zero, 0x5000
-    /* 7A6C8 8008BEB8 5AB9020C */  jal        func_800AE568
+    /* 7A6C8 8008BEB8 5AB9020C */  jal        ratan2
     /* 7A6CC 8008BEBC 21284000 */   addu      $a1, $v0, $zero
     /* 7A6D0 8008BEC0 5800C38E */  lw         $v1, 0x58($s6)
     /* 7A6D4 8008BEC4 00000000 */  nop

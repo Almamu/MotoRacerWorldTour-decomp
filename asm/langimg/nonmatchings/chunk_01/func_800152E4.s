@@ -98,11 +98,11 @@ glabel func_800152E4
     /* 3BC4 800153B4 0C80043C */  lui        $a0, %hi(D_800B8778)
     /* 3BC8 800153B8 01000324 */  addiu      $v1, $zero, 0x1
     /* 3BCC 800153BC 788783AC */  sw         $v1, %lo(D_800B8778)($a0)
-    /* 3BD0 800153C0 E0D6020C */  jal        func_800B5B80
+    /* 3BD0 800153C0 E0D6020C */  jal        EnterCriticalSection
     /* 3BD4 800153C4 00000000 */   nop
-    /* 3BD8 800153C8 AA9D020C */  jal        func_800A76A8
+    /* 3BD8 800153C8 AA9D020C */  jal        CdReadyCallback
     /* 3BDC 800153CC 21200000 */   addu      $a0, $zero, $zero
-    /* 3BE0 800153D0 E4D6020C */  jal        func_800B5B90
+    /* 3BE0 800153D0 E4D6020C */  jal        ExitCriticalSection
     /* 3BE4 800153D4 00000000 */   nop
     /* 3BE8 800153D8 FB540008 */  j          .L800153EC
     /* 3BEC 800153DC 01000224 */   addiu     $v0, $zero, 0x1

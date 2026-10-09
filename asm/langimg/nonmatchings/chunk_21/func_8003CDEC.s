@@ -274,7 +274,7 @@ glabel func_8003CDEC
     /* 2B9D4 8003D1C4 21202002 */  addu       $a0, $s1, $zero
     /* 2B9D8 8003D1C8 21284000 */  addu       $a1, $v0, $zero
   .L8003D1CC:
-    /* 2B9DC 8003D1CC 1AD9020C */  jal        func_800B6468
+    /* 2B9DC 8003D1CC 1AD9020C */  jal        strcpy
     /* 2B9E0 8003D1D0 00000000 */   nop
     /* 2B9E4 8003D1D4 68006282 */  lb         $v0, 0x68($s3)
     /* 2B9E8 8003D1D8 00000000 */  nop
@@ -300,7 +300,7 @@ glabel func_8003CDEC
     /* 2BA2C 8003D21C 0C4EA524 */  addiu      $a1, $a1, %lo(D_800C4E0C)
     /* 2BA30 8003D220 48006626 */  addiu      $a2, $s3, 0x48
     /* 2BA34 8003D224 21381602 */  addu       $a3, $s0, $s6
-    /* 2BA38 8003D228 96D9020C */  jal        func_800B6658
+    /* 2BA38 8003D228 96D9020C */  jal        sprintf
     /* 2BA3C 8003D22C 0900E724 */   addiu     $a3, $a3, 0x9
     /* 2BA40 8003D230 2120E002 */  addu       $a0, $s7, $zero
     /* 2BA44 8003D234 6A006682 */  lb         $a2, 0x6A($s3)

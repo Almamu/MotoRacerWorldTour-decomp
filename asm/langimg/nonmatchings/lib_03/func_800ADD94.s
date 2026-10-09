@@ -5,7 +5,7 @@ glabel func_800ADD94
     /* 9C5A8 800ADD98 1000B0AF */  sw         $s0, 0x10($sp)
     /* 9C5AC 800ADD9C 21808000 */  addu       $s0, $a0, $zero
     /* 9C5B0 800ADDA0 1400BFAF */  sw         $ra, 0x14($sp)
-    /* 9C5B4 800ADDA4 79AB020C */  jal        func_800AADE4
+    /* 9C5B4 800ADDA4 79AB020C */  jal        SetIntrMask
     /* 9C5B8 800ADDA8 21200000 */   addu      $a0, $zero, $zero
     /* 9C5BC 800ADDAC 0C80013C */  lui        $at, %hi(D_800BF36C)
     /* 9C5C0 800ADDB0 6CF320AC */  sw         $zero, %lo(D_800BF36C)($at)
@@ -78,7 +78,7 @@ glabel func_800ADD94
   .L800ADEB0:
     /* 9C6C0 800ADEB0 0C80043C */  lui        $a0, %hi(D_800BF378)
     /* 9C6C4 800ADEB4 78F3848C */  lw         $a0, %lo(D_800BF378)($a0)
-    /* 9C6C8 800ADEB8 79AB020C */  jal        func_800AADE4
+    /* 9C6C8 800ADEB8 79AB020C */  jal        SetIntrMask
     /* 9C6CC 800ADEBC 00000000 */   nop
     /* 9C6D0 800ADEC0 07000232 */  andi       $v0, $s0, 0x7
     /* 9C6D4 800ADEC4 03004014 */  bnez       $v0, .L800ADED4

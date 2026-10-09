@@ -38,7 +38,7 @@ glabel func_80133DD0
     /* 12C4 80133DF8 21100000 */   addu      $v0, $zero, $zero
   .L80133DFC:
     /* 12C8 80133DFC 1000A427 */  addiu      $a0, $sp, 0x10
-    /* 12CC 80133E00 EBE7040C */  jal        func_80139FAC
+    /* 12CC 80133E00 EBE7040C */  jal        StGetNext
     /* 12D0 80133E04 1400A527 */   addiu     $a1, $sp, 0x14
     /* 12D4 80133E08 F9FF4014 */  bnez       $v0, .L80133DF0
     /* 12D8 80133E0C 1580053C */   lui       $a1, %hi(D_8014D0E4)
@@ -97,7 +97,7 @@ glabel func_80133DD0
     /* 13A0 80133ED4 40280300 */  sll        $a1, $v1, 1
     /* 13A4 80133ED8 032C0500 */  sra        $a1, $a1, 16
     /* 13A8 80133EDC 2130A000 */  addu       $a2, $a1, $zero
-    /* 13AC 80133EE0 C014050C */  jal        func_80145300
+    /* 13AC 80133EE0 C014050C */  jal        SsSetSerialVol
     /* 13B0 80133EE4 4CD3E3AC */   sw        $v1, %lo(D_8014D34C)($a3)
     /* 13B4 80133EE8 1400A68F */  lw         $a2, 0x14($sp)
   .L80133EEC:
@@ -108,10 +108,10 @@ glabel func_80133DD0
     /* 13C8 80133EFC 1580043C */   lui       $a0, %hi(D_8014C2F8)
     /* 13CC 80133F00 0000C594 */  lhu        $a1, 0x0($a2)
     /* 13D0 80133F04 21306000 */  addu       $a2, $v1, $zero
-    /* 13D4 80133F08 082C050C */  jal        func_8014B020
+    /* 13D4 80133F08 082C050C */  jal        printf
     /* 13D8 80133F0C F8C28424 */   addiu     $a0, $a0, %lo(D_8014C2F8)
     /* 13DC 80133F10 1000A48F */  lw         $a0, 0x10($sp)
-    /* 13E0 80133F14 AFE7040C */  jal        func_80139EBC
+    /* 13E0 80133F14 AFE7040C */  jal        StFreeRing
     /* 13E4 80133F18 00000000 */   nop
     /* 13E8 80133F1C 28D00408 */  j          .L801340A0
     /* 13EC 80133F20 21100000 */   addu      $v0, $zero, $zero
@@ -129,7 +129,7 @@ glabel func_80133DD0
     /* 1418 80133F4C 1580093C */   lui       $t1, %hi(D_8014D0C8)
   .L80133F50:
     /* 141C 80133F50 1580043C */  lui        $a0, %hi(D_8014C314)
-    /* 1420 80133F54 082C050C */  jal        func_8014B020
+    /* 1420 80133F54 082C050C */  jal        printf
     /* 1424 80133F58 14C38424 */   addiu     $a0, $a0, %lo(D_8014C314)
     /* 1428 80133F5C 28D00408 */  j          .L801340A0
     /* 142C 80133F60 21100000 */   addu      $v0, $zero, $zero

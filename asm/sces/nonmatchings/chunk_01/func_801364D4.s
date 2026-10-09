@@ -3,13 +3,13 @@ nonmatching func_801364D4, 0x6C
 glabel func_801364D4
     /* 39A0 801364D4 E8FFBD27 */  addiu      $sp, $sp, -0x18
     /* 39A4 801364D8 1000BFAF */  sw         $ra, 0x10($sp)
-    /* 39A8 801364DC FF2A050C */  jal        func_8014ABFC
+    /* 39A8 801364DC FF2A050C */  jal        EnterCriticalSection
     /* 39AC 801364E0 00000000 */   nop
-    /* 39B0 801364E4 CAEC040C */  jal        func_8013B328
+    /* 39B0 801364E4 CAEC040C */  jal        VSyncCallback
     /* 39B4 801364E8 21200000 */   addu      $a0, $zero, $zero
-    /* 39B8 801364EC 9BF0040C */  jal        func_8013C26C
+    /* 39B8 801364EC 9BF0040C */  jal        DrawSyncCallback
     /* 39BC 801364F0 21200000 */   addu      $a0, $zero, $zero
-    /* 39C0 801364F4 032B050C */  jal        func_8014AC0C
+    /* 39C0 801364F4 032B050C */  jal        ExitCriticalSection
     /* 39C4 801364F8 00000000 */   nop
     /* 39C8 801364FC 1A80023C */  lui        $v0, %hi(D_8019DB64)
     /* 39CC 80136500 1A80033C */  lui        $v1, %hi(D_8019DA60)

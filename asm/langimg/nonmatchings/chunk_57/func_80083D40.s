@@ -27,7 +27,7 @@ glabel func_80083D40
     /* 725AC 80083D9C F8734224 */  addiu      $v0, $v0, %lo(D_800C73F8)
     /* 725B0 80083DA0 21800202 */  addu       $s0, $s0, $v0
     /* 725B4 80083DA4 0000058E */  lw         $a1, 0x0($s0)
-    /* 725B8 80083DA8 5ED9020C */  jal        memcpy
+    /* 725B8 80083DA8 5ED9020C */  jal        strncpy
     /* 725BC 80083DAC 20000624 */   addiu     $a2, $zero, 0x20
     /* 725C0 80083DB0 21909202 */  addu       $s2, $s4, $s2
     /* 725C4 80083DB4 40281100 */  sll        $a1, $s1, 1

@@ -5,7 +5,7 @@ glabel func_80136DF4
     /* 42C4 80136DF8 1000BFAF */  sw         $ra, 0x10($sp)
     /* 42C8 80136DFC 00F0043C */  lui        $a0, (0xF0000003 >> 16)
     /* 42CC 80136E00 03008434 */  ori        $a0, $a0, (0xF0000003 & 0xFFFF)
-    /* 42D0 80136E04 D72A050C */  jal        func_8014AB5C
+    /* 42D0 80136E04 D72A050C */  jal        DeliverEvent
     /* 42D4 80136E08 40000524 */   addiu     $a1, $zero, 0x40
     /* 42D8 80136E0C 1000BF8F */  lw         $ra, 0x10($sp)
     /* 42DC 80136E10 1800BD27 */  addiu      $sp, $sp, 0x18

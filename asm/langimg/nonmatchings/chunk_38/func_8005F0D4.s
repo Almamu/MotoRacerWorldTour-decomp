@@ -151,7 +151,7 @@ glabel func_8005F0D4
     /* 4DB0C 8005F2FC 0C80043C */   lui       $a0, %hi(D_800C725C)
     /* 4DB10 8005F300 5C728424 */  addiu      $a0, $a0, %lo(D_800C725C)
     /* 4DB14 8005F304 21280000 */  addu       $a1, $zero, $zero
-    /* 4DB18 8005F308 56D8020C */  jal        func_800B6158
+    /* 4DB18 8005F308 56D8020C */  jal        memset
     /* 4DB1C 8005F30C 3C000624 */   addiu     $a2, $zero, 0x3C
     /* 4DB20 8005F310 0C80033C */  lui        $v1, %hi(D_800BC884)
     /* 4DB24 8005F314 84C8638C */  lw         $v1, %lo(D_800BC884)($v1)
@@ -163,7 +163,7 @@ glabel func_8005F0D4
     /* 4DB38 8005F328 0C80043C */   lui       $a0, %hi(D_800C7298)
     /* 4DB3C 8005F32C 98728424 */  addiu      $a0, $a0, %lo(D_800C7298)
     /* 4DB40 8005F330 21280000 */  addu       $a1, $zero, $zero
-    /* 4DB44 8005F334 56D8020C */  jal        func_800B6158
+    /* 4DB44 8005F334 56D8020C */  jal        memset
     /* 4DB48 8005F338 54000624 */   addiu     $a2, $zero, 0x54
   .L8005F33C:
     /* 4DB4C 8005F33C 01000424 */  addiu      $a0, $zero, 0x1

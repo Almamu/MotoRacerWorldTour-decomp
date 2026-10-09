@@ -26,7 +26,7 @@ glabel func_80049B9C
     /* 383FC 80049BEC 0000668C */  lw         $a2, 0x0($v1)
     /* 38400 80049BF0 0D80043C */  lui        $a0, %hi(D_800CB1C0)
     /* 38404 80049BF4 C0B18424 */  addiu      $a0, $a0, %lo(D_800CB1C0)
-    /* 38408 80049BF8 96D9020C */  jal        func_800B6658
+    /* 38408 80049BF8 96D9020C */  jal        sprintf
     /* 3840C 80049BFC 00000000 */   nop
     /* 38410 80049C00 1800BF8F */  lw         $ra, 0x18($sp)
     /* 38414 80049C04 0D80023C */  lui        $v0, %hi(D_800CB1C0)

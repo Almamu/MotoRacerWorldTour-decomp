@@ -64,7 +64,7 @@ glabel func_80019FF8
     /* 88E8 8001A0D8 2800A427 */  addiu      $a0, $sp, 0x28
     /* 88EC 8001A0DC 0C80053C */  lui        $a1, %hi(D_800C498C)
     /* 88F0 8001A0E0 46006686 */  lh         $a2, 0x46($s3)
-    /* 88F4 8001A0E4 96D9020C */  jal        func_800B6658
+    /* 88F4 8001A0E4 96D9020C */  jal        sprintf
     /* 88F8 8001A0E8 8C49A524 */   addiu     $a1, $a1, %lo(D_800C498C)
     /* 88FC 8001A0EC 80000224 */  addiu      $v0, $zero, 0x80
     /* 8900 8001A0F0 0D80013C */  lui        $at, %hi(D_800C885D)

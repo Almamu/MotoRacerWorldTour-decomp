@@ -204,7 +204,7 @@ glabel func_8003D334
     /* 2BDE0 8003D5D0 0800E426 */  addiu      $a0, $s7, 0x8
     /* 2BDE4 8003D5D4 21284000 */  addu       $a1, $v0, $zero
   .L8003D5D8:
-    /* 2BDE8 8003D5D8 1AD9020C */  jal        func_800B6468
+    /* 2BDE8 8003D5D8 1AD9020C */  jal        strcpy
     /* 2BDEC 8003D5DC 00000000 */   nop
   .L8003D5E0:
     /* 2BDF0 8003D5E0 3000BF8F */  lw         $ra, 0x30($sp)

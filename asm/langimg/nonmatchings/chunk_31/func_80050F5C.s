@@ -37,7 +37,7 @@ glabel func_80050F5C
     /* 3F7E8 80050FD8 0580073C */  lui        $a3, %hi(func_80050F1C)
     /* 3F7EC 80050FDC 21280002 */  addu       $a1, $s0, $zero
     /* 3F7F0 80050FE0 04000624 */  addiu      $a2, $zero, 0x4
-    /* 3F7F4 80050FE4 62D8020C */  jal        func_800B6188
+    /* 3F7F4 80050FE4 62D8020C */  jal        qsort
     /* 3F7F8 80050FE8 1C0FE724 */   addiu     $a3, $a3, %lo(func_80050F1C)
     /* 3F7FC 80050FEC FFFF0426 */  addiu      $a0, $s0, -0x1
   .L80050FF0:

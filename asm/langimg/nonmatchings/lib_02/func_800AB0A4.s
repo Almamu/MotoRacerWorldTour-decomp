@@ -50,30 +50,30 @@ glabel func_800AB0A4
     /* 99964 800AB154 08002016 */  bnez       $s1, .L800AB178
     /* 99968 800AB158 04000224 */   addiu     $v0, $zero, 0x4
     /* 9996C 800AB15C 0100502E */  sltiu      $s0, $s2, 0x1
-    /* 99970 800AB160 0CD7020C */  jal        func_800B5C30
+    /* 99970 800AB160 0CD7020C */  jal        ChangeClearPAD
     /* 99974 800AB164 21200002 */   addu      $a0, $s0, $zero
     /* 99978 800AB168 03000424 */  addiu      $a0, $zero, 0x3
-    /* 9997C 800AB16C 18D7020C */  jal        func_800B5C60
+    /* 9997C 800AB16C 18D7020C */  jal        ChangeClearRCnt
     /* 99980 800AB170 21280002 */   addu      $a1, $s0, $zero
     /* 99984 800AB174 04000224 */  addiu      $v0, $zero, 0x4
   .L800AB178:
     /* 99988 800AB178 05002216 */  bne        $s1, $v0, .L800AB190
     /* 9998C 800AB17C 05000224 */   addiu     $v0, $zero, 0x5
     /* 99990 800AB180 21200000 */  addu       $a0, $zero, $zero
-    /* 99994 800AB184 18D7020C */  jal        func_800B5C60
+    /* 99994 800AB184 18D7020C */  jal        ChangeClearRCnt
     /* 99998 800AB188 0100452E */   sltiu     $a1, $s2, 0x1
     /* 9999C 800AB18C 05000224 */  addiu      $v0, $zero, 0x5
   .L800AB190:
     /* 999A0 800AB190 05002216 */  bne        $s1, $v0, .L800AB1A8
     /* 999A4 800AB194 06000224 */   addiu     $v0, $zero, 0x6
     /* 999A8 800AB198 01000424 */  addiu      $a0, $zero, 0x1
-    /* 999AC 800AB19C 18D7020C */  jal        func_800B5C60
+    /* 999AC 800AB19C 18D7020C */  jal        ChangeClearRCnt
     /* 999B0 800AB1A0 0100452E */   sltiu     $a1, $s2, 0x1
     /* 999B4 800AB1A4 06000224 */  addiu      $v0, $zero, 0x6
   .L800AB1A8:
     /* 999B8 800AB1A8 03002216 */  bne        $s1, $v0, .L800AB1B8
     /* 999BC 800AB1AC 02000424 */   addiu     $a0, $zero, 0x2
-    /* 999C0 800AB1B0 18D7020C */  jal        func_800B5C60
+    /* 999C0 800AB1B0 18D7020C */  jal        ChangeClearRCnt
     /* 999C4 800AB1B4 0100452E */   sltiu     $a1, $s2, 0x1
   .L800AB1B8:
     /* 999C8 800AB1B8 0C80023C */  lui        $v0, %hi(D_800BE5D8)

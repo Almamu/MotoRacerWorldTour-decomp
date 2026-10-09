@@ -41,23 +41,23 @@ glabel func_800A9D58
     /* 985C4 800A9DB4 01004230 */  andi       $v0, $v0, 0x1
     /* 985C8 800A9DB8 0D004010 */  beqz       $v0, .L800A9DF0
     /* 985CC 800A9DBC 1000A427 */   addiu     $a0, $sp, 0x10
-    /* 985D0 800A9DC0 B69E020C */  jal        func_800A7AD8
+    /* 985D0 800A9DC0 B69E020C */  jal        CdDataCallback
     /* 985D4 800A9DC4 21200000 */   addu      $a0, $zero, $zero
     /* 985D8 800A9DC8 1000A427 */  addiu      $a0, $sp, 0x10
-    /* 985DC 800A9DCC AE9E020C */  jal        func_800A7AB8
+    /* 985DC 800A9DCC AE9E020C */  jal        CdGetSector2
     /* 985E0 800A9DD0 03000524 */   addiu     $a1, $zero, 0x3
-    /* 985E4 800A9DD4 BF9E020C */  jal        func_800A7AFC
+    /* 985E4 800A9DD4 BF9E020C */  jal        CdDataSync
     /* 985E8 800A9DD8 21200000 */   addu      $a0, $zero, $zero
     /* 985EC 800A9DDC 0B80043C */  lui        $a0, %hi(func_800A9FCC)
-    /* 985F0 800A9DE0 B69E020C */  jal        func_800A7AD8
+    /* 985F0 800A9DE0 B69E020C */  jal        CdDataCallback
     /* 985F4 800A9DE4 CC9F8424 */   addiu     $a0, $a0, %lo(func_800A9FCC)
     /* 985F8 800A9DE8 7EA70208 */  j          .L800A9DF8
     /* 985FC 800A9DEC 00000000 */   nop
   .L800A9DF0:
-    /* 98600 800A9DF0 A69E020C */  jal        func_800A7A98
+    /* 98600 800A9DF0 A69E020C */  jal        CdGetSector
     /* 98604 800A9DF4 03000524 */   addiu     $a1, $zero, 0x3
   .L800A9DF8:
-    /* 98608 800A9DF8 089F020C */  jal        func_800A7C20
+    /* 98608 800A9DF8 089F020C */  jal        CdPosToInt
     /* 9860C 800A9DFC 1000A427 */   addiu     $a0, $sp, 0x10
     /* 98610 800A9E00 0C80103C */  lui        $s0, %hi(D_800BD360)
     /* 98614 800A9E04 60D31026 */  addiu      $s0, $s0, %lo(D_800BD360)
@@ -66,7 +66,7 @@ glabel func_800A9D58
     /* 98620 800A9E10 07004310 */  beq        $v0, $v1, .L800A9E30
     /* 98624 800A9E14 00000000 */   nop
     /* 98628 800A9E18 0C80043C */  lui        $a0, %hi(D_800B8184)
-    /* 9862C 800A9E1C E6DB020C */  jal        func_800B6F98
+    /* 9862C 800A9E1C E6DB020C */  jal        puts
     /* 98630 800A9E20 84818424 */   addiu     $a0, $a0, %lo(D_800B8184)
     /* 98634 800A9E24 E0FF0326 */  addiu      $v1, $s0, -0x20
     /* 98638 800A9E28 FFFF0224 */  addiu      $v0, $zero, -0x1
@@ -82,7 +82,7 @@ glabel func_800A9D58
     /* 9865C 800A9E4C 48D34224 */  addiu      $v0, $v0, %lo(D_800BD348)
     /* 98660 800A9E50 0000448C */  lw         $a0, 0x0($v0)
     /* 98664 800A9E54 0800458C */  lw         $a1, 0x8($v0)
-    /* 98668 800A9E58 AE9E020C */  jal        func_800A7AB8
+    /* 98668 800A9E58 AE9E020C */  jal        CdGetSector2
     /* 9866C 800A9E5C 00000000 */   nop
     /* 98670 800A9E60 B0A70208 */  j          .L800A9EC0
     /* 98674 800A9E64 00000000 */   nop
@@ -91,7 +91,7 @@ glabel func_800A9D58
     /* 9867C 800A9E6C 48D31026 */  addiu      $s0, $s0, %lo(D_800BD348)
     /* 98680 800A9E70 0000048E */  lw         $a0, 0x0($s0)
     /* 98684 800A9E74 0800058E */  lw         $a1, 0x8($s0)
-    /* 98688 800A9E78 A69E020C */  jal        func_800A7A98
+    /* 98688 800A9E78 A69E020C */  jal        CdGetSector
     /* 9868C 800A9E7C 00000000 */   nop
     /* 98690 800A9E80 F8FF0426 */  addiu      $a0, $s0, -0x8
     /* 98694 800A9E84 0800028E */  lw         $v0, 0x8($s0)
@@ -111,7 +111,7 @@ glabel func_800A9D58
   .L800A9EBC:
     /* 986CC 800A9EBC 140062AC */  sw         $v0, 0x14($v1)
   .L800A9EC0:
-    /* 986D0 800A9EC0 B4AA020C */  jal        func_800AAAD0
+    /* 986D0 800A9EC0 B4AA020C */  jal        VSync
     /* 986D4 800A9EC4 FFFF0424 */   addiu     $a0, $zero, -0x1
     /* 986D8 800A9EC8 0C80103C */  lui        $s0, %hi(D_800BD340)
     /* 986DC 800A9ECC 40D31026 */  addiu      $s0, $s0, %lo(D_800BD340)
@@ -123,7 +123,7 @@ glabel func_800A9D58
     /* 986F4 800A9EE4 27A8020C */  jal        func_800AA09C
     /* 986F8 800A9EE8 01000424 */   addiu     $a0, $zero, 0x1
   .L800A9EEC:
-    /* 986FC 800A9EEC B4AA020C */  jal        func_800AAAD0
+    /* 986FC 800A9EEC B4AA020C */  jal        VSync
     /* 98700 800A9EF0 FFFF0424 */   addiu     $a0, $zero, -0x1
     /* 98704 800A9EF4 1C00038E */  lw         $v1, 0x1C($s0)
     /* 98708 800A9EF8 00000000 */  nop
@@ -137,7 +137,7 @@ glabel func_800A9D58
     /* 98724 800A9F14 00000000 */  nop
     /* 98728 800A9F18 09004010 */  beqz       $v0, .L800A9F40
     /* 9872C 800A9F1C 00000000 */   nop
-    /* 98730 800A9F20 B4AA020C */  jal        func_800AAAD0
+    /* 98730 800A9F20 B4AA020C */  jal        VSync
     /* 98734 800A9F24 FFFF0424 */   addiu     $a0, $zero, -0x1
     /* 98738 800A9F28 1C00038E */  lw         $v1, 0x1C($s0)
     /* 9873C 800A9F2C 00000000 */  nop
@@ -147,7 +147,7 @@ glabel func_800A9D58
     /* 9874C 800A9F3C 00000000 */   nop
   .L800A9F40:
     /* 98750 800A9F40 2C00048E */  lw         $a0, 0x2C($s0)
-    /* 98754 800A9F44 AA9D020C */  jal        func_800A76A8
+    /* 98754 800A9F44 AA9D020C */  jal        CdReadyCallback
     /* 98758 800A9F48 00000000 */   nop
     /* 9875C 800A9F4C 0C80023C */  lui        $v0, %hi(D_800BCF84)
     /* 98760 800A9F50 84CF428C */  lw         $v0, %lo(D_800BCF84)($v0)
@@ -156,14 +156,14 @@ glabel func_800A9D58
     /* 9876C 800A9F5C 04004010 */  beqz       $v0, .L800A9F70
     /* 98770 800A9F60 00000000 */   nop
     /* 98774 800A9F64 3000048E */  lw         $a0, 0x30($s0)
-    /* 98778 800A9F68 B69E020C */  jal        func_800A7AD8
+    /* 98778 800A9F68 B69E020C */  jal        CdDataCallback
     /* 9877C 800A9F6C 00000000 */   nop
   .L800A9F70:
     /* 98780 800A9F70 0B80043C */  lui        $a0, %hi(func_800A9D24)
-    /* 98784 800A9F74 A59D020C */  jal        func_800A7694
+    /* 98784 800A9F74 A59D020C */  jal        CdSyncCallback
     /* 98788 800A9F78 249D8424 */   addiu     $a0, $a0, %lo(func_800A9D24)
     /* 9878C 800A9F7C 09000424 */  addiu      $a0, $zero, 0x9
-    /* 98790 800A9F80 FE9D020C */  jal        func_800A77F8
+    /* 98790 800A9F80 FE9D020C */  jal        CdControlF
     /* 98794 800A9F84 21280000 */   addu      $a1, $zero, $zero
     /* 98798 800A9F88 0C80033C */  lui        $v1, %hi(D_800BCF80)
     /* 9879C 800A9F8C 80CF638C */  lw         $v1, %lo(D_800BCF80)($v1)

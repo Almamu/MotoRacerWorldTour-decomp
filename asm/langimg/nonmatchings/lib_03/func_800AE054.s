@@ -21,7 +21,7 @@ nonmatching func_800AE054, 0x144
 glabel func_800AE054
     /* 9C864 800AE054 E0FFBD27 */  addiu      $sp, $sp, -0x20
     /* 9C868 800AE058 1800BFAF */  sw         $ra, 0x18($sp)
-    /* 9C86C 800AE05C B4AA020C */  jal        func_800AAAD0
+    /* 9C86C 800AE05C B4AA020C */  jal        VSync
     /* 9C870 800AE060 FFFF0424 */   addiu     $a0, $zero, -0x1
     /* 9C874 800AE064 0C80033C */  lui        $v1, %hi(D_800BF37C)
     /* 9C878 800AE068 7CF3638C */  lw         $v1, %lo(D_800BF37C)($v1)
@@ -61,7 +61,7 @@ glabel func_800AE054
     /* 9C8FC 800AE0EC 0000478C */  lw         $a3, 0x0($v0)
     /* 9C900 800AE0F0 6997020C */  jal        func_800A5DA4
     /* 9C904 800AE0F4 3F00A530 */   andi      $a1, $a1, 0x3F
-    /* 9C908 800AE0F8 79AB020C */  jal        func_800AADE4
+    /* 9C908 800AE0F8 79AB020C */  jal        SetIntrMask
     /* 9C90C 800AE0FC 21200000 */   addu      $a0, $zero, $zero
     /* 9C910 800AE100 0C80013C */  lui        $at, %hi(D_800BF36C)
     /* 9C914 800AE104 6CF320AC */  sw         $zero, %lo(D_800BF36C)($at)
@@ -92,7 +92,7 @@ glabel func_800AE054
     /* 9C978 800AE168 000062AC */  sw         $v0, 0x0($v1)
     /* 9C97C 800AE16C 0C80043C */  lui        $a0, %hi(D_800BF378)
     /* 9C980 800AE170 78F3848C */  lw         $a0, %lo(D_800BF378)($a0)
-    /* 9C984 800AE174 79AB020C */  jal        func_800AADE4
+    /* 9C984 800AE174 79AB020C */  jal        SetIntrMask
     /* 9C988 800AE178 00000000 */   nop
     /* 9C98C 800AE17C 62B80208 */  j          .L800AE188
     /* 9C990 800AE180 FFFF0224 */   addiu     $v0, $zero, -0x1

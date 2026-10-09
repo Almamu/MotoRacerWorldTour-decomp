@@ -26,7 +26,7 @@ glabel func_800A5530
     /* 93D98 800A5588 21204000 */  addu       $a0, $v0, $zero
     /* 93D9C 800A558C 0D80053C */  lui        $a1, %hi(D_800C9F38)
     /* 93DA0 800A5590 389FA524 */  addiu      $a1, $a1, %lo(D_800C9F38)
-    /* 93DA4 800A5594 32D8020C */  jal        func_800B60C8
+    /* 93DA4 800A5594 32D8020C */  jal        bcmp
     /* 93DA8 800A5598 04000624 */   addiu     $a2, $zero, 0x4
     /* 93DAC 800A559C 38004014 */  bnez       $v0, .L800A5680
     /* 93DB0 800A55A0 00000000 */   nop
@@ -113,7 +113,7 @@ glabel func_800A5530
     /* 93ED8 800A56C8 1C00A98F */  lw         $t1, 0x1C($sp)
     /* 93EDC 800A56CC 21802002 */  addu       $s0, $s1, $zero
     /* 93EE0 800A56D0 21280002 */  addu       $a1, $s0, $zero
-    /* 93EE4 800A56D4 FED8020C */  jal        func_800B63F8
+    /* 93EE4 800A56D4 FED8020C */  jal        strcmp
     /* 93EE8 800A56D8 21203401 */   addu      $a0, $t1, $s4
     /* 93EEC 800A56DC 0A004010 */  beqz       $v0, .L800A5708
     /* 93EF0 800A56E0 01005226 */   addiu     $s2, $s2, 0x1

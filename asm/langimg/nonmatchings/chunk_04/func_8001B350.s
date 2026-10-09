@@ -25,7 +25,7 @@ glabel func_8001B350
     /* 9BB4 8001B3A4 2400AC8F */  lw         $t4, 0x24($sp)
     /* 9BB8 8001B3A8 1800ABAF */  sw         $t3, 0x18($sp)
     /* 9BBC 8001B3AC 1C00ACAF */  sw         $t4, 0x1C($sp)
-    /* 9BC0 8001B3B0 56D8020C */  jal        func_800B6158
+    /* 9BC0 8001B3B0 56D8020C */  jal        memset
     /* 9BC4 8001B3B4 0A001724 */   addiu     $s7, $zero, 0xA
     /* 9BC8 8001B3B8 0000D08E */  lw         $s0, 0x0($s6)
     /* 9BCC 8001B3BC 00000000 */  nop

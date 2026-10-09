@@ -10,7 +10,7 @@ glabel func_800AB28C
     /* 99AB4 800AB2A4 00000000 */  nop
     /* 99AB8 800AB2A8 11004014 */  bnez       $v0, .L800AB2F0
     /* 99ABC 800AB2AC 00000000 */   nop
-    /* 99AC0 800AB2B0 DCD6020C */  jal        func_800B5B70
+    /* 99AC0 800AB2B0 DCD6020C */  jal        HookEntryInt
     /* 99AC4 800AB2B4 38000426 */   addiu     $a0, $s0, 0x38
     /* 99AC8 800AB2B8 0C80043C */  lui        $a0, %hi(D_800BE5D8)
     /* 99ACC 800AB2BC D8E5848C */  lw         $a0, %lo(D_800BE5D8)($a0)
@@ -22,7 +22,7 @@ glabel func_800AB28C
     /* 99AE4 800AB2D4 DCE5638C */  lw         $v1, %lo(D_800BE5DC)($v1)
     /* 99AE8 800AB2D8 3400028E */  lw         $v0, 0x34($s0)
     /* 99AEC 800AB2DC 00000000 */  nop
-    /* 99AF0 800AB2E0 E4D6020C */  jal        func_800B5B90
+    /* 99AF0 800AB2E0 E4D6020C */  jal        ExitCriticalSection
     /* 99AF4 800AB2E4 000062AC */   sw        $v0, 0x0($v1)
     /* 99AF8 800AB2E8 BDAC0208 */  j          .L800AB2F4
     /* 99AFC 800AB2EC 21100002 */   addu      $v0, $s0, $zero

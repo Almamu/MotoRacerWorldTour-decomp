@@ -39,12 +39,12 @@ glabel func_8013B200
     /* 870C 8013B240 0B004314 */  bne        $v0, $v1, .L8013B270
     /* 8710 8013B244 00000000 */   nop
     /* 8714 8013B248 1580043C */  lui        $a0, %hi(D_8014C930)
-    /* 8718 8013B24C 6230050C */  jal        func_8014C188
+    /* 8718 8013B24C 6230050C */  jal        puts
     /* 871C 8013B250 30C98424 */   addiu     $a0, $a0, %lo(D_8014C930)
-    /* 8720 8013B254 072B050C */  jal        func_8014AC1C
+    /* 8720 8013B254 072B050C */  jal        ChangeClearPAD
     /* 8724 8013B258 21200000 */   addu      $a0, $zero, $zero
     /* 8728 8013B25C 03000424 */  addiu      $a0, $zero, 0x3
-    /* 872C 8013B260 132B050C */  jal        func_8014AC4C
+    /* 872C 8013B260 132B050C */  jal        ChangeClearRCnt
     /* 8730 8013B264 21280000 */   addu      $a1, $zero, $zero
     /* 8734 8013B268 A2EC0408 */  j          .L8013B288
     /* 8738 8013B26C 00000000 */   nop

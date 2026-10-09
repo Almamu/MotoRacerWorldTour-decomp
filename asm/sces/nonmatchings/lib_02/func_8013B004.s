@@ -24,7 +24,7 @@ glabel func_8013B004
     /* 84D8 8013B00C 1580043C */  lui        $a0, %hi(D_8014C91C)
     /* 84DC 8013B010 1CC98424 */  addiu      $a0, $a0, %lo(D_8014C91C)
     /* 84E0 8013B014 1000BFAF */  sw         $ra, 0x10($sp)
-    /* 84E4 8013B018 082C050C */  jal        func_8014B020
+    /* 84E4 8013B018 082C050C */  jal        printf
     /* 84E8 8013B01C 00000000 */   nop
     /* 84EC 8013B020 1C80033C */  lui        $v1, %hi(D_801BDEBC)
     /* 84F0 8013B024 BCDE638C */  lw         $v1, %lo(D_801BDEBC)($v1)

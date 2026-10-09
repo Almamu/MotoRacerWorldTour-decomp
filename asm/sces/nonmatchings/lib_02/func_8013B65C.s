@@ -50,30 +50,30 @@ glabel func_8013B65C
     /* 8BD8 8013B70C 08002016 */  bnez       $s1, .L8013B730
     /* 8BDC 8013B710 04000224 */   addiu     $v0, $zero, 0x4
     /* 8BE0 8013B714 0100502E */  sltiu      $s0, $s2, 0x1
-    /* 8BE4 8013B718 072B050C */  jal        func_8014AC1C
+    /* 8BE4 8013B718 072B050C */  jal        ChangeClearPAD
     /* 8BE8 8013B71C 21200002 */   addu      $a0, $s0, $zero
     /* 8BEC 8013B720 03000424 */  addiu      $a0, $zero, 0x3
-    /* 8BF0 8013B724 132B050C */  jal        func_8014AC4C
+    /* 8BF0 8013B724 132B050C */  jal        ChangeClearRCnt
     /* 8BF4 8013B728 21280002 */   addu      $a1, $s0, $zero
     /* 8BF8 8013B72C 04000224 */  addiu      $v0, $zero, 0x4
   .L8013B730:
     /* 8BFC 8013B730 05002216 */  bne        $s1, $v0, .L8013B748
     /* 8C00 8013B734 05000224 */   addiu     $v0, $zero, 0x5
     /* 8C04 8013B738 21200000 */  addu       $a0, $zero, $zero
-    /* 8C08 8013B73C 132B050C */  jal        func_8014AC4C
+    /* 8C08 8013B73C 132B050C */  jal        ChangeClearRCnt
     /* 8C0C 8013B740 0100452E */   sltiu     $a1, $s2, 0x1
     /* 8C10 8013B744 05000224 */  addiu      $v0, $zero, 0x5
   .L8013B748:
     /* 8C14 8013B748 05002216 */  bne        $s1, $v0, .L8013B760
     /* 8C18 8013B74C 06000224 */   addiu     $v0, $zero, 0x6
     /* 8C1C 8013B750 01000424 */  addiu      $a0, $zero, 0x1
-    /* 8C20 8013B754 132B050C */  jal        func_8014AC4C
+    /* 8C20 8013B754 132B050C */  jal        ChangeClearRCnt
     /* 8C24 8013B758 0100452E */   sltiu     $a1, $s2, 0x1
     /* 8C28 8013B75C 06000224 */  addiu      $v0, $zero, 0x6
   .L8013B760:
     /* 8C2C 8013B760 03002216 */  bne        $s1, $v0, .L8013B770
     /* 8C30 8013B764 02000424 */   addiu     $a0, $zero, 0x2
-    /* 8C34 8013B768 132B050C */  jal        func_8014AC4C
+    /* 8C34 8013B768 132B050C */  jal        ChangeClearRCnt
     /* 8C38 8013B76C 0100452E */   sltiu     $a1, $s2, 0x1
   .L8013B770:
     /* 8C3C 8013B770 1C80023C */  lui        $v0, %hi(D_801BEFD0)

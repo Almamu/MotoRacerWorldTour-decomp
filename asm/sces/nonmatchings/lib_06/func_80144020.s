@@ -112,28 +112,28 @@ glabel func_80144020
     /* 11668 8014419C 00000000 */  nop
     /* 1166C 801441A0 08004010 */  beqz       $v0, .L801441C4
     /* 11670 801441A4 00000000 */   nop
-    /* 11674 801441A8 FF2A050C */  jal        func_8014ABFC
+    /* 11674 801441A8 FF2A050C */  jal        EnterCriticalSection
     /* 11678 801441AC 00000000 */   nop
     /* 1167C 801441B0 F8FF048E */  lw         $a0, -0x8($s0)
-    /* 11680 801441B4 CAEC040C */  jal        func_8013B328
+    /* 11680 801441B4 CAEC040C */  jal        VSyncCallback
     /* 11684 801441B8 00000000 */   nop
     /* 11688 801441BC 8C100508 */  j          .L80144230
     /* 1168C 801441C0 00000000 */   nop
   .L801441C4:
-    /* 11690 801441C4 FF2A050C */  jal        func_8014ABFC
+    /* 11690 801441C4 FF2A050C */  jal        EnterCriticalSection
     /* 11694 801441C8 00000000 */   nop
     /* 11698 801441CC 3E2B050C */  jal        func_8014ACF8
     /* 1169C 801441D0 21204002 */   addu      $a0, $s2, $zero
     /* 116A0 801441D4 21204002 */  addu       $a0, $s2, $zero
     /* 116A4 801441D8 FFFF2532 */  andi       $a1, $s1, 0xFFFF
-    /* 116A8 801441DC 172B050C */  jal        func_8014AC5C
+    /* 116A8 801441DC 172B050C */  jal        SetRCnt
     /* 116AC 801441E0 00100624 */   addiu     $a2, $zero, 0x1000
     /* 116B0 801441E4 02000482 */  lb         $a0, 0x2($s0)
     /* 116B4 801441E8 00000000 */  nop
     /* 116B8 801441EC 09008014 */  bnez       $a0, .L80144214
     /* 116BC 801441F0 00000000 */   nop
     /* 116C0 801441F4 21200000 */  addu       $a0, $zero, $zero
-    /* 116C4 801441F8 B2EC040C */  jal        func_8013B2C8
+    /* 116C4 801441F8 B2EC040C */  jal        InterruptCallback
     /* 116C8 801441FC 21280000 */   addu      $a1, $zero, $zero
     /* 116CC 80144200 02000482 */  lb         $a0, 0x2($s0)
     /* 116D0 80144204 1480053C */  lui        $a1, %hi(func_80144290)
@@ -147,10 +147,10 @@ glabel func_80144020
     /* 116EC 80144220 DC42A524 */   addiu     $a1, $a1, %lo(func_801442DC)
     /* 116F0 80144224 F8FF058E */  lw         $a1, -0x8($s0)
   .L80144228:
-    /* 116F4 80144228 B2EC040C */  jal        func_8013B2C8
+    /* 116F4 80144228 B2EC040C */  jal        InterruptCallback
     /* 116F8 8014422C 00000000 */   nop
   .L80144230:
-    /* 116FC 80144230 032B050C */  jal        func_8014AC0C
+    /* 116FC 80144230 032B050C */  jal        ExitCriticalSection
     /* 11700 80144234 00000000 */   nop
   .L80144238:
     /* 11704 80144238 1C00BF8F */  lw         $ra, 0x1C($sp)

@@ -8,7 +8,7 @@ glabel func_80085888
     /* 740A8 80085898 2188A000 */  addu       $s1, $a1, $zero
     /* 740AC 8008589C 21280000 */  addu       $a1, $zero, $zero
     /* 740B0 800858A0 1800BFAF */  sw         $ra, 0x18($sp)
-    /* 740B4 800858A4 56D8020C */  jal        func_800B6158
+    /* 740B4 800858A4 56D8020C */  jal        memset
     /* 740B8 800858A8 34000624 */   addiu     $a2, $zero, 0x34
     /* 740BC 800858AC 0D80033C */  lui        $v1, %hi(D_800CC030)
     /* 740C0 800858B0 30C06324 */  addiu      $v1, $v1, %lo(D_800CC030)

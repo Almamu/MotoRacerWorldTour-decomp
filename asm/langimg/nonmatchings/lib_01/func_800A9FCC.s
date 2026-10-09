@@ -24,7 +24,7 @@ glabel func_800A9FCC
     /* 9882C 800AA01C 1B004014 */  bnez       $v0, .L800AA08C
     /* 98830 800AA020 00000000 */   nop
     /* 98834 800AA024 2C00048E */  lw         $a0, 0x2C($s0)
-    /* 98838 800AA028 AA9D020C */  jal        func_800A76A8
+    /* 98838 800AA028 AA9D020C */  jal        CdReadyCallback
     /* 9883C 800AA02C 00000000 */   nop
     /* 98840 800AA030 0C80023C */  lui        $v0, %hi(D_800BCF84)
     /* 98844 800AA034 84CF428C */  lw         $v0, %lo(D_800BCF84)($v0)
@@ -33,14 +33,14 @@ glabel func_800A9FCC
     /* 98850 800AA040 04004010 */  beqz       $v0, .L800AA054
     /* 98854 800AA044 00000000 */   nop
     /* 98858 800AA048 3000048E */  lw         $a0, 0x30($s0)
-    /* 9885C 800AA04C B69E020C */  jal        func_800A7AD8
+    /* 9885C 800AA04C B69E020C */  jal        CdDataCallback
     /* 98860 800AA050 00000000 */   nop
   .L800AA054:
     /* 98864 800AA054 0B80043C */  lui        $a0, %hi(func_800A9D24)
-    /* 98868 800AA058 A59D020C */  jal        func_800A7694
+    /* 98868 800AA058 A59D020C */  jal        CdSyncCallback
     /* 9886C 800AA05C 249D8424 */   addiu     $a0, $a0, %lo(func_800A9D24)
     /* 98870 800AA060 09000424 */  addiu      $a0, $zero, 0x9
-    /* 98874 800AA064 FE9D020C */  jal        func_800A77F8
+    /* 98874 800AA064 FE9D020C */  jal        CdControlF
     /* 98878 800AA068 21280000 */   addu      $a1, $zero, $zero
     /* 9887C 800AA06C 0C80033C */  lui        $v1, %hi(D_800BCF80)
     /* 98880 800AA070 80CF638C */  lw         $v1, %lo(D_800BCF80)($v1)

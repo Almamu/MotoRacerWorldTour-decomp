@@ -1,0 +1,18 @@
+nonmatching _padWaitRXready, 0x28
+
+glabel _padWaitRXready
+    /* E220 80140D54 1C80033C */  lui        $v1, %hi(D_801BFEC0)
+    /* E224 80140D58 C0FE638C */  lw         $v1, %lo(D_801BFEC0)($v1)
+    /* E228 80140D5C 00000000 */  nop
+  .L80140D60:
+    /* E22C 80140D60 04006294 */  lhu        $v0, 0x4($v1)
+    /* E230 80140D64 00000000 */  nop
+    /* E234 80140D68 02004230 */  andi       $v0, $v0, 0x2
+    /* E238 80140D6C FCFF4010 */  beqz       $v0, .L80140D60
+    /* E23C 80140D70 00000000 */   nop
+    /* E240 80140D74 0800E003 */  jr         $ra
+    /* E244 80140D78 00000000 */   nop
+endlabel _padWaitRXready
+    /* E248 80140D7C 00000000 */  nop
+    /* E24C 80140D80 00000000 */  nop
+    /* E250 80140D84 00000000 */  nop

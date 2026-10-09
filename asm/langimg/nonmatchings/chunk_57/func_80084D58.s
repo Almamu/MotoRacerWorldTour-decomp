@@ -26,7 +26,7 @@ glabel func_80084D58
     /* 735BC 80084DAC 0D80043C */  lui        $a0, %hi(D_800D4798)
     /* 735C0 80084DB0 98478424 */  addiu      $a0, $a0, %lo(D_800D4798)
     /* 735C4 80084DB4 0D80053C */  lui        $a1, %hi(D_800C8B50)
-    /* 735C8 80084DB8 96D9020C */  jal        func_800B6658
+    /* 735C8 80084DB8 96D9020C */  jal        sprintf
     /* 735CC 80084DBC 508BA524 */   addiu     $a1, $a1, %lo(D_800C8B50)
     /* 735D0 80084DC0 0D80043C */  lui        $a0, %hi(D_800C886C)
     /* 735D4 80084DC4 6C88848C */  lw         $a0, %lo(D_800C886C)($a0)

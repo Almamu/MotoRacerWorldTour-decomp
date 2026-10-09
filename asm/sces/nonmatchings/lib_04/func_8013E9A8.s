@@ -17,7 +17,7 @@ glabel func_8013E9A8
   .L8013E9DC:
     /* BEA8 8013E9DC 1D80043C */  lui        $a0, %hi(D_801CE678)
     /* BEAC 8013E9E0 78E68424 */  addiu      $a0, $a0, %lo(D_801CE678)
-    /* BEB0 8013E9E4 EA07050C */  jal        func_80141FA8
+    /* BEB0 8013E9E4 EA07050C */  jal        PadInitDirect
     /* BEB4 8013E9E8 22008524 */   addiu     $a1, $a0, 0x22
     /* BEB8 8013E9EC 1D80033C */  lui        $v1, %hi(D_801CE6D8)
     /* BEBC 8013E9F0 1C80023C */  lui        $v0, %hi(D_801BFE0C)
@@ -38,7 +38,7 @@ glabel func_8013E9A8
     /* BEF4 8013EA28 02000624 */  addiu      $a2, $zero, 0x2
     /* BEF8 8013EA2C 04003126 */  addiu      $s1, $s1, 0x4
     /* BEFC 8013EA30 21800602 */  addu       $s0, $s0, $a2
-    /* BF00 8013EA34 2400050C */  jal        func_80140090
+    /* BF00 8013EA34 2400050C */  jal        PadSetAct
     /* BF04 8013EA38 01005226 */   addiu     $s2, $s2, 0x1
     /* BF08 8013EA3C 2A105302 */  slt        $v0, $s2, $s3
     /* BF0C 8013EA40 F7FF4014 */  bnez       $v0, .L8013EA20

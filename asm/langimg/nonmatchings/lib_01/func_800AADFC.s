@@ -36,20 +36,20 @@ glabel func_800AADFC
     /* 99688 800AAE78 84D51026 */  addiu      $s0, $s0, %lo(D_800BD584)
     /* 9968C 800AAE7C FCFF0426 */  addiu      $a0, $s0, -0x4
     /* 99690 800AAE80 DC0F0226 */  addiu      $v0, $s0, 0xFDC
-    /* 99694 800AAE84 DCD6020C */  jal        func_800B5B70
+    /* 99694 800AAE84 DCD6020C */  jal        HookEntryInt
     /* 99698 800AAE88 000002AE */   sw        $v0, 0x0($s0)
     /* 9969C 800AAE8C 01000224 */  addiu      $v0, $zero, 0x1
-    /* 996A0 800AAE90 CAAC020C */  jal        func_800AB328
+    /* 996A0 800AAE90 CAAC020C */  jal        startIntrVSync
     /* 996A4 800AAE94 C4FF02A6 */   sh        $v0, -0x3C($s0)
     /* 996A8 800AAE98 0C80033C */  lui        $v1, %hi(D_800BE5D0)
     /* 996AC 800AAE9C D0E5638C */  lw         $v1, %lo(D_800BE5D0)($v1)
-    /* 996B0 800AAEA0 12AD020C */  jal        func_800AB448
+    /* 996B0 800AAEA0 12AD020C */  jal        startIntrDMA
     /* 996B4 800AAEA4 140062AC */   sw        $v0, 0x14($v1)
     /* 996B8 800AAEA8 0C80043C */  lui        $a0, %hi(D_800BE5D0)
     /* 996BC 800AAEAC D0E5848C */  lw         $a0, %lo(D_800BE5D0)($a0)
-    /* 996C0 800AAEB0 B2D6020C */  jal        func_800B5AC8
+    /* 996C0 800AAEB0 B2D6020C */  jal        _96_remove
     /* 996C4 800AAEB4 040082AC */   sw        $v0, 0x4($a0)
-    /* 996C8 800AAEB8 E4D6020C */  jal        func_800B5B90
+    /* 996C8 800AAEB8 E4D6020C */  jal        ExitCriticalSection
     /* 996CC 800AAEBC C4FF1026 */   addiu     $s0, $s0, -0x3C
     /* 996D0 800AAEC0 21100002 */  addu       $v0, $s0, $zero
   .L800AAEC4:

@@ -37,15 +37,15 @@ glabel func_80082840
     /* 710D0 800828C0 C80000A2 */  sb         $zero, 0xC8($s0)
     /* 710D4 800828C4 B80000A2 */  sb         $zero, 0xB8($s0)
     /* 710D8 800828C8 D80000A2 */  sb         $zero, 0xD8($s0)
-    /* 710DC 800828CC 56D8020C */  jal        func_800B6158
+    /* 710DC 800828CC 56D8020C */  jal        memset
     /* 710E0 800828D0 E80000A2 */   sb        $zero, 0xE8($s0)
     /* 710E4 800828D4 00010426 */  addiu      $a0, $s0, 0x100
     /* 710E8 800828D8 21280000 */  addu       $a1, $zero, $zero
-    /* 710EC 800828DC 56D8020C */  jal        func_800B6158
+    /* 710EC 800828DC 56D8020C */  jal        memset
     /* 710F0 800828E0 08000624 */   addiu     $a2, $zero, 0x8
     /* 710F4 800828E4 08010426 */  addiu      $a0, $s0, 0x108
     /* 710F8 800828E8 21280000 */  addu       $a1, $zero, $zero
-    /* 710FC 800828EC 56D8020C */  jal        func_800B6158
+    /* 710FC 800828EC 56D8020C */  jal        memset
     /* 71100 800828F0 08000624 */   addiu     $a2, $zero, 0x8
     /* 71104 800828F4 1400BF8F */  lw         $ra, 0x14($sp)
     /* 71108 800828F8 1000B08F */  lw         $s0, 0x10($sp)

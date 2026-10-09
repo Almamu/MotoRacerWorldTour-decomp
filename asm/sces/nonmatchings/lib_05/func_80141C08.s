@@ -49,13 +49,13 @@ glabel func_80141C08
     /* F17C 80141CB0 09F84000 */  jalr       $v0
     /* F180 80141CB4 01000524 */   addiu     $a1, $zero, 0x1
     /* F184 80141CB8 21202002 */  addu       $a0, $s1, $zero
-    /* F188 80141CBC 9302050C */  jal        func_80140A4C
+    /* F188 80141CBC 9302050C */  jal        _padSioRW2
     /* F18C 80141CC0 FF004530 */   andi      $a1, $v0, 0xFF
     /* F190 80141CC4 AC004004 */  bltz       $v0, .L80141F78
     /* F194 80141CC8 00000000 */   nop
-    /* F198 80141CCC B20A050C */  jal        func_80142AC8
+    /* F198 80141CCC B20A050C */  jal        setRC2wait
     /* F19C 80141CD0 3C000424 */   addiu     $a0, $zero, 0x3C
-    /* F1A0 80141CD4 3103050C */  jal        func_80140CC4
+    /* F1A0 80141CD4 3103050C */  jal        _padClrIntSio0
     /* F1A4 80141CD8 00000000 */   nop
     /* F1A8 80141CDC 62004010 */  beqz       $v0, .L80141E68
     /* F1AC 80141CE0 01001026 */   addiu     $s0, $s0, 0x1
@@ -154,13 +154,13 @@ glabel func_80141C08
     /* F300 80141E34 09F84000 */  jalr       $v0
     /* F304 80141E38 21288002 */   addu      $a1, $s4, $zero
     /* F308 80141E3C 21202002 */  addu       $a0, $s1, $zero
-    /* F30C 80141E40 0F02050C */  jal        func_8014083C
+    /* F30C 80141E40 0F02050C */  jal        _padSioRW
     /* F310 80141E44 FF004530 */   andi      $a1, $v0, 0xFF
     /* F314 80141E48 4B004004 */  bltz       $v0, .L80141F78
     /* F318 80141E4C 00000000 */   nop
-    /* F31C 80141E50 B20A050C */  jal        func_80142AC8
+    /* F31C 80141E50 B20A050C */  jal        setRC2wait
     /* F320 80141E54 3C000424 */   addiu     $a0, $zero, 0x3C
-    /* F324 80141E58 3103050C */  jal        func_80140CC4
+    /* F324 80141E58 3103050C */  jal        _padClrIntSio0
     /* F328 80141E5C 00000000 */   nop
     /* F32C 80141E60 03004014 */  bnez       $v0, .L80141E70
     /* F330 80141E64 00000000 */   nop
@@ -194,7 +194,7 @@ glabel func_80141C08
     /* F390 80141EC4 09F84000 */  jalr       $v0
     /* F394 80141EC8 21288002 */   addu      $a1, $s4, $zero
     /* F398 80141ECC 21202002 */  addu       $a0, $s1, $zero
-    /* F39C 80141ED0 0F02050C */  jal        func_8014083C
+    /* F39C 80141ED0 0F02050C */  jal        _padSioRW
     /* F3A0 80141ED4 FF004530 */   andi      $a1, $v0, 0xFF
     /* F3A4 80141ED8 27004004 */  bltz       $v0, .L80141F78
     /* F3A8 80141EDC 00000000 */   nop
@@ -205,9 +205,9 @@ glabel func_80141C08
     /* F3BC 80141EF0 00000000 */  nop
     /* F3C0 80141EF4 07005010 */  beq        $v0, $s0, .L80141F14
     /* F3C4 80141EF8 00000000 */   nop
-    /* F3C8 80141EFC B20A050C */  jal        func_80142AC8
+    /* F3C8 80141EFC B20A050C */  jal        setRC2wait
     /* F3CC 80141F00 3C000424 */   addiu     $a0, $zero, 0x3C
-    /* F3D0 80141F04 3103050C */  jal        func_80140CC4
+    /* F3D0 80141F04 3103050C */  jal        _padClrIntSio0
     /* F3D4 80141F08 00000000 */   nop
     /* F3D8 80141F0C 1A004010 */  beqz       $v0, .L80141F78
     /* F3DC 80141F10 FDFF0224 */   addiu     $v0, $zero, -0x3
@@ -220,7 +220,7 @@ glabel func_80141C08
     /* F3F4 80141F28 E2FF401C */  bgtz       $v0, .L80141EB4
     /* F3F8 80141F2C D4FE22AC */   sw        $v0, %lo(D_801BFED4)($at)
   .L80141F30:
-    /* F3FC 80141F30 5503050C */  jal        func_80140D54
+    /* F3FC 80141F30 5503050C */  jal        _padWaitRXready
     /* F400 80141F34 00000000 */   nop
     /* F404 80141F38 44002392 */  lbu        $v1, 0x44($s1)
     /* F408 80141F3C 00000000 */  nop

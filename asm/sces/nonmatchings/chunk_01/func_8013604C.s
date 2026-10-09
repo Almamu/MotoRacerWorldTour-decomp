@@ -5,14 +5,14 @@ glabel func_8013604C
     /* 351C 80136050 1000BFAF */  sw         $ra, 0x10($sp)
     /* 3520 80136054 291A050C */  jal        func_801468A4
     /* 3524 80136058 00000000 */   nop
-    /* 3528 8013605C E20A050C */  jal        func_80142B88
+    /* 3528 8013605C E20A050C */  jal        SpuClearReverbWorkArea
     /* 352C 80136060 05000424 */   addiu     $a0, $zero, 0x5
-    /* 3530 80136064 CE19050C */  jal        func_80146738
+    /* 3530 80136064 CE19050C */  jal        SsUtSetReverbType
     /* 3534 80136068 05000424 */   addiu     $a0, $zero, 0x5
     /* 3538 8013606C 20000424 */  addiu      $a0, $zero, 0x20
-    /* 353C 80136070 3E17050C */  jal        func_80145CF8
+    /* 353C 80136070 3E17050C */  jal        SsUtSetReverbDepth
     /* 3540 80136074 20000524 */   addiu     $a1, $zero, 0x20
-    /* 3544 80136078 311A050C */  jal        func_801468C4
+    /* 3544 80136078 311A050C */  jal        SsUtReverbOn
     /* 3548 8013607C 00000000 */   nop
     /* 354C 80136080 1000BF8F */  lw         $ra, 0x10($sp)
     /* 3550 80136084 00000000 */  nop

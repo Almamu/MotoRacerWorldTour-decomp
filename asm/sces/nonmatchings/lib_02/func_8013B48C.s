@@ -46,9 +46,9 @@ glabel func_8013B48C
     /* 8994 8013B4C8 00000000 */  nop
     /* 8998 8013B4CC 00004594 */  lhu        $a1, 0x0($v0)
     /* 899C 8013B4D0 1580043C */  lui        $a0, %hi(D_8014C974)
-    /* 89A0 8013B4D4 082C050C */  jal        func_8014B020
+    /* 89A0 8013B4D4 082C050C */  jal        printf
     /* 89A4 8013B4D8 74C98424 */   addiu     $a0, $a0, %lo(D_8014C974)
-    /* 89A8 8013B4DC F32A050C */  jal        func_8014ABCC
+    /* 89A8 8013B4DC F32A050C */  jal        ReturnFromException
     /* 89AC 8013B4E0 00000000 */   nop
   .L8013B4E4:
     /* 89B0 8013B4E4 1C80043C */  lui        $a0, %hi(D_801BEFCC)
@@ -129,7 +129,7 @@ glabel func_8013B48C
     /* 8AC8 8013B5FC 90C98424 */  addiu      $a0, $a0, %lo(D_8014C990)
     /* 8ACC 8013B600 0000A594 */  lhu        $a1, 0x0($a1)
     /* 8AD0 8013B604 0000C694 */  lhu        $a2, 0x0($a2)
-    /* 8AD4 8013B608 082C050C */  jal        func_8014B020
+    /* 8AD4 8013B608 082C050C */  jal        printf
     /* 8AD8 8013B60C 00000000 */   nop
     /* 8ADC 8013B610 1C80023C */  lui        $v0, %hi(D_801BEFCC)
     /* 8AE0 8013B614 CCEF428C */  lw         $v0, %lo(D_801BEFCC)($v0)
@@ -142,7 +142,7 @@ glabel func_8013B48C
     /* 8AF8 8013B62C D8EF20AC */  sw         $zero, %lo(D_801BEFD8)($at)
   .L8013B630:
     /* 8AFC 8013B630 1C80013C */  lui        $at, %hi(D_801BDF42)
-    /* 8B00 8013B634 F32A050C */  jal        func_8014ABCC
+    /* 8B00 8013B634 F32A050C */  jal        ReturnFromException
     /* 8B04 8013B638 42DF20A4 */   sh        $zero, %lo(D_801BDF42)($at)
     /* 8B08 8013B63C 2400BF8F */  lw         $ra, 0x24($sp)
     /* 8B0C 8013B640 2000B48F */  lw         $s4, 0x20($sp)

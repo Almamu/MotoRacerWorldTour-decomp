@@ -23,7 +23,7 @@ glabel func_80089A3C
   .L80089A84:
     /* 78294 80089A84 21200002 */  addu       $a0, $s0, $zero
     /* 78298 80089A88 21280000 */  addu       $a1, $zero, $zero
-    /* 7829C 80089A8C 56D8020C */  jal        func_800B6158
+    /* 7829C 80089A8C 56D8020C */  jal        memset
     /* 782A0 80089A90 10000624 */   addiu     $a2, $zero, 0x10
     /* 782A4 80089A94 1400BF8F */  lw         $ra, 0x14($sp)
     /* 782A8 80089A98 1000B08F */  lw         $s0, 0x10($sp)

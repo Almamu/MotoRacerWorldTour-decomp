@@ -18,23 +18,23 @@ glabel func_80136130
     /* 3634 80136168 4400BFAF */  sw         $ra, 0x44($sp)
     /* 3638 8013616C 3000B4AF */  sw         $s4, 0x30($sp)
     /* 363C 80136170 2400B1AF */  sw         $s1, 0x24($sp)
-    /* 3640 80136174 27F0040C */  jal        func_8013C09C
+    /* 3640 80136174 27F0040C */  jal        ResetGraph
     /* 3644 80136178 2000B0AF */   sw        $s0, 0x20($sp)
-    /* 3648 8013617C 84F0040C */  jal        func_8013C210
+    /* 3648 8013617C 84F0040C */  jal        SetGraphDebug
     /* 364C 80136180 21200000 */   addu      $a0, $zero, $zero
-    /* 3650 80136184 FF2A050C */  jal        func_8014ABFC
+    /* 3650 80136184 FF2A050C */  jal        EnterCriticalSection
     /* 3654 80136188 00000000 */   nop
     /* 3658 8013618C 1380043C */  lui        $a0, %hi(func_801365F0)
-    /* 365C 80136190 CAEC040C */  jal        func_8013B328
+    /* 365C 80136190 CAEC040C */  jal        VSyncCallback
     /* 3660 80136194 F0658424 */   addiu     $a0, $a0, %lo(func_801365F0)
     /* 3664 80136198 1380043C */  lui        $a0, %hi(func_801365C0)
-    /* 3668 8013619C 9BF0040C */  jal        func_8013C26C
+    /* 3668 8013619C 9BF0040C */  jal        DrawSyncCallback
     /* 366C 801361A0 C0658424 */   addiu     $a0, $a0, %lo(func_801365C0)
-    /* 3670 801361A4 032B050C */  jal        func_8014AC0C
+    /* 3670 801361A4 032B050C */  jal        ExitCriticalSection
     /* 3674 801361A8 00000000 */   nop
-    /* 3678 801361AC D7F9040C */  jal        func_8013E75C
+    /* 3678 801361AC D7F9040C */  jal        InitGeom
     /* 367C 801361B0 00000000 */   nop
-    /* 3680 801361B4 F9F9040C */  jal        func_8013E7E4
+    /* 3680 801361B4 F9F9040C */  jal        SetGeomScreen
     /* 3684 801361B8 00010424 */   addiu     $a0, $zero, 0x100
     /* 3688 801361BC 0101422A */  slti       $v0, $s2, 0x101
     /* 368C 801361C0 1F004010 */  beqz       $v0, .L80136240
@@ -44,13 +44,13 @@ glabel func_80136130
     /* 369C 801361D0 21280000 */  addu       $a1, $zero, $zero
     /* 36A0 801361D4 21300000 */  addu       $a2, $zero, $zero
     /* 36A4 801361D8 21386002 */  addu       $a3, $s3, $zero
-    /* 36A8 801361DC 95F9040C */  jal        func_8013E654
+    /* 36A8 801361DC 95F9040C */  jal        SetDefDrawEnv
     /* 36AC 801361E0 1000B2AF */   sw        $s2, 0x10($sp)
     /* 36B0 801361E4 5C000426 */  addiu      $a0, $s0, 0x5C
     /* 36B4 801361E8 21280000 */  addu       $a1, $zero, $zero
     /* 36B8 801361EC 00010624 */  addiu      $a2, $zero, 0x100
     /* 36BC 801361F0 21386002 */  addu       $a3, $s3, $zero
-    /* 36C0 801361F4 95F9040C */  jal        func_8013E654
+    /* 36C0 801361F4 95F9040C */  jal        SetDefDrawEnv
     /* 36C4 801361F8 1000B2AF */   sw        $s2, 0x10($sp)
     /* 36C8 801361FC 1A80113C */  lui        $s1, %hi(D_8019DB38)
     /* 36CC 80136200 38DB3026 */  addiu      $s0, $s1, %lo(D_8019DB38)
@@ -58,13 +58,13 @@ glabel func_80136130
     /* 36D4 80136208 21280000 */  addu       $a1, $zero, $zero
     /* 36D8 8013620C 00010624 */  addiu      $a2, $zero, 0x100
     /* 36DC 80136210 21386002 */  addu       $a3, $s3, $zero
-    /* 36E0 80136214 C5F9040C */  jal        func_8013E714
+    /* 36E0 80136214 C5F9040C */  jal        SetDefDispEnv
     /* 36E4 80136218 1000B2AF */   sw        $s2, 0x10($sp)
     /* 36E8 8013621C 14000426 */  addiu      $a0, $s0, 0x14
     /* 36EC 80136220 21280000 */  addu       $a1, $zero, $zero
     /* 36F0 80136224 21300000 */  addu       $a2, $zero, $zero
     /* 36F4 80136228 21386002 */  addu       $a3, $s3, $zero
-    /* 36F8 8013622C C5F9040C */  jal        func_8013E714
+    /* 36F8 8013622C C5F9040C */  jal        SetDefDispEnv
     /* 36FC 80136230 1000B2AF */   sw        $s2, 0x10($sp)
     /* 3700 80136234 1A80033C */  lui        $v1, %hi(D_8019DB60)
     /* 3704 80136238 AED80408 */  j          .L801362B8
@@ -75,13 +75,13 @@ glabel func_80136130
     /* 3714 80136248 21280000 */  addu       $a1, $zero, $zero
     /* 3718 8013624C 21300000 */  addu       $a2, $zero, $zero
     /* 371C 80136250 21386002 */  addu       $a3, $s3, $zero
-    /* 3720 80136254 95F9040C */  jal        func_8013E654
+    /* 3720 80136254 95F9040C */  jal        SetDefDrawEnv
     /* 3724 80136258 1000B2AF */   sw        $s2, 0x10($sp)
     /* 3728 8013625C 5C000426 */  addiu      $a0, $s0, 0x5C
     /* 372C 80136260 21280000 */  addu       $a1, $zero, $zero
     /* 3730 80136264 21300000 */  addu       $a2, $zero, $zero
     /* 3734 80136268 21386002 */  addu       $a3, $s3, $zero
-    /* 3738 8013626C 95F9040C */  jal        func_8013E654
+    /* 3738 8013626C 95F9040C */  jal        SetDefDrawEnv
     /* 373C 80136270 1000B2AF */   sw        $s2, 0x10($sp)
     /* 3740 80136274 1A80113C */  lui        $s1, %hi(D_8019DB38)
     /* 3744 80136278 38DB3026 */  addiu      $s0, $s1, %lo(D_8019DB38)
@@ -89,13 +89,13 @@ glabel func_80136130
     /* 374C 80136280 21280000 */  addu       $a1, $zero, $zero
     /* 3750 80136284 21300000 */  addu       $a2, $zero, $zero
     /* 3754 80136288 21386002 */  addu       $a3, $s3, $zero
-    /* 3758 8013628C C5F9040C */  jal        func_8013E714
+    /* 3758 8013628C C5F9040C */  jal        SetDefDispEnv
     /* 375C 80136290 1000B2AF */   sw        $s2, 0x10($sp)
     /* 3760 80136294 14000426 */  addiu      $a0, $s0, 0x14
     /* 3764 80136298 21280000 */  addu       $a1, $zero, $zero
     /* 3768 8013629C 21300000 */  addu       $a2, $zero, $zero
     /* 376C 801362A0 21386002 */  addu       $a3, $s3, $zero
-    /* 3770 801362A4 C5F9040C */  jal        func_8013E714
+    /* 3770 801362A4 C5F9040C */  jal        SetDefDispEnv
     /* 3774 801362A8 1000B2AF */   sw        $s2, 0x10($sp)
     /* 3778 801362AC 1A80033C */  lui        $v1, %hi(D_8019DB60)
     /* 377C 801362B0 01000224 */  addiu      $v0, $zero, 0x1
@@ -113,7 +113,7 @@ glabel func_80136130
     /* 37A8 801362DC 1A0040A0 */  sb         $zero, 0x1A($v0)
     /* 37AC 801362E0 0A006010 */  beqz       $v1, .L8013630C
     /* 37B0 801362E4 1B0040A0 */   sb        $zero, 0x1B($v0)
-    /* 37B4 801362E8 28EF040C */  jal        func_8013BCA0
+    /* 37B4 801362E8 28EF040C */  jal        SetVideoMode
     /* 37B8 801362EC 01000424 */   addiu     $a0, $zero, 0x1
     /* 37BC 801362F0 38DB2326 */  addiu      $v1, $s1, %lo(D_8019DB38)
     /* 37C0 801362F4 00010224 */  addiu      $v0, $zero, 0x100
@@ -126,7 +126,7 @@ glabel func_80136130
     /* 37D8 8013630C 0200E232 */  andi       $v0, $s7, 0x2
     /* 37DC 80136310 04004010 */  beqz       $v0, .L80136324
     /* 37E0 80136314 FFFF0224 */   addiu     $v0, $zero, -0x1
-    /* 37E4 80136318 28EF040C */  jal        func_8013BCA0
+    /* 37E4 80136318 28EF040C */  jal        SetVideoMode
     /* 37E8 8013631C 21200000 */   addu      $a0, $zero, $zero
   .L80136320:
     /* 37EC 80136320 FFFF0224 */  addiu      $v0, $zero, -0x1
@@ -172,10 +172,10 @@ glabel func_80136130
     /* 3878 801363AC 80200500 */  sll        $a0, $a1, 2
     /* 387C 801363B0 21208500 */  addu       $a0, $a0, $a1
     /* 3880 801363B4 80200400 */  sll        $a0, $a0, 2
-    /* 3884 801363B8 03F2040C */  jal        func_8013C80C
+    /* 3884 801363B8 03F2040C */  jal        PutDispEnv
     /* 3888 801363BC 21208300 */   addu      $a0, $a0, $v1
   .L801363C0:
-    /* 388C 801363C0 B3F0040C */  jal        func_8013C2CC
+    /* 388C 801363C0 B3F0040C */  jal        SetDispMask
     /* 3890 801363C4 01000424 */   addiu     $a0, $zero, 0x1
     /* 3894 801363C8 40201E00 */  sll        $a0, $fp, 1
     /* 3898 801363CC 1A80033C */  lui        $v1, %hi(D_8019DB6C)

@@ -8,18 +8,18 @@ glabel func_8013941C
     /* 68F8 8013942C 1000A527 */  addiu      $a1, $sp, 0x10
     /* 68FC 80139430 1800B0AF */  sw         $s0, 0x18($sp)
     /* 6900 80139434 2000BFAF */  sw         $ra, 0x20($sp)
-    /* 6904 80139438 C4DC040C */  jal        func_80137310
+    /* 6904 80139438 C4DC040C */  jal        CdIntToPos
     /* 6908 8013943C 2180C000 */   addu      $s0, $a2, $zero
     /* 690C 80139440 02000424 */  addiu      $a0, $zero, 0x2
     /* 6910 80139444 1000A527 */  addiu      $a1, $sp, 0x10
-    /* 6914 80139448 B4DB040C */  jal        func_80136ED0
+    /* 6914 80139448 B4DB040C */  jal        CdControl
     /* 6918 8013944C 21300000 */   addu      $a2, $zero, $zero
     /* 691C 80139450 21202002 */  addu       $a0, $s1, $zero
     /* 6920 80139454 21280002 */  addu       $a1, $s0, $zero
-    /* 6924 80139458 7CE6040C */  jal        func_801399F0
+    /* 6924 80139458 7CE6040C */  jal        CdRead
     /* 6928 8013945C 80000624 */   addiu     $a2, $zero, 0x80
     /* 692C 80139460 21200000 */  addu       $a0, $zero, $zero
-    /* 6930 80139464 E3E6040C */  jal        func_80139B8C
+    /* 6930 80139464 E3E6040C */  jal        CdReadSync
     /* 6934 80139468 21280000 */   addu      $a1, $zero, $zero
     /* 6938 8013946C 0100422C */  sltiu      $v0, $v0, 0x1
     /* 693C 80139470 2000BF8F */  lw         $ra, 0x20($sp)

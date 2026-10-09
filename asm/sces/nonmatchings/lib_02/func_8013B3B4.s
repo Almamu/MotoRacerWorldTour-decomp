@@ -36,20 +36,20 @@ glabel func_8013B3B4
     /* 88FC 8013B430 7CDF1026 */  addiu      $s0, $s0, %lo(D_801BDF7C)
     /* 8900 8013B434 FCFF0426 */  addiu      $a0, $s0, -0x4
     /* 8904 8013B438 DC0F0226 */  addiu      $v0, $s0, 0xFDC
-    /* 8908 8013B43C FB2A050C */  jal        func_8014ABEC
+    /* 8908 8013B43C FB2A050C */  jal        HookEntryInt
     /* 890C 8013B440 000002AE */   sw        $v0, 0x0($s0)
     /* 8910 8013B444 01000224 */  addiu      $v0, $zero, 0x1
-    /* 8914 8013B448 38EE040C */  jal        func_8013B8E0
+    /* 8914 8013B448 38EE040C */  jal        startIntrVSync
     /* 8918 8013B44C C4FF02A6 */   sh        $v0, -0x3C($s0)
     /* 891C 8013B450 1C80033C */  lui        $v1, %hi(D_801BEFC8)
     /* 8920 8013B454 C8EF638C */  lw         $v1, %lo(D_801BEFC8)($v1)
-    /* 8924 8013B458 80EE040C */  jal        func_8013BA00
+    /* 8924 8013B458 80EE040C */  jal        startIntrDMA
     /* 8928 8013B45C 140062AC */   sw        $v0, 0x14($v1)
     /* 892C 8013B460 1C80043C */  lui        $a0, %hi(D_801BEFC8)
     /* 8930 8013B464 C8EF848C */  lw         $a0, %lo(D_801BEFC8)($a0)
-    /* 8934 8013B468 D12A050C */  jal        func_8014AB44
+    /* 8934 8013B468 D12A050C */  jal        _96_remove
     /* 8938 8013B46C 040082AC */   sw        $v0, 0x4($a0)
-    /* 893C 8013B470 032B050C */  jal        func_8014AC0C
+    /* 893C 8013B470 032B050C */  jal        ExitCriticalSection
     /* 8940 8013B474 C4FF1026 */   addiu     $s0, $s0, -0x3C
     /* 8944 8013B478 21100002 */  addu       $v0, $s0, $zero
   .L8013B47C:

@@ -10,13 +10,13 @@ glabel func_800154D4
     /* 3CFC 800154EC 1C00B3AF */  sw         $s3, 0x1C($sp)
     /* 3D00 800154F0 1800B2AF */  sw         $s2, 0x18($sp)
     /* 3D04 800154F4 1400B1AF */  sw         $s1, 0x14($sp)
-    /* 3D08 800154F8 E0D6020C */  jal        func_800B5B80
+    /* 3D08 800154F8 E0D6020C */  jal        EnterCriticalSection
     /* 3D0C 800154FC 1000B0AF */   sw        $s0, 0x10($sp)
     /* 3D10 80015500 0C80163C */  lui        $s6, %hi(D_800B8754)
     /* 3D14 80015504 0C80173C */  lui        $s7, %hi(D_800B875C)
     /* 3D18 80015508 5487D48E */  lw         $s4, %lo(D_800B8754)($s6)
     /* 3D1C 8001550C 5C87F58E */  lw         $s5, %lo(D_800B875C)($s7)
-    /* 3D20 80015510 E4D6020C */  jal        func_800B5B90
+    /* 3D20 80015510 E4D6020C */  jal        ExitCriticalSection
     /* 3D24 80015514 00000000 */   nop
     /* 3D28 80015518 0C80033C */  lui        $v1, %hi(D_800B8744)
     /* 3D2C 8001551C 4487628C */  lw         $v0, %lo(D_800B8744)($v1)
@@ -37,7 +37,7 @@ glabel func_800154D4
     /* 3D64 80015554 09F84000 */  jalr       $v0
     /* 3D68 80015558 00000000 */   nop
   .L8001555C:
-    /* 3D6C 8001555C B4AA020C */  jal        func_800AAAD0
+    /* 3D6C 8001555C B4AA020C */  jal        VSync
     /* 3D70 80015560 21200000 */   addu      $a0, $zero, $zero
     /* 3D74 80015564 0500001A */  blez       $s0, .L8001557C
     /* 3D78 80015568 00000000 */   nop

@@ -1,45 +1,45 @@
 #include "common.h"
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_08", func_80146268);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_08", _spu_setReverbAttr);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_08", func_80146738);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_08", SsUtSetReverbType);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_08", func_801467D4);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_08", SpuSetReverb);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_08", func_801468A4);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_08", func_801468C4);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_08", SsUtReverbOn);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_08", func_801468E4);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_08", _SsVmAlloc);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_08", func_80146B54);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_08", _SsVmDoAllocate);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_08", func_80146D24);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_08", func_80146D34);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_08", _SsVmFlush);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_08", func_801471C4);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_08", SpuSetNoiseVoice);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_08", func_801471F4);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_08", _SpuSetAnyVoice);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_08", func_801474B4);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_08", SpuSetReverbVoice);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_08", func_801474E4);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_08", SpuSetKey);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_08", func_801476A4);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_08", SpuSetVoiceAttr);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_08", func_80147CA4);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_08", _spu_note2pitch);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_08", func_80147D74);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_08", SpuGetVoiceEnvelope);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_08", func_80147D94);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_08", _SsVmInit);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_08", func_801480E4);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_08", SpuInitMalloc);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_08", func_80148144);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_08", _spu_setInTransfer);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_08", func_8014816C);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_08", _spu_getInTransfer);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_08", func_80148184);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_08", note2pitch2);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_08", func_801481EC);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_08", SsPitchFromNote);

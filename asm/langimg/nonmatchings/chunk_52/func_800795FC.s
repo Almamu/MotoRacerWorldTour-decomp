@@ -5,7 +5,7 @@ glabel func_800795FC
     /* 67E10 80079600 1000B0AF */  sw         $s0, 0x10($sp)
     /* 67E14 80079604 21808000 */  addu       $s0, $a0, $zero
     /* 67E18 80079608 1400BFAF */  sw         $ra, 0x14($sp)
-    /* 67E1C 8007960C A7AF020C */  jal        func_800ABE9C
+    /* 67E1C 8007960C A7AF020C */  jal        DrawSync
     /* 67E20 80079610 21200000 */   addu      $a0, $zero, $zero
     /* 67E24 80079614 2800048E */  lw         $a0, 0x28($s0)
     /* 67E28 80079618 00000000 */  nop

@@ -28,7 +28,7 @@ glabel func_80141A98
     /* EFC0 80141AF4 1C80053C */  lui        $a1, %hi(D_801BFEA8)
     /* EFC4 80141AF8 A8FEA58C */  lw         $a1, %lo(D_801BFEA8)($a1)
   .L80141AFC:
-    /* EFC8 80141AFC 9302050C */  jal        func_80140A4C
+    /* EFC8 80141AFC 9302050C */  jal        _padSioRW2
     /* EFCC 80141B00 21200002 */   addu      $a0, $s0, $zero
     /* EFD0 80141B04 0B004004 */  bltz       $v0, .L80141B34
     /* EFD4 80141B08 00000000 */   nop

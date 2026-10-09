@@ -72,7 +72,7 @@ glabel func_8013ACB8
     /* 8254 8013AD88 000062AC */   sw        $v0, 0x0($v1)
   .L8013AD8C:
     /* 8258 8013AD8C 1580043C */  lui        $a0, %hi(D_8014C8E0)
-    /* 825C 8013AD90 082C050C */  jal        func_8014B020
+    /* 825C 8013AD90 082C050C */  jal        printf
     /* 8260 8013AD94 E0C88424 */   addiu     $a0, $a0, %lo(D_8014C8E0)
   .L8013AD98:
     /* 8264 8013AD98 1000BF8F */  lw         $ra, 0x10($sp)

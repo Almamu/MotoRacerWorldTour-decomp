@@ -53,7 +53,7 @@ glabel func_801419C0
   .L80141A7C:
     /* EF48 80141A7C 37000592 */  lbu        $a1, 0x37($s0)
   .L80141A80:
-    /* EF4C 80141A80 9302050C */  jal        func_80140A4C
+    /* EF4C 80141A80 9302050C */  jal        _padSioRW2
     /* EF50 80141A84 00000000 */   nop
     /* EF54 80141A88 1400BF8F */  lw         $ra, 0x14($sp)
     /* EF58 80141A8C 1000B08F */  lw         $s0, 0x10($sp)

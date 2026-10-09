@@ -32,30 +32,30 @@ INCLUDE_ASM("asm/langimg/nonmatchings/lib_04", func_800B043C);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_04", func_800B045C);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_04", func_800B047C);
+INCLUDE_ASM("asm/langimg/nonmatchings/lib_04", PadGetState);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_04", func_800B053C);
+INCLUDE_ASM("asm/langimg/nonmatchings/lib_04", PadInfoMode);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_04", func_800B0634);
+INCLUDE_ASM("asm/langimg/nonmatchings/lib_04", PadInfoAct);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_04", func_800B0708);
+INCLUDE_ASM("asm/langimg/nonmatchings/lib_04", PadSetActAlign);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_04", func_800B0740);
+INCLUDE_ASM("asm/langimg/nonmatchings/lib_04", PadSetMainMode);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_04", func_800B0788);
+INCLUDE_ASM("asm/langimg/nonmatchings/lib_04", PadSetAct);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_04", func_800B07D8);
+INCLUDE_ASM("asm/langimg/nonmatchings/lib_04", _padSetVsyncParam);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_04", func_800B0804);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_04", func_800B086C);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_04", func_800B09D8);
+INCLUDE_ASM("asm/langimg/nonmatchings/lib_04", _padStartCom);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_04", func_800B0AA4);
+INCLUDE_ASM("asm/langimg/nonmatchings/lib_04", _padStopCom);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_04", func_800B0AE8);
+INCLUDE_ASM("asm/langimg/nonmatchings/lib_04", _padInitSioMode);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_04", func_800B0E1C);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_04", func_800B0EE4);
+INCLUDE_ASM("asm/langimg/nonmatchings/lib_04", _padSioRW);

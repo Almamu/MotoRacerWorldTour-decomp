@@ -67,7 +67,7 @@ glabel func_8003F314
     /* 2DC0C 8003F3FC 2C4EE524 */  addiu      $a1, $a3, %lo(D_800C4E2C)
     /* 2DC10 8003F400 2110A202 */  addu       $v0, $s5, $v0
     /* 2DC14 8003F404 0000468C */  lw         $a2, 0x0($v0)
-    /* 2DC18 8003F408 96D9020C */  jal        func_800B6658
+    /* 2DC18 8003F408 96D9020C */  jal        sprintf
     /* 2DC1C 8003F40C 21900000 */   addu      $s2, $zero, $zero
     /* 2DC20 8003F410 5400A0AF */  sw         $zero, 0x54($sp)
     /* 2DC24 8003F414 5C00D18E */  lw         $s1, 0x5C($s6)
@@ -111,7 +111,7 @@ glabel func_8003F314
     /* 2DCAC 8003F49C 384EE524 */  addiu      $a1, $a3, %lo(D_800C4E38)
     /* 2DCB0 8003F4A0 2110A202 */  addu       $v0, $s5, $v0
     /* 2DCB4 8003F4A4 0000468C */  lw         $a2, 0x0($v0)
-    /* 2DCB8 8003F4A8 96D9020C */  jal        func_800B6658
+    /* 2DCB8 8003F4A8 96D9020C */  jal        sprintf
     /* 2DCBC 8003F4AC 21900000 */   addu      $s2, $zero, $zero
     /* 2DCC0 8003F4B0 5400A0AF */  sw         $zero, 0x54($sp)
     /* 2DCC4 8003F4B4 5C00D18E */  lw         $s1, 0x5C($s6)
@@ -155,7 +155,7 @@ glabel func_8003F314
     /* 2DD4C 8003F53C 404EE524 */  addiu      $a1, $a3, %lo(D_800C4E40)
     /* 2DD50 8003F540 2110A202 */  addu       $v0, $s5, $v0
     /* 2DD54 8003F544 0000468C */  lw         $a2, 0x0($v0)
-    /* 2DD58 8003F548 96D9020C */  jal        func_800B6658
+    /* 2DD58 8003F548 96D9020C */  jal        sprintf
     /* 2DD5C 8003F54C 21900000 */   addu      $s2, $zero, $zero
     /* 2DD60 8003F550 5400A0AF */  sw         $zero, 0x54($sp)
     /* 2DD64 8003F554 5C00D18E */  lw         $s1, 0x5C($s6)
@@ -199,7 +199,7 @@ glabel func_8003F314
     /* 2DDEC 8003F5DC 4C4EE524 */  addiu      $a1, $a3, %lo(D_800C4E4C)
     /* 2DDF0 8003F5E0 2110A202 */  addu       $v0, $s5, $v0
     /* 2DDF4 8003F5E4 0000468C */  lw         $a2, 0x0($v0)
-    /* 2DDF8 8003F5E8 96D9020C */  jal        func_800B6658
+    /* 2DDF8 8003F5E8 96D9020C */  jal        sprintf
     /* 2DDFC 8003F5EC 21900000 */   addu      $s2, $zero, $zero
     /* 2DE00 8003F5F0 5400A0AF */  sw         $zero, 0x54($sp)
     /* 2DE04 8003F5F4 5C00D18E */  lw         $s1, 0x5C($s6)

@@ -57,13 +57,13 @@ glabel func_800B1F68
     /* A0840 800B2030 09F84000 */  jalr       $v0
     /* A0844 800B2034 01000524 */   addiu     $a1, $zero, 0x1
     /* A0848 800B2038 21202002 */  addu       $a0, $s1, $zero
-    /* A084C 800B203C 2FC4020C */  jal        func_800B10BC
+    /* A084C 800B203C 2FC4020C */  jal        _padSioRW2
     /* A0850 800B2040 FF004530 */   andi      $a1, $v0, 0xFF
     /* A0854 800B2044 9E004004 */  bltz       $v0, .L800B22C0
     /* A0858 800B2048 00000000 */   nop
-    /* A085C 800B204C 77CB020C */  jal        func_800B2DDC
+    /* A085C 800B204C 77CB020C */  jal        setRC2wait
     /* A0860 800B2050 3C000424 */   addiu     $a0, $zero, 0x3C
-    /* A0864 800B2054 BDC4020C */  jal        func_800B12F4
+    /* A0864 800B2054 BDC4020C */  jal        _padClrIntSio0
     /* A0868 800B2058 00000000 */   nop
     /* A086C 800B205C 61004010 */  beqz       $v0, .L800B21E4
     /* A0870 800B2060 01001026 */   addiu     $s0, $s0, 0x1
@@ -161,13 +161,13 @@ glabel func_800B1F68
     /* A09C0 800B21B0 09F84000 */  jalr       $v0
     /* A09C4 800B21B4 21288002 */   addu      $a1, $s4, $zero
     /* A09C8 800B21B8 21202002 */  addu       $a0, $s1, $zero
-    /* A09CC 800B21BC B9C3020C */  jal        func_800B0EE4
+    /* A09CC 800B21BC B9C3020C */  jal        _padSioRW
     /* A09D0 800B21C0 FF004530 */   andi      $a1, $v0, 0xFF
     /* A09D4 800B21C4 3E004004 */  bltz       $v0, .L800B22C0
     /* A09D8 800B21C8 00000000 */   nop
-    /* A09DC 800B21CC 77CB020C */  jal        func_800B2DDC
+    /* A09DC 800B21CC 77CB020C */  jal        setRC2wait
     /* A09E0 800B21D0 3C000424 */   addiu     $a0, $zero, 0x3C
-    /* A09E4 800B21D4 BDC4020C */  jal        func_800B12F4
+    /* A09E4 800B21D4 BDC4020C */  jal        _padClrIntSio0
     /* A09E8 800B21D8 00000000 */   nop
     /* A09EC 800B21DC 03004014 */  bnez       $v0, .L800B21EC
     /* A09F0 800B21E0 00000000 */   nop
@@ -194,13 +194,13 @@ glabel func_800B1F68
     /* A0A38 800B2228 09F84000 */  jalr       $v0
     /* A0A3C 800B222C 21288002 */   addu      $a1, $s4, $zero
     /* A0A40 800B2230 21202002 */  addu       $a0, $s1, $zero
-    /* A0A44 800B2234 B9C3020C */  jal        func_800B0EE4
+    /* A0A44 800B2234 B9C3020C */  jal        _padSioRW
     /* A0A48 800B2238 FF004530 */   andi      $a1, $v0, 0xFF
     /* A0A4C 800B223C 20004004 */  bltz       $v0, .L800B22C0
     /* A0A50 800B2240 00000000 */   nop
-    /* A0A54 800B2244 77CB020C */  jal        func_800B2DDC
+    /* A0A54 800B2244 77CB020C */  jal        setRC2wait
     /* A0A58 800B2248 3C000424 */   addiu     $a0, $zero, 0x3C
-    /* A0A5C 800B224C BDC4020C */  jal        func_800B12F4
+    /* A0A5C 800B224C BDC4020C */  jal        _padClrIntSio0
     /* A0A60 800B2250 00000000 */   nop
     /* A0A64 800B2254 1A004010 */  beqz       $v0, .L800B22C0
     /* A0A68 800B2258 FDFF0224 */   addiu     $v0, $zero, -0x3
@@ -212,7 +212,7 @@ glabel func_800B1F68
     /* A0A7C 800B226C 0C80013C */  lui        $at, %hi(D_800C3D00)
     /* A0A80 800B2270 E9FF401C */  bgtz       $v0, .L800B2218
     /* A0A84 800B2274 003D22AC */   sw        $v0, %lo(D_800C3D00)($at)
-    /* A0A88 800B2278 E1C4020C */  jal        func_800B1384
+    /* A0A88 800B2278 E1C4020C */  jal        _padWaitRXready
     /* A0A8C 800B227C 00000000 */   nop
     /* A0A90 800B2280 44002392 */  lbu        $v1, 0x44($s1)
     /* A0A94 800B2284 00000000 */  nop

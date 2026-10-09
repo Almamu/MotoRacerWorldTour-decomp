@@ -11,7 +11,7 @@ glabel func_8009FFCC
     /* 8E7F8 8009FFE8 0D80053C */  lui        $a1, %hi(D_800C9F04)
     /* 8E7FC 8009FFEC 049FA524 */  addiu      $a1, $a1, %lo(D_800C9F04)
     /* 8E800 8009FFF0 105882AF */  sw         $v0, %gp_rel(D_800C9F00)($gp)
-    /* 8E804 8009FFF4 5ED9020C */  jal        memcpy
+    /* 8E804 8009FFF4 5ED9020C */  jal        strncpy
     /* 8E808 8009FFF8 10000624 */   addiu     $a2, $zero, 0x10
     /* 8E80C 8009FFFC 1058838F */  lw         $v1, %gp_rel(D_800C9F00)($gp)
     /* 8E810 800A0000 00000000 */  nop

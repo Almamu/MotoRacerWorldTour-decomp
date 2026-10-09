@@ -53,7 +53,7 @@ glabel func_800B086C
     /* 9F138 800B0928 CC3C20AC */  sw         $zero, %lo(D_800C3CCC)($at)
     /* 9F13C 800B092C 0C80013C */  lui        $at, %hi(D_800C3CC8)
     /* 9F140 800B0930 C83C23AC */  sw         $v1, %lo(D_800C3CC8)($at)
-    /* 9F144 800B0934 BAC2020C */  jal        func_800B0AE8
+    /* 9F144 800B0934 BAC2020C */  jal        _padInitSioMode
     /* 9F148 800B0938 21204400 */   addu      $a0, $v0, $a0
     /* 9F14C 800B093C 06004014 */  bnez       $v0, .L800B0958
     /* 9F150 800B0940 00000000 */   nop

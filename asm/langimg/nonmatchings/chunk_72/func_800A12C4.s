@@ -35,7 +35,7 @@ glabel func_800A12C4
     /* 8FB48 800A1338 0A80073C */  lui        $a3, %hi(func_800A1284)
     /* 8FB4C 800A133C 21280002 */  addu       $a1, $s0, $zero
     /* 8FB50 800A1340 04000624 */  addiu      $a2, $zero, 0x4
-    /* 8FB54 800A1344 62D8020C */  jal        func_800B6188
+    /* 8FB54 800A1344 62D8020C */  jal        qsort
     /* 8FB58 800A1348 8412E724 */   addiu     $a3, $a3, %lo(func_800A1284)
     /* 8FB5C 800A134C FFFF0426 */  addiu      $a0, $s0, -0x1
   .L800A1350:

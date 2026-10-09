@@ -34,7 +34,7 @@ glabel func_80011D10
     /* 594 80011D84 589F8424 */  addiu      $a0, $a0, %lo(D_800C9F58)
     /* 598 80011D88 21280000 */  addu       $a1, $zero, $zero
     /* 59C 80011D8C 585880AF */  sw         $zero, %gp_rel(D_800C9F48)($gp)
-    /* 5A0 80011D90 56D8020C */  jal        func_800B6158
+    /* 5A0 80011D90 56D8020C */  jal        memset
     /* 5A4 80011D94 18000624 */   addiu     $a2, $zero, 0x18
     /* 5A8 80011D98 1000BF8F */  lw         $ra, 0x10($sp)
     /* 5AC 80011D9C 00000000 */  nop

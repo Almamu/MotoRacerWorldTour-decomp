@@ -16,9 +16,11 @@ extern "C" {
 
 typedef unsigned int size_t;
 
+/* PsyQ's libc (libc2) */
 size_t strlen(const char *s);
 void *memcpy(void *dst, const void *src, size_t n);
 int strcmp(const char *a, const char *b);
+char *strncpy(char *dst, const char *src, size_t n);
 
 #ifdef __cplusplus
 }

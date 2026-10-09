@@ -9,9 +9,9 @@ glabel func_800A17EC
     /* 90010 800A1800 3800B2AF */  sw         $s2, 0x38($sp)
     /* 90014 800A1804 9A1B020C */  jal        func_80086E68
     /* 90018 800A1808 3400B1AF */   sw        $s1, 0x34($sp)
-    /* 9001C 800A180C A7AF020C */  jal        func_800ABE9C
+    /* 9001C 800A180C A7AF020C */  jal        DrawSync
     /* 90020 800A1810 21200000 */   addu      $a0, $zero, $zero
-    /* 90024 800A1814 B4AA020C */  jal        func_800AAAD0
+    /* 90024 800A1814 B4AA020C */  jal        VSync
     /* 90028 800A1818 21200000 */   addu      $a0, $zero, $zero
     /* 9002C 800A181C D3D4020C */  jal        func_800B534C
     /* 90030 800A1820 00700424 */   addiu     $a0, $zero, 0x7000
@@ -44,11 +44,11 @@ glabel func_800A17EC
     /* 90090 800A1880 2C00A2A7 */  sh         $v0, 0x2C($sp)
     /* 90094 800A1884 2E00A2A7 */  sh         $v0, 0x2E($sp)
     /* 90098 800A1888 2800A0A7 */  sh         $zero, 0x28($sp)
-    /* 9009C 800A188C 08B0020C */  jal        func_800AC020
+    /* 9009C 800A188C 08B0020C */  jal        ClearImage
     /* 900A0 800A1890 2A00A0A7 */   sh        $zero, 0x2A($sp)
-    /* 900A4 800A1894 A7AF020C */  jal        func_800ABE9C
+    /* 900A4 800A1894 A7AF020C */  jal        DrawSync
     /* 900A8 800A1898 21200000 */   addu      $a0, $zero, $zero
-    /* 900AC 800A189C 81AF020C */  jal        func_800ABE04
+    /* 900AC 800A189C 81AF020C */  jal        SetDispMask
     /* 900B0 800A18A0 21200000 */   addu      $a0, $zero, $zero
     /* 900B4 800A18A4 1800A427 */  addiu      $a0, $sp, 0x18
     /* 900B8 800A18A8 21284002 */  addu       $a1, $s2, $zero
@@ -62,7 +62,7 @@ glabel func_800A17EC
     /* 900D8 800A18C8 1000A0AF */  sw         $zero, 0x10($sp)
     /* 900DC 800A18CC 1A1D020C */  jal        func_80087468
     /* 900E0 800A18D0 1400A0AF */   sw        $zero, 0x14($sp)
-    /* 900E4 800A18D4 A7AF020C */  jal        func_800ABE9C
+    /* 900E4 800A18D4 A7AF020C */  jal        DrawSync
     /* 900E8 800A18D8 21200000 */   addu      $a0, $zero, $zero
     /* 900EC 800A18DC 1800A427 */  addiu      $a0, $sp, 0x18
     /* 900F0 800A18E0 21280002 */  addu       $a1, $s0, $zero
@@ -72,9 +72,9 @@ glabel func_800A17EC
     /* 90100 800A18F0 1000A2AF */  sw         $v0, 0x10($sp)
     /* 90104 800A18F4 1A1D020C */  jal        func_80087468
     /* 90108 800A18F8 1400A0AF */   sw        $zero, 0x14($sp)
-    /* 9010C 800A18FC A7AF020C */  jal        func_800ABE9C
+    /* 9010C 800A18FC A7AF020C */  jal        DrawSync
     /* 90110 800A1900 21200000 */   addu      $a0, $zero, $zero
-    /* 90114 800A1904 81AF020C */  jal        func_800ABE04
+    /* 90114 800A1904 81AF020C */  jal        SetDispMask
     /* 90118 800A1908 01000424 */   addiu     $a0, $zero, 0x1
     /* 9011C 800A190C 03002012 */  beqz       $s1, .L800A191C
     /* 90120 800A1910 00000000 */   nop

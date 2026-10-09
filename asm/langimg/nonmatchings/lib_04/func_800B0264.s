@@ -22,7 +22,7 @@ glabel func_800B0264
     /* 9EABC 800B02AC 21104300 */  addu       $v0, $v0, $v1
     /* 9EAC0 800B02B0 0000448C */  lw         $a0, 0x0($v0)
     /* 9EAC4 800B02B4 02000524 */  addiu      $a1, $zero, 0x2
-    /* 9EAC8 800B02B8 4FC1020C */  jal        func_800B053C
+    /* 9EAC8 800B02B8 4FC1020C */  jal        PadInfoMode
     /* 9EACC 800B02BC 21300000 */   addu      $a2, $zero, $zero
     /* 9EAD0 800B02C0 04004010 */  beqz       $v0, .L800B02D4
     /* 9EAD4 800B02C4 0C80023C */   lui       $v0, %hi(D_800C3C7C)

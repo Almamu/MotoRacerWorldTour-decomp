@@ -1,8 +1,8 @@
 #include "common.h"
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_03", func_8013C80C);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_03", PutDispEnv);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_03", func_8013CD04);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_03", SetDrawEnv);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_03", func_8013CEFC);
 
@@ -56,12 +56,12 @@ INCLUDE_ASM("asm/sces/nonmatchings/lib_03", func_8013E604);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_03", func_8013E62C);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_03", func_8013E654);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_03", SetDefDrawEnv);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_03", func_8013E714);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_03", SetDefDispEnv);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_03", func_8013E754);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_03", func_8013E75C);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_03", InitGeom);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_03", func_8013E7E4);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_03", SetGeomScreen);

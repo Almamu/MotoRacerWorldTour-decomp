@@ -15,17 +15,17 @@ glabel func_80134298
     /* 1790 801342C4 00000000 */   nop
     /* 1794 801342C8 21200002 */  addu       $a0, $s0, $zero
     /* 1798 801342CC 1580033C */  lui        $v1, %hi(D_8014D340)
-    /* 179C 801342D0 25EB040C */  jal        func_8013AC94
+    /* 179C 801342D0 25EB040C */  jal        DecDCToutCallback
     /* 17A0 801342D4 40D360AC */   sw        $zero, %lo(D_8014D340)($v1)
     /* 17A4 801342D8 1580063C */  lui        $a2, %hi(D_8014D228)
     /* 17A8 801342DC 28D2C48C */  lw         $a0, %lo(D_8014D228)($a2)
-    /* 17AC 801342E0 2ADB040C */  jal        func_80136CA8
+    /* 17AC 801342E0 2ADB040C */  jal        StSetRing
     /* 17B0 801342E4 20000524 */   addiu     $a1, $zero, 0x20
     /* 17B4 801342E8 01000424 */  addiu      $a0, $zero, 0x1
     /* 17B8 801342EC 01000524 */  addiu      $a1, $zero, 0x1
     /* 17BC 801342F0 FFFF0624 */  addiu      $a2, $zero, -0x1
     /* 17C0 801342F4 21380000 */  addu       $a3, $zero, $zero
-    /* 17C4 801342F8 8BE7040C */  jal        func_80139E2C
+    /* 17C4 801342F8 8BE7040C */  jal        StSetStream
     /* 17C8 801342FC 1000A0AF */   sw        $zero, 0x10($sp)
     /* 17CC 80134300 21204002 */  addu       $a0, $s2, $zero
     /* 17D0 80134304 2DD0040C */  jal        func_801340B4

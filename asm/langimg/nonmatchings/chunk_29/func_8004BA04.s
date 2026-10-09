@@ -151,14 +151,14 @@ glabel func_8004BA04
     /* 3A440 8004BC30 5400A78F */  lw         $a3, 0x54($sp)
     /* 3A444 8004BC34 5800A38F */  lw         $v1, 0x58($sp)
     /* 3A448 8004BC38 54640525 */  addiu      $a1, $t0, %lo(D_800C6454)
-    /* 3A44C 8004BC3C 96D9020C */  jal        func_800B6658
+    /* 3A44C 8004BC3C 96D9020C */  jal        sprintf
     /* 3A450 8004BC40 1000A3AF */   sw        $v1, 0x10($sp)
     /* 3A454 8004BC44 172F0108 */  j          .L8004BC5C
     /* 3A458 8004BC48 00000000 */   nop
   .L8004BC4C:
     /* 3A45C 8004BC4C 1800A427 */  addiu      $a0, $sp, 0x18
     /* 3A460 8004BC50 0C80083C */  lui        $t0, %hi(D_800C6464)
-    /* 3A464 8004BC54 96D9020C */  jal        func_800B6658
+    /* 3A464 8004BC54 96D9020C */  jal        sprintf
     /* 3A468 8004BC58 64640525 */   addiu     $a1, $t0, %lo(D_800C6464)
   .L8004BC5C:
     /* 3A46C 8004BC5C 19004016 */  bnez       $s2, .L8004BCC4
@@ -187,7 +187,7 @@ glabel func_8004BA04
     /* 3A4C0 8004BCB0 0C80083C */  lui        $t0, %hi(D_800C647C)
     /* 3A4C4 8004BCB4 7C640525 */  addiu      $a1, $t0, %lo(D_800C647C)
   .L8004BCB8:
-    /* 3A4C8 8004BCB8 96D9020C */  jal        func_800B6658
+    /* 3A4C8 8004BCB8 96D9020C */  jal        sprintf
     /* 3A4CC 8004BCBC 00000000 */   nop
     /* 3A4D0 8004BCC0 2120A002 */  addu       $a0, $s5, $zero
   .L8004BCC4:
@@ -239,14 +239,14 @@ glabel func_8004BA04
     /* 3A580 8004BD70 6000A78F */  lw         $a3, 0x60($sp)
     /* 3A584 8004BD74 6400A38F */  lw         $v1, 0x64($sp)
     /* 3A588 8004BD78 5464A524 */  addiu      $a1, $a1, %lo(D_800C6454)
-    /* 3A58C 8004BD7C 96D9020C */  jal        func_800B6658
+    /* 3A58C 8004BD7C 96D9020C */  jal        sprintf
     /* 3A590 8004BD80 1000A3AF */   sw        $v1, 0x10($sp)
     /* 3A594 8004BD84 682F0108 */  j          .L8004BDA0
     /* 3A598 8004BD88 FF00033C */   lui       $v1, (0xFFFFFF >> 16)
   .L8004BD8C:
     /* 3A59C 8004BD8C 1800A427 */  addiu      $a0, $sp, 0x18
     /* 3A5A0 8004BD90 0C80053C */  lui        $a1, %hi(D_800C6470)
-    /* 3A5A4 8004BD94 96D9020C */  jal        func_800B6658
+    /* 3A5A4 8004BD94 96D9020C */  jal        sprintf
     /* 3A5A8 8004BD98 7064A524 */   addiu     $a1, $a1, %lo(D_800C6470)
     /* 3A5AC 8004BD9C FF00033C */  lui        $v1, (0xFFFFFF >> 16)
   .L8004BDA0:

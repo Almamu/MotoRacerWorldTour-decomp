@@ -136,7 +136,7 @@ glabel func_800A9A14
     /* 98324 800A9B14 1B00A2AB */  swl        $v0, 0x1B($sp)
     /* 98328 800A9B18 1800A2BB */  swr        $v0, 0x18($sp)
     /* 9832C 800A9B1C 1800A48F */  lw         $a0, 0x18($sp)
-    /* 98330 800A9B20 C79E020C */  jal        func_800A7B1C
+    /* 98330 800A9B20 C79E020C */  jal        CdIntToPos
     /* 98334 800A9B24 21288002 */   addu      $a1, $s4, $zero
     /* 98338 800A9B28 0400A226 */  addiu      $v0, $s5, 0x4
     /* 9833C 800A9B2C 21102202 */  addu       $v0, $s1, $v0
@@ -166,7 +166,7 @@ glabel func_800A9A14
     /* 98394 800A9B84 2200A3A2 */   sb        $v1, 0x22($s5)
   .L800A9B88:
     /* 98398 800A9B88 20000692 */  lbu        $a2, 0x20($s0)
-    /* 9839C 800A9B8C 46D8020C */  jal        func_800B6118
+    /* 9839C 800A9B8C 46D8020C */  jal        memcpy
     /* 983A0 800A9B90 21000526 */   addiu     $a1, $s0, 0x21
     /* 983A4 800A9B94 20000292 */  lbu        $v0, 0x20($s0)
     /* 983A8 800A9B98 00000000 */  nop

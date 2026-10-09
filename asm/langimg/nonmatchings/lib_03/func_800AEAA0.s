@@ -15,18 +15,18 @@ glabel func_800AEAA0
     /* 9D2DC 800AEACC F3BA0208 */  j          .L800AEBCC
     /* 9D2E0 800AEAD0 21100000 */   addu      $v0, $zero, $zero
   .L800AEAD4:
-    /* 9D2E4 800AEAD4 E0D6020C */  jal        func_800B5B80
+    /* 9D2E4 800AEAD4 E0D6020C */  jal        EnterCriticalSection
     /* 9D2E8 800AEAD8 0E80133C */   lui       $s3, %hi(D_800DE2F8)
-    /* 9D2EC 800AEADC 25BB020C */  jal        func_800AEC94
+    /* 9D2EC 800AEADC 25BB020C */  jal        InitCARD
     /* 9D2F0 800AEAE0 21200000 */   addu      $a0, $zero, $zero
-    /* 9D2F4 800AEAE4 E4D6020C */  jal        func_800B5B90
+    /* 9D2F4 800AEAE4 E4D6020C */  jal        ExitCriticalSection
     /* 9D2F8 800AEAE8 21900000 */   addu      $s2, $zero, $zero
-    /* 9D2FC 800AEAEC 40BB020C */  jal        func_800AED00
+    /* 9D2FC 800AEAEC 40BB020C */  jal        StartCARD
     /* 9D300 800AEAF0 00000000 */   nop
-    /* 9D304 800AEAF4 21BB020C */  jal        func_800AEC84
+    /* 9D304 800AEAF4 21BB020C */  jal        _bu_init
     /* 9D308 800AEAF8 00000000 */   nop
     /* 9D30C 800AEAFC F8E26426 */  addiu      $a0, $s3, %lo(D_800DE2F8)
-    /* 9D310 800AEB00 BBC8020C */  jal        func_800B22EC
+    /* 9D310 800AEB00 BBC8020C */  jal        PadInitDirect
     /* 9D314 800AEB04 22008524 */   addiu     $a1, $a0, 0x22
     /* 9D318 800AEB08 0E80033C */  lui        $v1, %hi(D_800DE358)
     /* 9D31C 800AEB0C 0C80023C */  lui        $v0, %hi(D_800C3C24)
@@ -45,7 +45,7 @@ glabel func_800AEAA0
     /* 9D34C 800AEB3C 02000624 */  addiu      $a2, $zero, 0x2
     /* 9D350 800AEB40 04003126 */  addiu      $s1, $s1, 0x4
     /* 9D354 800AEB44 02001026 */  addiu      $s0, $s0, 0x2
-    /* 9D358 800AEB48 E2C1020C */  jal        func_800B0788
+    /* 9D358 800AEB48 E2C1020C */  jal        PadSetAct
     /* 9D35C 800AEB4C 01005226 */   addiu     $s2, $s2, 0x1
     /* 9D360 800AEB50 0200422A */  slti       $v0, $s2, 0x2
     /* 9D364 800AEB54 F7FF4014 */  bnez       $v0, .L800AEB34

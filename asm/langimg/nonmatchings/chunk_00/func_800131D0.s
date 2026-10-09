@@ -60,7 +60,7 @@ glabel func_800131D0
     /* 1AB4 800132A4 0A0082A4 */  sh         $v0, 0xA($a0)
     /* 1AB8 800132A8 21200000 */  addu       $a0, $zero, $zero
     /* 1ABC 800132AC 0428BE00 */  sllv       $a1, $fp, $a1
-    /* 1AC0 800132B0 05D1020C */  jal        func_800B4414
+    /* 1AC0 800132B0 05D1020C */  jal        SpuSetPitchLFOVoice
     /* 1AC4 800132B4 1000A6AF */   sw        $a2, 0x10($sp)
     /* 1AC8 800132B8 1000A68F */  lw         $a2, 0x10($sp)
   .L800132BC:

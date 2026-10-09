@@ -13,7 +13,7 @@ glabel func_800B1CFC
     /* A0530 800B1D20 FEFF0524 */  addiu      $a1, $zero, -0x2
     /* A0534 800B1D24 0C80013C */  lui        $at, %hi(D_800C3D08)
     /* A0538 800B1D28 083D22AC */  sw         $v0, %lo(D_800C3D08)($at)
-    /* A053C 800B1D2C B9C3020C */  jal        func_800B0EE4
+    /* A053C 800B1D2C B9C3020C */  jal        _padSioRW
     /* A0540 800B1D30 000060A0 */   sb        $zero, 0x0($v1)
     /* A0544 800B1D34 1400BF8F */  lw         $ra, 0x14($sp)
     /* A0548 800B1D38 1000B08F */  lw         $s0, 0x10($sp)

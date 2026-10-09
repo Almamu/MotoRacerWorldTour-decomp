@@ -1,5 +1,6 @@
 #include "common.h"
 #include "langimg/cobjet.h"
+#include "langimg/strutil.h"
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02", func_80015798);
 
@@ -18,8 +19,6 @@ CName::~CName() {
     }
 }
 
-#ifdef NON_MATCHING
-// Equivalent; the original keeps the reloaded m_str in $v1, this in $v0.
 void CName::Set(const char *str) {
     if (str) {
         if (m_str) {
@@ -28,20 +27,17 @@ void CName::Set(const char *str) {
         }
         int len = strlen(str) + 1;
         m_str = new char[len];
-        memcpy(m_str, str, len);
+        strncpy(m_str, str, len);
         m_str[len - 1] = 0;
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02", Set__5CNamePCc);
-#endif
 
 char *CName::Get() {
     return m_str;
 }
 
 int CName::Equals(const char *str) {
-    return strcmp(str, m_str) == 0;
+    return func_800A6100(str, m_str) == 0;
 }
 
 CNamed::CNamed() {

@@ -635,7 +635,7 @@ glabel func_80040E98
     /* 2FFD0 800417C0 0C80053C */   lui       $a1, %hi(D_800C4FE8)
     /* 2FFD4 800417C4 0000E48E */  lw         $a0, 0x0($s7)
     /* 2FFD8 800417C8 E84FA524 */  addiu      $a1, $a1, %lo(D_800C4FE8)
-    /* 2FFDC 800417CC 3ED9020C */  jal        func_800B64F8
+    /* 2FFDC 800417CC 3ED9020C */  jal        strncmp
     /* 2FFE0 800417D0 0D000624 */   addiu     $a2, $zero, 0xD
     /* 2FFE4 800417D4 04004014 */  bnez       $v0, .L800417E8
     /* 2FFE8 800417D8 00000000 */   nop

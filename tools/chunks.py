@@ -234,12 +234,13 @@ def cmd_sync(args):
             i = by_title.get(issue_title(c).split(" (")[0])
             if not i:
                 continue
-            body = issue_body(c)
-            if body.strip() == i["body"].strip():
+            title, body = issue_title(c), issue_body(c)
+            if body.strip() == i["body"].strip() and title == i["title"]:
                 continue
             print(f"#{i['number']} {c['target']} {c['name']}: updated")
             if not args.dry_run:
-                gh("issue", "edit", str(i["number"]), "--body-file", "-", input=body)
+                gh("issue", "edit", str(i["number"]), "--title", title,
+                   "--body-file", "-", input=body)
 
 
 CLEANUP_LABELS = ["cleanup", "blocked"]

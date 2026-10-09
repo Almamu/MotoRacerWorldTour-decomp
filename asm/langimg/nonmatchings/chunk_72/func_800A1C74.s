@@ -10,7 +10,7 @@ glabel func_800A1C74
     /* 9049C 800A1C8C 1400B1AF */  sw         $s1, 0x14($sp)
     /* 904A0 800A1C90 F486020C */  jal        func_800A1BD0
     /* 904A4 800A1C94 1000B0AF */   sw        $s0, 0x10($sp)
-    /* 904A8 800A1C98 B4AA020C */  jal        func_800AAAD0
+    /* 904A8 800A1C98 B4AA020C */  jal        VSync
     /* 904AC 800A1C9C 21200000 */   addu      $a0, $zero, $zero
     /* 904B0 800A1CA0 2C870208 */  j          .L800A1CB0
     /* 904B4 800A1CA4 02001024 */   addiu     $s0, $zero, 0x2
@@ -19,7 +19,7 @@ glabel func_800A1C74
     /* 904BC 800A1CAC 00000000 */   nop
   .L800A1CB0:
     /* 904C0 800A1CB0 21206002 */  addu       $a0, $s3, $zero
-    /* 904C4 800A1CB4 EDA4020C */  jal        func_800A93B4
+    /* 904C4 800A1CB4 EDA4020C */  jal        CdSearchFile
     /* 904C8 800A1CB8 21284002 */   addu      $a1, $s2, $zero
     /* 904CC 800A1CBC 21884000 */  addu       $s1, $v0, $zero
     /* 904D0 800A1CC0 F9FF2012 */  beqz       $s1, .L800A1CA8
@@ -27,7 +27,7 @@ glabel func_800A1C74
   .L800A1CC8:
     /* 904D8 800A1CC8 F886020C */  jal        func_800A1BE0
     /* 904DC 800A1CCC 00000000 */   nop
-    /* 904E0 800A1CD0 B4AA020C */  jal        func_800AAAD0
+    /* 904E0 800A1CD0 B4AA020C */  jal        VSync
     /* 904E4 800A1CD4 21200000 */   addu      $a0, $zero, $zero
     /* 904E8 800A1CD8 21102002 */  addu       $v0, $s1, $zero
     /* 904EC 800A1CDC 2000BF8F */  lw         $ra, 0x20($sp)

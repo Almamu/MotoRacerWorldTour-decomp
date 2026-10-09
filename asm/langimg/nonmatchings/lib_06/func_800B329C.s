@@ -46,7 +46,7 @@ glabel func_800B329C
     /* A1AD8 800B32C8 AE014594 */  lhu        $a1, 0x1AE($v0)
     /* A1ADC 800B32CC 21908000 */  addu       $s2, $a0, $zero
     /* A1AE0 800B32D0 A60143A4 */  sh         $v1, 0x1A6($v0)
-    /* A1AE4 800B32D4 6BCE020C */  jal        func_800B39AC
+    /* A1AE4 800B32D4 6BCE020C */  jal        _spu_Fw1ts
     /* A1AE8 800B32D8 FF07B330 */   andi      $s3, $a1, 0x7FF
     /* A1AEC 800B32DC 39002012 */  beqz       $s1, .L800B33C4
     /* A1AF0 800B32E0 4100222E */   sltiu     $v0, $s1, 0x41
@@ -75,7 +75,7 @@ glabel func_800B329C
     /* A1B3C 800B332C 00000000 */  nop
     /* A1B40 800B3330 CFFF8230 */  andi       $v0, $a0, 0xFFCF
     /* A1B44 800B3334 10004234 */  ori        $v0, $v0, 0x10
-    /* A1B48 800B3338 6BCE020C */  jal        func_800B39AC
+    /* A1B48 800B3338 6BCE020C */  jal        _spu_Fw1ts
     /* A1B4C 800B333C AA0162A4 */   sh        $v0, 0x1AA($v1)
     /* A1B50 800B3340 0C80023C */  lui        $v0, %hi(D_800C3DB0)
     /* A1B54 800B3344 B03D428C */  lw         $v0, %lo(D_800C3DB0)($v0)
@@ -107,9 +107,9 @@ glabel func_800B329C
     /* A1BB4 800B33A4 EFFF4014 */  bnez       $v0, .L800B3364
     /* A1BB8 800B33A8 01006324 */   addiu     $v1, $v1, 0x1
   .L800B33AC:
-    /* A1BBC 800B33AC 6BCE020C */  jal        func_800B39AC
+    /* A1BBC 800B33AC 6BCE020C */  jal        _spu_Fw1ts
     /* A1BC0 800B33B0 23883002 */   subu      $s1, $s1, $s0
-    /* A1BC4 800B33B4 6BCE020C */  jal        func_800B39AC
+    /* A1BC4 800B33B4 6BCE020C */  jal        _spu_Fw1ts
     /* A1BC8 800B33B8 00000000 */   nop
     /* A1BCC 800B33BC C9FF2016 */  bnez       $s1, .L800B32E4
     /* A1BD0 800B33C0 4100222E */   sltiu     $v0, $s1, 0x41

@@ -12,7 +12,7 @@ glabel func_800ADB34
     /* 9C364 800ADB54 24105000 */  and        $v0, $v0, $s0
     /* 9C368 800ADB58 89004014 */  bnez       $v0, .L800ADD80
     /* 9C36C 800ADB5C 01000224 */   addiu     $v0, $zero, 0x1
-    /* 9C370 800ADB60 79AB020C */  jal        func_800AADE4
+    /* 9C370 800ADB60 79AB020C */  jal        SetIntrMask
     /* 9C374 800ADB64 21200000 */   addu      $a0, $zero, $zero
     /* 9C378 800ADB68 0C80043C */  lui        $a0, %hi(D_800BF368)
     /* 9C37C 800ADB6C 68F3848C */  lw         $a0, %lo(D_800BF368)($a0)
@@ -45,7 +45,7 @@ glabel func_800ADB34
     /* 9C3E4 800ADBD4 00000000 */  nop
     /* 9C3E8 800ADBD8 03004014 */  bnez       $v0, .L800ADBE8
     /* 9C3EC 800ADBDC 02000424 */   addiu     $a0, $zero, 0x2
-    /* 9C3F0 800ADBE0 50AB020C */  jal        func_800AAD40
+    /* 9C3F0 800ADBE0 50AB020C */  jal        DMACallback
     /* 9C3F4 800ADBE4 21280000 */   addu      $a1, $zero, $zero
   .L800ADBE8:
     /* 9C3F8 800ADBE8 0C80033C */  lui        $v1, %hi(D_800BF348)
@@ -116,7 +116,7 @@ glabel func_800ADB34
   .L800ADCE4:
     /* 9C4F4 800ADCE4 0C80043C */  lui        $a0, %hi(D_800BF374)
     /* 9C4F8 800ADCE8 74F3848C */  lw         $a0, %lo(D_800BF374)($a0)
-    /* 9C4FC 800ADCEC 79AB020C */  jal        func_800AADE4
+    /* 9C4FC 800ADCEC 79AB020C */  jal        SetIntrMask
     /* 9C500 800ADCF0 00000000 */   nop
     /* 9C504 800ADCF4 0C80033C */  lui        $v1, %hi(D_800BF368)
     /* 9C508 800ADCF8 68F3638C */  lw         $v1, %lo(D_800BF368)($v1)

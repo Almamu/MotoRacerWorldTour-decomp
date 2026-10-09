@@ -7,7 +7,7 @@ glabel func_80014634
     /* 2E50 80014640 97510008 */  j          .L8001465C
     /* 2E54 80014644 1400BFAF */   sw        $ra, 0x14($sp)
   .L80014648:
-    /* 2E58 80014648 B4AA020C */  jal        func_800AAAD0
+    /* 2E58 80014648 B4AA020C */  jal        VSync
     /* 2E5C 8001464C 21200000 */   addu      $a0, $zero, $zero
     /* 2E60 80014650 21200002 */  addu       $a0, $s0, $zero
     /* 2E64 80014654 CE4F000C */  jal        func_80013F38

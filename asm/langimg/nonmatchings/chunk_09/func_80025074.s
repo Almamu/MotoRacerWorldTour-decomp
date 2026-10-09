@@ -23,7 +23,7 @@ glabel func_80025074
     /* 138CC 800250BC 0E000524 */   addiu     $a1, $zero, 0xE
     /* 138D0 800250C0 1000A48F */  lw         $a0, 0x10($sp)
     /* 138D4 800250C4 1800A58F */  lw         $a1, 0x18($sp)
-    /* 138D8 800250C8 5AB9020C */  jal        func_800AE568
+    /* 138D8 800250C8 5AB9020C */  jal        ratan2
     /* 138DC 800250CC 00000000 */   nop
     /* 138E0 800250D0 88640724 */  addiu      $a3, $zero, 0x6488
     /* 138E4 800250D4 0C000824 */  addiu      $t0, $zero, 0xC

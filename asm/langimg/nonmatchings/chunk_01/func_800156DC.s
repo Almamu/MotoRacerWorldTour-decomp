@@ -9,14 +9,14 @@ glabel func_800156DC
     /* 3F00 800156F0 21300000 */  addu       $a2, $zero, $zero
     /* 3F04 800156F4 1000BFAF */  sw         $ra, 0x10($sp)
     /* 3F08 800156F8 848740AC */  sw         $zero, %lo(D_800B8784)($v0)
-    /* 3F0C 800156FC 4B9E020C */  jal        func_800A792C
+    /* 3F0C 800156FC 4B9E020C */  jal        CdControlB
     /* 3F10 80015700 E8C460AC */   sw        $zero, %lo(D_800CC4E8)($v1)
-    /* 3F14 80015704 E0D6020C */  jal        func_800B5B80
+    /* 3F14 80015704 E0D6020C */  jal        EnterCriticalSection
     /* 3F18 80015708 00000000 */   nop
     /* 3F1C 8001570C 02000424 */  addiu      $a0, $zero, 0x2
-    /* 3F20 80015710 44AB020C */  jal        func_800AAD10
+    /* 3F20 80015710 44AB020C */  jal        InterruptCallback
     /* 3F24 80015714 21280000 */   addu      $a1, $zero, $zero
-    /* 3F28 80015718 E4D6020C */  jal        func_800B5B90
+    /* 3F28 80015718 E4D6020C */  jal        ExitCriticalSection
     /* 3F2C 8001571C 00000000 */   nop
     /* 3F30 80015720 1000BF8F */  lw         $ra, 0x10($sp)
     /* 3F34 80015724 00000000 */  nop

@@ -6,7 +6,7 @@ glabel func_800B2674
     /* A0E8C 800B267C 21808000 */  addu       $s0, $a0, $zero
     /* A0E90 800B2680 57000426 */  addiu      $a0, $s0, 0x57
     /* A0E94 800B2684 1400BFAF */  sw         $ra, 0x14($sp)
-    /* A0E98 800B2688 17D8020C */  jal        func_800B605C
+    /* A0E98 800B2688 17D8020C */  jal        bzero
     /* A0E9C 800B268C 06000524 */   addiu     $a1, $zero, 0x6
     /* A0EA0 800B2690 E6000296 */  lhu        $v0, 0xE6($s0)
     /* A0EA4 800B2694 00000000 */  nop

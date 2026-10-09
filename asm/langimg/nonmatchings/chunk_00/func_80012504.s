@@ -137,7 +137,7 @@ glabel func_80012504
     /* F08 800126F8 2428A200 */  and        $a1, $a1, $v0
   .L800126FC:
     /* F0C 800126FC 0A00C5A4 */  sh         $a1, 0xA($a2)
-    /* F10 80012700 09CF020C */  jal        func_800B3C24
+    /* F10 80012700 09CF020C */  jal        SpuSetReverbVoice
     /* F14 80012704 21286002 */   addu      $a1, $s3, $zero
     /* F18 80012708 2400E016 */  bnez       $s7, .L8001279C
     /* F1C 8001270C 13001024 */   addiu     $s0, $zero, 0x13
@@ -170,7 +170,7 @@ glabel func_80012504
     /* F80 80012770 0A004010 */  beqz       $v0, .L8001279C
     /* F84 80012774 4C00A4A7 */   sh        $a0, 0x4C($sp)
     /* F88 80012778 01000424 */  addiu      $a0, $zero, 0x1
-    /* F8C 8001277C 05D1020C */  jal        func_800B4414
+    /* F8C 8001277C 05D1020C */  jal        SpuSetPitchLFOVoice
     /* F90 80012780 21286002 */   addu      $a1, $s3, $zero
     /* F94 80012784 FFFF2326 */  addiu      $v1, $s1, -0x1
     /* F98 80012788 0200C226 */  addiu      $v0, $s6, 0x2
@@ -182,12 +182,12 @@ glabel func_80012504
     /* FAC 8001279C 21202002 */  addu       $a0, $s1, $zero
     /* FB0 800127A0 1000A527 */  addiu      $a1, $sp, 0x10
     /* FB4 800127A4 1400B0AF */  sw         $s0, 0x14($sp)
-    /* FB8 800127A8 34D1020C */  jal        func_800B44D0
+    /* FB8 800127A8 34D1020C */  jal        SpuNSetVoiceAttr
     /* FBC 800127AC 1000B3AF */   sw        $s3, 0x10($sp)
     /* FC0 800127B0 0500E016 */  bnez       $s7, .L800127C8
     /* FC4 800127B4 01001E24 */   addiu     $fp, $zero, 0x1
     /* FC8 800127B8 01000424 */  addiu      $a0, $zero, 0x1
-    /* FCC 800127BC 2DD0020C */  jal        func_800B40B4
+    /* FCC 800127BC 2DD0020C */  jal        SpuSetKey
     /* FD0 800127C0 21286002 */   addu      $a1, $s3, $zero
     /* FD4 800127C4 01001E24 */  addiu      $fp, $zero, 0x1
   .L800127C8:

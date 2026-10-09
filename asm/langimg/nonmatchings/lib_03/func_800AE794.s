@@ -26,7 +26,7 @@ glabel func_800AE794
     /* 9CFEC 800AE7DC 03000524 */  addiu      $a1, $zero, 0x3
     /* 9CFF0 800AE7E0 1000BFAF */  sw         $ra, 0x10($sp)
     /* 9CFF4 800AE7E4 0000848C */  lw         $a0, 0x0($a0)
-    /* 9CFF8 800AE7E8 4FC1020C */  jal        func_800B053C
+    /* 9CFF8 800AE7E8 4FC1020C */  jal        PadInfoMode
     /* 9CFFC 800AE7EC 21300000 */   addu      $a2, $zero, $zero
     /* 9D000 800AE7F0 1000BF8F */  lw         $ra, 0x10($sp)
     /* 9D004 800AE7F4 00000000 */  nop

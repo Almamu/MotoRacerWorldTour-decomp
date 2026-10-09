@@ -44,14 +44,14 @@ glabel func_800B2980
     /* A1228 800B2A18 00000000 */   nop
   .L800B2A1C:
     /* A122C 800B2A1C 21200002 */  addu       $a0, $s0, $zero
-    /* A1230 800B2A20 12C7020C */  jal        func_800B1C48
+    /* A1230 800B2A20 12C7020C */  jal        _padCmdParaMode
     /* A1234 800B2A24 01000524 */   addiu     $a1, $zero, 0x1
     /* A1238 800B2A28 9CCA0208 */  j          .L800B2A70
     /* A123C 800B2A2C 21100000 */   addu      $v0, $zero, $zero
   .L800B2A30:
     /* A1240 800B2A30 21200002 */  addu       $a0, $s0, $zero
   .L800B2A34:
-    /* A1244 800B2A34 12C7020C */  jal        func_800B1C48
+    /* A1244 800B2A34 12C7020C */  jal        _padCmdParaMode
     /* A1248 800B2A38 21280000 */   addu      $a1, $zero, $zero
     /* A124C 800B2A3C 9CCA0208 */  j          .L800B2A70
     /* A1250 800B2A40 21100000 */   addu      $v0, $zero, $zero
@@ -65,7 +65,7 @@ glabel func_800B2980
     /* A126C 800B2A5C 9CCA0208 */  j          .L800B2A70
     /* A1270 800B2A60 21100000 */   addu      $v0, $zero, $zero
   .L800B2A64:
-    /* A1274 800B2A64 EEC4020C */  jal        func_800B13B8
+    /* A1274 800B2A64 EEC4020C */  jal        _padSendAtLoadInfo
     /* A1278 800B2A68 21200002 */   addu      $a0, $s0, $zero
     /* A127C 800B2A6C 21100000 */  addu       $v0, $zero, $zero
   .L800B2A70:

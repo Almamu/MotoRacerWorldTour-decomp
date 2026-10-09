@@ -78,7 +78,7 @@ glabel LoadFile
     /* 2BF0 80135724 09006012 */  beqz       $s3, .L8013574C
     /* 2BF4 80135728 21204002 */   addu      $a0, $s2, $zero
     /* 2BF8 8013572C 21280002 */  addu       $a1, $s0, $zero
-    /* 2BFC 80135730 6C2B050C */  jal        func_8014ADB0
+    /* 2BFC 80135730 6C2B050C */  jal        memcpy
     /* 2C00 80135734 21302002 */   addu      $a2, $s1, $zero
   .L80135738:
     /* 2C04 80135738 04006012 */  beqz       $s3, .L8013574C

@@ -8,7 +8,7 @@ glabel func_8009FCD8
     /* 8E4F8 8009FCE8 800A858C */  lw         $a1, 0xA80($a0)
     /* 8E4FC 8009FCEC 00000000 */  nop
     /* 8E500 8009FCF0 6000B08C */  lw         $s0, 0x60($a1)
-    /* 8E504 8009FCF4 A7AF020C */  jal        func_800ABE9C
+    /* 8E504 8009FCF4 A7AF020C */  jal        DrawSync
     /* 8E508 8009FCF8 21200000 */   addu      $a0, $zero, $zero
     /* 8E50C 8009FCFC 3001038E */  lw         $v1, 0x130($s0)
     /* 8E510 8009FD00 01000624 */  addiu      $a2, $zero, 0x1

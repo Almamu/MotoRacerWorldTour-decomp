@@ -58,14 +58,14 @@ glabel func_80011E44
     /* 720 80011F10 FFFF8424 */  addiu      $a0, $a0, -0x1
     /* 724 80011F14 FBFF8714 */  bne        $a0, $a3, .L80011F04
     /* 728 80011F18 2130C200 */   addu      $a2, $a2, $v0
-    /* 72C 80011F1C CDD0020C */  jal        func_800B4334
+    /* 72C 80011F1C CDD0020C */  jal        SpuSetTransferMode
     /* 730 80011F20 21200000 */   addu      $a0, $zero, $zero
-    /* 734 80011F24 B5D0020C */  jal        func_800B42D4
+    /* 734 80011F24 B5D0020C */  jal        SpuSetTransferStartAddr
     /* 738 80011F28 10100424 */   addiu     $a0, $zero, 0x1010
     /* 73C 80011F2C 1C00048E */  lw         $a0, 0x1C($s0)
-    /* 740 80011F30 9DD0020C */  jal        func_800B4274
+    /* 740 80011F30 9DD0020C */  jal        SpuRead
     /* 744 80011F34 21282002 */   addu      $a1, $s1, $zero
-    /* 748 80011F38 D9D0020C */  jal        func_800B4364
+    /* 748 80011F38 D9D0020C */  jal        SpuIsTransferCompleted
     /* 74C 80011F3C 01000424 */   addiu     $a0, $zero, 0x1
     /* 750 80011F40 1C00058E */  lw         $a1, 0x1C($s0)
     /* 754 80011F44 21200002 */  addu       $a0, $s0, $zero

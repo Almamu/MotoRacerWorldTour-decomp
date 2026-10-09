@@ -8,19 +8,19 @@ glabel func_80011C5C
     /* 47C 80011C6C 2188A000 */  addu       $s1, $a1, $zero
     /* 480 80011C70 1800B2AF */  sw         $s2, 0x18($sp)
     /* 484 80011C74 1C00BFAF */  sw         $ra, 0x1C($sp)
-    /* 488 80011C78 A7CB020C */  jal        func_800B2E9C
+    /* 488 80011C78 A7CB020C */  jal        SsUtReverbOff
     /* 48C 80011C7C 2190C000 */   addu      $s2, $a2, $zero
-    /* 490 80011C80 B1CE020C */  jal        func_800B3AC4
+    /* 490 80011C80 B1CE020C */  jal        SpuSetReverb
     /* 494 80011C84 21200000 */   addu      $a0, $zero, $zero
-    /* 498 80011C88 C5CF020C */  jal        func_800B3F14
+    /* 498 80011C88 C5CF020C */  jal        SpuClearReverbWorkArea
     /* 49C 80011C8C 07000424 */   addiu     $a0, $zero, 0x7
     /* 4A0 80011C90 FF3F0424 */  addiu      $a0, $zero, 0x3FFF
-    /* 4A4 80011C94 DCD2020C */  jal        func_800B4B70
+    /* 4A4 80011C94 DCD2020C */  jal        SpuSetCommonMasterVolume
     /* 4A8 80011C98 FF3F0524 */   addiu     $a1, $zero, 0x3FFF
-    /* 4AC 80011C9C ECD2020C */  jal        func_800B4BB0
+    /* 4AC 80011C9C ECD2020C */  jal        SpuSetCommonCDMix
     /* 4B0 80011CA0 01000424 */   addiu     $a0, $zero, 0x1
     /* 4B4 80011CA4 FF7F0424 */  addiu      $a0, $zero, 0x7FFF
-    /* 4B8 80011CA8 E4D2020C */  jal        func_800B4B90
+    /* 4B8 80011CA8 E4D2020C */  jal        SpuSetCommonCDVolume
     /* 4BC 80011CAC FF7F0524 */   addiu     $a1, $zero, 0x7FFF
     /* 4C0 80011CB0 01000224 */  addiu      $v0, $zero, 0x1
     /* 4C4 80011CB4 4D0080A3 */  sb         $zero, %gp_rel(D_800C473D)($gp)

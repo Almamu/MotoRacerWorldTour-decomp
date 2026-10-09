@@ -33,9 +33,9 @@ glabel func_8014074C
     /* DC8C 801407C0 0C006210 */  beq        $v1, $v0, .L801407F4
     /* DC90 801407C4 00000000 */   nop
   .L801407C8:
-    /* DC94 801407C8 B20A050C */  jal        func_80142AC8
+    /* DC94 801407C8 B20A050C */  jal        setRC2wait
     /* DC98 801407CC 3C000424 */   addiu     $a0, $zero, 0x3C
-    /* DC9C 801407D0 3103050C */  jal        func_80140CC4
+    /* DC9C 801407D0 3103050C */  jal        _padClrIntSio0
     /* DCA0 801407D4 00000000 */   nop
     /* DCA4 801407D8 06004014 */  bnez       $v0, .L801407F4
     /* DCA8 801407DC 00000000 */   nop

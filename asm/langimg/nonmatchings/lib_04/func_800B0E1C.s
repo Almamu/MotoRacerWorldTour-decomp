@@ -22,9 +22,9 @@ glabel func_800B0E1C
     /* 9F674 800B0E64 00000000 */  nop
     /* 9F678 800B0E68 0C004010 */  beqz       $v0, .L800B0E9C
     /* 9F67C 800B0E6C 00000000 */   nop
-    /* 9F680 800B0E70 77CB020C */  jal        func_800B2DDC
+    /* 9F680 800B0E70 77CB020C */  jal        setRC2wait
     /* 9F684 800B0E74 3C000424 */   addiu     $a0, $zero, 0x3C
-    /* 9F688 800B0E78 BDC4020C */  jal        func_800B12F4
+    /* 9F688 800B0E78 BDC4020C */  jal        _padClrIntSio0
     /* 9F68C 800B0E7C 00000000 */   nop
     /* 9F690 800B0E80 06004014 */  bnez       $v0, .L800B0E9C
     /* 9F694 800B0E84 00000000 */   nop

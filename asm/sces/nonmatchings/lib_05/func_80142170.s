@@ -28,7 +28,7 @@ glabel func_80142170
     /* F698 801421CC 79080508 */  j          .L801421E4
     /* F69C 801421D0 000040AC */   sw        $zero, 0x0($v0)
   .L801421D4:
-    /* F6A0 801421D4 6C0A050C */  jal        func_801429B0
+    /* F6A0 801421D4 6C0A050C */  jal        _dirFailAuto
     /* F6A4 801421D8 21200002 */   addu      $a0, $s0, $zero
     /* F6A8 801421DC 9908050C */  jal        func_80142264
     /* F6AC 801421E0 21200002 */   addu      $a0, $s0, $zero
@@ -51,7 +51,7 @@ glabel func_80142170
     /* F6EC 80142220 00210300 */  sll        $a0, $v1, 4
     /* F6F0 80142224 23208300 */  subu       $a0, $a0, $v1
     /* F6F4 80142228 00210400 */  sll        $a0, $a0, 4
-    /* F6F8 8014222C 0601050C */  jal        func_80140418
+    /* F6F8 8014222C 0601050C */  jal        _padInitSioMode
     /* F6FC 80142230 21209100 */   addu      $a0, $a0, $s1
     /* F700 80142234 90080508 */  j          .L80142240
     /* F704 80142238 FFFF0534 */   ori       $a1, $zero, 0xFFFF

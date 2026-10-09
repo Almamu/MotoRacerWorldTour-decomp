@@ -32,12 +32,12 @@ glabel func_80096290
     /* 84B10 80096300 2338E600 */  subu       $a3, $a3, $a2
     /* 84B14 80096304 23186700 */  subu       $v1, $v1, $a3
     /* 84B18 80096308 21800802 */  addu       $s0, $s0, $t0
-    /* 84B1C 8009630C A7AF020C */  jal        func_800ABE9C
+    /* 84B1C 8009630C A7AF020C */  jal        DrawSync
     /* 84B20 80096310 1000A3AF */   sw        $v1, 0x10($sp)
     /* 84B24 80096314 21202002 */  addu       $a0, $s1, $zero
     /* 84B28 80096318 2CB0020C */  jal        func_800AC0B0
     /* 84B2C 8009631C 21280002 */   addu      $a1, $s0, $zero
-    /* 84B30 80096320 A7AF020C */  jal        func_800ABE9C
+    /* 84B30 80096320 A7AF020C */  jal        DrawSync
     /* 84B34 80096324 21200000 */   addu      $a0, $zero, $zero
     /* 84B38 80096328 A446848F */  lw         $a0, %gp_rel(D_800C8D94)($gp)
     /* 84B3C 8009632C 1000A58F */  lw         $a1, 0x10($sp)

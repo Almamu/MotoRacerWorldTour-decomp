@@ -425,7 +425,7 @@ glabel func_800A7CA0
     /* 969D4 800A81C4 06000224 */   addiu     $v0, $zero, 0x6
   .L800A81C8:
     /* 969D8 800A81C8 0B80043C */  lui        $a0, %hi(D_800B7EC4)
-    /* 969DC 800A81CC E6DB020C */  jal        func_800B6F98
+    /* 969DC 800A81CC E6DB020C */  jal        puts
     /* 969E0 800A81D0 C47E8424 */   addiu     $a0, $a0, %lo(D_800B7EC4)
     /* 969E4 800A81D4 1000A593 */  lbu        $a1, 0x10($sp)
     /* 969E8 800A81D8 0B80043C */  lui        $a0, %hi(D_800B7ED8)

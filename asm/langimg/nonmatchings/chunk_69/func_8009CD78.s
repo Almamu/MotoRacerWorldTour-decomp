@@ -33,7 +33,7 @@ glabel func_8009CD78
     /* 8B5F0 8009CDE0 21284000 */  addu       $a1, $v0, $zero
     /* 8B5F4 8009CDE4 0C80043C */  lui        $a0, %hi(D_800BC884)
     /* 8B5F8 8009CDE8 84C8848C */  lw         $a0, %lo(D_800BC884)($a0)
-    /* 8B5FC 8009CDEC 46D8020C */  jal        func_800B6118
+    /* 8B5FC 8009CDEC 46D8020C */  jal        memcpy
     /* 8B600 8009CDF0 AC150624 */   addiu     $a2, $zero, 0x15AC
     /* 8B604 8009CDF4 2878020C */  jal        func_8009E0A0
     /* 8B608 8009CDF8 21202002 */   addu      $a0, $s1, $zero

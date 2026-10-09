@@ -64,7 +64,7 @@ glabel func_8007C780
     /* 6B074 8007C864 708C22AC */  sw         $v0, %lo(D_800C8C70)($at)
     /* 6B078 8007C868 801F013C */  lui        $at, (0x1F800004 >> 16)
     /* 6B07C 8007C86C 040030AC */  sw         $s0, (0x1F800004 & 0xFFFF)($at)
-    /* 6B080 8007C870 72B0020C */  jal        func_800AC1C8
+    /* 6B080 8007C870 72B0020C */  jal        ClearOTagR
     /* 6B084 8007C874 21200002 */   addu      $a0, $s0, $zero
     /* 6B088 8007C878 19001324 */  addiu      $s3, $zero, 0x19
     /* 6B08C 8007C87C FF00053C */  lui        $a1, (0xFFFFFF >> 16)

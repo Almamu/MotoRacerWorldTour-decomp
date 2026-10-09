@@ -3,7 +3,7 @@ nonmatching func_800A2554, 0x44
 glabel func_800A2554
     /* 90D64 800A2554 E8FFBD27 */  addiu      $sp, $sp, -0x18
     /* 90D68 800A2558 1000BFAF */  sw         $ra, 0x10($sp)
-    /* 90D6C 800A255C 98AA020C */  jal        func_800AAA60
+    /* 90D6C 800A255C 98AA020C */  jal        _card_chan
     /* 90D70 800A2560 00000000 */   nop
     /* 90D74 800A2564 0D80043C */  lui        $a0, %hi(D_800D6094)
     /* 90D78 800A2568 03000324 */  addiu      $v1, $zero, 0x3

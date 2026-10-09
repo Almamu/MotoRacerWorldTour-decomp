@@ -148,7 +148,7 @@ glabel func_800121F4
     /* C10 80012400 0A0002A6 */  sh         $v0, 0xA($s0)
     /* C14 80012404 21200000 */  addu       $a0, $zero, $zero
     /* C18 80012408 01000524 */  addiu      $a1, $zero, 0x1
-    /* C1C 8001240C 05D1020C */  jal        func_800B4414
+    /* C1C 8001240C 05D1020C */  jal        SpuSetPitchLFOVoice
     /* C20 80012410 04286502 */   sllv      $a1, $a1, $s3
   .L80012414:
     /* C24 80012414 19008012 */  beqz       $s4, .L8001247C
@@ -175,7 +175,7 @@ glabel func_800121F4
     /* C74 80012464 0A0062A4 */  sh         $v0, 0xA($v1)
     /* C78 80012468 21200000 */  addu       $a0, $zero, $zero
     /* C7C 8001246C 01000524 */  addiu      $a1, $zero, 0x1
-    /* C80 80012470 05D1020C */  jal        func_800B4414
+    /* C80 80012470 05D1020C */  jal        SpuSetPitchLFOVoice
     /* C84 80012474 0428C500 */   sllv      $a1, $a1, $a2
   .L80012478:
     /* C88 80012478 21686002 */  addu       $t5, $s3, $zero

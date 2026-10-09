@@ -39,7 +39,7 @@ glabel func_8003B51C
     /* 29DB0 8003B5A0 0000668C */  lw         $a2, 0x0($v1)
     /* 29DB4 8003B5A4 0C00658C */  lw         $a1, 0xC($v1)
     /* 29DB8 8003B5A8 80300600 */  sll        $a2, $a2, 2
-    /* 29DBC 8003B5AC 46D8020C */  jal        func_800B6118
+    /* 29DBC 8003B5AC 46D8020C */  jal        memcpy
     /* 29DC0 8003B5B0 FFFFC624 */   addiu     $a2, $a2, -0x1
     /* 29DC4 8003B5B4 B80A428E */  lw         $v0, 0xAB8($s2)
     /* 29DC8 8003B5B8 00000000 */  nop

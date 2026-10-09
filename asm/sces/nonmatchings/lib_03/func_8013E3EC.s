@@ -3,7 +3,7 @@ nonmatching func_8013E3EC, 0x34
 glabel func_8013E3EC
     /* B8B8 8013E3EC E8FFBD27 */  addiu      $sp, $sp, -0x18
     /* B8BC 8013E3F0 1000BFAF */  sw         $ra, 0x10($sp)
-    /* B8C0 8013E3F4 22EC040C */  jal        func_8013B088
+    /* B8C0 8013E3F4 22EC040C */  jal        VSync
     /* B8C4 8013E3F8 FFFF0424 */   addiu     $a0, $zero, -0x1
     /* B8C8 8013E3FC F0004224 */  addiu      $v0, $v0, 0xF0
     /* B8CC 8013E400 1C80013C */  lui        $at, %hi(D_801BFD74)

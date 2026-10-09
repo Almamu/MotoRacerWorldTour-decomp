@@ -28,7 +28,7 @@ glabel func_800B24B4
     /* A0D20 800B2510 4AC90208 */  j          .L800B2528
     /* A0D24 800B2514 000040AC */   sw        $zero, 0x0($v0)
   .L800B2518:
-    /* A0D28 800B2518 34CB020C */  jal        func_800B2CD0
+    /* A0D28 800B2518 34CB020C */  jal        _dirFailAuto
     /* A0D2C 800B251C 21200002 */   addu      $a0, $s0, $zero
     /* A0D30 800B2520 6AC9020C */  jal        func_800B25A8
     /* A0D34 800B2524 21200002 */   addu      $a0, $s0, $zero
@@ -51,7 +51,7 @@ glabel func_800B24B4
     /* A0D74 800B2564 00210300 */  sll        $a0, $v1, 4
     /* A0D78 800B2568 23208300 */  subu       $a0, $a0, $v1
     /* A0D7C 800B256C 00210400 */  sll        $a0, $a0, 4
-    /* A0D80 800B2570 BAC2020C */  jal        func_800B0AE8
+    /* A0D80 800B2570 BAC2020C */  jal        _padInitSioMode
     /* A0D84 800B2574 21209100 */   addu      $a0, $a0, $s1
     /* A0D88 800B2578 61C90208 */  j          .L800B2584
     /* A0D8C 800B257C FFFF0534 */   ori       $a1, $zero, 0xFFFF

@@ -80,7 +80,7 @@ glabel func_800A1654
     /* 8FF80 800A1770 00140200 */  sll        $v0, $v0, 16
     /* 8FF84 800A1774 25108200 */  or         $v0, $a0, $v0
     /* 8FF88 800A1778 180002AE */  sw         $v0, 0x18($s0)
-    /* 8FF8C 800A177C 9DB0020C */  jal        func_800AC274
+    /* 8FF8C 800A177C 9DB0020C */  jal        DrawPrim
     /* 8FF90 800A1780 21200002 */   addu      $a0, $s0, $zero
     /* 8FF94 800A1784 21384002 */  addu       $a3, $s2, $zero
     /* 8FF98 800A1788 0010E228 */  slti       $v0, $a3, 0x1000

@@ -29,7 +29,7 @@ glabel func_80039D4C
   .L80039DB0:
     /* 285C0 80039DB0 2800038E */  lw         $v1, 0x28($s0)
     /* 285C4 80039DB4 40210400 */  sll        $a0, $a0, 5
-    /* 285C8 80039DB8 CCD7020C */  jal        func_800B5F30
+    /* 285C8 80039DB8 CCD7020C */  jal        atoi
     /* 285CC 80039DBC 21206400 */   addu      $a0, $v1, $a0
     /* 285D0 80039DC0 7EE70008 */  j          .L80039DF8
     /* 285D4 80039DC4 21284000 */   addu      $a1, $v0, $zero
@@ -38,7 +38,7 @@ glabel func_80039D4C
     /* 285DC 80039DCC 00000000 */  nop
     /* 285E0 80039DD0 05004010 */  beqz       $v0, .L80039DE8
     /* 285E4 80039DD4 00000000 */   nop
-    /* 285E8 80039DD8 CCD7020C */  jal        func_800B5F30
+    /* 285E8 80039DD8 CCD7020C */  jal        atoi
     /* 285EC 80039DDC 30002426 */   addiu     $a0, $s1, 0x30
     /* 285F0 80039DE0 7EE70008 */  j          .L80039DF8
     /* 285F4 80039DE4 21284000 */   addu      $a1, $v0, $zero

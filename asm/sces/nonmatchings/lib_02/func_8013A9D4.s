@@ -71,7 +71,7 @@ glabel func_8013A9D4
     /* 7F44 8013AA78 21082500 */  addu       $at, $at, $a1
     /* 7F48 8013AA7C 8810258C */  lw         $a1, (0x1F801088 & 0xFFFF)($at)
     /* 7F4C 8013AA80 1580043C */  lui        $a0, %hi(D_8014C8C0)
-    /* 7F50 8013AA84 082C050C */  jal        func_8014B020
+    /* 7F50 8013AA84 082C050C */  jal        printf
     /* 7F54 8013AA88 C0C88424 */   addiu     $a0, $a0, %lo(D_8014C8C0)
     /* 7F58 8013AA8C 94EA0408 */  j          .L8013AA50
     /* 7F5C 8013AA90 01000224 */   addiu     $v0, $zero, 0x1

@@ -41,7 +41,7 @@ glabel func_800B5E0C
     /* A46A8 800B5E98 08008010 */  beqz       $a0, .L800B5EBC
     /* A46AC 800B5E9C 00000000 */   nop
     /* A46B0 800B5EA0 0E80053C */  lui        $a1, %hi(D_800DE728)
-    /* A46B4 800B5EA4 FED8020C */  jal        func_800B63F8
+    /* A46B4 800B5EA4 FED8020C */  jal        strcmp
     /* A46B8 800B5EA8 28E7A524 */   addiu     $a1, $a1, %lo(D_800DE728)
     /* A46BC 800B5EAC 03004014 */  bnez       $v0, .L800B5EBC
     /* A46C0 800B5EB0 00000000 */   nop

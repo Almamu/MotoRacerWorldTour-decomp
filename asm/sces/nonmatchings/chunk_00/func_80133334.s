@@ -149,33 +149,33 @@ glabel func_80133334
     /* 880 801333B4 40280B00 */  sll        $a1, $t3, 1
     /* 884 801333B8 2128AB00 */  addu       $a1, $a1, $t3
     /* 888 801333BC C0280500 */  sll        $a1, $a1, 3
-    /* 88C 801333C0 082C050C */  jal        func_8014B020
+    /* 88C 801333C0 082C050C */  jal        printf
     /* 890 801333C4 21286500 */   addu      $a1, $v1, $a1
     /* 894 801333C8 ADCE0408 */  j          .L80133AB4
     /* 898 801333CC FFFF0224 */   addiu     $v0, $zero, -0x1
   .L801333D0:
-    /* 89C 801333D0 25EB040C */  jal        func_8013AC94
+    /* 89C 801333D0 25EB040C */  jal        DecDCToutCallback
     /* 8A0 801333D4 21200000 */   addu      $a0, $zero, $zero
-    /* 8A4 801333D8 B3DC040C */  jal        func_801372CC
+    /* 8A4 801333D8 B3DC040C */  jal        CdDataCallback
     /* 8A8 801333DC 21200000 */   addu      $a0, $zero, $zero
-    /* 8AC 801333E0 AFDB040C */  jal        func_80136EBC
+    /* 8AC 801333E0 AFDB040C */  jal        CdReadyCallback
     /* 8B0 801333E4 21200000 */   addu      $a0, $zero, $zero
     /* 8B4 801333E8 21200000 */  addu       $a0, $zero, $zero
     /* 8B8 801333EC 21280000 */  addu       $a1, $zero, $zero
-    /* 8BC 801333F0 C014050C */  jal        func_80145300
+    /* 8BC 801333F0 C014050C */  jal        SsSetSerialVol
     /* 8C0 801333F4 21300000 */   addu      $a2, $zero, $zero
     /* 8C4 801333F8 80000224 */  addiu      $v0, $zero, 0x80
     /* 8C8 801333FC 3808A2A3 */  sb         $v0, 0x838($sp)
     /* 8CC 80133400 0E000424 */  addiu      $a0, $zero, 0xE
     /* 8D0 80133404 3808A527 */  addiu      $a1, $sp, 0x838
-    /* 8D4 80133408 50DC040C */  jal        func_80137140
+    /* 8D4 80133408 50DC040C */  jal        CdControlB
     /* 8D8 8013340C 21300000 */   addu      $a2, $zero, $zero
     /* 8DC 80133410 09000424 */  addiu      $a0, $zero, 0x9
     /* 8E0 80133414 21280000 */  addu       $a1, $zero, $zero
-    /* 8E4 80133418 50DC040C */  jal        func_80137140
+    /* 8E4 80133418 50DC040C */  jal        CdControlB
     /* 8E8 8013341C 21300000 */   addu      $a2, $zero, $zero
     /* 8EC 80133420 1580043C */  lui        $a0, %hi(D_8014C2A4)
-    /* 8F0 80133424 082C050C */  jal        func_8014B020
+    /* 8F0 80133424 082C050C */  jal        printf
     /* 8F4 80133428 A4C28424 */   addiu     $a0, $a0, %lo(D_8014C2A4)
   .L8013342C:
     /* 8F8 8013342C 21200000 */  addu       $a0, $zero, $zero
@@ -183,7 +183,7 @@ glabel func_80133334
     /* 900 80133434 9A000624 */  addiu      $a2, $zero, 0x9A
     /* 904 80133438 1580153C */  lui        $s5, %hi(D_8014D34C)
     /* 908 8013343C 4D00023C */  lui        $v0, (0x4D0000 >> 16)
-    /* 90C 80133440 C014050C */  jal        func_80145300
+    /* 90C 80133440 C014050C */  jal        SsSetSerialVol
     /* 910 80133444 4CD3A2AE */   sw        $v0, %lo(D_8014D34C)($s5)
     /* 914 80133448 4008B027 */  addiu      $s0, $sp, 0x840
     /* 918 8013344C 21200002 */  addu       $a0, $s0, $zero
@@ -196,16 +196,16 @@ glabel func_80133334
     /* 934 80133468 40900B00 */  sll        $s2, $t3, 1
     /* 938 8013346C 21184B02 */  addu       $v1, $s2, $t3
     /* 93C 80133470 C0880300 */  sll        $s1, $v1, 3
-    /* 940 80133474 262E050C */  jal        func_8014B898
+    /* 940 80133474 262E050C */  jal        sprintf
     /* 944 80133478 2130D100 */   addu      $a2, $a2, $s1
     /* 948 8013347C B2D7040C */  jal        StrUpper
     /* 94C 80133480 21200002 */   addu      $a0, $s0, $zero
     /* 950 80133484 21200002 */  addu       $a0, $s0, $zero
     /* 954 80133488 1580053C */  lui        $a1, %hi(D_8014C258)
-    /* 958 8013348C 7C2B050C */  jal        func_8014ADF0
+    /* 958 8013348C 7C2B050C */  jal        strcat
     /* 95C 80133490 58C2A524 */   addiu     $a1, $a1, %lo(D_8014C258)
     /* 960 80133494 2000A427 */  addiu      $a0, $sp, 0x20
-    /* 964 80133498 C8E2040C */  jal        func_80138B20
+    /* 964 80133498 C8E2040C */  jal        CdSearchFile
     /* 968 8013349C 21280002 */   addu      $a1, $s0, $zero
     /* 96C 801334A0 09004014 */  bnez       $v0, .L801334C8
     /* 970 801334A4 15000424 */   addiu     $a0, $zero, 0x15
@@ -213,21 +213,21 @@ glabel func_80133334
     /* 978 801334AC 15800B3C */  lui        $t3, %hi(D_8014D350)
     /* 97C 801334B0 50D3658D */  lw         $a1, %lo(D_8014D350)($t3)
     /* 980 801334B4 5CC28424 */  addiu      $a0, $a0, %lo(D_8014C25C)
-    /* 984 801334B8 082C050C */  jal        func_8014B020
+    /* 984 801334B8 082C050C */  jal        printf
     /* 988 801334BC 2128B100 */   addu      $a1, $a1, $s1
     /* 98C 801334C0 50CD0408 */  j          .L80133540
     /* 990 801334C4 15800B3C */   lui       $t3, %hi(D_8014D228)
   .L801334C8:
     /* 994 801334C8 2000A527 */  addiu      $a1, $sp, 0x20
-    /* 998 801334CC 50DC040C */  jal        func_80137140
+    /* 998 801334CC 50DC040C */  jal        CdControlB
     /* 99C 801334D0 21300000 */   addu      $a2, $zero, $zero
     /* 9A0 801334D4 01000424 */  addiu      $a0, $zero, 0x1
     /* 9A4 801334D8 3800A527 */  addiu      $a1, $sp, 0x38
-    /* 9A8 801334DC 7CE6040C */  jal        func_801399F0
+    /* 9A8 801334DC 7CE6040C */  jal        CdRead
     /* 9AC 801334E0 80000624 */   addiu     $a2, $zero, 0x80
     /* 9B0 801334E4 01000424 */  addiu      $a0, $zero, 0x1
   .L801334E8:
-    /* 9B4 801334E8 E3E6040C */  jal        func_80139B8C
+    /* 9B4 801334E8 E3E6040C */  jal        CdReadSync
     /* 9B8 801334EC 21280000 */   addu      $a1, $zero, $zero
     /* 9BC 801334F0 FDFF401C */  bgtz       $v0, .L801334E8
     /* 9C0 801334F4 01000424 */   addiu     $a0, $zero, 0x1
@@ -241,12 +241,12 @@ glabel func_80133334
     /* 9E0 80133514 00000000 */   nop
     /* 9E4 80133518 1580043C */  lui        $a0, %hi(D_8014C27C)
     /* 9E8 8013351C 7CC28424 */  addiu      $a0, $a0, %lo(D_8014C27C)
-    /* 9EC 80133520 082C050C */  jal        func_8014B020
+    /* 9EC 80133520 082C050C */  jal        printf
     /* 9F0 80133524 4008A527 */   addiu     $a1, $sp, 0x840
     /* 9F4 80133528 1580043C */  lui        $a0, %hi(D_8014C290)
     /* 9F8 8013352C 02000696 */  lhu        $a2, 0x2($s0)
     /* 9FC 80133530 3800A597 */  lhu        $a1, 0x38($sp)
-    /* A00 80133534 082C050C */  jal        func_8014B020
+    /* A00 80133534 082C050C */  jal        printf
     /* A04 80133538 90C28424 */   addiu     $a0, $a0, %lo(D_8014C290)
     /* A08 8013353C 15800B3C */  lui        $t3, %hi(D_8014D228)
   .L80133540:
@@ -256,12 +256,12 @@ glabel func_80133334
     /* A18 8013354C ADCE0408 */  j          .L80133AB4
     /* A1C 80133550 FFFF0224 */   addiu     $v0, $zero, -0x1
   .L80133554:
-    /* A20 80133554 05DD040C */  jal        func_80137414
+    /* A20 80133554 05DD040C */  jal        CdPosToInt
     /* A24 80133558 2000A427 */   addiu     $a0, $sp, 0x20
     /* A28 8013355C 05004424 */  addiu      $a0, $v0, 0x5
-    /* A2C 80133560 C4DC040C */  jal        func_80137310
+    /* A2C 80133560 C4DC040C */  jal        CdIntToPos
     /* A30 80133564 2000A527 */   addiu     $a1, $sp, 0x20
-    /* A34 80133568 22EC040C */  jal        func_8013B088
+    /* A34 80133568 22EC040C */  jal        VSync
     /* A38 8013356C 21200000 */   addu      $a0, $zero, $zero
     /* A3C 80133570 1580173C */  lui        $s7, %hi(D_8014D354)
     /* A40 80133574 1C000396 */  lhu        $v1, 0x1C($s0)
@@ -345,7 +345,7 @@ glabel func_80133334
   .L801336A8:
     /* B74 801336A8 49FF0212 */  beq        $s0, $v0, .L801333D0
     /* B78 801336AC 00000000 */   nop
-    /* B7C 801336B0 B3F0040C */  jal        func_8013C2CC
+    /* B7C 801336B0 B3F0040C */  jal        SetDispMask
     /* B80 801336B4 01000424 */   addiu     $a0, $zero, 0x1
     /* B84 801336B8 E8000016 */  bnez       $s0, .L80133A5C
     /* B88 801336BC 21886002 */   addu      $s1, $s3, $zero
@@ -357,7 +357,7 @@ glabel func_80133334
     /* B9C 801336D0 21202002 */   addu      $a0, $s1, $zero
     /* BA0 801336D4 50D0040C */  jal        func_80134140
     /* BA4 801336D8 21280000 */   addu      $a1, $zero, $zero
-    /* BA8 801336DC 22EC040C */  jal        func_8013B088
+    /* BA8 801336DC 22EC040C */  jal        VSync
     /* BAC 801336E0 21200000 */   addu      $a0, $zero, $zero
     /* BB0 801336E4 2000238E */  lw         $v1, 0x20($s1)
     /* BB4 801336E8 1580023C */  lui        $v0, %hi(D_8014D348)
@@ -386,11 +386,11 @@ glabel func_80133334
     /* C10 80133744 00000000 */  nop
     /* C14 80133748 16004010 */  beqz       $v0, .L801337A4
     /* C18 8013374C 15800B3C */   lui       $t3, %hi(D_8014D0F0)
-    /* C1C 80133750 25EB040C */  jal        func_8013AC94
+    /* C1C 80133750 25EB040C */  jal        DecDCToutCallback
     /* C20 80133754 21200000 */   addu      $a0, $zero, $zero
-    /* C24 80133758 B3DC040C */  jal        func_801372CC
+    /* C24 80133758 B3DC040C */  jal        CdDataCallback
     /* C28 8013375C 21200000 */   addu      $a0, $zero, $zero
-    /* C2C 80133760 AFDB040C */  jal        func_80136EBC
+    /* C2C 80133760 AFDB040C */  jal        CdReadyCallback
     /* C30 80133764 21200000 */   addu      $a0, $zero, $zero
     /* C34 80133768 4CD3A38E */  lw         $v1, %lo(D_8014D34C)($s5)
     /* C38 8013376C 00000000 */  nop
@@ -399,13 +399,13 @@ glabel func_80133334
     /* C44 80133778 00241000 */   sll       $a0, $s0, 16
   .L8013377C:
     /* C48 8013377C 03240400 */  sra        $a0, $a0, 16
-    /* C4C 80133780 F40F050C */  jal        func_80143FD0
+    /* C4C 80133780 F40F050C */  jal        SsSetMVol
     /* C50 80133784 21288000 */   addu      $a1, $a0, $zero
     /* C54 80133788 FFFF1026 */  addiu      $s0, $s0, -0x1
     /* C58 8013378C FBFF0106 */  bgez       $s0, .L8013377C
     /* C5C 80133790 00241000 */   sll       $a0, $s0, 16
   .L80133794:
-    /* C60 80133794 082C050C */  jal        func_8014B020
+    /* C60 80133794 082C050C */  jal        printf
     /* C64 80133798 ACC2E426 */   addiu     $a0, $s7, %lo(D_8014C2AC)
     /* C68 8013379C 97CE0408 */  j          .L80133A5C
     /* C6C 801337A0 01001424 */   addiu     $s4, $zero, 0x1
@@ -414,11 +414,11 @@ glabel func_80133334
     /* C74 801337A8 00000000 */  nop
     /* C78 801337AC 49004010 */  beqz       $v0, .L801338D4
     /* C7C 801337B0 1580023C */   lui       $v0, %hi(D_8014D340)
-    /* C80 801337B4 25EB040C */  jal        func_8013AC94
+    /* C80 801337B4 25EB040C */  jal        DecDCToutCallback
     /* C84 801337B8 21200000 */   addu      $a0, $zero, $zero
-    /* C88 801337BC B3DC040C */  jal        func_801372CC
+    /* C88 801337BC B3DC040C */  jal        CdDataCallback
     /* C8C 801337C0 21200000 */   addu      $a0, $zero, $zero
-    /* C90 801337C4 AFDB040C */  jal        func_80136EBC
+    /* C90 801337C4 AFDB040C */  jal        CdReadyCallback
     /* C94 801337C8 21200000 */   addu      $a0, $zero, $zero
     /* C98 801337CC 4CD3A38E */  lw         $v1, %lo(D_8014D34C)($s5)
     /* C9C 801337D0 00000000 */  nop
@@ -427,7 +427,7 @@ glabel func_80133334
     /* CA8 801337DC 00241000 */   sll       $a0, $s0, 16
   .L801337E0:
     /* CAC 801337E0 03240400 */  sra        $a0, $a0, 16
-    /* CB0 801337E4 F40F050C */  jal        func_80143FD0
+    /* CB0 801337E4 F40F050C */  jal        SsSetMVol
     /* CB4 801337E8 21288000 */   addu      $a1, $a0, $zero
     /* CB8 801337EC FFFF1026 */  addiu      $s0, $s0, -0x1
     /* CBC 801337F0 FBFF0106 */  bgez       $s0, .L801337E0
@@ -442,11 +442,11 @@ glabel func_80133334
     /* CDC 80133810 00000000 */  nop
     /* CE0 80133814 16006010 */  beqz       $v1, .L80133870
     /* CE4 80133818 15800B3C */   lui       $t3, %hi(D_8014D0F0)
-    /* CE8 8013381C 25EB040C */  jal        func_8013AC94
+    /* CE8 8013381C 25EB040C */  jal        DecDCToutCallback
     /* CEC 80133820 21200000 */   addu      $a0, $zero, $zero
-    /* CF0 80133824 B3DC040C */  jal        func_801372CC
+    /* CF0 80133824 B3DC040C */  jal        CdDataCallback
     /* CF4 80133828 21200000 */   addu      $a0, $zero, $zero
-    /* CF8 8013382C AFDB040C */  jal        func_80136EBC
+    /* CF8 8013382C AFDB040C */  jal        CdReadyCallback
     /* CFC 80133830 21200000 */   addu      $a0, $zero, $zero
     /* D00 80133834 4CD3A38E */  lw         $v1, %lo(D_8014D34C)($s5)
     /* D04 80133838 00000000 */  nop
@@ -455,13 +455,13 @@ glabel func_80133334
     /* D10 80133844 00241000 */   sll       $a0, $s0, 16
   .L80133848:
     /* D14 80133848 03240400 */  sra        $a0, $a0, 16
-    /* D18 8013384C F40F050C */  jal        func_80143FD0
+    /* D18 8013384C F40F050C */  jal        SsSetMVol
     /* D1C 80133850 21288000 */   addu      $a1, $a0, $zero
     /* D20 80133854 FFFF1026 */  addiu      $s0, $s0, -0x1
     /* D24 80133858 FBFF0106 */  bgez       $s0, .L80133848
     /* D28 8013385C 00241000 */   sll       $a0, $s0, 16
   .L80133860:
-    /* D2C 80133860 082C050C */  jal        func_8014B020
+    /* D2C 80133860 082C050C */  jal        printf
     /* D30 80133864 ACC2E426 */   addiu     $a0, $s7, %lo(D_8014C2AC)
     /* D34 80133868 97CE0408 */  j          .L80133A5C
     /* D38 8013386C 01001424 */   addiu     $s4, $zero, 0x1
@@ -470,11 +470,11 @@ glabel func_80133334
     /* D40 80133874 00000000 */  nop
     /* D44 80133878 16004010 */  beqz       $v0, .L801338D4
     /* D48 8013387C 1580023C */   lui       $v0, %hi(D_8014D340)
-    /* D4C 80133880 25EB040C */  jal        func_8013AC94
+    /* D4C 80133880 25EB040C */  jal        DecDCToutCallback
     /* D50 80133884 21200000 */   addu      $a0, $zero, $zero
-    /* D54 80133888 B3DC040C */  jal        func_801372CC
+    /* D54 80133888 B3DC040C */  jal        CdDataCallback
     /* D58 8013388C 21200000 */   addu      $a0, $zero, $zero
-    /* D5C 80133890 AFDB040C */  jal        func_80136EBC
+    /* D5C 80133890 AFDB040C */  jal        CdReadyCallback
     /* D60 80133894 21200000 */   addu      $a0, $zero, $zero
     /* D64 80133898 4CD3A38E */  lw         $v1, %lo(D_8014D34C)($s5)
     /* D68 8013389C 00000000 */  nop
@@ -483,13 +483,13 @@ glabel func_80133334
     /* D74 801338A8 00241000 */   sll       $a0, $s0, 16
   .L801338AC:
     /* D78 801338AC 03240400 */  sra        $a0, $a0, 16
-    /* D7C 801338B0 F40F050C */  jal        func_80143FD0
+    /* D7C 801338B0 F40F050C */  jal        SsSetMVol
     /* D80 801338B4 21288000 */   addu      $a1, $a0, $zero
     /* D84 801338B8 FFFF1026 */  addiu      $s0, $s0, -0x1
     /* D88 801338BC FBFF0106 */  bgez       $s0, .L801338AC
     /* D8C 801338C0 00241000 */   sll       $a0, $s0, 16
   .L801338C4:
-    /* D90 801338C4 082C050C */  jal        func_8014B020
+    /* D90 801338C4 082C050C */  jal        printf
     /* D94 801338C8 BCC26426 */   addiu     $a0, $s3, %lo(D_8014C2BC)
     /* D98 801338CC 98CE0408 */  j          .L80133A60
     /* D9C 801338D0 21200000 */   addu      $a0, $zero, $zero
@@ -498,20 +498,20 @@ glabel func_80133334
     /* DA4 801338D8 01000324 */  addiu      $v1, $zero, 0x1
     /* DA8 801338DC 41000316 */  bne        $s0, $v1, .L801339E4
     /* DAC 801338E0 00000000 */   nop
-    /* DB0 801338E4 25EB040C */  jal        func_8013AC94
+    /* DB0 801338E4 25EB040C */  jal        DecDCToutCallback
     /* DB4 801338E8 21200000 */   addu      $a0, $zero, $zero
-    /* DB8 801338EC B3DC040C */  jal        func_801372CC
+    /* DB8 801338EC B3DC040C */  jal        CdDataCallback
     /* DBC 801338F0 21200000 */   addu      $a0, $zero, $zero
-    /* DC0 801338F4 AFDB040C */  jal        func_80136EBC
+    /* DC0 801338F4 AFDB040C */  jal        CdReadyCallback
     /* DC4 801338F8 21200000 */   addu      $a0, $zero, $zero
     /* DC8 801338FC 0E000424 */  addiu      $a0, $zero, 0xE
     /* DCC 80133900 3808A527 */  addiu      $a1, $sp, 0x838
     /* DD0 80133904 21300000 */  addu       $a2, $zero, $zero
     /* DD4 80133908 48000324 */  addiu      $v1, $zero, 0x48
-    /* DD8 8013390C 50DC040C */  jal        func_80137140
+    /* DD8 8013390C 50DC040C */  jal        CdControlB
     /* DDC 80133910 3808A3A3 */   sb        $v1, 0x838($sp)
     /* DE0 80133914 1580043C */  lui        $a0, %hi(D_8014C2CC)
-    /* DE4 80133918 082C050C */  jal        func_8014B020
+    /* DE4 80133918 082C050C */  jal        printf
     /* DE8 8013391C CCC28424 */   addiu     $a0, $a0, %lo(D_8014C2CC)
     /* DEC 80133920 50D3C38E */  lw         $v1, %lo(D_8014D350)($s6)
     /* DF0 80133924 00000000 */  nop
@@ -526,7 +526,7 @@ glabel func_80133334
   .L80133948:
     /* E14 80133948 21200000 */  addu       $a0, $zero, $zero
   .L8013394C:
-    /* E18 8013394C A2DB040C */  jal        func_80136E88
+    /* E18 8013394C A2DB040C */  jal        CdReady
     /* E1C 80133950 21280000 */   addu      $a1, $zero, $zero
     /* E20 80133954 28D2248E */  lw         $a0, %lo(D_8014D228)($s1)
     /* E24 80133958 A3DC040C */  jal        func_8013728C
@@ -542,10 +542,10 @@ glabel func_80133334
     /* E4C 80133980 F1FF5214 */  bne        $v0, $s2, .L80133948
     /* E50 80133984 1580043C */   lui       $a0, %hi(D_8014C2D8)
   .L80133988:
-    /* E54 80133988 082C050C */  jal        func_8014B020
+    /* E54 80133988 082C050C */  jal        printf
     /* E58 8013398C D8C28424 */   addiu     $a0, $a0, %lo(D_8014C2D8)
     /* E5C 80133990 21200000 */  addu       $a0, $zero, $zero
-    /* E60 80133994 F40F050C */  jal        func_80143FD0
+    /* E60 80133994 F40F050C */  jal        SsSetMVol
     /* E64 80133998 21280000 */   addu      $a1, $zero, $zero
     /* E68 8013399C 4CD3A28E */  lw         $v0, %lo(D_8014D34C)($s5)
     /* E6C 801339A0 00000000 */  nop
@@ -556,14 +556,14 @@ glabel func_80133334
   .L801339B4:
     /* E80 801339B4 002C1000 */  sll        $a1, $s0, 16
     /* E84 801339B8 032C0500 */  sra        $a1, $a1, 16
-    /* E88 801339BC C014050C */  jal        func_80145300
+    /* E88 801339BC C014050C */  jal        SsSetSerialVol
     /* E8C 801339C0 2130A000 */   addu      $a2, $a1, $zero
     /* E90 801339C4 FFFF1026 */  addiu      $s0, $s0, -0x1
     /* E94 801339C8 FAFF0106 */  bgez       $s0, .L801339B4
     /* E98 801339CC 21200000 */   addu      $a0, $zero, $zero
     /* E9C 801339D0 1580043C */  lui        $a0, %hi(D_8014C2E8)
   .L801339D4:
-    /* EA0 801339D4 082C050C */  jal        func_8014B020
+    /* EA0 801339D4 082C050C */  jal        printf
     /* EA4 801339D8 E8C28424 */   addiu     $a0, $a0, %lo(D_8014C2E8)
     /* EA8 801339DC 98CE0408 */  j          .L80133A60
     /* EAC 801339E0 21200000 */   addu      $a0, $zero, $zero
@@ -578,7 +578,7 @@ glabel func_80133334
     /* EC8 801339FC 80100200 */  sll        $v0, $v0, 2
     /* ECC 80133A00 21105100 */  addu       $v0, $v0, $s1
     /* ED0 80133A04 0000448C */  lw         $a0, 0x0($v0)
-    /* ED4 80133A08 EFEA040C */  jal        func_8013ABBC
+    /* ED4 80133A08 EFEA040C */  jal        DecDCTin
     /* ED8 80133A0C 03000524 */   addiu     $a1, $zero, 0x3
     /* EDC 80133A10 28002586 */  lh         $a1, 0x28($s1)
     /* EE0 80133A14 2A002286 */  lh         $v0, 0x2A($s1)
@@ -588,7 +588,7 @@ glabel func_80133334
     /* EF0 80133A24 12280000 */  mflo       $a1
     /* EF4 80133A28 C21F0500 */  srl        $v1, $a1, 31
     /* EF8 80133A2C 2128A300 */  addu       $a1, $a1, $v1
-    /* EFC 80133A30 0EEB040C */  jal        func_8013AC38
+    /* EFC 80133A30 0EEB040C */  jal        DecDCTout
     /* F00 80133A34 43280500 */   sra       $a1, $a1, 1
     /* F04 80133A38 84D0040C */  jal        func_80134210
     /* F08 80133A3C 21202002 */   addu      $a0, $s1, $zero
@@ -603,20 +603,20 @@ glabel func_80133334
     /* F28 80133A5C 21200000 */  addu       $a0, $zero, $zero
   .L80133A60:
     /* F2C 80133A60 21280000 */  addu       $a1, $zero, $zero
-    /* F30 80133A64 C014050C */  jal        func_80145300
+    /* F30 80133A64 C014050C */  jal        SsSetSerialVol
     /* F34 80133A68 21300000 */   addu      $a2, $zero, $zero
     /* F38 80133A6C 0E000424 */  addiu      $a0, $zero, 0xE
     /* F3C 80133A70 3808A527 */  addiu      $a1, $sp, 0x838
     /* F40 80133A74 21300000 */  addu       $a2, $zero, $zero
     /* F44 80133A78 80000324 */  addiu      $v1, $zero, 0x80
-    /* F48 80133A7C 50DC040C */  jal        func_80137140
+    /* F48 80133A7C 50DC040C */  jal        CdControlB
     /* F4C 80133A80 3808A3A3 */   sb        $v1, 0x838($sp)
     /* F50 80133A84 09000424 */  addiu      $a0, $zero, 0x9
     /* F54 80133A88 21280000 */  addu       $a1, $zero, $zero
-    /* F58 80133A8C 50DC040C */  jal        func_80137140
+    /* F58 80133A8C 50DC040C */  jal        CdControlB
     /* F5C 80133A90 21300000 */   addu      $a2, $zero, $zero
     /* F60 80133A94 7F000424 */  addiu      $a0, $zero, 0x7F
-    /* F64 80133A98 F40F050C */  jal        func_80143FD0
+    /* F64 80133A98 F40F050C */  jal        SsSetMVol
     /* F68 80133A9C 7F000524 */   addiu     $a1, $zero, 0x7F
     /* F6C 80133AA0 15800B3C */  lui        $t3, %hi(D_8014D228)
     /* F70 80133AA4 28D2648D */  lw         $a0, %lo(D_8014D228)($t3)

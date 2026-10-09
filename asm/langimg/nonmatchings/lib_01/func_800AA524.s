@@ -6,7 +6,7 @@ glabel func_800AA524
     /* 98D3C 800AA52C 21808000 */  addu       $s0, $a0, $zero
     /* 98D40 800AA530 03000016 */  bnez       $s0, .L800AA540
     /* 98D44 800AA534 1400BFAF */   sw        $ra, 0x14($sp)
-    /* 98D48 800AA538 38AB020C */  jal        func_800AACE0
+    /* 98D48 800AA538 38AB020C */  jal        ResetCallback
     /* 98D4C 800AA53C 00000000 */   nop
   .L800AA540:
     /* 98D50 800AA540 98A9020C */  jal        func_800AA660

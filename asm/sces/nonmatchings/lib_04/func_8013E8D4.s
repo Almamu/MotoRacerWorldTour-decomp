@@ -9,7 +9,7 @@ glabel func_8013E8D4
     /* BDB4 8013E8E8 03000524 */  addiu      $a1, $zero, 0x3
     /* BDB8 8013E8EC 1000BFAF */  sw         $ra, 0x10($sp)
     /* BDBC 8013E8F0 0000848C */  lw         $a0, 0x0($a0)
-    /* BDC0 8013E8F4 91FF040C */  jal        func_8013FE44
+    /* BDC0 8013E8F4 91FF040C */  jal        PadInfoMode
     /* BDC4 8013E8F8 21300000 */   addu      $a2, $zero, $zero
     /* BDC8 8013E8FC 1000BF8F */  lw         $ra, 0x10($sp)
     /* BDCC 8013E900 00000000 */  nop

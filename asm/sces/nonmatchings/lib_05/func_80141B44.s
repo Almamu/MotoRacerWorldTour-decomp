@@ -37,7 +37,7 @@ glabel func_80141B44
     /* F08C 80141BC0 09F84000 */  jalr       $v0
     /* F090 80141BC4 21200002 */   addu      $a0, $s0, $zero
     /* F094 80141BC8 21200002 */  addu       $a0, $s0, $zero
-    /* F098 80141BCC 9302050C */  jal        func_80140A4C
+    /* F098 80141BCC 9302050C */  jal        _padSioRW2
     /* F09C 80141BD0 FF004530 */   andi      $a1, $v0, 0xFF
     /* F0A0 80141BD4 21184000 */  addu       $v1, $v0, $zero
     /* F0A4 80141BD8 5A000224 */  addiu      $v0, $zero, 0x5A

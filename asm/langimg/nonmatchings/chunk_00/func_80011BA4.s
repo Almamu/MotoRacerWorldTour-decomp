@@ -3,7 +3,7 @@ nonmatching func_80011BA4, 0xB8
 glabel func_80011BA4
     /* 3B4 80011BA4 D0FFBD27 */  addiu      $sp, $sp, -0x30
     /* 3B8 80011BA8 2800BFAF */  sw         $ra, 0x28($sp)
-    /* 3BC 80011BAC 11D1020C */  jal        func_800B4444
+    /* 3BC 80011BAC 11D1020C */  jal        SpuGetAllKeysStatus
     /* 3C0 80011BB0 1000A427 */   addiu     $a0, $sp, 0x10
     /* 3C4 80011BB4 21380000 */  addu       $a3, $zero, $zero
     /* 3C8 80011BB8 21400000 */  addu       $t0, $zero, $zero

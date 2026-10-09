@@ -1,6 +1,6 @@
 #include "common.h"
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_04", func_8013E7F4);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_04", _patch_gte);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_04", func_8013E8A0);
 
@@ -54,26 +54,26 @@ INCLUDE_ASM("asm/sces/nonmatchings/lib_04", func_8013FD38);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_04", func_8013FD58);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_04", func_8013FD78);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_04", PadGetState);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_04", func_8013FE44);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_04", PadInfoMode);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_04", func_8013FF3C);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_04", PadInfoAct);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_04", func_80140010);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_04", PadSetActAlign);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_04", func_80140048);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_04", PadSetMainMode);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_04", func_80140090);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_04", PadSetAct);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_04", func_801400E4);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_04", _padSetVsyncParam);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_04", func_80140110);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_04", func_80140178);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_04", func_80140308);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_04", _padStartCom);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_04", func_801403D4);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_04", _padStopCom);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_04", func_80140418);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_04", _padInitSioMode);

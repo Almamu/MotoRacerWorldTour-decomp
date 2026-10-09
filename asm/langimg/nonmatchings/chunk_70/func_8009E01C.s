@@ -17,12 +17,12 @@ glabel func_8009E01C
     /* 8C860 8009E050 21204000 */  addu       $a0, $v0, $zero
     /* 8C864 8009E054 21280000 */  addu       $a1, $zero, $zero
     /* 8C868 8009E058 F01F0624 */  addiu      $a2, $zero, 0x1FF0
-    /* 8C86C 8009E05C 56D8020C */  jal        func_800B6158
+    /* 8C86C 8009E05C 56D8020C */  jal        memset
     /* 8C870 8009E060 340002AE */   sw        $v0, 0x34($s0)
     /* 8C874 8009E064 3400048E */  lw         $a0, 0x34($s0)
     /* 8C878 8009E068 21282002 */  addu       $a1, $s1, $zero
     /* 8C87C 8009E06C 00048424 */  addiu      $a0, $a0, 0x400
-    /* 8C880 8009E070 46D8020C */  jal        func_800B6118
+    /* 8C880 8009E070 46D8020C */  jal        memcpy
     /* 8C884 8009E074 00044626 */   addiu     $a2, $s2, 0x400
     /* 8C888 8009E078 2000BF8F */  lw         $ra, 0x20($sp)
     /* 8C88C 8009E07C 400013AE */  sw         $s3, 0x40($s0)

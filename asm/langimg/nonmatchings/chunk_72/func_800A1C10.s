@@ -4,7 +4,7 @@ glabel func_800A1C10
     /* 90420 800A1C10 E8FFBD27 */  addiu      $sp, $sp, -0x18
     /* 90424 800A1C14 1000B0AF */  sw         $s0, 0x10($sp)
     /* 90428 800A1C18 1400BFAF */  sw         $ra, 0x14($sp)
-    /* 9042C 800A1C1C 319D020C */  jal        func_800A74C4
+    /* 9042C 800A1C1C 319D020C */  jal        CdInit
     /* 90430 800A1C20 21808000 */   addu      $s0, $a0, $zero
     /* 90434 800A1C24 989D020C */  jal        func_800A7660
     /* 90438 800A1C28 21200000 */   addu      $a0, $zero, $zero

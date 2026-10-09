@@ -10,7 +10,7 @@ glabel func_8013B7A4
     /* 8C88 8013B7BC 00000000 */  nop
     /* 8C8C 8013B7C0 1C004010 */  beqz       $v0, .L8013B834
     /* 8C90 8013B7C4 21100000 */   addu      $v0, $zero, $zero
-    /* 8C94 8013B7C8 FF2A050C */  jal        func_8014ABFC
+    /* 8C94 8013B7C8 FF2A050C */  jal        EnterCriticalSection
     /* 8C98 8013B7CC 00000000 */   nop
     /* 8C9C 8013B7D0 1C80023C */  lui        $v0, %hi(D_801BEFD0)
     /* 8CA0 8013B7D4 D0EF428C */  lw         $v0, %lo(D_801BEFD0)($v0)
@@ -33,7 +33,7 @@ glabel func_8013B7A4
     /* 8CE4 8013B818 0000828C */  lw         $v0, 0x0($a0)
     /* 8CE8 8013B81C 77776334 */  ori        $v1, $v1, (0x77777777 & 0xFFFF)
     /* 8CEC 8013B820 24104300 */  and        $v0, $v0, $v1
-    /* 8CF0 8013B824 F72A050C */  jal        func_8014ABDC
+    /* 8CF0 8013B824 F72A050C */  jal        ResetEntryInt
     /* 8CF4 8013B828 000082AC */   sw        $v0, 0x0($a0)
     /* 8CF8 8013B82C 21100002 */  addu       $v0, $s0, $zero
     /* 8CFC 8013B830 000040A4 */  sh         $zero, 0x0($v0)

@@ -15,7 +15,7 @@ glabel func_8008A06C
     /* 788A8 8008A098 4C000426 */   addiu     $a0, $s0, 0x4C
     /* 788AC 8008A09C 21200002 */  addu       $a0, $s0, $zero
     /* 788B0 8008A0A0 21280000 */  addu       $a1, $zero, $zero
-    /* 788B4 8008A0A4 56D8020C */  jal        func_800B6158
+    /* 788B4 8008A0A4 56D8020C */  jal        memset
     /* 788B8 8008A0A8 74000624 */   addiu     $a2, $zero, 0x74
     /* 788BC 8008A0AC 21100002 */  addu       $v0, $s0, $zero
     /* 788C0 8008A0B0 1400BF8F */  lw         $ra, 0x14($sp)

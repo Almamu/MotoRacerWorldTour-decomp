@@ -16,7 +16,7 @@ glabel func_80017574
     /* 5DB4 800175A4 1000A427 */  addiu      $a0, $sp, 0x10
     /* 5DB8 800175A8 0400308E */  lw         $s0, 0x4($s1)
     /* 5DBC 800175AC 21280000 */  addu       $a1, $zero, $zero
-    /* 5DC0 800175B0 56D8020C */  jal        func_800B6158
+    /* 5DC0 800175B0 56D8020C */  jal        memset
     /* 5DC4 800175B4 21300002 */   addu      $a2, $s0, $zero
     /* 5DC8 800175B8 0800438E */  lw         $v1, 0x8($s2)
     /* 5DCC 800175BC 00000000 */  nop

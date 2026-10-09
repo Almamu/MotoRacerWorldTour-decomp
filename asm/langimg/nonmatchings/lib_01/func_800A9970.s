@@ -23,7 +23,7 @@ glabel func_800A9970
     /* 981C8 800A99B8 00000000 */   nop
     /* 981CC 800A99BC 07005314 */  bne        $v0, $s3, .L800A99DC
     /* 981D0 800A99C0 21208002 */   addu      $a0, $s4, $zero
-    /* 981D4 800A99C4 FED8020C */  jal        func_800B63F8
+    /* 981D4 800A99C4 FED8020C */  jal        strcmp
     /* 981D8 800A99C8 21284002 */   addu      $a1, $s2, $zero
     /* 981DC 800A99CC 04004014 */  bnez       $v0, .L800A99E0
     /* 981E0 800A99D0 2C005226 */   addiu     $s2, $s2, 0x2C

@@ -17,11 +17,11 @@ glabel func_8006BF4C
     /* 5A790 8006BF80 D85F22AC */  sw         $v0, %lo(D_800D5FD8)($at)
     /* 5A794 8006BF84 040000AE */  sw         $zero, 0x4($s0)
     /* 5A798 8006BF88 0C0400AE */  sw         $zero, 0x40C($s0)
-    /* 5A79C 8006BF8C 56D8020C */  jal        func_800B6158
+    /* 5A79C 8006BF8C 56D8020C */  jal        memset
     /* 5A7A0 8006BF90 080000AE */   sw        $zero, 0x8($s0)
     /* 5A7A4 8006BF94 20040426 */  addiu      $a0, $s0, 0x420
     /* 5A7A8 8006BF98 21280000 */  addu       $a1, $zero, $zero
-    /* 5A7AC 8006BF9C 56D8020C */  jal        func_800B6158
+    /* 5A7AC 8006BF9C 56D8020C */  jal        memset
     /* 5A7B0 8006BFA0 0C000624 */   addiu     $a2, $zero, 0xC
     /* 5A7B4 8006BFA4 2C040426 */  addiu      $a0, $s0, 0x42C
     /* 5A7B8 8006BFA8 465A020C */  jal        func_80096918

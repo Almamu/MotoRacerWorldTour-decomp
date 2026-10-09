@@ -71,7 +71,7 @@ glabel Startup
     /* 23A0 80134ED4 3000A0A7 */  sh         $zero, 0x30($sp)
     /* 23A4 80134ED8 3200A0A7 */  sh         $zero, 0x32($sp)
     /* 23A8 80134EDC 3400A2A7 */  sh         $v0, 0x34($sp)
-    /* 23AC 80134EE0 76F1040C */  jal        func_8013C5D8
+    /* 23AC 80134EE0 76F1040C */  jal        StoreImage
     /* 23B0 80134EE4 3600A3A7 */   sh        $v1, 0x36($sp)
     /* 23B4 80134EE8 3412063C */  lui        $a2, (0x12345670 >> 16)
     /* 23B8 80134EEC 7056C634 */  ori        $a2, $a2, (0x12345670 & 0xFFFF)
@@ -93,16 +93,16 @@ glabel Startup
     /* 23F0 80134F24 5CD34426 */  addiu      $a0, $s2, %lo(D_8014D35C)
     /* 23F4 80134F28 8FFE040C */  jal        func_8013FA3C
     /* 23F8 80134F2C 2000A527 */   addiu     $a1, $sp, 0x20
-    /* 23FC 80134F30 D9F0040C */  jal        func_8013C364
+    /* 23FC 80134F30 D9F0040C */  jal        DrawSync
     /* 2400 80134F34 21200000 */   addu      $a0, $zero, $zero
     /* 2404 80134F38 3000A427 */  addiu      $a0, $sp, 0x30
     /* 2408 80134F3C 5CDA238E */  lw         $v1, %lo(D_8019DA5C)($s1)
     /* 240C 80134F40 80D46526 */  addiu      $a1, $s3, %lo(D_8014D480)
     /* 2410 80134F44 01006338 */  xori       $v1, $v1, 0x1
     /* 2414 80134F48 001A0300 */  sll        $v1, $v1, 8
-    /* 2418 80134F4C 5EF1040C */  jal        func_8013C578
+    /* 2418 80134F4C 5EF1040C */  jal        LoadImage
     /* 241C 80134F50 3200A3A7 */   sh        $v1, 0x32($sp)
-    /* 2420 80134F54 D9F0040C */  jal        func_8013C364
+    /* 2420 80134F54 D9F0040C */  jal        DrawSync
     /* 2424 80134F58 21200000 */   addu      $a0, $zero, $zero
     /* 2428 80134F5C FEFF1026 */  addiu      $s0, $s0, -0x2
     /* 242C 80134F60 2400A38F */  lw         $v1, 0x24($sp)
@@ -122,7 +122,7 @@ glabel Startup
     /* 2464 80134F98 C0310600 */  sll        $a2, $a2, 7
     /* 2468 80134F9C 28D3040C */  jal        func_80134CA0
     /* 246C 80134FA0 4000C634 */   ori       $a2, $a2, 0x40
-    /* 2470 80134FA4 22EC040C */  jal        func_8013B088
+    /* 2470 80134FA4 22EC040C */  jal        VSync
     /* 2474 80134FA8 02000424 */   addiu     $a0, $zero, 0x2
     /* 2478 80134FAC 14D9040C */  jal        func_80136450
     /* 247C 80134FB0 00000000 */   nop
@@ -135,7 +135,7 @@ glabel Startup
     /* 2498 80134FCC 7F000324 */  addiu      $v1, $zero, 0x7F
     /* 249C 80134FD0 1000A0AF */  sw         $zero, 0x10($sp)
     /* 24A0 80134FD4 1400A3AF */  sw         $v1, 0x14($sp)
-    /* 24A4 80134FD8 6816050C */  jal        func_801459A0
+    /* 24A4 80134FD8 6816050C */  jal        SsUtKeyOn
     /* 24A8 80134FDC 1800A3AF */   sw        $v1, 0x18($sp)
   .L80134FE0:
     /* 24AC 80134FE0 50D9040C */  jal        func_80136540

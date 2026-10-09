@@ -4,7 +4,7 @@ glabel func_80149A0C
     /* 16ED8 80149A0C E8FFBD27 */  addiu      $sp, $sp, -0x18
     /* 16EDC 80149A10 1000B0AF */  sw         $s0, 0x10($sp)
     /* 16EE0 80149A14 1400BFAF */  sw         $ra, 0x14($sp)
-    /* 16EE4 80149A18 9E26050C */  jal        func_80149A78
+    /* 16EE4 80149A18 9E26050C */  jal        SpuMalloc
     /* 16EE8 80149A1C 2180C000 */   addu      $s0, $a2, $zero
     /* 16EEC 80149A20 21184000 */  addu       $v1, $v0, $zero
     /* 16EF0 80149A24 FFFF0224 */  addiu      $v0, $zero, -0x1
@@ -15,7 +15,7 @@ glabel func_80149A0C
     /* 16F04 80149A38 1D80013C */  lui        $at, %hi(D_801CFBD0)
     /* 16F08 80149A3C 21082200 */  addu       $at, $at, $v0
     /* 16F0C 80149A40 D0FB20A0 */  sb         $zero, %lo(D_801CFBD0)($at)
-    /* 16F10 80149A44 5120050C */  jal        func_80148144
+    /* 16F10 80149A44 5120050C */  jal        _spu_setInTransfer
     /* 16F14 80149A48 21200000 */   addu      $a0, $zero, $zero
     /* 16F18 80149A4C 1D80033C */  lui        $v1, %hi(D_801CFC28)
     /* 16F1C 80149A50 28FC6394 */  lhu        $v1, %lo(D_801CFC28)($v1)

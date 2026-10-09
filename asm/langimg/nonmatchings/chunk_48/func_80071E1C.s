@@ -34,7 +34,7 @@ glabel func_80071E1C
     /* 606A4 80071E94 380003AE */  sw         $v1, 0x38($s0)
     /* 606A8 80071E98 3C0003AE */  sw         $v1, 0x3C($s0)
     /* 606AC 80071E9C 480003AE */  sw         $v1, 0x48($s0)
-    /* 606B0 80071EA0 56D8020C */  jal        func_800B6158
+    /* 606B0 80071EA0 56D8020C */  jal        memset
     /* 606B4 80071EA4 440003AE */   sw        $v1, 0x44($s0)
     /* 606B8 80071EA8 21200002 */  addu       $a0, $s0, $zero
     /* 606BC 80071EAC CDCD0234 */  ori        $v0, $zero, 0xCDCD

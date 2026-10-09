@@ -44,7 +44,7 @@ glabel func_80134948
     /* 1E58 8013498C 2000B2AF */  sw         $s2, 0x20($sp)
     /* 1E5C 80134990 1C00B1AF */  sw         $s1, 0x1C($sp)
     /* 1E60 80134994 1800B0AF */  sw         $s0, 0x18($sp)
-    /* 1E64 80134998 582B050C */  jal        func_8014AD60
+    /* 1E64 80134998 582B050C */  jal        bcmp
     /* 1E68 8013499C 4C00A7AF */   sw        $a3, 0x4C($sp)
     /* 1E6C 801349A0 66004014 */  bnez       $v0, .L80134B3C
     /* 1E70 801349A4 21200000 */   addu      $a0, $zero, $zero
@@ -82,7 +82,7 @@ glabel func_80134948
     /* 1EEC 80134A20 2128C000 */   addu      $a1, $a2, $zero
     /* 1EF0 80134A24 0000848E */  lw         $a0, 0x0($s4)
     /* 1EF4 80134A28 4800A58F */  lw         $a1, 0x48($sp)
-    /* 1EF8 80134A2C EFEA040C */  jal        func_8013ABBC
+    /* 1EF8 80134A2C EFEA040C */  jal        DecDCTin
     /* 1EFC 80134A30 00000000 */   nop
     /* 1F00 80134A34 21202002 */  addu       $a0, $s1, $zero
     /* 1F04 80134A38 21280002 */  addu       $a1, $s0, $zero
@@ -95,7 +95,7 @@ glabel func_80134948
     /* 1F20 80134A54 0600A296 */  lhu        $v0, 0x6($s5)
     /* 1F24 80134A58 21184301 */  addu       $v1, $t2, $v1
     /* 1F28 80134A5C 1000A3A7 */  sh         $v1, 0x10($sp)
-    /* 1F2C 80134A60 0EEB040C */  jal        func_8013AC38
+    /* 1F2C 80134A60 0EEB040C */  jal        DecDCTout
     /* 1F30 80134A64 1600A2A7 */   sh        $v0, 0x16($sp)
     /* 1F34 80134A68 16EB040C */  jal        func_8013AC58
     /* 1F38 80134A6C 21200000 */   addu      $a0, $zero, $zero
@@ -137,13 +137,13 @@ glabel func_80134948
   .L80134AEC:
     /* 1FB8 80134AEC 1000A427 */  addiu      $a0, $sp, 0x10
   .L80134AF0:
-    /* 1FBC 80134AF0 5EF1040C */  jal        func_8013C578
+    /* 1FBC 80134AF0 5EF1040C */  jal        LoadImage
     /* 1FC0 80134AF4 21282002 */   addu      $a1, $s1, $zero
     /* 1FC4 80134AF8 C3D20408 */  j          .L80134B0C
     /* 1FC8 80134AFC 01001624 */   addiu     $s6, $zero, 0x1
   .L80134B00:
     /* 1FCC 80134B00 1580043C */  lui        $a0, %hi(D_8014C348)
-    /* 1FD0 80134B04 082C050C */  jal        func_8014B020
+    /* 1FD0 80134B04 082C050C */  jal        printf
     /* 1FD4 80134B08 48C38424 */   addiu     $a0, $a0, %lo(D_8014C348)
   .L80134B0C:
     /* 1FD8 80134B0C 01006426 */  addiu      $a0, $s3, 0x1
@@ -181,7 +181,7 @@ glabel func_80134948
     /* 2054 80134B88 91D9040C */  jal        func_80136644
     /* 2058 80134B8C 2120C003 */   addu      $a0, $fp, $zero
     /* 205C 80134B90 0000848E */  lw         $a0, 0x0($s4)
-    /* 2060 80134B94 EFEA040C */  jal        func_8013ABBC
+    /* 2060 80134B94 EFEA040C */  jal        DecDCTin
     /* 2064 80134B98 21280000 */   addu      $a1, $zero, $zero
     /* 2068 80134B9C 5000AA8F */  lw         $t2, 0x50($sp)
     /* 206C 80134BA0 0600A696 */  lhu        $a2, 0x6($s5)
@@ -195,14 +195,14 @@ glabel func_80134948
     /* 208C 80134BC0 1000AAA7 */   sh        $t2, 0x10($sp)
   .L80134BC4:
     /* 2090 80134BC4 21200002 */  addu       $a0, $s0, $zero
-    /* 2094 80134BC8 0EEB040C */  jal        func_8013AC38
+    /* 2094 80134BC8 0EEB040C */  jal        DecDCTout
     /* 2098 80134BCC 21282002 */   addu      $a1, $s1, $zero
     /* 209C 80134BD0 16EB040C */  jal        func_8013AC58
     /* 20A0 80134BD4 21200000 */   addu      $a0, $zero, $zero
     /* 20A4 80134BD8 1000A427 */  addiu      $a0, $sp, 0x10
-    /* 20A8 80134BDC 5EF1040C */  jal        func_8013C578
+    /* 20A8 80134BDC 5EF1040C */  jal        LoadImage
     /* 20AC 80134BE0 21280002 */   addu      $a1, $s0, $zero
-    /* 20B0 80134BE4 D9F0040C */  jal        func_8013C364
+    /* 20B0 80134BE4 D9F0040C */  jal        DrawSync
     /* 20B4 80134BE8 21200000 */   addu      $a0, $zero, $zero
     /* 20B8 80134BEC 1000A397 */  lhu        $v1, 0x10($sp)
     /* 20BC 80134BF0 4C00AA8F */  lw         $t2, 0x4C($sp)
@@ -219,7 +219,7 @@ glabel func_80134948
     /* 20E4 80134C18 0BD30408 */  j          .L80134C2C
     /* 20E8 80134C1C 2110C002 */   addu      $v0, $s6, $zero
   .L80134C20:
-    /* 20EC 80134C20 082C050C */  jal        func_8014B020
+    /* 20EC 80134C20 082C050C */  jal        printf
     /* 20F0 80134C24 48C38424 */   addiu     $a0, $a0, %lo(D_8014C348)
     /* 20F4 80134C28 2110C002 */  addu       $v0, $s6, $zero
   .L80134C2C:

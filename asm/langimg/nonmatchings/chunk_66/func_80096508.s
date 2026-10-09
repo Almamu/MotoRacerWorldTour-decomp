@@ -5,7 +5,7 @@ glabel func_80096508
     /* 84D1C 8009650C 01000424 */  addiu      $a0, $zero, 0x1
     /* 84D20 80096510 21280000 */  addu       $a1, $zero, $zero
     /* 84D24 80096514 3000BFAF */  sw         $ra, 0x30($sp)
-    /* 84D28 80096518 4B9E020C */  jal        func_800A792C
+    /* 84D28 80096518 4B9E020C */  jal        CdControlB
     /* 84D2C 8009651C 1000A627 */   addiu     $a2, $sp, 0x10
     /* 84D30 80096520 1000A28F */  lw         $v0, 0x10($sp)
     /* 84D34 80096524 3000BF8F */  lw         $ra, 0x30($sp)

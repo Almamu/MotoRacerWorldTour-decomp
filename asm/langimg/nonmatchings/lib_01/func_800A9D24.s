@@ -7,7 +7,7 @@ glabel func_800A9D24
     /* 98540 800A9D30 68D31026 */  addiu      $s0, $s0, %lo(D_800BD368)
     /* 98544 800A9D34 1400BFAF */  sw         $ra, 0x14($sp)
     /* 98548 800A9D38 0000048E */  lw         $a0, 0x0($s0)
-    /* 9854C 800A9D3C A59D020C */  jal        func_800A7694
+    /* 9854C 800A9D3C A59D020C */  jal        CdSyncCallback
     /* 98550 800A9D40 D8FF1026 */   addiu     $s0, $s0, -0x28
     /* 98554 800A9D44 240000AE */  sw         $zero, 0x24($s0)
     /* 98558 800A9D48 1400BF8F */  lw         $ra, 0x14($sp)

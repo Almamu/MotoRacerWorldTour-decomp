@@ -20,7 +20,7 @@ glabel func_80081154
     /* 6F9A4 80081194 05008010 */  beqz       $a0, .L800811AC
     /* 6F9A8 80081198 040022AE */   sw        $v0, 0x4($s1)
     /* 6F9AC 8008119C 21280000 */  addu       $a1, $zero, $zero
-    /* 6F9B0 800811A0 56D8020C */  jal        func_800B6158
+    /* 6F9B0 800811A0 56D8020C */  jal        memset
     /* 6F9B4 800811A4 21300002 */   addu      $a2, $s0, $zero
     /* 6F9B8 800811A8 080032AE */  sw         $s2, 0x8($s1)
   .L800811AC:

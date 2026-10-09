@@ -2,41 +2,41 @@
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_05", func_8014074C);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_05", func_8014083C);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_05", _padSioRW);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_05", func_80140A4C);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_05", _padSioRW2);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_05", func_80140CC4);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_05", _padClrIntSio0);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_05", func_80140D54);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_05", _padWaitRXready);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_05", func_80140D88);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_05", func_80140D94);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_05", _padSendAtLoadInfo);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_05", func_80140E18);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_05", _padRecvAtLoadInfo);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_05", func_80141088);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_05", _padGetActSize);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_05", func_801410C0);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_05", _padLoadActInfo);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_05", func_80141194);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_05", func_8014123C);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_05", func_80141634);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_05", _padSetActAlign);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_05", func_8014169C);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_05", func_801416B8);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_05", func_80141780);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_05", _padSetMainMode);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_05", func_80141818);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_05", func_8014186C);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_05", func_801418CC);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_05", _padCmdParaMode);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_05", func_801418EC);
 
@@ -58,7 +58,7 @@ INCLUDE_ASM("asm/sces/nonmatchings/lib_05", func_80141B44);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_05", func_80141C08);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_05", func_80141FA8);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_05", PadInitDirect);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_05", func_80142108);
 
@@ -74,4 +74,4 @@ INCLUDE_ASM("asm/sces/nonmatchings/lib_05", func_801425AC);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_05", func_801425E4);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_05", func_80142608);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_05", _padInitDirSeq);

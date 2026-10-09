@@ -15,7 +15,7 @@ glabel func_8008A1D0
     /* 78A0C 8008A1FC 4C000426 */   addiu     $a0, $s0, 0x4C
     /* 78A10 8008A200 21200002 */  addu       $a0, $s0, $zero
     /* 78A14 8008A204 21280000 */  addu       $a1, $zero, $zero
-    /* 78A18 8008A208 56D8020C */  jal        func_800B6158
+    /* 78A18 8008A208 56D8020C */  jal        memset
     /* 78A1C 8008A20C 74000624 */   addiu     $a2, $zero, 0x74
     /* 78A20 8008A210 1400BF8F */  lw         $ra, 0x14($sp)
     /* 78A24 8008A214 1000B08F */  lw         $s0, 0x10($sp)

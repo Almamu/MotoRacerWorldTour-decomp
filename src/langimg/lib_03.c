@@ -32,7 +32,7 @@ INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", func_800AE054);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", func_800AE198);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", func_800AE238);
+INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", DrawOTag2);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", func_800AE334);
 
@@ -40,15 +40,15 @@ INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", func_800AE35C);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", func_800AE388);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", func_800AE390);
+INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", InitGeom);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", func_800AE418);
+INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", ApplyRotMatrixLV);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", func_800AE558);
+INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", SetGeomScreen);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", func_800AE568);
+INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", ratan2);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", func_800AE6E8);
+INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", _patch_gte);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", func_800AE794);
 
@@ -68,31 +68,33 @@ INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", func_800AEBF0);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", func_800AEC38);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", func_800AEC84);
+INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", _bu_init);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", func_800AEC94);
+INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", InitCARD);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", func_800AED00);
+INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", StartCARD);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", func_800AED38);
+INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", StopCARD);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", func_800AED64);
+INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", InitCARD2);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", func_800AED74);
+INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", StartCARD2);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", func_800AED84);
+INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", StopCARD2);
+
+INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", func_800AED94);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", func_800AEDC0);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", func_800AEE04);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", func_800AEE2C);
+INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", _patch_card);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", func_800AEEC0);
+INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", _patch_card2);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", func_800AEF30);
+INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", _copy_memcard_patch);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", func_800AEF64);
+INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", _ExitCard);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/lib_03", func_800AEFE4);
 

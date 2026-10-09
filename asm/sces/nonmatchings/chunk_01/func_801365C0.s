@@ -3,7 +3,7 @@ nonmatching func_801365C0, 0x30
 glabel func_801365C0
     /* 3A8C 801365C0 E8FFBD27 */  addiu      $sp, $sp, -0x18
     /* 3A90 801365C4 1000BFAF */  sw         $ra, 0x10($sp)
-    /* 3A94 801365C8 22EC040C */  jal        func_8013B088
+    /* 3A94 801365C8 22EC040C */  jal        VSync
     /* 3A98 801365CC 01000424 */   addiu     $a0, $zero, 0x1
     /* 3A9C 801365D0 1A80033C */  lui        $v1, %hi(D_8019DA50)
     /* 3AA0 801365D4 1A80053C */  lui        $a1, %hi(D_8019DA54)

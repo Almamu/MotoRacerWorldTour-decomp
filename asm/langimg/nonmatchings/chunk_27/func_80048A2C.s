@@ -119,7 +119,7 @@ glabel func_80048A2C
     /* 373F4 80048BE4 4C0340AE */  sw         $zero, 0x34C($s2)
     /* 373F8 80048BE8 600042AE */  sw         $v0, 0x60($s2)
     /* 373FC 80048BEC 5C0C40AE */  sw         $zero, 0xC5C($s2)
-    /* 37400 80048BF0 56D8020C */  jal        func_800B6158
+    /* 37400 80048BF0 56D8020C */  jal        memset
     /* 37404 80048BF4 600C40AE */   sw        $zero, 0xC60($s2)
     /* 37408 80048BF8 21204002 */  addu       $a0, $s2, $zero
     /* 3740C 80048BFC 0C80053C */  lui        $a1, %hi(D_800C5E30)

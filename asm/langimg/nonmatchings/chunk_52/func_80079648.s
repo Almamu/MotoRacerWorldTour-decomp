@@ -6,12 +6,12 @@ glabel func_80079648
     /* 67E60 80079650 2180A000 */  addu       $s0, $a1, $zero
     /* 67E64 80079654 1400B1AF */  sw         $s1, 0x14($sp)
     /* 67E68 80079658 1800BFAF */  sw         $ra, 0x18($sp)
-    /* 67E6C 8007965C E0D6020C */  jal        func_800B5B80
+    /* 67E6C 8007965C E0D6020C */  jal        EnterCriticalSection
     /* 67E70 80079660 2188C000 */   addu      $s1, $a2, $zero
     /* 67E74 80079664 0C80033C */  lui        $v1, %hi(D_800B8874)
     /* 67E78 80079668 0C80023C */  lui        $v0, %hi(D_800B8878)
     /* 67E7C 8007966C 748870AC */  sw         $s0, %lo(D_800B8874)($v1)
-    /* 67E80 80079670 E4D6020C */  jal        func_800B5B90
+    /* 67E80 80079670 E4D6020C */  jal        ExitCriticalSection
     /* 67E84 80079674 788851AC */   sw        $s1, %lo(D_800B8878)($v0)
     /* 67E88 80079678 1800BF8F */  lw         $ra, 0x18($sp)
     /* 67E8C 8007967C 1400B18F */  lw         $s1, 0x14($sp)

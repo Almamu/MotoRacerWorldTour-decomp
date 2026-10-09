@@ -111,7 +111,7 @@ glabel func_800AFD38
     /* 9E6D8 800AFEC8 58E34224 */  addiu      $v0, $v0, %lo(D_800DE358)
     /* 9E6DC 800AFECC 2180A202 */  addu       $s0, $s5, $v0
     /* 9E6E0 800AFED0 0000048E */  lw         $a0, 0x0($s0)
-    /* 9E6E4 800AFED4 1FC1020C */  jal        func_800B047C
+    /* 9E6E4 800AFED4 1FC1020C */  jal        PadGetState
     /* 9E6E8 800AFED8 00000000 */   nop
     /* 9E6EC 800AFEDC 21204000 */  addu       $a0, $v0, $zero
     /* 9E6F0 800AFEE0 02000324 */  addiu      $v1, $zero, 0x2
@@ -124,7 +124,7 @@ glabel func_800AFD38
     /* 9E708 800AFEF8 1A008214 */  bne        $a0, $v0, .L800AFF64
     /* 9E70C 800AFEFC 0C80053C */   lui       $a1, %hi(D_800C3BBC)
     /* 9E710 800AFF00 0000048E */  lw         $a0, 0x0($s0)
-    /* 9E714 800AFF04 C2C1020C */  jal        func_800B0708
+    /* 9E714 800AFF04 C2C1020C */  jal        PadSetActAlign
     /* 9E718 800AFF08 BC3BA524 */   addiu     $a1, $a1, %lo(D_800C3BBC)
     /* 9E71C 800AFF0C 21206002 */  addu       $a0, $s3, $zero
     /* 9E720 800AFF10 F2B9020C */  jal        func_800AE7C8

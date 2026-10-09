@@ -22,7 +22,7 @@ glabel func_80087468
     /* 75CC0 800874B0 3000B2AF */  sw         $s2, 0x30($sp)
     /* 75CC4 800874B4 2800B0AF */  sw         $s0, 0x28($sp)
     /* 75CC8 800874B8 1800A9AF */  sw         $t1, 0x18($sp)
-    /* 75CCC 800874BC 32D8020C */  jal        func_800B60C8
+    /* 75CCC 800874BC 32D8020C */  jal        bcmp
     /* 75CD0 800874C0 5C00A7AF */   sw        $a3, 0x5C($sp)
     /* 75CD4 800874C4 97004014 */  bnez       $v0, .L80087724
     /* 75CD8 800874C8 21200000 */   addu      $a0, $zero, $zero
@@ -68,7 +68,7 @@ glabel func_80087468
     /* 75D74 80087564 5000A98F */  lw         $t1, 0x50($sp)
     /* 75D78 80087568 5800A58F */  lw         $a1, 0x58($sp)
     /* 75D7C 8008756C 0000248D */  lw         $a0, 0x0($t1)
-    /* 75D80 80087570 59A9020C */  jal        func_800AA564
+    /* 75D80 80087570 59A9020C */  jal        DecDCTin
     /* 75D84 80087574 00000000 */   nop
     /* 75D88 80087578 2120A002 */  addu       $a0, $s5, $zero
     /* 75D8C 8008757C 21286002 */  addu       $a1, $s3, $zero
@@ -81,7 +81,7 @@ glabel func_80087468
     /* 75DA8 80087598 0600C397 */  lhu        $v1, 0x6($fp)
     /* 75DAC 8008759C 21102201 */  addu       $v0, $t1, $v0
     /* 75DB0 800875A0 1000A2A7 */  sh         $v0, 0x10($sp)
-    /* 75DB4 800875A4 78A9020C */  jal        func_800AA5E0
+    /* 75DB4 800875A4 78A9020C */  jal        DecDCTout
     /* 75DB8 800875A8 1600A3A7 */   sh        $v1, 0x16($sp)
     /* 75DBC 800875AC 80A9020C */  jal        func_800AA600
     /* 75DC0 800875B0 21200000 */   addu      $a0, $zero, $zero
@@ -219,7 +219,7 @@ glabel func_80087468
     /* 75F98 80087788 5000A98F */  lw         $t1, 0x50($sp)
     /* 75F9C 8008778C 00000000 */  nop
     /* 75FA0 80087790 0000248D */  lw         $a0, 0x0($t1)
-    /* 75FA4 80087794 59A9020C */  jal        func_800AA564
+    /* 75FA4 80087794 59A9020C */  jal        DecDCTin
     /* 75FA8 80087798 21280000 */   addu      $a1, $zero, $zero
     /* 75FAC 8008779C 6000A98F */  lw         $t1, 0x60($sp)
     /* 75FB0 800877A0 0600C697 */  lhu        $a2, 0x6($fp)
@@ -233,14 +233,14 @@ glabel func_80087468
     /* 75FD0 800877C0 1000A9A7 */   sh        $t1, 0x10($sp)
   .L800877C4:
     /* 75FD4 800877C4 21200002 */  addu       $a0, $s0, $zero
-    /* 75FD8 800877C8 78A9020C */  jal        func_800AA5E0
+    /* 75FD8 800877C8 78A9020C */  jal        DecDCTout
     /* 75FDC 800877CC 21284002 */   addu      $a1, $s2, $zero
     /* 75FE0 800877D0 80A9020C */  jal        func_800AA600
     /* 75FE4 800877D4 21200000 */   addu      $a0, $zero, $zero
     /* 75FE8 800877D8 1000A427 */  addiu      $a0, $sp, 0x10
     /* 75FEC 800877DC 2CB0020C */  jal        func_800AC0B0
     /* 75FF0 800877E0 21280002 */   addu      $a1, $s0, $zero
-    /* 75FF4 800877E4 A7AF020C */  jal        func_800ABE9C
+    /* 75FF4 800877E4 A7AF020C */  jal        DrawSync
     /* 75FF8 800877E8 21200000 */   addu      $a0, $zero, $zero
     /* 75FFC 800877EC 1000A397 */  lhu        $v1, 0x10($sp)
     /* 76000 800877F0 5C00A98F */  lw         $t1, 0x5C($sp)

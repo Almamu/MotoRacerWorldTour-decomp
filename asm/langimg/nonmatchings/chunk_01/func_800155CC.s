@@ -41,14 +41,14 @@ glabel func_800155CC
     /* 3DE8 800155D8 1400BFAF */  sw         $ra, 0x14($sp)
     /* 3DEC 800155DC 6997020C */  jal        func_800A5DA4
     /* 3DF0 800155E0 1000B0AF */   sw        $s0, 0x10($sp)
-    /* 3DF4 800155E4 319D020C */  jal        func_800A74C4
+    /* 3DF4 800155E4 319D020C */  jal        CdInit
     /* 3DF8 800155E8 0D80103C */   lui       $s0, %hi(D_800CC4E8)
-    /* 3DFC 800155EC E0D6020C */  jal        func_800B5B80
+    /* 3DFC 800155EC E0D6020C */  jal        EnterCriticalSection
     /* 3E00 800155F0 00000000 */   nop
     /* 3E04 800155F4 E8C4048E */  lw         $a0, %lo(D_800CC4E8)($s0)
     /* 3E08 800155F8 A155000C */  jal        func_80015684
     /* 3E0C 800155FC 00000000 */   nop
-    /* 3E10 80015600 E4D6020C */  jal        func_800B5B90
+    /* 3E10 80015600 E4D6020C */  jal        ExitCriticalSection
     /* 3E14 80015604 00000000 */   nop
     /* 3E18 80015608 9455000C */  jal        func_80015650
     /* 3E1C 8001560C 00000000 */   nop

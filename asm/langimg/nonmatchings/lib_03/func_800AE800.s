@@ -15,7 +15,7 @@ glabel func_800AE800
     /* 9D03C 800AE82C 2000BFAF */  sw         $ra, 0x20($sp)
     /* 9D040 800AE830 1000B0AF */  sw         $s0, 0x10($sp)
     /* 9D044 800AE834 0000448E */  lw         $a0, 0x0($s2)
-    /* 9D048 800AE838 4FC1020C */  jal        func_800B053C
+    /* 9D048 800AE838 4FC1020C */  jal        PadInfoMode
     /* 9D04C 800AE83C 21300000 */   addu      $a2, $zero, $zero
     /* 9D050 800AE840 21804000 */  addu       $s0, $v0, $zero
     /* 9D054 800AE844 11000012 */  beqz       $s0, .L800AE88C
@@ -23,7 +23,7 @@ glabel func_800AE800
     /* 9D05C 800AE84C 1CBA0208 */  j          .L800AE870
     /* 9D060 800AE850 00000000 */   nop
   .L800AE854:
-    /* 9D064 800AE854 B4AA020C */  jal        func_800AAAD0
+    /* 9D064 800AE854 B4AA020C */  jal        VSync
     /* 9D068 800AE858 0A000424 */   addiu     $a0, $zero, 0xA
     /* 9D06C 800AE85C FFFF3126 */  addiu      $s1, $s1, -0x1
     /* 9D070 800AE860 03002106 */  bgez       $s1, .L800AE870
@@ -33,7 +33,7 @@ glabel func_800AE800
   .L800AE870:
     /* 9D080 800AE870 0000448E */  lw         $a0, 0x0($s2)
     /* 9D084 800AE874 21286002 */  addu       $a1, $s3, $zero
-    /* 9D088 800AE878 D0C1020C */  jal        func_800B0740
+    /* 9D088 800AE878 D0C1020C */  jal        PadSetMainMode
     /* 9D08C 800AE87C 21300000 */   addu      $a2, $zero, $zero
     /* 9D090 800AE880 F4FF4010 */  beqz       $v0, .L800AE854
     /* 9D094 800AE884 00000000 */   nop

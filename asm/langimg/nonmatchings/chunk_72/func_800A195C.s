@@ -10,9 +10,9 @@ glabel func_800A195C
     /* 90184 800A1974 98488424 */  addiu      $a0, $a0, %lo(D_800D4898)
     /* 90188 800A1978 3183020C */  jal        func_800A0CC4
     /* 9018C 800A197C 01001024 */   addiu     $s0, $zero, 0x1
-    /* 90190 800A1980 38AB020C */  jal        func_800AACE0
+    /* 90190 800A1980 38AB020C */  jal        ResetCallback
     /* 90194 800A1984 00000000 */   nop
-    /* 90198 800A1988 E4B8020C */  jal        func_800AE390
+    /* 90198 800A1988 E4B8020C */  jal        InitGeom
     /* 9019C 800A198C 00000000 */   nop
     /* 901A0 800A1990 21200000 */  addu       $a0, $zero, $zero
     /* 901A4 800A1994 FCBA020C */  jal        func_800AEBF0
@@ -115,7 +115,7 @@ glabel func_800A195C
     /* 90328 800A1B18 0400238E */  lw         $v1, 0x4($s1)
     /* 9032C 800A1B1C 0D80013C */  lui        $at, %hi(D_800C886C)
     /* 90330 800A1B20 6C8823AC */  sw         $v1, %lo(D_800C886C)($at)
-    /* 90334 800A1B24 56B9020C */  jal        func_800AE558
+    /* 90334 800A1B24 56B9020C */  jal        SetGeomScreen
     /* 90338 800A1B28 00010424 */   addiu     $a0, $zero, 0x100
     /* 9033C 800A1B2C A081020C */  jal        func_800A0680
     /* 90340 800A1B30 00000000 */   nop

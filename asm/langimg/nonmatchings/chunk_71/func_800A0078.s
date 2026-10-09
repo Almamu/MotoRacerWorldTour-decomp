@@ -20,7 +20,7 @@ glabel func_800A0078
     /* 8E8C8 800A00B8 06004010 */  beqz       $v0, .L800A00D4
     /* 8E8CC 800A00BC 21204002 */   addu      $a0, $s2, $zero
     /* 8E8D0 800A00C0 21280002 */  addu       $a1, $s0, $zero
-    /* 8E8D4 800A00C4 5ED9020C */  jal        memcpy
+    /* 8E8D4 800A00C4 5ED9020C */  jal        strncpy
     /* 8E8D8 800A00C8 04000624 */   addiu     $a2, $zero, 0x4
     /* 8E8DC 800A00CC 030040A2 */  sb         $zero, 0x3($s2)
     /* 8E8E0 800A00D0 01001124 */  addiu      $s1, $zero, 0x1

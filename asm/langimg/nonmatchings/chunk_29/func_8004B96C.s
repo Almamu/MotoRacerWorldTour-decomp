@@ -28,11 +28,11 @@ glabel func_8004B96C
     /* 3A1DC 8004B9CC 00000000 */  nop
     /* 3A1E0 8004B9D0 0B0047A9 */  swl        $a3, 0xB($t2)
     /* 3A1E4 8004B9D4 080047B9 */  swr        $a3, 0x8($t2)
-    /* 3A1E8 8004B9D8 D2D8020C */  jal        func_800B6348
+    /* 3A1E8 8004B9D8 D2D8020C */  jal        strcat
     /* 3A1EC 8004B9DC 21200002 */   addu      $a0, $s0, $zero
     /* 3A1F0 8004B9E0 21200002 */  addu       $a0, $s0, $zero
     /* 3A1F4 8004B9E4 0C80053C */  lui        $a1, %hi(D_800C6450)
-    /* 3A1F8 8004B9E8 D2D8020C */  jal        func_800B6348
+    /* 3A1F8 8004B9E8 D2D8020C */  jal        strcat
     /* 3A1FC 8004B9EC 5064A524 */   addiu     $a1, $a1, %lo(D_800C6450)
     /* 3A200 8004B9F0 21100002 */  addu       $v0, $s0, $zero
     /* 3A204 8004B9F4 1400BF8F */  lw         $ra, 0x14($sp)

@@ -74,7 +74,7 @@ glabel func_8009C9A4
     /* 8B2C8 8009CAB8 0C00448C */  lw         $a0, 0xC($v0)
     /* 8B2CC 8009CABC 0400268E */  lw         $a2, 0x4($s1)
     /* 8B2D0 8009CAC0 1000078E */  lw         $a3, 0x10($s0)
-    /* 8B2D4 8009CAC4 96D9020C */  jal        func_800B6658
+    /* 8B2D4 8009CAC4 96D9020C */  jal        sprintf
     /* 8B2D8 8009CAC8 0100C624 */   addiu     $a2, $a2, 0x1
     /* 8B2DC 8009CACC 0C00638E */  lw         $v1, 0xC($s3)
     /* 8B2E0 8009CAD0 0D80023C */  lui        $v0, %hi(D_800D5F34)

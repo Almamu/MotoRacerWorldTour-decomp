@@ -64,21 +64,21 @@ glabel func_80046564
     /* 34E4C 8004663C 21204000 */  addu       $a0, $v0, $zero
     /* 34E50 80046640 21280000 */  addu       $a1, $zero, $zero
     /* 34E54 80046644 21300002 */  addu       $a2, $s0, $zero
-    /* 34E58 80046648 56D8020C */  jal        func_800B6158
+    /* 34E58 80046648 56D8020C */  jal        memset
     /* 34E5C 8004664C 880222AE */   sw        $v0, 0x288($s1)
     /* 34E60 80046650 959C020C */  jal        __builtin_vec_new
     /* 34E64 80046654 21200002 */   addu      $a0, $s0, $zero
     /* 34E68 80046658 21204000 */  addu       $a0, $v0, $zero
     /* 34E6C 8004665C 21280000 */  addu       $a1, $zero, $zero
     /* 34E70 80046660 21300002 */  addu       $a2, $s0, $zero
-    /* 34E74 80046664 56D8020C */  jal        func_800B6158
+    /* 34E74 80046664 56D8020C */  jal        memset
     /* 34E78 80046668 8C0222AE */   sw        $v0, 0x28C($s1)
     /* 34E7C 8004666C 959C020C */  jal        __builtin_vec_new
     /* 34E80 80046670 21200002 */   addu      $a0, $s0, $zero
     /* 34E84 80046674 21204000 */  addu       $a0, $v0, $zero
     /* 34E88 80046678 21280000 */  addu       $a1, $zero, $zero
     /* 34E8C 8004667C 21300002 */  addu       $a2, $s0, $zero
-    /* 34E90 80046680 56D8020C */  jal        func_800B6158
+    /* 34E90 80046680 56D8020C */  jal        memset
     /* 34E94 80046684 900222AE */   sw        $v0, 0x290($s1)
     /* 34E98 80046688 959C020C */  jal        __builtin_vec_new
     /* 34E9C 8004668C 21200002 */   addu      $a0, $s0, $zero
@@ -95,7 +95,7 @@ glabel func_80046564
     /* 34EC0 800466B0 21204000 */  addu       $a0, $v0, $zero
     /* 34EC4 800466B4 21280000 */  addu       $a1, $zero, $zero
     /* 34EC8 800466B8 21300002 */  addu       $a2, $s0, $zero
-    /* 34ECC 800466BC 56D8020C */  jal        func_800B6158
+    /* 34ECC 800466BC 56D8020C */  jal        memset
     /* 34ED0 800466C0 940222AE */   sw        $v0, 0x294($s1)
     /* 34ED4 800466C4 8002238E */  lw         $v1, 0x280($s1)
     /* 34ED8 800466C8 00000000 */  nop

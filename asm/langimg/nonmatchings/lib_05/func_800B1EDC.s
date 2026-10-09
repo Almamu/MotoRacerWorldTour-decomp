@@ -22,7 +22,7 @@ glabel func_800B1EDC
     /* A0730 800B1F20 09F84000 */  jalr       $v0
     /* A0734 800B1F24 21200002 */   addu      $a0, $s0, $zero
     /* A0738 800B1F28 21200002 */  addu       $a0, $s0, $zero
-    /* A073C 800B1F2C 2FC4020C */  jal        func_800B10BC
+    /* A073C 800B1F2C 2FC4020C */  jal        _padSioRW2
     /* A0740 800B1F30 FF004530 */   andi      $a1, $v0, 0xFF
     /* A0744 800B1F34 21184000 */  addu       $v1, $v0, $zero
     /* A0748 800B1F38 5A000224 */  addiu      $v0, $zero, 0x5A

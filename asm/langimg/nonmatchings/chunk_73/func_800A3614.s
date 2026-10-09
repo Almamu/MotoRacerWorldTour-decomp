@@ -37,7 +37,7 @@ glabel func_800A3614
     /* 91E6C 800A365C 00000000 */   nop
   .L800A3660:
     /* 91E70 800A3660 0D80113C */  lui        $s1, %hi(D_800D6044)
-    /* 91E74 800A3664 ECD6020C */  jal        func_800B5BB0
+    /* 91E74 800A3664 ECD6020C */  jal        open
     /* 91E78 800A3668 01C00534 */   ori       $a1, $zero, 0xC001
     /* 91E7C 800A366C 24004004 */  bltz       $v0, .L800A3700
     /* 91E80 800A3670 446022AE */   sw        $v0, %lo(D_800D6044)($s1)
@@ -71,12 +71,12 @@ glabel func_800A3614
     /* 91EE0 800A36D0 00000000 */   nop
     /* 91EE4 800A36D4 21280000 */  addu       $a1, $zero, $zero
     /* 91EE8 800A36D8 4460248E */  lw         $a0, %lo(D_800D6044)($s1)
-    /* 91EEC 800A36DC F0D6020C */  jal        func_800B5BC0
+    /* 91EEC 800A36DC F0D6020C */  jal        lseek
     /* 91EF0 800A36E0 21300000 */   addu      $a2, $zero, $zero
     /* 91EF4 800A36E4 4460248E */  lw         $a0, %lo(D_800D6044)($s1)
     /* 91EF8 800A36E8 5460058E */  lw         $a1, %lo(D_800D6054)($s0)
     /* 91EFC 800A36EC 4860468E */  lw         $a2, %lo(D_800D6048)($s2)
-    /* 91F00 800A36F0 F4D6020C */  jal        func_800B5BD0
+    /* 91F00 800A36F0 F4D6020C */  jal        read
     /* 91F04 800A36F4 21800000 */   addu      $s0, $zero, $zero
     /* 91F08 800A36F8 018E0208 */  j          .L800A3804
     /* 91F0C 800A36FC 00000000 */   nop
@@ -162,7 +162,7 @@ glabel func_800A3614
     /* 9201C 800A380C 04000212 */  beq        $s0, $v0, .L800A3820
     /* 92020 800A3810 0D80033C */   lui       $v1, %hi(D_800D6044)
     /* 92024 800A3814 4460648C */  lw         $a0, %lo(D_800D6044)($v1)
-    /* 92028 800A3818 FCD6020C */  jal        func_800B5BF0
+    /* 92028 800A3818 FCD6020C */  jal        close
     /* 9202C 800A381C 00000000 */   nop
   .L800A3820:
     /* 92030 800A3820 21100002 */  addu       $v0, $s0, $zero

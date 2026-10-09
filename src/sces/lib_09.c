@@ -1,39 +1,39 @@
 #include "common.h"
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_09", func_80148318);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_09", vmNoiseOn);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_09", func_80148888);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_09", SpuSetNoiseClock);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_09", func_801488D8);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_09", _SsVmKeyOffNow);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_09", func_80148998);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_09", _SsVmKeyOnNow);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_09", func_80148E68);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_09", _SsVmSetSeqVol);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_09", func_801493D4);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_09", _SsVmGetSeqVol);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_09", func_80149438);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_09", _SsVmSeqKeyOff);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_09", func_801494E8);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_09", _SsVmVSetUp);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_09", func_801495A8);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_09", SsVabClose);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_09", func_80149658);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_09", SpuFree);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_09", func_801496D8);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_09", _spu_gcSPU);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_09", func_801499D8);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_09", SsVabOpenHead);
 
 INCLUDE_ASM("asm/sces/nonmatchings/lib_09", func_80149A0C);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_09", func_80149A78);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_09", SpuMalloc);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_09", func_80149D48);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_09", _SsVabOpenHeadWithMode);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_09", func_8014A138);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_09", SsVabTransBody);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_09", func_8014A1F8);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_09", SpuRead);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_09", func_8014A258);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_09", SpuSetTransferStartAddr);
 
-INCLUDE_ASM("asm/sces/nonmatchings/lib_09", func_8014A2B8);
+INCLUDE_ASM("asm/sces/nonmatchings/lib_09", SpuSetTransferMode);

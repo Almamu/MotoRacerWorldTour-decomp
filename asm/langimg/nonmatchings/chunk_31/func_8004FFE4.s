@@ -15,16 +15,16 @@ glabel func_8004FFE4
     /* 3E820 80050010 8400B3AF */  sw         $s3, 0x84($sp)
     /* 3E824 80050014 8000B2AF */  sw         $s2, 0x80($sp)
     /* 3E828 80050018 7C00B1AF */  sw         $s1, 0x7C($sp)
-    /* 3E82C 8005001C 56D8020C */  jal        func_800B6158
+    /* 3E82C 8005001C 56D8020C */  jal        memset
     /* 3E830 80050020 7800B0AF */   sw        $s0, 0x78($sp)
     /* 3E834 80050024 2800B027 */  addiu      $s0, $sp, 0x28
     /* 3E838 80050028 21200002 */  addu       $a0, $s0, $zero
     /* 3E83C 8005002C 21280000 */  addu       $a1, $zero, $zero
-    /* 3E840 80050030 56D8020C */  jal        func_800B6158
+    /* 3E840 80050030 56D8020C */  jal        memset
     /* 3E844 80050034 14000624 */   addiu     $a2, $zero, 0x14
     /* 3E848 80050038 4000A427 */  addiu      $a0, $sp, 0x40
     /* 3E84C 8005003C 21280000 */  addu       $a1, $zero, $zero
-    /* 3E850 80050040 56D8020C */  jal        func_800B6158
+    /* 3E850 80050040 56D8020C */  jal        memset
     /* 3E854 80050044 14000624 */   addiu     $a2, $zero, 0x14
     /* 3E858 80050048 21A80000 */  addu       $s5, $zero, $zero
     /* 3E85C 8005004C 21B00000 */  addu       $s6, $zero, $zero
@@ -196,7 +196,7 @@ glabel func_8004FFE4
     /* 3EAC4 800502B4 2128A002 */  addu       $a1, $s5, $zero
     /* 3EAC8 800502B8 04000624 */  addiu      $a2, $zero, 0x4
     /* 3EACC 800502BC 0580073C */  lui        $a3, %hi(func_8004FFAC)
-    /* 3EAD0 800502C0 62D8020C */  jal        func_800B6188
+    /* 3EAD0 800502C0 62D8020C */  jal        qsort
     /* 3EAD4 800502C4 ACFFE724 */   addiu     $a3, $a3, %lo(func_8004FFAC)
   .L800502C8:
     /* 3EAD8 800502C8 5800AB8F */  lw         $t3, 0x58($sp)
@@ -208,7 +208,7 @@ glabel func_8004FFE4
     /* 3EAF0 800502E0 21286001 */  addu       $a1, $t3, $zero
     /* 3EAF4 800502E4 04000624 */  addiu      $a2, $zero, 0x4
     /* 3EAF8 800502E8 0580073C */  lui        $a3, %hi(func_8004FFAC)
-    /* 3EAFC 800502EC 62D8020C */  jal        func_800B6188
+    /* 3EAFC 800502EC 62D8020C */  jal        qsort
     /* 3EB00 800502F0 ACFFE724 */   addiu     $a3, $a3, %lo(func_8004FFAC)
     /* 3EB04 800502F4 0200C22E */  sltiu      $v0, $s6, 0x2
   .L800502F8:
@@ -217,7 +217,7 @@ glabel func_8004FFE4
     /* 3EB10 80050300 21200002 */  addu       $a0, $s0, $zero
     /* 3EB14 80050304 2128C002 */  addu       $a1, $s6, $zero
     /* 3EB18 80050308 04000624 */  addiu      $a2, $zero, 0x4
-    /* 3EB1C 8005030C 62D8020C */  jal        func_800B6188
+    /* 3EB1C 8005030C 62D8020C */  jal        qsort
     /* 3EB20 80050310 21382002 */   addu      $a3, $s1, $zero
   .L80050314:
     /* 3EB24 80050314 21280002 */  addu       $a1, $s0, $zero

@@ -29,11 +29,11 @@ glabel FindEntry
   .L801359EC:
     /* 2EB8 801359EC 40002012 */  beqz       $s1, .L80135AF0
     /* 2EBC 801359F0 1000A427 */   addiu     $a0, $sp, 0x10
-    /* 2EC0 801359F4 C42B050C */  jal        func_8014AF10
+    /* 2EC0 801359F4 C42B050C */  jal        strcpy
     /* 2EC4 801359F8 21284002 */   addu      $a1, $s2, $zero
     /* 2EC8 801359FC B2D7040C */  jal        StrUpper
     /* 2ECC 80135A00 1000A427 */   addiu     $a0, $sp, 0x10
-    /* 2ED0 80135A04 D82B050C */  jal        func_8014AF60
+    /* 2ED0 80135A04 D82B050C */  jal        strlen
     /* 2ED4 80135A08 21204002 */   addu      $a0, $s2, $zero
     /* 2ED8 80135A0C 1000A427 */  addiu      $a0, $sp, 0x10
     /* 2EDC 80135A10 21284000 */  addu       $a1, $v0, $zero

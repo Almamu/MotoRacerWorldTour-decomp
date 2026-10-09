@@ -48,7 +48,7 @@ glabel func_800AAED4
     /* 99728 800AAF18 0C80043C */  lui        $a0, %hi(D_800B8268)
     /* 9972C 800AAF1C 6997020C */  jal        func_800A5DA4
     /* 99730 800AAF20 68828424 */   addiu     $a0, $a0, %lo(D_800B8268)
-    /* 99734 800AAF24 D4D6020C */  jal        func_800B5B50
+    /* 99734 800AAF24 D4D6020C */  jal        ReturnFromException
     /* 99738 800AAF28 00000000 */   nop
   .L800AAF2C:
     /* 9973C 800AAF2C 0C80043C */  lui        $a0, %hi(D_800BE5D4)
@@ -142,7 +142,7 @@ glabel func_800AAED4
     /* 99884 800AB074 E0E520AC */  sw         $zero, %lo(D_800BE5E0)($at)
   .L800AB078:
     /* 99888 800AB078 0C80013C */  lui        $at, %hi(D_800BD54A)
-    /* 9988C 800AB07C D4D6020C */  jal        func_800B5B50
+    /* 9988C 800AB07C D4D6020C */  jal        ReturnFromException
     /* 99890 800AB080 4AD520A4 */   sh        $zero, %lo(D_800BD54A)($at)
     /* 99894 800AB084 2400BF8F */  lw         $ra, 0x24($sp)
     /* 99898 800AB088 2000B48F */  lw         $s4, 0x20($sp)

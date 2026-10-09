@@ -16,11 +16,11 @@ glabel func_8004970C
     /* 37F4C 8004973C 21280000 */  addu       $a1, $zero, $zero
     /* 37F50 80049740 92E5010C */  jal        func_80079648
     /* 37F54 80049744 21300000 */   addu      $a2, $zero, $zero
-    /* 37F58 80049748 B4AA020C */  jal        func_800AAAD0
+    /* 37F58 80049748 B4AA020C */  jal        VSync
     /* 37F5C 8004974C 21200000 */   addu      $a0, $zero, $zero
     /* 37F60 80049750 B3A6010C */  jal        func_80069ACC
     /* 37F64 80049754 9C004426 */   addiu     $a0, $s2, 0x9C
-    /* 37F68 80049758 B4AA020C */  jal        func_800AAAD0
+    /* 37F68 80049758 B4AA020C */  jal        VSync
     /* 37F6C 8004975C 21200000 */   addu      $a0, $zero, $zero
     /* 37F70 80049760 14035026 */  addiu      $s0, $s2, 0x314
   .L80049764:

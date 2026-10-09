@@ -52,9 +52,11 @@ only; the boot executable's first matching function has no small data.
 - **Small data.** Small globals are `$gp`-relative (`$gp` = 0x800C46F0, set
   by the entry point), so the default `-G8` is used.
 
-`src/langimg/chunk_02.cpp` has the proof: seven functions of `CName`,
-`CNamed` and `Cobjet` give the original bytes. The eighth, `CName::Set`,
-differs by one register and is parked (see "Decompiling a function").
+`src/langimg/chunk_02.cpp` has the proof: eight functions of `CName`,
+`CNamed` and `Cobjet` give the original bytes, `CName::Set` included. That
+one only matched once the library names were known: the call it makes is to
+`strncpy`, not `memcpy`, and the `char *` return type changes the register
+allocation.
 
 ### The boot executable: GCC 2.91.66
 
@@ -68,18 +70,38 @@ boot executable wasn't simply linked from the game's objects.
 
 ### Libraries
 
-Both executables link the same PsyQ libraries: libcd `bios.c` 1997-03-28,
-`intr.c` 1997-02-07 and libgpu `sys.c` 1998-01-12, among others. They
-start with PsyQ's startup code (`EntryPoint` in the game, 0x80136B4C in the
-boot executable). Sony built these with its own compiler, so it may be
-neither of the above; nobody has tested yet. The RCS strings point to
-PsyQ 4.1 or 4.2. Rather than decompiling the libraries by hand, the plan
-(issue #97) is to name them from the PsyQ signatures and link the SDK's
-own objects, or reuse existing decompilations. Until then the `lib_*`
-chunks build their `INCLUDE_ASM`s with their executable's compiler (that
-doesn't matter for asm), and the first person to decompile one should
-find out which compiler matches and give the libraries their own entry in
-the Makefile.
+Both executables link Sony's PsyQ libraries after their own code, starting
+with PsyQ's startup code (`__SN_ENTRY_POINT`: 0x800A7084 in the game,
+0x80136B4C in the boot executable). They aren't to be decompiled by hand
+(issue #97).
+
+`tools/psyq_sigs.py` finds them with the
+[psx_psyq_signatures](https://github.com/lab313ru/psx_psyq_signatures)
+database (clone it anywhere): it matches each SDK object's code function by
+function, places each object where most of it matches over every SDK
+version, and writes the names into `config/<target>/symbol_addrs.txt`:
+
+```sh
+tools/psyq_sigs.py ../psx_psyq_signatures objects   # where each object sits, and the versions that match
+tools/psyq_sigs.py ../psx_psyq_signatures symbols   # the symbol_addrs.txt block (replace the generated one)
+```
+
+| | Game | Boot executable |
+|---|---|---|
+| Library functions named | 193 of 350 (53% of the bytes) | 209 of 367 (65%) |
+| Code matched by an SDK object | 55 KB of 65 KB | 78 KB of 87 KB |
+| SDK versions | libpad only 4.3; libcard's `PATCH.OBJ` only 4.5+; the rest 4.1-4.7 | libpad and libgpu 4.4-4.5 |
+
+The unnamed rest is static functions (the signatures label them
+`text_XXX`) and functions whose code differs from every version in the
+database. The game's libraries don't all come from one SDK release, so
+linking Sony's objects will mean picking each one's version; the
+`objects` output has them. The RCS strings in both executables (libcd
+`bios.c` 1.86, `intr.c` 1.75, libgpu `sys.c` 1.140) agree with this era.
+
+Splat finds the library functions' boundaries itself; `symbol_addrs.txt`
+gives sizes only for one-function objects (the BIOS call stubs, which
+splat can mistake for data).
 
 ## Setup
 
@@ -143,7 +165,7 @@ tools/chunks.py cleanup-issues /tmp/c --naming 98 --headers 99   # the per-chunk
 A function that's understood but doesn't match after a real effort is
 **parked**: its C goes under `#ifdef NON_MATCHING` with a comment saying
 what differs, and its `INCLUDE_ASM` stays under `#else`
-(`CName::Set` in `chunk_02.cpp` is an example). Keep its `.s` file.
+Keep its `.s` file.
 `make NON_MATCHING=1` builds the C instead; the result differs from the
 original only in those functions.
 
@@ -190,7 +212,7 @@ C is the same with `cc1`.
 | –                     | 0x0         | 16-byte header (`assets/langimg/header.bin`)          |
 | 0x80011800–0x80011820 | 0x10        | 8 words of data at the start of `.text`               |
 | 0x80011820–0x800A7084 | 0x30        | game code (`chunk_00`–`chunk_74`)                     |
-| 0x800A7084–0x800B716C | 0x95894     | startup code and libraries (`lib_00`–`lib_07`)        |
+| 0x800A7084–0x800B716C | 0x95894     | PsyQ startup code and libraries (`lib_00`–`lib_07`)   |
 | 0x800B716C–0x800B71D8 | 0xA597C     | constructor list (20 static initialisers) and destructor list (8) |
 | 0x800B71D8–0x800B8734 | 0xA59E8     | `.rodata`: strings and jump tables, split by chunk    |
 | 0x800B8734–0x800C46F0 | 0xA6F44     | data                                                  |

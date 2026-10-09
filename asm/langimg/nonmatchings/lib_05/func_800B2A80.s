@@ -154,7 +154,7 @@ glabel func_800B2A80
     /* A14AC 800B2C9C 2BCB0208 */  j          .L800B2CAC
     /* A14B0 800B2CA0 00000000 */   nop
   .L800B2CA4:
-    /* A14B4 800B2CA4 0FC5020C */  jal        func_800B143C
+    /* A14B4 800B2CA4 0FC5020C */  jal        _padRecvAtLoadInfo
     /* A14B8 800B2CA8 21200002 */   addu      $a0, $s0, $zero
   .L800B2CAC:
     /* A14BC 800B2CAC 46000392 */  lbu        $v1, 0x46($s0)

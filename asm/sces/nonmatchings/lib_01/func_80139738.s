@@ -24,7 +24,7 @@ glabel func_80139738
     /* 6C54 80139788 1B004014 */  bnez       $v0, .L801397F8
     /* 6C58 8013978C 00000000 */   nop
     /* 6C5C 80139790 2C00048E */  lw         $a0, 0x2C($s0)
-    /* 6C60 80139794 AFDB040C */  jal        func_80136EBC
+    /* 6C60 80139794 AFDB040C */  jal        CdReadyCallback
     /* 6C64 80139798 00000000 */   nop
     /* 6C68 8013979C 1C80023C */  lui        $v0, %hi(D_801BD8BC)
     /* 6C6C 801397A0 BCD8428C */  lw         $v0, %lo(D_801BD8BC)($v0)
@@ -33,14 +33,14 @@ glabel func_80139738
     /* 6C78 801397AC 04004010 */  beqz       $v0, .L801397C0
     /* 6C7C 801397B0 00000000 */   nop
     /* 6C80 801397B4 3000048E */  lw         $a0, 0x30($s0)
-    /* 6C84 801397B8 B3DC040C */  jal        func_801372CC
+    /* 6C84 801397B8 B3DC040C */  jal        CdDataCallback
     /* 6C88 801397BC 00000000 */   nop
   .L801397C0:
     /* 6C8C 801397C0 1480043C */  lui        $a0, %hi(func_80139490)
-    /* 6C90 801397C4 AADB040C */  jal        func_80136EA8
+    /* 6C90 801397C4 AADB040C */  jal        CdSyncCallback
     /* 6C94 801397C8 90948424 */   addiu     $a0, $a0, %lo(func_80139490)
     /* 6C98 801397CC 09000424 */  addiu      $a0, $zero, 0x9
-    /* 6C9C 801397D0 03DC040C */  jal        func_8013700C
+    /* 6C9C 801397D0 03DC040C */  jal        CdControlF
     /* 6CA0 801397D4 21280000 */   addu      $a1, $zero, $zero
     /* 6CA4 801397D8 1C80033C */  lui        $v1, %hi(D_801BD8B8)
     /* 6CA8 801397DC B8D8638C */  lw         $v1, %lo(D_801BD8B8)($v1)

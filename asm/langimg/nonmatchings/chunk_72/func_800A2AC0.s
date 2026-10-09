@@ -40,7 +40,7 @@ glabel func_800A2AC0
     /* 9131C 800A2B0C 0000668C */  lw         $a2, 0x0($v1)
     /* 91320 800A2B10 D860478C */  lw         $a3, %lo(D_800D60D8)($v0)
     /* 91324 800A2B14 6800B08F */  lw         $s0, 0x68($sp)
-    /* 91328 800A2B18 96D9020C */  jal        func_800B6658
+    /* 91328 800A2B18 96D9020C */  jal        sprintf
     /* 9132C 800A2B1C 607BA524 */   addiu     $a1, $a1, %lo(D_800B7B60)
     /* 91330 800A2B20 0F001032 */  andi       $s0, $s0, 0xF
     /* 91334 800A2B24 05000012 */  beqz       $s0, .L800A2B3C
@@ -55,7 +55,7 @@ glabel func_800A2AC0
     /* 91354 800A2B44 908A020C */  jal        func_800A2A40
     /* 91358 800A2B48 00000000 */   nop
     /* 9135C 800A2B4C 1800A427 */  addiu      $a0, $sp, 0x18
-    /* 91360 800A2B50 ECD6020C */  jal        func_800B5BB0
+    /* 91360 800A2B50 ECD6020C */  jal        open
     /* 91364 800A2B54 01C00534 */   ori       $a1, $zero, 0xC001
     /* 91368 800A2B58 12004004 */  bltz       $v0, .L800A2BA4
     /* 9136C 800A2B5C 086082AE */   sw        $v0, %lo(D_800D6008)($s4)
@@ -168,11 +168,11 @@ glabel func_800A2AC0
     /* 914E8 800A2CD8 0C60658E */  lw         $a1, %lo(D_800D600C)($s3)
     /* 914EC 800A2CDC C860238E */  lw         $v1, %lo(D_800D60C8)($s1)
     /* 914F0 800A2CE0 21880000 */  addu       $s1, $zero, $zero
-    /* 914F4 800A2CE4 F0D6020C */  jal        func_800B5BC0
+    /* 914F4 800A2CE4 F0D6020C */  jal        lseek
     /* 914F8 800A2CE8 206043AE */   sw        $v1, %lo(D_800D6020)($s2)
     /* 914FC 800A2CEC 0860848E */  lw         $a0, %lo(D_800D6008)($s4)
     /* 91500 800A2CF0 1C60058E */  lw         $a1, %lo(D_800D601C)($s0)
-    /* 91504 800A2CF4 F4D6020C */  jal        func_800B5BD0
+    /* 91504 800A2CF4 F4D6020C */  jal        read
     /* 91508 800A2CF8 00080624 */   addiu     $a2, $zero, 0x800
     /* 9150C 800A2CFC 428B0208 */  j          .L800A2D08
     /* 91510 800A2D00 00000000 */   nop
@@ -210,7 +210,7 @@ glabel func_800A2AC0
     /* 9157C 800A2D6C 04002212 */  beq        $s1, $v0, .L800A2D80
     /* 91580 800A2D70 0D80033C */   lui       $v1, %hi(D_800D6008)
     /* 91584 800A2D74 0860648C */  lw         $a0, %lo(D_800D6008)($v1)
-    /* 91588 800A2D78 FCD6020C */  jal        func_800B5BF0
+    /* 91588 800A2D78 FCD6020C */  jal        close
     /* 9158C 800A2D7C 00000000 */   nop
   .L800A2D80:
     /* 91590 800A2D80 21102002 */  addu       $v0, $s1, $zero
