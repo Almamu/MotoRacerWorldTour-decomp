@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Format the C/C++ in src/ and include/ with clang-format (.clang-format).
+"""Format the C/C++ in src/, include/ and lib/ with clang-format (.clang-format).
 
   tools/format.py              format every file in place
   tools/format.py PATH...      just these files or directories
@@ -17,7 +17,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-DIRS = ("src", "include")
+DIRS = ("src", "include", "lib")
 SUFFIXES = (".c", ".cpp", ".h")
 MAJOR = 21
 

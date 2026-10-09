@@ -39,15 +39,20 @@ version; [docs/decomp.md](docs/decomp.md) has the detail.
 
 ## Doing the work
 
-Follow "Decompiling a function" in [docs/decomp.md](docs/decomp.md). In
-short:
+Follow the per-function loop in [docs/workflow.md](docs/workflow.md),
+every step, every function. In short:
 
 - Replace the function's `INCLUDE_ASM` line in its chunk's source file
-  with the code, where the line was, and delete its `.s` file under
-  `asm/<target>/nonmatchings/<chunk>/`.
+  (`src/<target>/`, or `lib/<library>/<target>/` for a library) with the
+  code, where the line was, and delete its `.s` file under
+  `asm/<target>/nonmatchings/<chunk>/` once it matches.
 - **Every change must keep both executables byte-identical.** `make` must
-  print `OK` for both, and `tools/diff_func.py <function>` shows what
-  differs while you iterate.
+  print `OK` for both. While you iterate, `tools/try_func.py <function>`
+  compiles the chunk alone and shows what differs, without linking.
+- **Check the compiler** when a function resists in ways that look
+  structural: `tools/try_func.py <function> --gcc 2.91.66` (and
+  `2.95.2`). Code that only matches with another compiler or flags than
+  its executable's belongs in a library ([docs/libraries.md](docs/libraries.md)).
 - **Parking:** a function you understand but can't match goes under
   `#ifdef NON_MATCHING`, with a comment saying what differs, and keeps its
   `INCLUDE_ASM` under `#else` and its `.s` file. A function you don't
@@ -56,9 +61,18 @@ short:
   work doesn't conflict. The shared files are the headers in `include/`
   and `config/<target>/symbol_addrs.txt`: keep `symbol_addrs.txt` in
   address order and change only the lines you need.
-- **Matching notes:** docs/decomp.md, "Matching notes", lists what made
-  the trickier functions match (declarations, `char` signedness, statement
-  order, ...). Read it before parking anything.
+- **Techniques:** [docs/matching_techniques.md](docs/matching_techniques.md)
+  is what made the trickier functions match (build settings, source
+  shapes, workarounds), each with its case. Read it before parking
+  anything. Workarounds are spelled with their `include/match.h` macro and
+  a comment saying what they fix.
+- **Write it up** (docs/workflow.md, step 8), in the same PR: a new
+  technique goes in docs/matching_techniques.md, your pass gets a file in
+  [docs/matching/](docs/matching/README.md) (`issue-<N>-<slug>.md`: each
+  function, what matched it or what's left, what you tried), and library
+  findings go in docs/libraries.md.
+- **Libraries** (`lib/`) have their own build settings; moving a chunk
+  there is in docs/libraries.md.
 - **Hand-written assembly** isn't decompiled: list the function in
   `config/<target>/handwritten.txt` with a word on what it is.
 - **Names:** `tools/rename.py TARGET OLD NEW` renames a symbol everywhere.
@@ -68,7 +82,8 @@ short:
   than a wrong name.
 - **Headers:** classes and declarations shared by several chunks go in
   `include/<target>/`, one header per class or subsystem (e.g.
-  `include/langimg/cobjet.h`), not in the chunk file.
+  `include/langimg/cobjet.h`), not in the chunk file; a library's in
+  `lib/<library>/include/`.
 
 ### Verification
 
@@ -131,7 +146,8 @@ are committed.
 ## Opening the PR
 
 Say which functions you decompiled, which you parked and why, and which
-you left alone, and that `make` passed from clean. Wait for CI to pass. Reference the issue
+you left alone, and that `make` passed from clean. Link the write-up in
+docs/matching/. Wait for CI to pass. Reference the issue
 with `Refs #N`. Use `Closes #N` only in the PR that decompiles every
 function of the chunk; parked functions keep the issue open.
 

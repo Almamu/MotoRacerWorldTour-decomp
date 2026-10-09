@@ -33,7 +33,11 @@ the code is still assembly (`tools/chunks.py status` has the numbers).
 > keep both executables byte-identical.
 
 [`docs/decomp.md`](docs/decomp.md) has the compilers and the evidence for
-them, the chunks, how to decompile a function, and the memory maps.
+them, the chunks and the memory maps;
+[`docs/workflow.md`](docs/workflow.md) the per-function loop;
+[`docs/matching_techniques.md`](docs/matching_techniques.md) what makes code
+match; and [`docs/libraries.md`](docs/libraries.md) the code built apart
+(`lib/`: Sony's libraries, the game's sound engine).
 
 ## AI-assisted decompilation
 

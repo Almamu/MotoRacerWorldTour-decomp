@@ -3,10 +3,10 @@
 
 The code of each executable is split into chunks of about 8 KB
 (config/<target>.yaml; docs/decomp.md, "Chunks"), one source file each:
-src/<target>/chunk_NN.cpp (or .c) for the game's own code, lib_NN.c for
-the libraries. A function is still to do while its source file has an
-INCLUDE_ASM for it; one under `#else` of `#ifdef NON_MATCHING` has C that
-doesn't match yet.
+src/<target>/chunk_NN.cpp (or .c) for the game's own code, and
+lib/<library>/<target>/<chunk>.c(pp) for the libraries (docs/libraries.md).
+A function is still to do while its source file has an INCLUDE_ASM for it;
+one under `#else` of `#ifdef NON_MATCHING` has C that doesn't match yet.
 
 The function list comes from build/<target>.elf, so build first (make).
 
@@ -16,8 +16,9 @@ The function list comes from build/<target>.elf, so build first (make).
   tools/chunks.py issues DIR              write each chunk's issue (title + body) to DIR
   tools/chunks.py issues DIR --create     ...and open them on GitHub (gh)
   tools/chunks.py sync [--dry-run]        tick done functions in the open chunk issues
-  tools/chunks.py stamp TARGET            record the config splat's tracked outputs came from
-                                          (make does it after splitting)
+  tools/chunks.py stamp TARGET            record the config splat's tracked outputs came from,
+                                          and relink (make does it after splitting)
+  tools/chunks.py relink TARGET           point linker/TARGET.ld at the chunks that live in lib/
   tools/chunks.py check                   the tree's bookkeeping (needs no build): every
                                           INCLUDE_ASM/INCLUDE_RODATA has its .s, every .s under
                                           asm/*/nonmatchings/ is included, handwritten.txt agrees,
@@ -37,6 +38,8 @@ import sys
 from pathlib import Path
 
 import yaml
+
+import paths
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -154,7 +157,7 @@ def survey(target):
     hand = handwritten(target)
     out = []
     for name, ext, lo, hi in chunks(target):
-        src = ROOT / "src" / target / f"{name}.{ext}"
+        src = paths.chunk_source(target, name, ext)
         todo, parked = remaining(src)
         fs = [(a,) + funcs[a] for a in sorted(funcs) if lo <= a < hi]
         out.append({
@@ -426,7 +429,23 @@ def stamp_path(target):
     return ROOT / "linker" / f"{target}.stamp"
 
 
+def relink(target):
+    """Point the linker script at the objects of the chunks in lib/: splat
+    names every chunk's object after src/<target>/."""
+    ld = ROOT / "linker" / f"{target}.ld"
+    text = ld.read_text()
+    for chunk in paths.library_sources(target):
+        text = text.replace(f"build/{target}/src/{target}/{chunk}.o(",
+                            f"{paths.chunk_object(target, chunk)}(")
+    ld.write_text(text)
+
+
+def cmd_relink(args):
+    relink(args.target)
+
+
 def cmd_stamp(args):
+    relink(args.target)
     stamp_path(args.target).write_text(config_hash(args.target) + "\n")
 
 
@@ -434,7 +453,7 @@ def cmd_check(args):
     errors = []
     for target in TARGETS:
         included = set()
-        for src in sorted((ROOT / "src" / target).glob("*.c*")):
+        for src in paths.chunk_sources(target):
             for m in INCLUDE_RE.finditer(COMMENT_RE.sub("", src.read_text())):
                 path = ROOT / m.group(1) / f"{m.group(2)}.s"
                 included.add(path)
@@ -450,6 +469,17 @@ def cmd_check(args):
             if name not in names:
                 errors.append(f"config/{target}/handwritten.txt: {name} has no INCLUDE_ASM")
     for target in TARGETS:
+        ld = (ROOT / "linker" / f"{target}.ld").read_text()
+        for chunk, src in paths.library_sources(target).items():
+            rel = src.relative_to(ROOT)
+            if f"{paths.chunk_object(target, chunk)}(" not in ld:
+                errors.append(f"linker/{target}.ld: doesn't link {rel}: run "
+                              f"`tools/chunks.py relink {target}`")
+            for ext in ("c", "cpp"):
+                dup = ROOT / "src" / target / f"{chunk}.{ext}"
+                if dup.exists():
+                    errors.append(f"{dup.relative_to(ROOT)}: {chunk} lives in {rel}")
+    for target in TARGETS:
         st = stamp_path(target)
         if not st.exists() or st.read_text().strip() != config_hash(target):
             errors.append(f"linker/{target}.stamp: config/{target}.yaml or its symbol_addrs.txt "
@@ -457,7 +487,7 @@ def cmd_check(args):
                           "extracted/ and commit asm/ and linker/")
     # Paths into one machine's checkout (a tool run with an absolute path
     # writes them) break the build everywhere else.
-    for d in ("src", "include", "config", "asm"):
+    for d in paths.SOURCE_DIRS + ("config", "asm", "linker"):
         for path in sorted((ROOT / d).rglob("*")):
             if path.is_file() and str(ROOT) in path.read_text(errors="ignore"):
                 errors.append(f"{path.relative_to(ROOT)}: contains the path {ROOT}")
@@ -483,6 +513,8 @@ def main():
     p.add_argument("dir")
     p = sub.add_parser("stamp")
     p.add_argument("target", choices=sorted(TARGETS))
+    p = sub.add_parser("relink")
+    p.add_argument("target", choices=sorted(TARGETS))
     p = sub.add_parser("cleanup-issues")
     p.add_argument("dir")
     p.add_argument("--naming", type=int, required=True, help="the naming tracking issue")
@@ -490,7 +522,7 @@ def main():
     p.add_argument("--create", action="store_true")
     args = ap.parse_args()
     {"status": cmd_status, "badges": cmd_badges, "issues": cmd_issues, "sync": cmd_sync, "check": cmd_check,
-     "stamp": cmd_stamp,
+     "stamp": cmd_stamp, "relink": cmd_relink,
      "cleanup-issues": cmd_cleanup_issues}[args.cmd](args)
 
 

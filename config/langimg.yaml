@@ -18,6 +18,9 @@ options:
   # copy of the game; make re-splits when the game files are in extracted/
   ld_script_path: linker/langimg.ld
   ld_dependencies: False
+  # C files are written by hand (src/, lib/), never generated: a chunk moved
+  # to lib/ mustn't come back as a stub in src/.
+  create_c_files: False
   create_asm_dependencies: True
 
   find_file_boundaries: True

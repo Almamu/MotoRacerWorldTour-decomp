@@ -3,7 +3,7 @@
 #   make setup    fetch the compilers (GCC 2.95.2 and 2.91.66 for the PlayStation) and maspsx
 #   make split    re-run splat after config changes (needs the originals in extracted/)
 #   make          build and compare against the originals
-#   make objects  just compile src/ (needs neither the game files nor splat)
+#   make objects  just compile src/ and lib/ (no linking)
 #   make sdk      also link Sony's PsyQ objects in place of the library asm they
 #                 match, and compare that (needs tools/fetch_psyq.sh first)
 
@@ -21,7 +21,7 @@ AS       := $(CROSS)as
 LD       := $(CROSS)ld
 OBJCOPY  := $(CROSS)objcopy
 PYTHON   := python3
-MASPSX   := $(PYTHON) tools/maspsx/maspsx.py
+MASPSX   := $(PYTHON) tools/maspsx_plus.py
 SPLAT    := $(PYTHON) -m splat split
 
 # Each executable has its own compiler (docs/decomp.md): the game GCC 2.95.2,
@@ -37,13 +37,23 @@ sces_G      := 0
 
 # Per-target compiler flags. The boot executable's compiler had signed plain
 # char (the MIPS default); decompals' builds default to unsigned.
-langimg_CFLAGS :=
+langimg_CFLAGS := -mno-split-addresses
 sces_CFLAGS    := -fsigned-char
+
+# Libraries (lib/<name>/<target>/, docs/libraries.md) built with another
+# compiler or flags than the rest of their target (a setting that's set,
+# even to nothing, replaces the target's): LIB_<name>_GCC and
+# LIB_<name>_CFLAGS, and maspsx's flags from LIB_<name>_MASPSXFLAGS. The
+# game's sound engine is GCC 2.91.66's, its divisions without checks.
+LIBS             := $(notdir $(wildcard lib/*))
+LIB_sound_GCC    := 2.91.66-psx
+LIB_sound_CFLAGS := -mno-split-addresses
+LIB_sound_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks
 
 # -O2; the C++ has no exceptions and no RTTI.
 CC1FLAGS    := -O2 -quiet
 CXXFLAGS    := -fno-exceptions -fno-rtti
-CPPFLAGS    := -nostdinc -D__GNUC__=2 -Dmips -D__mips__ -I include -I src
+CPPFLAGS    := -nostdinc -D__GNUC__=2 -Dmips -D__mips__ -I include -I src $(patsubst %,-I %,$(wildcard lib/*/include))
 ifeq ($(NON_MATCHING),1)
 CPPFLAGS    += -DNON_MATCHING
 endif
@@ -75,12 +85,12 @@ $(1)_BIN      := $(BUILD)/$(1).bin
 endef
 $(foreach t,$(TARGETS),$(eval $(call target_vars,$(t))))
 
-# Every object the linker script names (asm/, src/ and assets).
+# Every object the linker script names (asm/, src/, lib/ and assets).
 ld_objects = $(shell grep -o 'build/[A-Za-z0-9_/.-]*\.o' $(1) 2>/dev/null | sort -u)
 
 # Objects are rebuilt when the compile flags change (NON_MATCHING=1 and back).
 FLAGS_STAMP := $(BUILD)/flags.txt
-FLAGS_NOW   := $(CPPFLAGS) $(CC1FLAGS) $(CXXFLAGS) $(MASPSXFLAGS) $(langimg_G) $(sces_G) $(langimg_CFLAGS) $(sces_CFLAGS)
+FLAGS_NOW   := $(CPPFLAGS) $(CC1FLAGS) $(CXXFLAGS) $(MASPSXFLAGS) $(langimg_G) $(sces_G) $(langimg_CFLAGS) $(sces_CFLAGS) $(foreach l,$(LIBS),$(l):$(LIB_$(l)_GCC):$(LIB_$(l)_CFLAGS):$(LIB_$(l)_MASPSXFLAGS))
 $(shell mkdir -p $(BUILD); echo '$(FLAGS_NOW)' | cmp -s - $(FLAGS_STAMP) || echo '$(FLAGS_NOW)' > $(FLAGS_STAMP))
 
 #### Rules ####
@@ -122,7 +132,7 @@ build: $(foreach t,$(TARGETS),$($(t)_BIN))
 
 # Every source file compiled, without linking: what CI checks when it has
 # no copy of the game.
-SRC_OBJECTS := $(foreach t,$(TARGETS),$(patsubst %,$(BUILD)/$(t)/%.o,$(basename $(wildcard src/$(t)/*.c src/$(t)/*.cpp))))
+SRC_OBJECTS := $(foreach t,$(TARGETS),$(patsubst %,$(BUILD)/$(t)/%.o,$(basename $(wildcard src/$(t)/*.c src/$(t)/*.cpp lib/*/$(t)/*.c lib/*/$(t)/*.cpp))))
 objects: $(SRC_OBJECTS)
 
 # The library code with Sony's own objects linked in where they match
@@ -156,10 +166,16 @@ $(BUILD)/sces.bin: $(BUILD)/sces.elf
 	$(OBJCOPY) -O binary $< $@
 
 # __GNUC_MINOR__ of a target's compiler (95, 91).
-gcc_minor = -D__GNUC_MINOR__=$(word 2,$(subst ., ,$($(1)_GCC)))
+gcc_minor = -D__GNUC_MINOR__=$(word 2,$(subst ., ,$(1)))
 
 # Objects of each target live under build/<target>/ (splat's build_path).
+# OBJ_GCC and OBJ_CFLAGS are each object's compiler and flags: its target's,
+# or its library's (LIB_<name>_GCC, _CFLAGS, _MASPSXFLAGS).
 define target_rules
+$(BUILD)/$(1)/%.o: OBJ_GCC = $($(1)_GCC)
+$(BUILD)/$(1)/%.o: OBJ_CFLAGS = $($(1)_CFLAGS)
+$(BUILD)/$(1)/%.o: OBJ_MASPSXFLAGS = $(MASPSXFLAGS)
+
 # Binary pieces splat extracted to assets/ (the header).
 $(BUILD)/$(1)/%.o: %.bin
 	@mkdir -p $$(dir $$@)
@@ -175,16 +191,20 @@ $(BUILD)/$(1)/%.o: %.s
 # splat writes the INCLUDE_ASM ones (<object>.asmproc.d).
 $(BUILD)/$(1)/%.o: %.cpp $(call gcc_dir,$($(1)_GCC))/cc1 $(FLAGS_STAMP)
 	@mkdir -p $$(dir $$@)
-	$(call gcc_dir,$($(1)_GCC))/cpp $(CPPFLAGS) $(call gcc_minor,$(1)) -MD $$(@:.o=.d) -lang-c++ -D__cplusplus -D__GNUG__=2 -D_LANGUAGE_C_PLUS_PLUS $$< | $(call gcc_dir,$($(1)_GCC))/cc1plus $(CC1FLAGS) -G$($(1)_G) $($(1)_CFLAGS) $(CXXFLAGS) | $(MASPSX) $(MASPSXFLAGS) -G$($(1)_G) | $(AS) $(ASFLAGS) -o $$@
+	$$(call gcc_dir,$$(OBJ_GCC))/cpp $(CPPFLAGS) $$(call gcc_minor,$$(OBJ_GCC)) -MD $$(@:.o=.d) -lang-c++ -D__cplusplus -D__GNUG__=2 -D_LANGUAGE_C_PLUS_PLUS $$< | $$(call gcc_dir,$$(OBJ_GCC))/cc1plus $(CC1FLAGS) -G$($(1)_G) $$(OBJ_CFLAGS) $(CXXFLAGS) | $(MASPSX) $$(OBJ_MASPSXFLAGS) -G$($(1)_G) | $(AS) $(ASFLAGS) -o $$@
 	$(ALIGN4) $$@
 	@sed -i 's|^[^:]*:|$$@:|' $$(@:.o=.d)
 
 $(BUILD)/$(1)/%.o: %.c $(call gcc_dir,$($(1)_GCC))/cc1 $(FLAGS_STAMP)
 	@mkdir -p $$(dir $$@)
-	$(call gcc_dir,$($(1)_GCC))/cpp $(CPPFLAGS) $(call gcc_minor,$(1)) -MD $$(@:.o=.d) $$< | $(call gcc_dir,$($(1)_GCC))/cc1 $(CC1FLAGS) -G$($(1)_G) $($(1)_CFLAGS) | $(MASPSX) $(MASPSXFLAGS) -G$($(1)_G) | $(AS) $(ASFLAGS) -o $$@
+	$$(call gcc_dir,$$(OBJ_GCC))/cpp $(CPPFLAGS) $$(call gcc_minor,$$(OBJ_GCC)) -MD $$(@:.o=.d) $$< | $$(call gcc_dir,$$(OBJ_GCC))/cc1 $(CC1FLAGS) -G$($(1)_G) $$(OBJ_CFLAGS) | $(MASPSX) $$(OBJ_MASPSXFLAGS) -G$($(1)_G) | $(AS) $(ASFLAGS) -o $$@
 	$(ALIGN4) $$@
 	@sed -i 's|^[^:]*:|$$@:|' $$(@:.o=.d)
 endef
 $(foreach t,$(TARGETS),$(eval $(call target_rules,$(t))))
+$(foreach t,$(TARGETS),$(foreach l,$(LIBS),\
+  $(if $(filter-out undefined,$(origin LIB_$(l)_GCC)),$(eval $(BUILD)/$(t)/lib/$(l)/%.o: OBJ_GCC = $(LIB_$(l)_GCC)))\
+  $(if $(filter-out undefined,$(origin LIB_$(l)_CFLAGS)),$(eval $(BUILD)/$(t)/lib/$(l)/%.o: OBJ_CFLAGS = $(LIB_$(l)_CFLAGS)))\
+  $(if $(filter-out undefined,$(origin LIB_$(l)_MASPSXFLAGS)),$(eval $(BUILD)/$(t)/lib/$(l)/%.o: OBJ_MASPSXFLAGS = $(LIB_$(l)_MASPSXFLAGS)))))
 
 -include $(shell find $(BUILD) -name '*.d' 2>/dev/null)

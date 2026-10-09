@@ -1,4 +1,5 @@
 #include "common.h"
+#include "match.h"
 #include "sces/boot.h"
 #include "sces/movie.h"
 
@@ -126,11 +127,6 @@ int func_80135504(void) {
 void func_8013550C(int arg) {
 }
 
-/* Stores a word at any address (swl/swr). The original goes through the
- * assembler's usw macro: written in C, GCC schedules the loop counter's
- * decrement before the store instead of after it. */
-#define STORE_UNALIGNED(p, v) __asm__ volatile("usw %0, 0(%1)" : : "r"(v), "r"(p))
-
 /* Undoes MR3.DAT's LZSS: a flag byte per 8 items, a set bit is a literal
  * byte, a clear one a 16-bit (offset 12 bits, length 4 bits + 3) copy from
  * the output. Offset 0 ends the stream. Copies are word-wide when the
@@ -178,6 +174,7 @@ void LzssDecompress(u8 *src, u8 *dst) {
                 while (len) {
                     w = *(u32 *)from;
                     from += 4;
+                    /* in C, GCC decrements len before the store */
                     STORE_UNALIGNED(dst, w);
                     dst += 4;
                     len--;
