@@ -13,8 +13,13 @@ version; [docs/decomp.md](docs/decomp.md) has the detail.
 - `langimg` is the game (C++, GCC 2.95.2), `sces` the boot executable (C,
   GCC 2.91.66).
 - `library` marks the PsyQ library code at the end of each executable.
-  Its compiler hasn't been identified yet, so start with a game chunk
-  unless you want to work that out (docs/decomp.md, "Libraries").
+  Don't decompile it by hand: #97 covers naming it from the PsyQ
+  signatures and linking the SDK's own objects (or existing decompiled
+  source) instead. Help there is welcome.
+- `cleanup` issues are for code that's already decompiled. Each game
+  chunk has a follow-up (labelled `blocked` until its chunk issue
+  closes), and #98 to #102 cover naming, headers, source files, data and
+  code style across the whole tree.
 - An issue already claimed in its comments is taken, unless the claim is
   old and nothing came of it; ask in the issue.
 

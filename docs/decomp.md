@@ -72,7 +72,10 @@ Both executables link the same PsyQ libraries: libcd `bios.c` 1997-03-28,
 `intr.c` 1997-02-07 and libgpu `sys.c` 1998-01-12, among others. They
 start with PsyQ's startup code (`EntryPoint` in the game, 0x80136B4C in the
 boot executable). Sony built these with its own compiler, so it may be
-neither of the above; nobody has tested yet. Until then the `lib_*`
+neither of the above; nobody has tested yet. The RCS strings point to
+PsyQ 4.1 or 4.2. Rather than decompiling the libraries by hand, the plan
+(issue #97) is to name them from the PsyQ signatures and link the SDK's
+own objects, or reuse existing decompilations. Until then the `lib_*`
 chunks build their `INCLUDE_ASM`s with their executable's compiler (that
 doesn't matter for asm), and the first person to decompile one should
 find out which compiler matches and give the libraries their own entry in
@@ -120,6 +123,7 @@ tools/chunks.py status            # functions and bytes done, per chunk with any
 tools/chunks.py status --all      # every chunk
 tools/chunks.py issues /tmp/i     # each chunk's issue title and body, as files
 tools/chunks.py sync              # tick the functions done since, in the open issues
+tools/chunks.py cleanup-issues /tmp/c --naming 98 --headers 99   # the per-chunk cleanup follow-ups
 ```
 
 ## Decompiling a function
