@@ -30,17 +30,22 @@ What git holds and what it doesn't:
 
 | Code                          | Compiler                           | Language |
 |-------------------------------|------------------------------------|----------|
-| `LANGIMG.DAT` (`chunk_*`)     | GCC 2.95.2, PlayStation build      | C++      |
-| `SCES_030.37` (`chunk_*`)     | GCC 2.91.66 (egcs 1.1.2), PlayStation build | C++      |
-| Libraries in both (`lib_*`)   | not identified yet (see "Libraries") | C      |
+| `LANGIMG.DAT` (`src/langimg`) | GCC 2.95.2, PlayStation build      | C++      |
+| `LANGIMG.DAT`'s sound engine (`lib/sound`) | GCC 2.91.66, PlayStation build | C++ (or C) |
+| `SCES_030.37` (`src/sces`)    | GCC 2.91.66 (egcs 1.1.2), PlayStation build | C++      |
+| Sony's libraries in both (`lib/psyq`) | not identified yet ([libraries.md](libraries.md)) | C |
 
 Both compilers are the `-psx` builds from
-[decompals/old-gcc](https://github.com/decompals/old-gcc), run at `-O2`
-with `-G8`, and PsyQ's assembler behaviour is emulated by
-[maspsx](https://github.com/mkst/maspsx). The game uses `-G8`; the boot
-executable `-G0`: it never addresses anything through `$gp`, and with
-`-G8` its global loads come out as single assembler macros instead of the
-split `%hi`/`%lo` pairs it has.
+[decompals/old-gcc](https://github.com/decompals/old-gcc), run at `-O2`,
+and PsyQ's assembler behaviour is emulated by
+[maspsx](https://github.com/mkst/maspsx) (through `tools/maspsx_plus.py`).
+The game uses `-G8` and `-mno-split-addresses`; the boot executable `-G0`
+and GCC's default split addresses: it never addresses anything through
+`$gp`, and with `-G8` its global loads come out as single assembler
+macros instead of the split `%hi`/`%lo` pairs it has. The full table of
+settings, and the evidence for each, is in
+[matching_techniques.md](matching_techniques.md), "Compilers and flags";
+the libraries' own settings in [libraries.md](libraries.md).
 
 ### The game: GCC 2.95.2
 
@@ -95,67 +100,10 @@ the sample's names (`strSync`, `strNextVlc`, `strKickCD`, ...).
 
 ### Libraries
 
-Both executables link Sony's PsyQ libraries after their own code, starting
-with PsyQ's startup code (`__SN_ENTRY_POINT`: 0x800A7084 in the game,
-0x80136B4C in the boot executable). They aren't to be decompiled by hand
-(issue #97): where Sony's own object is what's linked, `make sdk` links it.
-
-**Names.** `config/<target>/symbol_addrs.txt` has a generated block of
-library names. Lines marked `exact` are functions of an SDK object found
-whole in the executable (`tools/psyq_match.py`); "referred to by an SDK
-object" ones (functions and data) are what Sony's objects call the
-symbols they use, at the addresses their relocations have in the
-original; the rest come from the
-[psx_psyq_signatures](https://github.com/lab313ru/psx_psyq_signatures)
-database (`tools/psyq_sigs.py`), which matches function by function and
-places each object where most of it matches over every SDK version:
-
-```sh
-make sdk                                             # writes build/sdk/match.json
-tools/psyq_sigs.py ../psx_psyq_signatures symbols build/sdk   # the block to paste in
-```
-
-**Sony's objects.** `tools/fetch_psyq.sh` downloads the runtime libraries
-4.3, 4.4 (with Sony's `patches/`) and 4.7 from archive.org's `ps1_sdks`
-collection, and decomp.me's `psyq-obj-parser`, into `tools/psyq/` (ignored;
-nothing of it is committed), checking everything against
-`tools/psyq.sha256`. Then `make sdk`:
-
-1. `tools/psyq_match.py` converts every object to ELF and looks for its
-   whole `.text` in the library code, every byte equal except what its
-   relocations fill in, and where its calls and address loads of a known
-   symbol land on that symbol. libds, libgs, libhmd, libmcx and libcomb
-   are skipped: they carry copies of other libraries' code, and the
-   executables use libcd (its strings are there).
-2. `tools/psyq_link.py` rewrites the linker script: each library chunk
-   becomes one object per function, and the functions that a matched
-   object without data of its own covers are replaced by that object's
-   `.text`. Symbols the objects need that this build doesn't define get
-   their addresses from the original executable's relocated instructions.
-3. `tools/sdk_build.sh` assembles, links and compares the result
-   (`build/sdk/*.bin`), and records the replaced functions, which
-   `tools/chunks.py` then counts as done.
-
-The normal build stays on the tracked asm, so it needs none of this.
-
-| | Game | Boot executable |
-|---|---|---|
-| Library functions named | 194 of 325 | 213 of 339 |
-| SDK objects found whole | 103 (23 KB of 66 KB) | 122 (44 KB of 88 KB) |
-| Linked by `make sdk` | 76 objects, 8.2 KB, 80 functions | 88 objects, 21.9 KB, 97 functions |
-| SDK release | 4.3 (several objects are only in 4.3); one libpad object only in 4.7 | 4.4 (several only in 4.4); a libpad and a libsnd object only in 4.7 |
-
-The other found objects have data of their own, which is still in the data
-disassembly; they can be linked once the data is split by chunk (#101).
-The rest of the library code matches no release: libcd's `BIOS.OBJ`, for
-one, is 4.3/4.4's for its first 0x1100 bytes, but the game's `CD_init` has
-debug `printf` calls that no released version has, so the game linked a
-library build Sony shipped some other way. That code stays asm (and could
-be decompiled, with the SDK's objects as a reference).
-
-Splat finds the library functions' boundaries itself; `symbol_addrs.txt`
-gives sizes only for one-function objects (the BIOS call stubs, which
-splat can mistake for data).
+Code built apart from the executable it's in (Sony's PsyQ libraries, the
+game's sound engine) lives in `lib/`, with its own build settings: see
+[libraries.md](libraries.md), which also covers PsyQ's names and
+`make sdk`.
 
 ## Setup
 
@@ -226,62 +174,26 @@ branch with them.
 
 ## Decompiling a function
 
-1. Read `asm/<target>/nonmatchings/<chunk>/<function>.s`. `m2c` gives a
-   C draft: `m2c asm/langimg/nonmatchings/chunk_05/func_8001B778.s`.
-2. In `src/<target>/<chunk>.cpp` (or `.c`), replace the function's
-   `INCLUDE_ASM(...)` line with the code, where the line was. The order of
-   the functions in the file is their order in the executable.
-3. Delete the function's `.s` file.
-4. `make`. Both lines must say `OK`. `tools/diff_func.py <function>` shows
-   the instructions that differ.
-5. If a name became known, `tools/rename.py TARGET OLD NEW` renames the
-   symbol everywhere (`symbol_addrs.txt`, sources, the `.s` file); C++
-   functions take their GCC mangled name (see below). `make` then
-   re-splits.
+The loop for one function (read, write, compare with
+`tools/try_func.py`, shape, permute, match or park, write up) is
+[workflow.md](workflow.md); what makes code match, technique by
+technique, is [matching_techniques.md](matching_techniques.md), with the
+passes behind them in [docs/matching/](matching/README.md).
 
-A function that's understood but doesn't match after a real effort is
+In short: replace the function's `INCLUDE_ASM(...)` in its chunk with the
+code, where the line was (functions stay in address order), compare
+until it matches, delete its `.s` file, and `make` (both lines `OK`). A
+function that's understood but doesn't match after a real effort is
 **parked**: its C goes under `#ifdef NON_MATCHING` with a comment saying
-what differs, and its `INCLUDE_ASM` stays under `#else`
-Keep its `.s` file.
+what differs, its `INCLUDE_ASM` under `#else`, and its `.s` file stays.
 `make NON_MATCHING=1` builds the C instead; the result differs from the
-original only in those functions.
+original only in those functions. `tools/rename.py TARGET OLD NEW`
+renames a symbol everywhere once its name is known.
 
 Data stays in splat's disassembly for now. A decompiled function refers to
 a global by the symbol splat gave it (`extern u32 D_800C4A10;`, or a name
-from `symbol_addrs.txt`), declared in a header.
-
-### Matching notes
-
-What it took to match the boot executable so far (likely to apply to the
-game too; check before assuming):
-
-- **Declarations matter, not only code.** The original was built against
-  declarations where `free()`, `DecDCToutCallback()` and the heap
-  allocator return `int`. With `void` (or pointer) returns, the
-  registers right after the call come out differently, even when the
-  result isn't used. When a register differs right after a call, try an
-  `int` return on the callee first.
-- **Signed `char`.** The boot executable's compiler had signed plain
-  `char`; decompals' builds default to unsigned (`sces_CFLAGS` in the
-  Makefile adds `-fsigned-char`).
-- **`-G0`** for the boot executable, `-G8` for the game.
-- **Statement order** decides the scheduling when nothing else does;
-  reorder before rewriting.
-- **Orphan literals.** Identical string literals are merged within a
-  source file, so an unreferenced copy of a string belongs to the next
-  file. Until the chunks follow the original files such data is spelled
-  out (`D_8014C38C` after `Startup`).
-- **Static object init/fini** (GCC's `_GLOBAL_.I`/`.D` functions) come at
-  the end of the file that defines the object; inside a chunk they're
-  written as plain functions that construct or destroy it.
-- **Hand-written assembly** stays assembly: a run of it at the end of a
-  chunk becomes its own `asm` segment (`asm/sces/vlc.s`); a single
-  function inside a chunk is listed in `config/<target>/handwritten.txt`
-  (it keeps its `INCLUDE_ASM` and counts as done).
-- **[decomp-permuter](https://github.com/simonlindholm/decomp-permuter)**
-  helps with what's left after that (register choices). It parses C, not
-  C++: give it the function as plain C, compiled through `cc1plus`
-  inside `extern "C" { }`.
+from `symbol_addrs.txt`), declared in a header with its real type (a small
+one is then reached through `$gp`).
 
 ### C++ names
 
@@ -304,19 +216,26 @@ vtables, which are still in the data disassembly.
 | `linker/`                      | splat's linker script, symbol lists and the stamp of the config they came from |
 | `config/<target>/symbol_addrs.txt` | known symbols                                     |
 | `config/checksums.sha1`        | SHA-1 of the originals, checked against `build/*.bin` |
-| `src/<target>/`                | one source file per chunk                             |
+| `src/<target>/`                | one source file per chunk of the executable's own code |
+| `lib/<library>/`               | libraries built apart: their chunks (`<target>/`) and headers (`include/`); [libraries.md](libraries.md) |
 | `asm/<target>/data/`, `assets/` | splat's disassembly of the data, and the headers     |
 | `asm/<target>/nonmatchings/`   | the functions not decompiled yet, one `.s` each       |
-| `include/`                     | headers; `include_asm.h` and the `.inc` files came from splat (`include_asm.h` is ours now) |
+| `include/`                     | headers; `include_asm.h` and the `.inc` files came from splat (`include_asm.h` is ours now); `match.h`, the named workarounds |
 | `tools/chunks.py`              | progress and the chunk issues                         |
 | `tools/diff_func.py`           | one function of the build against the original (needs `extracted/`) |
-| `tools/format.py`              | clang-format over `src/` and `include/` (`--check` in CI) |
+| `tools/format.py`              | clang-format over `src/`, `include/` and `lib/` (`--check` in CI) |
+| `tools/try_func.py`            | compiles one source and compares one function with its `.s` (no linking) |
+| `tools/permuter_setup.py`      | a decomp-permuter directory for one function          |
+| `tools/maspsx_plus.py`         | maspsx, plus `$gp` for small externs and `--div-no-checks` |
+| `tools/paths.py`               | where a chunk's source and object are (`src/` or `lib/`) |
 | `tools/get_compiler.sh`        | downloads a compiler, checked against `tools/compilers.sha256` |
 | `tools/maspsx`                 | git submodule                                         |
 
 The C++ pipeline is GCC's own `cpp` (`-lang-c++ -D__cplusplus`), then
-`cc1plus -O2 -G8 -fno-exceptions -fno-rtti`, then maspsx, then GNU `as`;
-C is the same with `cc1`.
+`cc1plus -O2 -G<n> -fno-exceptions -fno-rtti` plus the target's or
+library's flags, then `tools/maspsx_plus.py`, then GNU `as`; C is the
+same with `cc1`. Each object's compiler and flags can differ
+(`OBJ_GCC`, `OBJ_CFLAGS`, `OBJ_MASPSXFLAGS` in the Makefile).
 
 ## LANGIMG.DAT memory map
 

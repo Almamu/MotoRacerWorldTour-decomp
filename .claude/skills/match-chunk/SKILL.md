@@ -12,9 +12,11 @@ process in [docs/decomp.md](../../../docs/decomp.md); it doesn't replace it.
 
 ## 0. Before anything else
 
-Read, once per session: [CONTRIBUTING.md](../../../CONTRIBUTING.md) and
-[docs/decomp.md](../../../docs/decomp.md) (compilers, chunks, "Decompiling a
-function", C++ names). Build once (`make setup` if `tools/gcc-*` is missing,
+Read, once per session: [CONTRIBUTING.md](../../../CONTRIBUTING.md),
+[docs/workflow.md](../../../docs/workflow.md) (the per-function loop),
+[docs/matching_techniques.md](../../../docs/matching_techniques.md) (what
+makes code match), [docs/libraries.md](../../../docs/libraries.md) and
+[docs/decomp.md](../../../docs/decomp.md) (compilers, chunks, C++ names). Build once (`make setup` if `tools/gcc-*` is missing,
 then `make`) and check both lines say `OK` before changing anything. The
 build needs the user's own `extracted/` game files; if they're missing,
 stop and say so.
@@ -43,15 +45,17 @@ Don't edit the checkboxes; `tools/chunks.py sync` ticks them after merge.
 
 ## 3. Work through the functions, in address order
 
-For each function:
+For each function, docs/workflow.md's loop:
 
 1. Read its `.s` file, and its callers and callees where that helps
-   (`grep -rl <name> asm/ src/`). `m2c <file.s>` gives a draft.
+   (`grep -rl <name> asm/ src/ lib/`). `m2c <file.s>` gives a draft.
 2. Write the code in place of its `INCLUDE_ASM` line. In `.cpp` chunks,
    use C++ where the asm shows it (`this` in `$a0`, vtable calls, mangled
    callee names); classes go in `include/<target>/` headers.
-3. `make`, then `tools/diff_func.py <name>` until it reports `identical`
-   and both executables say `OK`. Then delete the `.s` file.
+3. `tools/try_func.py <name>` until it reports 0 differ (it compiles the
+   chunk alone; `-D NON_MATCHING` for parked C, `--gcc 2.91.66` to check
+   the compiler when the shape is wrong). Then delete the `.s` file,
+   `make` (both `OK`) and `tools/diff_func.py <name>` (`identical`).
 4. Matching tricks that often matter with these GCC versions: statement
    order, temporaries vs. reusing a variable, `while` vs. `do`/`for` loop
    shape, signed vs. unsigned types, pointer vs. array indexing.
@@ -60,6 +64,10 @@ For each function:
    under `#else`, keep the `.s`).
 6. If you don't understand what it does: leave the `INCLUDE_ASM` and say
    so in the PR. Never commit C that doesn't match outside `NON_MATCHING`.
+
+Write up what you learned as you go (docs/workflow.md, step 8): new
+techniques in docs/matching_techniques.md, the pass in
+`docs/matching/issue-<N>-<slug>.md`.
 
 Names: only rename (in `config/<target>/symbol_addrs.txt`, address
 order) when you're confident; C++ functions take GCC 2.95 mangled names.
