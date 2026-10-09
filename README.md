@@ -37,7 +37,7 @@ What can be edited:
 
 | Asset | Edit as | Notes |
 |---|---|---|
-| Textures, fonts (`.Vrm`) | PNG | mapped to each texture's existing palette; size/position fixed |
+| Textures, fonts (`.Vrm`) | PNG | mapped to each texture's existing palette; size/position fixed. Sprites and fonts identical in several banks (HUD, fonts) are unpacked once to `assets/shared/` and written into every bank that has them |
 | Palettes (`.Vrm`) | PNG strip per CLUT | exact 15-bit colours; alpha = transparency / STP bit |
 | Loading screens (`.bs`) | PNG | re-encoded no larger than the original |
 | Sound banks (`.snd`) | WAV (16-bit mono) | ADPCM-encoded; loop layout kept; SPU RAM is 512 KB |

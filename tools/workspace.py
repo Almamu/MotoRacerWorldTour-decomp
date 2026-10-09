@@ -9,6 +9,8 @@ unpack creates:
   <ws>/mr3dat/      MR3.DAT entries + manifest.json (tools/mr3dat.py)
   <ws>/assets/      editable versions:
       <entry>.vrm/  blks/*.png, fonts/*.png        (tools/vrm.py)
+      shared/       sprites and fonts identical in several banks (HUD, fonts):
+                    edit once, written into every bank listed in shared.json
       <entry>.png   for .bs loading screens         (tools/bs.py)
       <entry>.snd/  vagNN.wav                       (tools/snd.py)
       <entry>.json  for .sdf files: their strings   (tools/sdf_text.py)
@@ -88,9 +90,64 @@ def unpack(track, ws):
             run("sdf_geom.py", "export", src, Path(str(dst) + ".geom"))
             if not e["file"].lower().split("/")[-1].startswith("db_"):
                 run("menu_script.py", "export", src, Path(str(dst) + ".menu.json"))
+    share_sprites(assets)
     state = {"assets": tree_hashes(assets), "mr3dat": tree_hashes(ws / "mr3dat")}
     (ws / "workspace.json").write_text(json.dumps(state, indent=1))
     print(f"unpacked into {ws}")
+
+
+def share_sprites(assets):
+    """Sprites (blks/<hash>.png) and fonts (fonts/<hash>.png + .json) that are
+    identical in several texture banks (HUD, fonts...) are moved to
+    assets/shared/{blks,fonts}/, once each, listed in assets/shared/shared.json
+    with the banks they belong to; repack writes an edited shared file into
+    every one of those banks."""
+    groups = {}
+    for bank in sorted(p for p in assets.rglob("*") if p.is_dir() and p.suffix.lower() == ".vrm"):
+        for kind in ("blks", "fonts"):
+            for png in sorted((bank / kind).glob("*.png")) if (bank / kind).is_dir() else []:
+                key = (kind, png.stem, sha1(png),
+                       sha1(png.with_suffix(".json")) if png.with_suffix(".json").exists() else "")
+                groups.setdefault(key, []).append(bank)
+    shared = assets / "shared"
+    listing = {}
+    for (kind, name, digest, _), banks in groups.items():
+        if len(banks) < 2:
+            continue
+        stem = name if f"{kind}/{name}" not in listing else f"{name}_{digest[:6]}"
+        (shared / kind).mkdir(parents=True, exist_ok=True)
+        for ext in (".png", ".json"):
+            src = banks[0] / kind / (name + ext)
+            if src.exists():
+                shutil.copyfile(src, shared / kind / (stem + ext))
+                for b in banks:
+                    (b / kind / (name + ext)).unlink()
+        listing[f"{kind}/{stem}"] = {"file": name, "banks": [b.relative_to(assets).as_posix() for b in banks]}
+    if listing:
+        (shared / "shared.json").write_text(json.dumps(listing, indent=1))
+    return listing
+
+
+def unshare_sprites(assets, now, before):
+    """Copy edited shared sprites/fonts into each bank folder that uses them;
+    returns the set of bank folders touched."""
+    listing_path = assets / "shared" / "shared.json"
+    if not listing_path.exists():
+        return set()
+    touched = set()
+    for key, info in json.loads(listing_path.read_text()).items():
+        kind, stem = key.split("/")
+        files = [f"shared/{kind}/{stem}{ext}" for ext in (".png", ".json")]
+        if all(now.get(f) == before.get(f) for f in files):
+            continue
+        for bank in info["banks"]:
+            for ext in (".png", ".json"):
+                src = assets / "shared" / kind / (stem + ext)
+                if src.exists():
+                    (assets / bank / kind).mkdir(parents=True, exist_ok=True)
+                    shutil.copyfile(src, assets / bank / kind / (info["file"] + ext))
+            touched.add(bank)
+    return touched
 
 
 def changed_under(prefix, now, before):
@@ -102,12 +159,13 @@ def repack(ws, out_track):
     manifest = json.loads((ws / "mr3dat" / "manifest.json").read_text())
     assets = ws / "assets"
     now = tree_hashes(assets)
+    shared_banks = unshare_sprites(assets, now, state["assets"])
     rebuilt = 0
     for e in manifest["entries"]:
         k = kind(e)
         entry = ws / "mr3dat" / e["file"]
         a = assets / e["file"]
-        if k == ".vrm" and changed_under(e["file"] + "/", now, state["assets"]):
+        if k == ".vrm" and (changed_under(e["file"] + "/", now, state["assets"]) or e["file"] in shared_banks):
             run("vrm.py", "import", entry, a, entry)
         elif k == ".snd" and changed_under(e["file"] + "/", now, state["assets"]):
             run("snd.py", "import", entry, a, entry)
