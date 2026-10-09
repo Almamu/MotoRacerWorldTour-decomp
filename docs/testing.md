@@ -101,7 +101,10 @@ python3 tools/regress.py run  "iso/<game>.cue" bios.bin extracted/regress/refs o
 
 Scenarios (in the script): `arcade_race` (main menu → Sachsenring loading
 screen → countdown → 1200 frames of racing with the throttle held),
-`world_tour` (MODE page, track select, bike select) and `options`. Steps
+`lap` (a full lap of Sachsenring driven by `tools/autopilot.py`; fails with
+`LAP NOT FINISHED` if the bike doesn't get round, e.g. because edited
+collision walls it in, or gates no longer count laps), `world_tour` (MODE
+page, track select, bike select) and `options`. Steps
 wait for screen conditions (the main menu is detected by its blue
 background), so the changed CD timing of a rebuilt disc doesn't matter.
 
@@ -117,3 +120,17 @@ Checked: the original disc matches its references exactly; a disc with
 edited menus differs only where the edit shows (the retargeted page link);
 a disc whose loading screen lacks the BS end-of-frame markers (the bug
 found earlier) is reported `BLACK`/`FROZEN` from the loading screen on.
+
+## Autopilot (`tools/autopilot.py`)
+
+Drives the player's bike from RAM data only: it finds the level module
+object by its collision pointer (the face table ends exactly at the
+collision header; the current-module global 0x800C5E14 is only set while a
+module runs), reads the track gates and the AI racing line 0 (level root
+28), steers at the racing-line point a few gates ahead (gate + lane offset)
+and follows the line's target-speed byte with throttle and brake. It
+finishes Sachsenring in about 7600 frames (2:31 game time) without
+crashing, and can set the lap count (race setup +4). Used to observe the
+rider animations at the finish (`C_DEF02` when beaten, nothing when
+winning) and in the regression `lap` scenario; checked to fail when a
+collision wall blocks the track.

@@ -96,6 +96,7 @@ python3 tools/sdf_mesh.py extracted/mr3dat/data/final/Usa_PS.sdf extracted/sdf/U
 | `blender/`             | `.sdf` ⇄ Blender  | add-on: import levels/scenes with textures, export edits; see `docs/blender.md` |
 | `sdf_collision.py`     | level `.sdf`      | collision surface (root 5): decode, export OBJ, re-encode faces |
 | `psxrun.py`            | cue + BIOS        | deterministic libretro runner: frame-exact input, RAM, save states (experiments) |
+| `autopilot.py`         | (emulator RAM)    | drives the player round the track along the AI racing line (regression `lap` scenario, experiments) |
 | `regress.py`           | rebuilt track 01  | regression test: scripted menu/race scenarios vs references, hang/black detection |
 | `emutest.py`           | data track + cue  | boots it in Mednafen headless, presses buttons, saves frames; see `docs/testing.md` |
 

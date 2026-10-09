@@ -35,6 +35,8 @@ HERE = Path(__file__).resolve().parent
 #   ["press", button]                               tap (8 frames)
 #   ["wait", frames]                                 run, checking the picture keeps changing
 #   ["hold", button, frames]                         hold a button, same check
+#   ["autopilot", laps, max_frames]                   drive with tools/autopilot.py; fails if
+#                                                    the lap(s) aren't finished
 #   ["shot", name]                                   checkpoint, compared with the reference
 #   ["shot", name, "loose"]                          live race: the exact moment depends on CD
 #                                                    timing, so the difference is only reported
@@ -48,6 +50,13 @@ SCENARIOS = {
         ["wait", 500], ["shot", "race_start"],
         ["hold", "cross", 600], ["shot", "racing", "loose"],
         ["hold", "cross", 600], ["shot", "racing_2", "loose"],
+    ],
+    "lap": [
+        ["wait", 900, "boot"],
+        ["press_until", "cross", "main_menu", 6000],
+        ["wait", 100], ["press", "cross"], ["wait", 1000],     # arcade -> Sachsenring, countdown
+        ["autopilot", 1, 12000],                               # one lap following the racing line
+        ["shot", "finish", "loose"],
     ],
     "world_tour": [
         ["wait", 900, "boot"],
@@ -116,6 +125,12 @@ def run_scenario(cue, bios, steps, workdir):
                     break
                 psx.run(8, [button])
                 psx.run(92)
+        elif kind == "autopilot":
+            from autopilot import Autopilot
+            result = Autopilot(psx).drive(step[2], laps=step[1])
+            if not result["finished"]:
+                problems.append(f"LAP NOT FINISHED: {result['gates']}/{result['gate_count']} gates "
+                                f"in {result['frames']} frames")
         elif kind == "shot":
             im = psx.image()
             shots[step[1]] = im
