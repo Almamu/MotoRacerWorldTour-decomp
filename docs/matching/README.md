@@ -14,3 +14,4 @@ issue it worked on, and add it below.
 |---|---|
 | [issue-85-sces-chunk01.md](issue-85-sces-chunk01.md) | Boot executable, chunk_01's parked functions (and chunk_00's movie loop, #84) |
 | [issue-1-langimg-sound.md](issue-1-langimg-sound.md) | The game's chunk_00: its sound engine, and the game's build settings |
+| [issue-2-langimg-chunk01.md](issue-2-langimg-chunk01.md) | The game's chunk_01: 3D sounds and CD audio, two more library files |

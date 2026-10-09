@@ -74,7 +74,9 @@ goes in `lib/` with its own settings ([libraries.md](libraries.md)).
 | Code | Compiler | `-G` | Flags | maspsx |
 |---|---|---|---|---|
 | `LANGIMG.DAT` (`src/langimg`) | GCC 2.95.2 | 8 | `-mno-split-addresses` | `--expand-div` |
-| `lib/sound` (in `LANGIMG.DAT`) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks` |
+| `lib/sound` chunk_00 (in `LANGIMG.DAT`) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks` |
+| `lib/sound` chunk_01 | GCC 2.91.66 | 0 | `-mno-split-addresses` | `--expand-div --div-no-checks` |
+| `lib/cdaudio` chunk_01b | GCC 2.91.66 | 0 | (split addresses) | `--expand-div` |
 | `SCES_030.37` (`src/sces`) | GCC 2.91.66 | 0 | `-fsigned-char` | `--expand-div` |
 
 All at `-O2`, C++ with `-fno-exceptions -fno-rtti`, through maspsx
@@ -92,6 +94,11 @@ flag changes no matched function of the game. The boot executable stops
 matching with it, so it keeps GCC's default.
 
 ### Small globals (`$gp`)
+
+Whether a piece of code uses `$gp` at all tells its `-G`: the game's sound
+engine reads its small globals with `%gp_rel`, the next file (chunk_01)
+reads the same globals with `lui` + `lw`, so it was built with `-G0`
+(`func_80014C24` matched with `--cflags=-G0`).
 
 The game reaches every variable of 8 bytes or less through `$gp`
 (`%gp_rel`), from every file. maspsx alone only does that for the
@@ -154,6 +161,9 @@ globals), a script that tries every order is quicker than guessing:
 
 ### Branches
 
+- **Tests GCC would merge.** `(f & 0x400004) == 0x400004 && !(f & 2)`
+  becomes one test of `f & 0x400006`; the original tests them apart, with
+  a load between: nested `if`s (`func_80013764`).
 - **One condition, not two returns.** `FindEntry` checks the hash range
   with one `if (hash >= first && last >= hash) { ... }`; two early
   `return`s gave the second exit its own copy of the return value.
@@ -191,7 +201,8 @@ globals), a script that tries every order is quicker than guessing:
   `(&a[i])->` computes the address anew: hoisted, and every field becomes
   a pointer stepped by the element size, as in the original
   (`func_80011A68`, `func_80011960`; `VOICE(i)` in
-  `lib/sound/include/sound.h`). `--cflags=-dL` shows which case you're in
+  `lib/sound/include/sound.h`). Outside loops too, it changes the order
+  of the address's terms: `(&w->emitters[i])->flags = 1` (`func_800140CC`). `--cflags=-dL` shows which case you're in
   (`not desirable` / `not worth while`).
 - **Constants set inside the loop.** A constant the original holds in a
   saved register across the loop (`-1`, `1`, `0xFF`) is one GCC hoisted
@@ -227,6 +238,15 @@ globals), a script that tries every order is quicker than guessing:
   is reassociated to `f() - 0x400 - angle`; the original adds first and
   subtracts after the call, which `-(angle + 0x400) + f()` gives
   (`func_8001280C`).
+- **An inline that takes the struct.** `w->emitters[i].flags &= ~1` folds
+  the field's offset into the emitter's (`0x21C`); the original computes
+  the emitter's address (`0x20C`) and reads the field through it, which an
+  inline taking the emitter gives (`ClearEmitterFlags`, `func_80014130`).
+- **Read the field into a local first.** A flag word updated by a
+  condition, `f = e->flags; if (c) f |= X; else f &= ~X; e->flags = f;`,
+  loads once before the test where the inline form loads in each branch
+  (`Changed()` in `lib/sound` chunk_01; `func_80014188` with
+  `old = e->flags`).
 - **Through an inline function.** A value returned by an inline function
   can survive where the same constant written inline is folded: in
   `func_80012F7C`, `ClearFlags(&f, 1)` keeps `~1` in a register as the
@@ -250,7 +270,9 @@ globals), a script that tries every order is quicker than guessing:
   their declaration, which would keep them in saved registers across it
   (`func_80011BA4`). And the other way round: a result counter the
   original zeroes before a call is declared before it, `int n = 0;
-  SoundSlot *slot = f(handle);` (`func_80012C18`).
+  SoundSlot *slot = f(handle);` (`func_80012C18`), and a result set to 0
+  at its declaration stays in a saved register across a call where `r = 0`
+  after it doesn't (`func_80014724`).
 - **Unused locals.** A frame bigger than its variables need means the
   original had locals the optimiser dropped: `int unused[6];` gives
   `func_8001184C`'s 0x30-byte frame.
@@ -298,6 +320,23 @@ assignments were further off.
   right after the call come out differently, even when the result isn't
   used. When a register differs right after a call, try an `int` return
   on the callee first.
+- **No return statement.** A function called for its result whose
+  original leaves in `$v0` what its own callee returned, with no copy:
+  its source had no `return` (GCC 2.9x accepts that in a non-void
+  function). `func_800147C8` (`short`, ends with the store of its
+  callee's result) and the sound engine's `func_8001355C`, whose caller
+  `func_80013764` reads the volume it computed. Written with `return n;`
+  GCC copies the value to another register first.
+- **`volatile` for state an interrupt changes.** Read again for every
+  test, and its stores kept out of delay slots: the CD player's state
+  (`func_800154D4`, whose first read and loop reads are separate) and
+  `D_800B8778` (`func_80015200`, the store before `jr` with a `nop` in
+  the slot).
+- **Another file's prototype.** A caller can extend arguments a way the
+  callee's own declaration doesn't explain: `func_800153FC` passes `short`s
+  (`sll`/`sra` by 16) to `func_80011820`, which takes `s8`s. That file
+  had another declaration; call through a cast to that type
+  (`SET_CD_VOLUME` in `lib/cdaudio`).
 - **A callee declared `void` that returns something.** `func_8001363C`
   only matches with `func_80099DCC` (a vector shift) declared `void`,
   although it returns its destination: with a pointer return the copy
@@ -341,7 +380,11 @@ as done).
 - **Orphan literals.** Identical string literals are merged within a
   source file, so an unreferenced copy of a string belongs to the next
   file. Until the chunks follow the original files such data is spelled
-  out (`D_8014C38C` after `Startup`).
+  out (`D_8014C38C` after `Startup`). The same for strings nothing uses at
+  all (`lib/cdaudio`'s "Pause Play", ...): an `extern "C" const char`
+  array after the function whose strings they follow; while that function
+  is parked, inside its `NON_MATCHING` block, because its `.s` carries
+  them (splat migrates unreferenced `.rodata` to the function before it).
 - **Static object init/fini** (GCC's `_GLOBAL_.I`/`.D` functions) come at
   the end of the file that defines the object; inside a chunk they're
   written as plain functions that construct or destroy it.
@@ -355,6 +398,10 @@ what still differs, and its `INCLUDE_ASM` under `#else`. Its `.s` stays.
 
 ## Pitfalls
 
+- **A chunk that doesn't compile.** `tools/try_func.py` once reported
+  matches for a file with errors: the compile pipeline's status was the
+  assembler's, and cc1 had left out the broken functions. It runs the
+  pipeline with `pipefail` now.
 - **Comparing the asm with itself.** A function that's still an
   `INCLUDE_ASM` in the file compiled (or parked, compiled without
   `-D NON_MATCHING`) assembles the original's instructions, so a
