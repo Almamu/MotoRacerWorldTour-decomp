@@ -1200,8 +1200,13 @@ straight blends in a little of pose 3). By the same test, pose **1** is
 the full-throttle tuck, pose **2** braking, pose **11** (with a little of
 7) waiting at the start line; zeroing poses 1–15 changed nothing during a
 crash into a wall. Poses 4, 6, 9 and 10 aren't referenced by the blend
-code (0x80021154, 0x80022454, 0x80022A68), and 12–15 didn't show in these
-situations (jumps or wheelies, presumably).
+code (0x80021154, 0x80022454, 0x80022A68). From the code of 0x80021154:
+with a small lean (|lean| < 0x800, bike +0xA0) the stance blends pose 2
+with poses 14 and 13 (slight lean either side), with a larger lean poses
+5 / 3 take over; poses 11 and 12 are blended by a value that counts down
+at rider +0x104 (the start); pose 15 is blended in over a 1000 ms timer
+(+0x110) once a race-time condition holds, and blends back towards pose 2
+(probably the finish or a celebration; not observed).
 
 The rider **models** (+0x290) are rigs: `{s16 part count, …, +0x0A s16
 type (draw-function pair from 0x800C8D34), …, +0x28 Part** parts}`; their 31
@@ -1255,5 +1260,5 @@ a flag bit: an 8-bit value, a 16-bit button mask (1 = accelerate), another
 
 ## Next steps
 
-- Riders: when poses 12–15 are used; the crash animation.
+- Riders: confirm pose 15's trigger; the `.san` animations (root 11), e.g. the crash.
 
