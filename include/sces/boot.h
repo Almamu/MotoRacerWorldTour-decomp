@@ -64,6 +64,11 @@ extern void *D_8019DB68;
 extern DRAWENV D_8019DA80[2];
 extern DISPENV D_8019DB38[2];
 extern int D_8019DB70;
+extern int D_8019DB60; /* 1: interlaced (h > 256) */
+extern int D_8019DB6C; /* the ordering table's size */
+extern void *D_8019DA70;
+extern char D_8019D994[]; /* the libsnd sequence table */
+extern u_char D_8019DC88[]; /* the menu sound bank's VAB header */
 
 extern u32 Crc32Table[256];
 
@@ -80,6 +85,13 @@ void LzssDecompress(u8 *src, u8 *dest);
 int func_80135D34(int arg);
 void func_80135F10(void);
 void func_80136E74(int mode); /* libcd, near CdInit */
+
+/* The heap (libsn, next to free): from their use, malloc, realloc and the
+ * size of the largest free block. Declared returning int as the boot
+ * executable was built (it changes the registers after the calls). */
+int func_8014A454(u32 size);
+int func_8014A838(void *p, u32 size);
+int func_8014AA98(void);
 void func_80135024(int *key, Options *opt);
 void func_80135090(int *key, Options *opt);
 void func_801350FC(int *key, Options *opt);
@@ -94,6 +106,8 @@ void func_80136028(void);
 void func_8013604C(void);
 void func_80136090(void);
 int func_801360CC(void);
+int func_80135F84(void);
+int func_80136130(int x, int y, int w, int h, int mode, int otSize, int primCount, int clear);
 void func_80136450(void);
 int func_801364D4(void);
 void func_80136540(void);

@@ -436,7 +436,23 @@ void func_80135F10(void) {
 
 INCLUDE_RODATA("asm/sces/nonmatchings/chunk_01", D_8014C3C0);
 
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", func_80135F84);
+/* libsnd on, reverb off, and the menu sound bank's header opened. */
+int func_80135F84(void) {
+    SsInit();
+    SsUtReverbOff();
+    SpuClearReverbWorkArea(5);
+    SsUtSetReverbType(0);
+    SsUtSetReverbDepth(0, 0);
+    SsSetTableSize(D_8019D994, 1, 1);
+    SsSetTickMode(1);
+    SsStart();
+    D_8019D990 = SsVabOpenHead(D_8019DC88, -1);
+    if (D_8019D990 == -1) {
+        printf("VAB header open failed\n");
+        return -1;
+    }
+    return 0;
+}
 
 /* Master volume to full. */
 void func_80136028(void) {
@@ -476,7 +492,79 @@ int func_801360CC(void) {
     return -1;
 }
 
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", func_80136130);
+/* Graphics: the double-buffered draw and display environments (one above
+ * the other unless h > 256), PAL/NTSC, the screen position (-1: default),
+ * then the ordering table and the primitive buffer. 0 if out of memory.
+ * The unused RECT is in the original's frame too. */
+int func_80136130(int x, int y, int w, int h, int mode, int otSize, int primCount, int clear) {
+    RECT unused;
+    DRAWENV *draw;
+
+    ResetGraph(3);
+    SetGraphDebug(0);
+    EnterCriticalSection();
+    VSyncCallback(func_801365F0);
+    DrawSyncCallback(func_801365C0);
+    ExitCriticalSection();
+    InitGeom();
+    SetGeomScreen(256);
+    if (h <= 256) {
+        SetDefDrawEnv(&D_8019DA80[0], 0, 0, w, h);
+        SetDefDrawEnv(&D_8019DA80[1], 0, 256, w, h);
+        SetDefDispEnv(&D_8019DB38[0], 0, 256, w, h);
+        SetDefDispEnv(&D_8019DB38[1], 0, 0, w, h);
+        D_8019DB60 = 0;
+    } else {
+        SetDefDrawEnv(&D_8019DA80[0], 0, 0, w, h);
+        SetDefDrawEnv(&D_8019DA80[1], 0, 0, w, h);
+        SetDefDispEnv(&D_8019DB38[0], 0, 0, w, h);
+        SetDefDispEnv(&D_8019DB38[1], 0, 0, w, h);
+        D_8019DB60 = 1;
+    }
+    D_8019DA80[0].isbg = D_8019DA80[1].isbg = 0;
+    D_8019DA80[0].r0 = 0;
+    D_8019DA80[0].g0 = 0;
+    D_8019DA80[0].b0 = 0;
+    draw = &D_8019DA80[1];
+    draw->r0 = 0;
+    draw->g0 = 0;
+    draw->b0 = 0;
+    if (mode & 1) {
+        SetVideoMode(1);
+        D_8019DB38[0].screen.w = D_8019DB38[1].screen.w = 256;
+        D_8019DB38[0].screen.h = D_8019DB38[1].screen.h = 256;
+    } else if (mode & 2) {
+        SetVideoMode(0);
+    }
+    if (x == -1) {
+        D_8019DB38[0].screen.x = D_8019DB38[1].screen.x = 0;
+    } else {
+        D_8019DB38[0].screen.x = D_8019DB38[1].screen.x = x;
+    }
+    if (y == -1) {
+        D_8019DB38[0].screen.y = D_8019DB38[1].screen.y = 14;
+    } else {
+        D_8019DB38[0].screen.y = D_8019DB38[1].screen.y = y;
+    }
+    if (clear) {
+        func_80136540();
+        PutDrawEnv(&D_8019DA80[D_8019DA5C]);
+        PutDispEnv(&D_8019DB38[D_8019DA5C]);
+    }
+    SetDispMask(1);
+    D_8019DB6C = otSize;
+    D_8019DB64 = (void *)func_8014A454(otSize * 2);
+    if (D_8019DB64 == 0) {
+        return 0;
+    }
+    D_8019DA70 = D_8019DB64;
+    D_8019DB68 = (void *)func_8014A454(primCount * 20);
+    if (D_8019DB68 == 0) {
+        return 0;
+    }
+    D_8019DA68 = 0;
+    return 1;
+}
 
 /* Waits for the frame, then shows the buffer just drawn. */
 void func_80136450(void) {
@@ -487,10 +575,6 @@ void func_80136450(void) {
     D_8019DA5C ^= 1;
 }
 
-#ifdef NON_MATCHING
-/* Equivalent; after the first free() the original puts D_8019DB68's
- * address in $a1, this build in $v0. strInit has the same quirk: the
- * original takes the first argument register the call leaves free */
 int func_801364D4(void) {
     EnterCriticalSection();
     VSyncCallback(0);
@@ -503,9 +587,6 @@ int func_801364D4(void) {
     free(D_8019DB68);
     return 1;
 }
-#else
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_01", func_801364D4);
-#endif
 
 /* Clears VRAM, and copies line 510 to 511. */
 void func_80136540(void) {

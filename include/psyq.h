@@ -53,7 +53,9 @@ extern "C" {
 #endif
 
 int printf(const char *fmt, ...);
-void free(void *p);
+/* Declared returning int in what the game was built against: with void the
+ * registers after the call come out differently. */
+int free(void *p);
 char *strcpy(char *dst, const char *src);
 
 /* libapi */
@@ -63,6 +65,9 @@ void ExitCriticalSection(void);
 /* libetc */
 int VSync(int mode);
 int VSyncCallback(void (*f)());
+void ResetGraph(int mode);
+void SetGraphDebug(int level);
+int SetVideoMode(long mode);
 
 /* libcd */
 int CdInit(void);
@@ -88,8 +93,20 @@ int DrawSyncCallback(void (*f)());
 int ClearImage(RECT *rect, u_char r, u_char g, u_char b);
 int MoveImage(RECT *rect, int x, int y);
 int LoadImage(RECT *rect, u_long *p);
+DRAWENV *SetDefDrawEnv(DRAWENV *env, int x, int y, int w, int h);
+DISPENV *SetDefDispEnv(DISPENV *env, int x, int y, int w, int h);
+void SetDispMask(int mask);
+
+/* libgte */
+void InitGeom(void);
+void SetGeomScreen(long h);
 
 /* libsnd */
+void SsInit(void);
+void SsSetTableSize(char *table, short s_max, short t_max);
+void SsSetTickMode(long tick_mode);
+void SsStart(void);
+short SsVabOpenHead(u_char *addr, short vabid);
 short SsUtKeyOn(short vabId, short prog, short tone, short note, short fine,
                 short voll, short volr);
 void SsSetMVol(short voll, short volr);
@@ -108,7 +125,7 @@ short SsVabTransCompleted(short immediateFlag);
 long SpuClearReverbWorkArea(long rev_mode);
 
 /* libpress */
-void DecDCToutCallback(void (*func)());
+int DecDCToutCallback(void (*func)());
 void DecDCTout(u_long *buf, int size);
 
 #ifdef __cplusplus

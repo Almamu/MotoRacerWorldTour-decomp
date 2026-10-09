@@ -135,10 +135,6 @@ int strNextVlc(DECENV *dec) {
     return 0;
 }
 
-#ifdef NON_MATCHING
-/* Equivalent; the original keeps the addresses of D_8014D340 and D_8014D228
- * in $v1 and $a2, this build in $v0 and $v1. The second argument (passed by
- * the caller) isn't used. */
 void strInit(CdlLOC *loc, int unused, StrCallback callback, int mode) {
     func_8013AB7C(0); /* DecDCTReset(0) in the sample */
     func_801365F8();
@@ -148,9 +144,6 @@ void strInit(CdlLOC *loc, int unused, StrCallback callback, int mode) {
     StSetStream(1, 1, 0xFFFFFFFF, 0, 0);
     strKickCD(loc, mode);
 }
-#else
-INCLUDE_ASM("asm/sces/nonmatchings/chunk_00", strInit);
-#endif
 
 // The statement order is what gives the original's scheduling.
 void strSetDefDecEnv(DECENV *dec, int x0, int y0, int x1, int y1, int w, int h) {
