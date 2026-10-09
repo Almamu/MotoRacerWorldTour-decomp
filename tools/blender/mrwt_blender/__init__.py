@@ -165,6 +165,12 @@ def build_mesh(name, item, s, textures):
                          ("psx_type", [f.type for f in item.faces])):
         a = me.attributes.new(attr, "INT", "FACE")
         a.data.foreach_set("value", values)
+    if item.vert_ids is not None:   # ground: original vertex / grid cell, for rebuilding
+        for attr, domain, values in (("psx_vert", "POINT", [i + 1 for i in item.vert_ids]),
+                                     ("psx_pad", "POINT", item.pads),
+                                     ("psx_cell", "FACE", [f.cell + 1 for f in item.faces])):
+            a = me.attributes.new(attr, "INT", domain)
+            a.data.foreach_set("value", values)
     me.update()
     return me
 
@@ -668,7 +674,24 @@ def mesh_item(me, s, matrix=None):
         if key.startswith("new:"):
             face.new_texture = key[4:]
         faces.append(face)
-    return sc.Item(-1, verts, faces)
+    item = sc.Item(-1, verts, faces)
+    if "psx_vert" in me.attributes:   # ground
+        nv = len(me.vertices)
+        ids, pads, cells = [0] * nv, [0] * nv, [0] * n
+        me.attributes["psx_vert"].data.foreach_get("value", ids)
+        if "psx_pad" in me.attributes:
+            me.attributes["psx_pad"].data.foreach_get("value", pads)
+        if "psx_cell" in me.attributes:
+            me.attributes["psx_cell"].data.foreach_get("value", cells)
+        seen = set()
+        item.vert_ids = []
+        for v in ids:   # copies made by extruding / duplicating count as new
+            item.vert_ids.append(v - 1 if v > 0 and v not in seen else None)
+            seen.add(v)
+        item.pads = pads
+        for f, c in zip(faces, cells):
+            f.cell = c - 1
+    return item
 
 
 def object_placement(ob, s):

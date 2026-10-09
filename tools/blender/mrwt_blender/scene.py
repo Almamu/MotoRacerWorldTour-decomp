@@ -35,6 +35,7 @@ class Face:
     clut: int = 0
     colors: list = None        # [(r, g, b)] per corner
     poly: int = -1             # index of the polygon record it came from
+    cell: int = -1             # ground only: grid cell whose sector holds it
 
     @property
     def textured(self):
@@ -54,6 +55,8 @@ class Item:
     verts: list
     faces: list                # triangles and quads
     lines: list = field(default_factory=list)   # (a, b) pairs, type 2 (never drawn)
+    pads: list = None          # ground only: each vertex's 4th word
+    vert_ids: list = None      # ground only: original vertex index per vertex, or None (new)
 
 
 @dataclass
@@ -111,16 +114,63 @@ def read_item(sdf, i, item):
     return Item(i, [tuple(v) for v in mesh.vertices], faces, lines)
 
 
+def ground_cells(sdf):
+    """Ground grid: (cell size in game units, {cell index: (column, row)},
+    {sector: cell}). Row records are 16 bytes: u8 width, u8 run count,
+    u16 first cell at +6, runs* at +8 (s8: negative = empty columns,
+    positive = cells); empty rows have a null pointer."""
+    w = sdf.roots[6]
+    size = round(sdf.u32(w + 0x34) / 32 / math.sqrt(2))
+    rows = sdf.u32(w + 4)
+    pos = {}
+    for r in range(sdf.u32(w + 0x10)):
+        ra = sdf.u32(rows + 4 * r)
+        if not ra:
+            continue
+        n, first, runs = sdf.data[ra + 1], u16(sdf, ra + 6), sdf.u32(ra + 8)
+        col, ci = 0, first
+        for v in struct.unpack_from(f"<{n}b", sdf.data, runs):
+            if v < 0:
+                col -= v
+            else:
+                for _ in range(v):
+                    pos[ci] = (col, r)
+                    ci += 1
+                    col += 1
+    cells = sdf.u32(w + 0x24)
+    owner = {}
+    for c in range(sdf.u32(w + 0x14)):
+        sec = struct.unpack_from("<h", sdf.data, cells + 12 * c + 10)[0]
+        if sec >= 0:
+            owner[sec] = c
+    return size, pos, owner
+
+
+def _ground_colours(sdf, relocs, g, rec, tex_at, flags, k):
+    """Corner colours (outline order) of a ground polygon."""
+    gouraud = flags & 0x10
+    if g["rec"] == 8:   # in the 28-byte texture entry
+        words = struct.unpack_from("<4I", sdf.data, tex_at + 12)
+    else:
+        word = sdf.u32(rec + 8)
+        words = [sdf.u32(word + 4 * c) for c in range(k)] if gouraud and (rec + 8) in relocs \
+            else [word] * 4
+    return [rgb(words[c] if gouraud else words[0]) for c in range(k)]
+
+
 def read_ground(sdf):
     g = ground_layout(sdf)
     owner = block_of_vertex(g)
-    verts = []
+    relocs = set(sdf.relocs)
+    _, _, sector_cell = ground_cells(sdf)
+    verts, pads = [], []
     for i in range(g["n_verts"]):
-        x, y, z = struct.unpack_from("<3h", sdf.data, g["verts"] + i * 8)
+        x, y, z, pad = struct.unpack_from("<3hH", sdf.data, g["verts"] + i * 8)
         bx, bz = owner.get(i, (0, 0))
         verts.append((x + bx * BLOCK_SCALE, y, z + bz * BLOCK_SCALE))
+        pads.append(pad)
     faces, n = [], 0
-    for first, block, counts, list_start in g["sectors"]:
+    for si, (first, block, counts, list_start) in enumerate(g["sectors"]):
         vstart = g["blocks"][block][3]
         for k in range(counts & 0xFF):
             rec = g["polys"] + (first + k) * g["rec"]
@@ -130,11 +180,13 @@ def read_ground(sdf):
             idx = [vstart + u16(sdf, g["lists"] + (list_start + i) * 2) for i in local]
             uv0, clut, uv1, tpage, uv2, uv3 = struct.unpack_from("<6H", sdf.data, g["tex"] + tex)
             uv = [(w & 0xFF, w >> 8) for w in (uv0, uv1, uv2, uv3)][:len(idx)]
+            colors = _ground_colours(sdf, relocs, g, rec, g["tex"] + tex, flags, len(idx))
             if quad:  # stored as an outline; use GPU order like the items
                 idx, uv = [idx[0], idx[1], idx[3], idx[2]], [uv[0], uv[1], uv[3], uv[2]]
-            faces.append(Face(idx, flags, uv, tpage, clut, [(128, 128, 128)] * len(idx), n))
+                colors = [colors[0], colors[1], colors[3], colors[2]]
+            faces.append(Face(idx, flags, uv, tpage, clut, colors, n, sector_cell.get(si, -1)))
             n += 1
-    return Item(-1, verts, faces)
+    return Item(-1, verts, faces, pads=pads, vert_ids=list(range(len(verts))))
 
 
 def read_objects(sdf):
@@ -252,6 +304,239 @@ def write_ground(sdf, old, new):
     return changed
 
 
+def ground_unchanged(old, new):
+    """Per old polygon: True if `new` has it with the same original vertices,
+    texture, flags and colours. Returns (kept: set of old polygon indices,
+    face_kept: per new face, the old polygon it is or None)."""
+    ids = new.vert_ids or [None] * len(new.verts)
+    seen = set()
+    kept, face_kept = set(), []
+    for f in new.faces:
+        o = old.faces[f.poly] if 0 <= f.poly < len(old.faces) and f.poly not in seen else None
+        if o is not None and [ids[i] for i in f.idx] == o.idx and f.uv == o.uv and \
+                (f.tpage, f.clut, f.type) == (o.tpage, o.clut, o.type) and \
+                [tuple(c) for c in f.colors] == [tuple(c) for c in o.colors]:
+            kept.add(f.poly)
+            seen.add(f.poly)
+            face_kept.append(f.poly)
+        else:
+            face_kept.append(None)
+    return kept, face_kept
+
+
+def write_ground_any(sdf, old, new):
+    """Positions only when the ground kept its vertices and polygons, else
+    rebuild_ground. Returns (moved vertices, rebuilt cells)."""
+    if new.vert_ids is None or (len(new.verts) == len(old.verts) and new.vert_ids == list(range(len(old.verts)))):
+        kept, face_kept = ground_unchanged(old, new)
+        if len(kept) == len(old.faces) and len(new.faces) == len(old.faces) and len(new.verts) == len(old.verts):
+            return write_ground(sdf, old, new), 0
+    return rebuild_ground(sdf, old, new)
+
+
+def rebuild_ground(sdf, old, new):
+    """Ground with added / removed / reshaped polygons. Cells whose polygons
+    are all unchanged keep their sector, block, index list and records;
+    the other cells get a new sector with a block of their own (copies of
+    the vertices they use). New polygons go to the cell under their centre
+    (or the nearest one); faces that still carry a cell (kept ones, or
+    copies Blender made by extruding) stay in it. The original vertex array
+    stays as the prefix of the new one (vertex animation points into it),
+    the original texture entries as the prefix of the new table. Everything
+    is appended to the file. Returns (moved original vertices, rebuilt cells)."""
+    g = ground_layout(sdf)
+    w = sdf.roots[6]
+    relocs = set(sdf.relocs)
+    size, cell_pos, sector_cell = ground_cells(sdf)
+    pos_cell = {v: c for c, v in cell_pos.items()}
+    ncells = sdf.u32(w + 0x14)
+    cells_at = sdf.u32(w + 0x24)
+    rec_size = g["rec"]
+    tex_size = 12 if rec_size == 12 else 28
+    mesh, extra = g["mesh"], sdf.u32(g["mesh"] + 0x28)
+    n_tex = u16(sdf, extra + 0x14)
+    ids = new.vert_ids or [None] * len(new.verts)
+    pads = new.pads or [0] * len(new.verts)
+    kept, face_kept = ground_unchanged(old, new)
+
+    # original vertices: positions from Blender (first vertex carrying the id)
+    orig_of_new = {}
+    for v, i in enumerate(ids):
+        if i is not None and 0 <= i < len(old.verts) and i not in orig_of_new:
+            orig_of_new[i] = v
+    vowner = block_of_vertex(g)
+    vdata = bytearray(sdf.data[g["verts"]:g["verts"] + 8 * g["n_verts"]])
+    moved = 0
+    for i, v in orig_of_new.items():
+        if tuple(new.verts[v]) != tuple(old.verts[i]):
+            bx, bz = vowner.get(i, (0, 0))
+            x, y, z = new.verts[v]
+            struct.pack_into("<3h", vdata, 8 * i, s16(x - bx * BLOCK_SCALE), s16(y), s16(z - bz * BLOCK_SCALE))
+            moved += 1
+
+    # which cell every polygon of the new ground goes to
+    old_cell = {o.poly: o.cell for o in old.faces}
+    by_cell = {}
+    changed_cells = set()
+    for f, k in zip(new.faces, face_kept):
+        if k is not None:
+            c = old_cell[k]
+        else:
+            c = f.cell if f.cell in cell_pos else None
+            if c is None:
+                pts = [new.verts[i] for i in f.idx]
+                col = math.floor(sum(p[0] for p in pts) / len(pts) / size)
+                row = math.floor(sum(p[2] for p in pts) / len(pts) / size)
+                c = pos_cell.get((col, row))
+                if c is None:
+                    c = min(cell_pos, key=lambda q: (cell_pos[q][0] - col) ** 2 + (cell_pos[q][1] - row) ** 2)
+            changed_cells.add(c)
+        by_cell.setdefault(c, []).append((f, k))
+    for o in old.faces:
+        if o.poly not in kept:
+            changed_cells.add(o.cell)
+
+    # texture entries: the original table, then new ones (deduplicated)
+    tex = bytearray(sdf.data[g["tex"]:g["tex"] + tex_size * n_tex])
+    tex_index = {bytes(tex[k:k + tex_size]): k for k in range(0, len(tex), tex_size)}
+    colours = bytearray()        # Gouraud colour words (12-byte records)
+    colour_ptrs = []             # (offset in the polygon array, offset in colours)
+
+    def word(c):
+        r, gr, b = c[:3]
+        return r | gr << 8 | b << 16
+
+    def tex_entry(f, outline_uv, outline_col):
+        uv = list(outline_uv) + [outline_uv[-1]] * (4 - len(outline_uv))
+        uvw = [u | v << 8 for u, v in uv]
+        e = struct.pack("<6H", uvw[0], f.clut, uvw[1], f.tpage, uvw[2], uvw[3])
+        if tex_size == 28:
+            cols = list(outline_col) + [outline_col[-1]] * (4 - len(outline_col))
+            e += struct.pack("<4I", *[word(c) for c in cols])
+        if e not in tex_index:
+            tex_index[e] = len(tex)
+            tex.extend(e)
+        if len(tex) > 0xFFFF:
+            raise ValueError("ground: too many different texture entries (16-bit offsets)")
+        return tex_index[e]
+
+    verts = bytearray(vdata)
+    blocks = bytearray(sdf.data[sdf.u32(w + 0x54):sdf.u32(w + 0x54) + 12 * len(g["blocks"])])
+    sectors, lists, polys = bytearray(), bytearray(), bytearray()
+    poly_ptrs = []               # Gouraud pointers kept from original records (offset, target)
+    cell_sector = {}
+
+    def emit_kept(si):
+        first, block, counts, list_start = g["sectors"][si]
+        npoly, nvert = counts & 0xFF, (counts >> 8) & 0xFF
+        sec = struct.pack("<hhBBh8x", len(polys) // rec_size, block, npoly, nvert, len(lists) // 2)
+        lists.extend(sdf.data[g["lists"] + 2 * list_start:g["lists"] + 2 * (list_start + nvert)])
+        for k in range(npoly):
+            rec = g["polys"] + (first + k) * rec_size
+            if rec_size == 12 and (rec + 8) in relocs:
+                poly_ptrs.append((len(polys) + 8, sdf.u32(rec + 8)))
+            polys.extend(sdf.data[rec:rec + rec_size])
+        return sec
+
+    def emit_new(c, faces):
+        used = []
+        where = {}
+        for f, _ in faces:
+            for i in f.idx:
+                if i not in where:
+                    where[i] = len(used)
+                    used.append(i)
+        if len(faces) > 255 or len(used) > 255:
+            raise ValueError(f"ground: grid cell {cell_pos[c]} would have {len(faces)} polygons / "
+                             f"{len(used)} vertices (at most 255 each)")
+        if any(not f.textured for f, _ in faces):
+            raise ValueError("ground: every face needs a texture (a page_… material or your own image)")
+        xs = [new.verts[i][0] for i in used]
+        zs = [new.verts[i][2] for i in used]
+        ox = round((min(xs) + max(xs)) / 2 / BLOCK_SCALE)
+        oz = round((min(zs) + max(zs)) / 2 / BLOCK_SCALE)
+        first_vert = len(verts) // 8
+        for i in used:
+            x, y, z = new.verts[i]
+            verts.extend(struct.pack("<3hH", s16(x - ox * BLOCK_SCALE), s16(y), s16(z - oz * BLOCK_SCALE),
+                                     pads[i] & 0xFFFF))
+        block = len(blocks) // 12
+        blocks.extend(struct.pack("<hhhhhh", ox, oz, len(used), first_vert, -1, 0))
+        sec = struct.pack("<hhBBh8x", len(polys) // rec_size, block, len(faces), len(used), len(lists) // 2)
+        lists.extend(struct.pack(f"<{len(used)}H", *range(len(used))))
+        for f, _ in faces:
+            n = len(f.idx)
+            if n == 4:   # GPU order -> outline
+                order = [0, 1, 3, 2]
+            else:
+                order = [0, 1, 2]
+            local = [where[f.idx[k]] for k in order]
+            uv = [f.uv[k] for k in order]
+            col = [tuple(f.colors[k]) for k in order] if f.colors else [(128, 128, 128)] * n
+            flags = f.type | 0x0C if n == 4 else (f.type & ~0x04 if f.type & 0x0C == 0x0C else f.type)
+            t = tex_entry(f, uv, col)
+            rec = struct.pack("<HH4B", flags & 0xFFFF, t, *(local + [0xFF] * (4 - n)))
+            if rec_size == 12:
+                if flags & 0x10:
+                    colour_ptrs.append((len(polys) + 8, len(colours)))
+                    colours.extend(struct.pack(f"<{n}I", *[word(c) for c in col]))
+                    rec += struct.pack("<I", 0)
+                else:
+                    rec += struct.pack("<I", word(col[0]))
+            polys.extend(rec)
+        return sec
+
+    for si in range(len(g["sectors"])):
+        c = sector_cell[si]
+        if c not in changed_cells:
+            cell_sector[c] = len(sectors) // 16
+            sectors.extend(emit_kept(si))
+        elif by_cell.get(c):
+            cell_sector[c] = len(sectors) // 16
+            sectors.extend(emit_new(c, by_cell[c]))
+    for c in sorted(by_cell):
+        if c not in cell_sector and by_cell[c]:
+            cell_sector[c] = len(sectors) // 16
+            sectors.extend(emit_new(c, by_cell[c]))
+    nverts = len(verts) // 8
+    if nverts > 0xFFFF or len(polys) // rec_size > 0xFFFF:
+        raise ValueError("ground: more than 65535 vertices / polygons")
+
+    # write: new arrays at the end, pointers and counts updated
+    old_verts = g["verts"]
+    verts_at = sdf.append(bytes(verts))
+    blocks_at = sdf.append(bytes(blocks))
+    sectors_at = sdf.append(bytes(sectors))
+    lists_at = sdf.append(bytes(lists))
+    polys_at = sdf.append(bytes(polys))
+    tex_at = sdf.append(bytes(tex))
+    colours_at = sdf.append(bytes(colours)) if colours else 0
+    for off, target in poly_ptrs:
+        sdf.set_pointer(polys_at + off, target)
+    for off, coff in colour_ptrs:
+        sdf.set_pointer(polys_at + off, colours_at + coff)
+    # pointers into the old vertex array (vertex animation) move along
+    for r in list(sdf.relocs):
+        t = sdf.u32(r)
+        if old_verts <= t < old_verts + 8 * g["n_verts"] and r != mesh + 0x18:
+            sdf.set_pointer(r, verts_at + (t - old_verts))
+    sdf.set_pointer(mesh + 0x18, verts_at)
+    sdf.set_pointer(w + 0x50, sectors_at)
+    sdf.set_pointer(w + 0x54, blocks_at)
+    sdf.set_pointer(w + 0x58, lists_at)
+    sdf.set_pointer(extra + 0x18, polys_at)
+    sdf.set_pointer(extra + 0x1C, tex_at)
+    data = bytearray(sdf.data)
+    struct.pack_into("<H", data, mesh, len(polys) // rec_size)
+    struct.pack_into("<H", data, mesh + 4, nverts)
+    struct.pack_into("<H", data, extra + 0x14, len(tex) // tex_size)
+    struct.pack_into("<III", data, w + 0x40, len(lists) // 2, len(blocks) // 12, len(sectors) // 16)
+    for c in range(ncells):
+        struct.pack_into("<h", data, cells_at + 12 * c + 10, cell_sector.get(c, -1))
+    sdf.data = bytes(data)
+    return moved, len(changed_cells)
+
+
 def write_objects(sdf, old, new):
     by_offset = {o.object: o for o in old}
     data = bytearray(sdf.data)
@@ -347,8 +632,11 @@ def save(base, out, items=None, ground=None, objects=None, collision=None, track
             replace_item(sdf, table[i], new.verts, faces)
             log.append(f"item {i}: new mesh ({len(new.verts)} vertices, {len(new.faces)} faces)")
     if ground is not None and old.ground is not None:
-        n = write_ground(sdf, old.ground, ground)
-        if n:
+        n, cells = write_ground_any(sdf, old.ground, ground)
+        if cells:
+            log.append(f"ground: rebuilt {cells} grid cells ({len(ground.faces)} polygons, was "
+                       f"{len(old.ground.faces)}), {n} original vertices moved")
+        elif n:
             log.append(f"ground: {n} vertices moved")
     if objects:
         n = write_objects(sdf, old.objects, objects)

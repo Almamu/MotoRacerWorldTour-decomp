@@ -496,14 +496,22 @@ The PC exporter's leftover heap pointers sit in the runtime fields
 
 ### Grid
 
-The cells form a run-length-encoded 2D grid over X/Z. Row record:
+The cells form a run-length-encoded 2D grid over X/Z, starting at world
+(0, 0): column = x / size, row = z / size, with size = world+0x34 / 32 / √2
+(2048 or 1024 units). World+0x04 points to one pointer per row (null for
+an empty row). Row record (16 bytes):
 
 | Offset | Type  | Meaning                                                    |
 |--------|-------|------------------------------------------------------------|
 | 0x00   | u8    | grid width (low byte)                                      |
 | 0x01   | u8    | number of runs                                             |
+| 0x02   | u8[4] | 0xCD                                                       |
 | 0x06   | u16   | index of this row's first cell in the cell array           |
-| 0x08   | s8*   | runs: negative = that many empty columns, positive = that many cells; -128 ends the row |
+| 0x08   | s8*   | pointer to the runs: negative = that many empty columns, positive = that many cells |
+| 0x0C   | u32   | 0xCDCDCDCD                                                 |
+
+Each polygon belongs to one cell's sector; 99% of them overlap their
+cell's square (polygons are large, ~1400 units, so many spill over).
 
 Rows' first-cell indices follow on from each other, and the cells of all
 rows add up to world+0x14 (checked on all 58 level files).
@@ -540,6 +548,8 @@ cells together reference every sector.
 Sectors are stored back to back: each one's first polygon and list start
 follow on from the previous one, and the last ones end exactly at the
 ground mesh's polygon count and at world+0x40.
+
+Each sector belongs to exactly one cell (all levels).
 
 ### Block (12 bytes)
 
@@ -591,6 +601,16 @@ Flags:
 | 6    | semi-transparent                                             |
 | 0–1, 7, 8 | rendering flags passed on to the drawing code (not decoded) |
 
+Colours: in the 12-byte form the word at +8 (flat), or for Gouraud
+polygons the 3 or 4 words it points to; in the 8-byte form the texture
+entry's 4 colour words (flat polygons use the first). Corner order is the
+outline order, like the UVs. Vertex records are `s16 x, y, z` plus a
+fourth word that is not padding (e.g. 0x805F on Sachsenring; kept as is).
+
+A few pointers outside the ground point at single ground vertices (vertex
+animation lists: 1 on Sachsenring, 6 on Reims), so the vertex array must
+not be renumbered.
+
 So the GPU primitives are `0x24` (textured triangle), `0x2C` (textured
 quad), `0x34` (textured Gouraud triangle) and `0x3C` (textured Gouraud
 quad), +2 when semi-transparent.
@@ -598,6 +618,25 @@ quad), +2 when semi-transparent.
 Texture entry: `u8 u0, v0; u16 clut; u8 u1, v1; u16 tpage; u8 u2, v2;
 u8 u3, v3` (12 bytes), in format 2 followed by 4 colour words (flat
 polygons use the first, Gouraud ones the first 3 or 4).
+
+### Rebuilding the ground
+
+`scene.rebuild_ground` (Blender export, when ground faces are added,
+removed or reshaped): cells whose polygons are all unchanged keep their
+sector, block, index list and records; each other cell gets a new sector
+and a block of its own holding copies of the vertices it uses (origin on
+a 128-unit multiple, so positions stay exact; at most 255 polygons and
+255 vertices per cell). Kept polygons stay in their cell, faces that
+still carry a cell (Blender copies it when extruding) stay there, new
+ones go to the cell under their centre or the nearest existing one. The
+original vertex array and texture table stay as prefixes of the new ones
+(vertex-animation pointers are moved along; texture entries are
+deduplicated, 16-bit byte offsets); all arrays are appended to the file
+and the world struct, mesh, 48-byte block and cells repointed. An
+unchanged ground rebuilt this way has the same polygons in the same
+cells on every level. In the emulator: a ground face beside Sachsenring's
+start straight extruded 300 units up shows as a wall; deleting road faces
+ahead of the grid leaves a hole; a lap still completes.
 
 ## Collision (root 5)
 
