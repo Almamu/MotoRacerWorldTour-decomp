@@ -1166,6 +1166,27 @@ the rider animation code blends the others on top (0x80021154, 0x80022454,
 | +0x0C  | u8*  | joints that get a translation |
 | +0x10  | SVECTOR* | one translation per entry of the translation list |
 
+**Assembly** (0x800910EC; checked by rendering the rest pose and poses 3
+and 8 in Blender: a rider sitting on a bike). The 31-part tree comes from
+a stored runtime rig in the level (u8 part count, +4 → a rider model, +8 →
+31 runtime parts of 0x80 bytes, +4 of each = parent pointer; found as the
+reloc slot pointing at one of the two models): parents 0 → 1, 2, 19, 20,
+21, 25, 26; 1 → 17, 18, 22; 2 → 3; 3 → 4, 6, 8; 4 → 5 → 29; 6 → 7 → 30;
+8 → 10 → 15, 16; 15 → 11 → 12 → 27; 16 → 13 → 14 → 28; 21 → 23; 22 → 24;
+9 has none. Parts are visited in the order table (model +0x24), skipping
+flags & 0x30 (locators). For each: `R_local = Rx·Ry·Rz` (angles = pose
+rotation + base rotation at part +0x0C, 4096 = 360°), `t_local = pivot
+(+ pose translation if flags & 0x40)`, `R = R_parent·R_local`,
+`t = R_parent·t_local + t_parent`. A part transforms its vertices (model
++0x14 buffer, part +0x1C first, +0x1A count / 3) into scratchpad slots
+(+0x1E byte offset / 8) and draws its polygons (+0x20, +0x14 count; their
+indices are slot byte offsets), so seam polygons use neighbouring parts'
+vertices; extra seam groups (model +0x4C / +0x6C / +0x70) follow. Rig space
+is Y up. `tools/sdf_rig.py` implements it (OBJ export of any pose; write
+back of vertices and poses). Level root 9 is the **opponents'** rider: a
+mesh edit there shows on the AI riders in the emulator, not on the
+player's.
+
 The rider **models** (+0x290) are rigs: `{s16 part count, …, +0x0A s16
 type (draw-function pair from 0x800C8D34), …, +0x28 Part** parts}`; their 31
 named parts form a LightWave skeleton for rider and bike (`pilot`, `Pilot
@@ -1218,9 +1239,8 @@ a flag bit: an 8-bit value, a 16-bit button mask (1 = accelerate), another
 
 ## Next steps
 
-- Root 9: which motion each blended pose stands for. Copying pose k over
-  pose 8 in RAM (the riding pose applied every frame) shows, from the chase
-  camera, poses 1–5 sitting upright and 6–15 tucked; a side view needs the
-  rig hierarchy (0x8008E658: which of the 31 model parts each of the 21
-  pose joints drives, and their parents), not decoded yet.
+- Riders: where the player's rider rig lives (root 9 drives the
+  opponents), and when the pose records are applied (zeroing pose 8 in RAM
+  changes nothing during a normal ride; the `.san` animations of root 11
+  probably drive the riding motion).
 

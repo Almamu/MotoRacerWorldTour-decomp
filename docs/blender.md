@@ -42,6 +42,7 @@ Game coordinates (Y down) become Blender's Z up: game (x, y, z) → Blender
 | `<name> ground` | levels: the track ground, one vertex per stored vertex |
 | `<name> collision` | levels: the collision surface the bikes ride on (wireframe, coloured by surface type; corners shared by faces are welded) |
 | `<name> track` / `gates K` | levels: one mesh per gate list (list 0 = the lap): each gate is an edge across the track, from its negative to its positive side; the gate sits at the edge's midpoint, faces along the edge's normal, and its half-widths are half the edge length |
+| `<name> rider` (hidden) | levels: the rider rig (root 9): an armature with one bone per part (31, rider and bike; bones keep identity rest orientations, Euler mode `ZYX` = the game's Rx·Ry·Rz) and the rider mesh skinned to it (one vertex per vertex-buffer entry). Each pose record is an action `<name>_pose_NN` keyed at frame 1 |
 | `<name> track` / `line K.J` | the AI racing lines of list K: one point per gate; point attributes `speed` (target speed), `flags` (allowed line changes; bit 7 clear = jump section) and `steer` |
 
 Objects whose matrix is still the 0xCDCD fill (placed at run time, e.g. the
@@ -76,6 +77,8 @@ byte-identical (checked on all 70 levels and menu/end scenes).
 | Move ground vertices | written in place (block-relative); topology is fixed |
 | Move gate edge ends | position, direction and half-widths of the gate are rewritten; the list's distances are recomputed from the first moved gate on |
 | Move racing-line points / edit their attributes | lane offset = the point's sideways distance from its gate (16-unit steps); target speed, flags and steer from the attributes. Checked in the emulator: lowering Sachsenring's target speeds in Blender slows the AI bikes as expected |
+| Move rider mesh vertices (rest pose) | written back part-local to the model's vertex buffer (vertex count fixed). In the emulator the change shows on the **opponents'** riders (scaling part 10 enlarges their chest/head); the player's rider comes from another rig not decoded yet |
+| Edit a pose action's keys | the pose record's packed rotations (and translations of parts with flag 0x40) are rewritten; joints can't be added. The riding pose (8) isn't read during a normal ride (zeroing it in RAM changes nothing), so pose edits may only show in other rider states |
 | Move collision vertices | the faces using them are re-encoded (edges, planes, height); moves under 2.5 units are ignored |
 
 **The bikes ride on the collision surface, not on the ground mesh.** Its

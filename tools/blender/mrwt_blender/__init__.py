@@ -335,6 +335,140 @@ def track_from_blender(root, s, old):
     return new
 
 
+def rig_matrix(s):
+    """Rig space (Y up) -> Blender: (x, y, z) -> (-x, z, y) * scale."""
+    return Matrix(((-s, 0, 0, 0), (0, 0, s, 0), (0, s, 0, 0), (0, 0, 0, 1)))
+
+
+def bone_name(part):
+    return part.name or f"part_{part.index:02d}"
+
+
+def build_rider(context, name, path, s, coll):
+    """The rider rig (model 0) as an armature + skinned mesh; each pose record
+    becomes an action `<name>_pose_NN` keyed at frame 1."""
+    import sdf_rig
+    from sdf import parse
+    sdf = parse(Path(path).read_bytes())
+    rig = sdf_rig.read(sdf)
+    zero = sdf_rig.world_matrices(rig, None, base=False)
+    arm = bpy.data.armatures.new(f"{name}_rider")
+    arm_ob = bpy.data.objects.new(f"{name} rider", arm)
+    arm_ob.matrix_world = rig_matrix(s)
+    arm_ob["mrwt_rider"] = True
+    coll.objects.link(arm_ob)
+    context.view_layer.objects.active = arm_ob
+    bpy.ops.object.mode_set(mode="EDIT")
+    bones = {}
+    for k in rig.order:
+        part = rig.parts[k]
+        b = arm.edit_bones.new(bone_name(part))
+        head = Vector(zero[k][1])
+        b.head, b.tail, b.roll = head, head + Vector((0, 20, 0)), 0.0  # identity rest orientation
+        if part.parent is not None:
+            b.parent = bones[part.parent]
+        bones[k] = b
+    bpy.ops.object.mode_set(mode="OBJECT")
+    for part in rig.parts:
+        pb = arm_ob.pose.bones[bone_name(part)]
+        pb.rotation_mode = "ZYX"  # matrix Rx·Ry·Rz, as the game
+        pb.rotation_euler = [a * 2 * math.pi / 4096 for a in part.base_rot]
+    # mesh: one vertex per vertex-buffer entry (zero-angle frame), skinned to its part
+    verts = sdf_rig.posed_vertices(rig, None, base=False)
+    fs = sdf_rig.faces(sdf, rig)
+    me = bpy.data.meshes.new(f"{name}_rider_mesh")
+    me.from_pydata([tuple(v) for v in verts], [], [idx for idx, _, _ in fs])
+    me["mrwt_rider"] = True
+    ob = bpy.data.objects.new(f"{name} rider mesh", me)
+    ob.parent = arm_ob
+    coll.objects.link(ob)
+    own = sdf_rig.owners(rig)
+    groups = {p.index: ob.vertex_groups.new(name=bone_name(p)) for p in rig.parts}
+    for i in range(len(verts)):
+        groups[own.get(i, 0)].add([i], 1.0, "REPLACE")
+    ob.modifiers.new("rig", "ARMATURE").object = arm_ob
+    # poses
+    arm_ob.animation_data_create()
+    for pose in rig.poses:
+        act = bpy.data.actions.new(f"{name}_pose_{pose.index:02d}")
+        act["mrwt_pose"] = pose.index
+        act.use_fake_user = True
+        arm_ob.animation_data.action = act
+        for k, ang in pose.rotations.items():
+            part = rig.parts[k]
+            pb = arm_ob.pose.bones[bone_name(part)]
+            pb.rotation_euler = [(a + b) * 2 * math.pi / 4096 for a, b in zip(ang, part.base_rot)]
+            pb.keyframe_insert("rotation_euler", frame=1)
+        for k, tr in pose.translations.items():
+            pb = arm_ob.pose.bones[bone_name(rig.parts[k])]
+            pb.location = tr
+            pb.keyframe_insert("location", frame=1)
+    arm_ob.animation_data.action = None
+    for part in rig.parts:  # back to the base pose
+        pb = arm_ob.pose.bones[bone_name(part)]
+        pb.rotation_euler = [a * 2 * math.pi / 4096 for a in part.base_rot]
+        pb.location = (0, 0, 0)
+    return arm_ob
+
+
+def action_values(act, frame=1):
+    """{(bone, property): [values]} of an action's F-curves at `frame`
+    (Blender 4.4+ layered actions, or the older flat F-curve list)."""
+    import re
+    curves = []
+    if getattr(act, "layers", None):
+        for layer in act.layers:
+            for strip in layer.strips:
+                for slot in act.slots:
+                    bag = strip.channelbag(slot)
+                    if bag:
+                        curves += list(bag.fcurves)
+    else:
+        curves = list(act.fcurves)
+    out = {}
+    for fc in curves:
+        m = re.match(r'pose\.bones\["(.+)"\]\.(\w+)', fc.data_path)
+        if m:
+            vals = out.setdefault((m.group(1), m.group(2)), [0.0, 0.0, 0.0])
+            vals[fc.array_index] = fc.evaluate(frame)
+    return out
+
+
+def rider_from_blender(context, root, path):
+    """(vertices in the zero-angle frame, {pose index: Pose}) or None."""
+    import sdf_rig
+    from sdf import parse
+    arm_ob = next((o for o in root.all_objects if o.get("mrwt_rider") and o.type == "ARMATURE"), None)
+    mesh_ob = next((o for o in root.all_objects if o.type == "MESH" and o.data.get("mrwt_rider")), None)
+    if arm_ob is None:
+        return None
+    rig = sdf_rig.read(parse(Path(path).read_bytes()))
+    verts = None
+    if mesh_ob is not None:
+        if len(mesh_ob.data.vertices) != len(rig.vertices):
+            raise ValueError("rider mesh: vertices can't be added or removed")
+        verts = [tuple(v.co) for v in mesh_ob.data.vertices]
+    poses = {}
+    for act in bpy.data.actions:
+        if "mrwt_pose" not in act:
+            continue
+        pose = next((p for p in rig.poses if p.index == act["mrwt_pose"]), None)
+        if pose is None:
+            continue
+        vals = action_values(act)
+        new = sdf_rig.Pose(pose.index, {}, {}, pose.record)
+        for k, old_ang in pose.rotations.items():
+            part = rig.parts[k]
+            v = vals.get((bone_name(part), "rotation_euler"))
+            new.rotations[k] = old_ang if v is None else tuple(
+                round(a * 4096 / (2 * math.pi)) - b for a, b in zip(v, part.base_rot))
+        for k, old_t in pose.translations.items():
+            v = vals.get((bone_name(rig.parts[k]), "location"))
+            new.translations[k] = old_t if v is None else tuple(round(c) for c in v)
+        poses[pose.index] = new
+    return {"vertices": verts, "poses": poses, "base": False}
+
+
 def import_scene(context, path, vrm_path, s):
     data = sc.load(path)
     name = Path(path).stem
@@ -378,6 +512,11 @@ def import_scene(context, path, vrm_path, s):
         track_col = bpy.data.collections.new(f"{name} track")
         root.children.link(track_col)
         build_track(name, data.track, s, track_col)
+    if data.track is not None:  # levels: the rider rig
+        rider_col = bpy.data.collections.new(f"{name} rider")
+        root.children.link(rider_col)
+        build_rider(context, name, path, s, rider_col)
+        rider_col.hide_viewport = True
     return data, root
 
 
@@ -473,7 +612,8 @@ def export_scene(root, out, base=None):
             ground = mesh_item(me, s, ob.matrix_world)
         if me.get("mrwt_collision"):
             collision = collision_faces(ob, s)
-    return sc.save(base or root["mrwt_source"], out, items, ground, objects, collision, track)
+    rider = rider_from_blender(bpy.context, root, base or root["mrwt_source"])
+    return sc.save(base or root["mrwt_source"], out, items, ground, objects, collision, track, rider)
 
 
 # --- operators ---------------------------------------------------------------

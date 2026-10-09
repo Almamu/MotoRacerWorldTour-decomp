@@ -87,6 +87,7 @@ python3 tools/sdf_mesh.py extracted/mr3dat/data/final/Usa_PS.sdf extracted/sdf/U
 | `sdf.py`               | `.sdf`            | parse / serialize (byte-identical), summary     |
 | `sdf_geom.py`          | `.sdf` ⇄ OBJ/JSON | export meshes/ground/placements; import edits or new meshes |
 | `sdf_text.py`          | `.sdf` ⇄ JSON     | export / re-import text strings (menus, DB)    |
+| `sdf_rig.py`           | level `.sdf`      | rider rig (root 9): skeleton, posed OBJ export, vertex/pose write-back |
 | `menu_script.py`       | menu / level `.sdf` | pages, page lists and decompiled widget scripts (menu flow, unlocks) |
 | `sdf_mesh.py`          | level `.sdf` (+`.Vrm`) | textured OBJ: ground, draw items, placed objects |
 | `dps.py`               | `.DPS`            | MP4 (via ffmpeg, correct frame rate)           |

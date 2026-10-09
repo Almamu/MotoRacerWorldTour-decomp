@@ -16,7 +16,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 TOOLS = HERE.parent
-LIBS = ["sdf.py", "sdf_mesh.py", "sdf_geom.py", "sdf_collision.py", "vrm.py"]
+LIBS = ["sdf.py", "sdf_mesh.py", "sdf_geom.py", "sdf_collision.py", "sdf_rig.py", "vrm.py"]
 
 
 def main():

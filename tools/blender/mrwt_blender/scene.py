@@ -288,7 +288,7 @@ def write_collision(sdf, old, new, tolerance=2.5):
     return changed
 
 
-def save(base, out, items=None, ground=None, objects=None, collision=None, track=None):
+def save(base, out, items=None, ground=None, objects=None, collision=None, track=None, rider=None):
     """Write `base` with the given edits to `out`.
 
     items: {index: Item} (verts and faces in game units); ground: Item;
@@ -320,6 +320,11 @@ def save(base, out, items=None, ground=None, objects=None, collision=None, track
         n = write_collision(sdf, old.collision, collision)
         if n:
             log.append(f"collision: {n} faces re-encoded")
+    if rider:
+        import sdf_rig
+        nv, nj = sdf_rig.write(sdf, sdf_rig.read(sdf), **rider)
+        if nv or nj:
+            log.append(f"rider: {nv} vertices, {nj} pose joints changed")
     if track is not None and old.track:
         ng, nl = write_track(sdf, old.track, track)
         if ng or nl:
