@@ -2,6 +2,7 @@
 #include "langimg/cobjet.h"
 #include "gte.h"
 #include "langimg/ui.h"
+#include "langimg/seq.h"
 
 /* The game's code built with GCC 2.91.66, -G8, split addresses
  * (docs/matching/issue-4-langimg-chunk03.md). */
@@ -32,28 +33,6 @@ struct Obj2D {
     int *m_prim;
 };
 void func_800194E4(Obj2D *o);
-
-// An entry of a sequence: an object, its linked entry, and its m_3F
-struct SeqEntry {
-    int m_obj : 12;
-    int m_link : 12; // -1: none
-    int m_3F : 8;
-    SeqEntry *m_next;
-};
-
-// A sequence of objects and their linked entries
-struct Seq {
-    int m_00;
-    CobjetList *m_objs;
-    CobjetLinkedTable *m_links;
-    int m_0C;
-    SeqEntry *m_entries;
-    int m_14;
-    unsigned m_state : 2; // 0x18
-    unsigned m_18_2 : 4;
-    unsigned m_mode : 6;
-};
-int func_80019578(Seq *s, int a, int back, int c);
 
 // The 2D drawing state (D_800C886C): a C++ object, its vtable pointer at
 // 0x68

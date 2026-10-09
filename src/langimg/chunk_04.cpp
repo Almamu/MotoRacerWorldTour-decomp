@@ -1,20 +1,116 @@
 #include "common.h"
+#include "langimg/seq.h"
+
+/* The game's code built with GCC 2.91.66, -G8, split addresses
+ * (docs/matching/issue-5-langimg-chunk04.md). */
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_8001983C);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_80019A98);
+/* Sets and clears flags on the sequence's objects. Returns whether it has
+ * entries. */
+int func_80019A98(Seq *s, int set, int clear) {
+    SeqEntry *e;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_80019B2C);
+    if (s->m_objs && (e = s->m_entries)) {
+        do {
+            if (e->m_obj != -1) {
+                Cobjet *o = 0;
+                int i = e->m_obj;
+                CobjetList *objs = s->m_objs;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_80019BC4);
+                if (i >= 0) {
+                    o = objs->m_items[i];
+                }
+                if (o) {
+                    o->m_04 = (o->m_04 | set) & ~clear;
+                }
+            }
+        } while ((e = e->m_next));
+    }
+    return s->m_entries != 0;
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_80019C78);
+/* Clears m_2C on the sequence's linked entries with that id (-1: all). */
+void func_80019B2C(Seq *s, int id) {
+    SeqEntry *e;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_80019D0C);
+    if (s->m_links && (e = s->m_entries)) {
+        do {
+            if (e->m_link != -1) {
+                CobjetLinked *x = s->m_links->m_items[e->m_link];
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_80019D60);
+                if (x && (id == -1 || x->m_id == id)) {
+                    x->m_2C = 0;
+                }
+            }
+        } while ((e = e->m_next));
+    }
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_80019DC0);
+/* Sets the direction of the sequence's linked entries with that id. */
+void func_80019BC4(Seq *s, int dir, int id) {
+    SeqEntry *e;
+
+    if (s->m_links && (e = s->m_entries)) {
+        do {
+            if (e->m_link != -1) {
+                CobjetLinked *x = s->m_links->m_items[e->m_link];
+
+                if (x && (id == -1 || x->m_id == id)) {
+                    int v = (dir & 0xF) << 8;
+
+                    x->m_flags = (x->m_flags & ~0xF00) | v;
+                }
+            }
+        } while ((e = e->m_next));
+    }
+}
+
+/* The set's sequence of that name, or 0. */
+Seq *func_80019C78(SeqSet *set, const char *name) {
+    Seq *s = set->m_first;
+    Seq *r = 0;
+
+    if (name && *(s8 *)name && s) {
+        do {
+            if (!func_800A60AC(name, s->Get())) {
+                r = s;
+            } else {
+                s = s->m_next;
+            }
+        } while (s && !r);
+    }
+    return r;
+}
+
+/* Starts a sequence (func_80019578) if it has entries; returns its count. */
+int func_80019D0C(SeqSet *set, Seq *s, int a, int back, int c) {
+    int r = 0;
+
+    if (s) {
+        r = s->m_count;
+        if (r > 0) {
+            func_80019578(s, a, back, c);
+        }
+    }
+    return r;
+}
+
+/* Starts the set's sequence of that name. */
+int func_80019D60(SeqSet *set, const char *name, int a, int back, int c) {
+    return func_80019D0C(set, func_80019C78(set, name), a, back, c);
+}
+
+/* Resets the flags of the set's sequences of a mode (0: all). */
+void func_80019DC0(SeqSet *set, int mode) {
+    Seq *s;
+
+    for (s = set->m_first; s; s = s->m_next) {
+        if (!mode || s->m_mode == mode) {
+            func_80019A98(s, 0x180000, 0);
+        }
+    }
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_80019E30);
 
