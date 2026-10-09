@@ -4,6 +4,44 @@
 /* The game's code built with GCC 2.91.66 and -G0
  * (docs/matching/issue-4-langimg-chunk03.md). */
 
+/* Cobjet's constructor and destructor, called by the subclasses below by
+ * their symbols: the subclasses' names aren't known, so they're plain
+ * functions that set the vtable pointer (Cobjet + 0x50) themselves. */
+extern Cobjet *CobjetCtor(Cobjet *o) asm("__6Cobjet");
+extern void CobjetDtor(Cobjet *o, int flags) asm("_._6Cobjet");
+#define SET_VTABLE(o, vt) (*(void **)((char *)(o) + 0x50) = (vt))
+
+extern "C" {
+/* The subclasses' vtables: one entry each, their destructor */
+extern int D_800C4948[];
+extern int D_800C4958[];
+extern int D_800C4968[];
+}
+
+/* A Cobjet with a tree and three more fields (vtable D_800C4948) */
+class CobjetTreeObj : public Cobjet {
+public:
+    Cobjet *m_54;      // the object it was put after
+    Cobjet *m_58;      // what follows it
+    int m_5C;          // put first, as a parent's first child
+    CobjetTree m_tree; // 0x60: the tree it starts with
+};
+
+static inline Cobjet *Next(Cobjet *o) {
+    return o->m_40 ? o->m_40->m_next : 0;
+}
+
+static inline Cobjet *First(Cobjet *o) {
+    return o->m_40 ? o->m_40->m_first : 0;
+}
+
+extern "C" {
+CobjetTreeObj *func_8001816C(CobjetTreeObj *o);
+void func_800181CC(CobjetTreeObj *o, int flags);
+void func_80018224(CobjetList *l, CobjetTreeObj *g, Cobjet *c);
+void func_800184A4(CobjetList *l, CobjetTreeObj *g);
+}
+
 /* Draws the list's objects from start on, n of them: their drawn flags
  * cleared first, then each top object's tree. */
 void func_800177E8(CobjetList *l, int start, int n) {
@@ -333,17 +371,182 @@ int func_80018048(CobjetList *l, Cobjet *child, int *first) {
     return r;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_03", func_800180F4);
+/* The constructor of the Cobjet subclass with vtable D_800C4958. */
+Cobjet *func_800180F4(Cobjet *o) {
+    CobjetCtor(o);
+    SET_VTABLE(o, D_800C4958);
+    ((int *)o)[0x5C / 4] = -1;
+    return o;
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_03", func_80018130);
+/* The constructor of the Cobjet subclass with vtable D_800C4968. */
+Cobjet *func_80018130(Cobjet *o) {
+    CobjetCtor(o);
+    SET_VTABLE(o, D_800C4968);
+    ((int *)o)[0x54 / 4] = -1;
+    return o;
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_03", func_8001816C);
+/* CobjetTreeObj's constructor: a tree of its own. */
+CobjetTreeObj *func_8001816C(CobjetTreeObj *o) {
+    CobjetTree *t;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_03", func_800181CC);
+    CobjetCtor(o);
+    SET_VTABLE(o, D_800C4948);
+    o->m_tree.m_first = 0;
+    o->m_tree.m_next = 0;
+    t = (CobjetTree *)__builtin_new(sizeof(CobjetTree));
+    t->m_first = 0;
+    t->m_next = 0;
+    o->m_40 = t;
+    o->m_58 = 0;
+    o->m_54 = 0;
+    o->m_5C = 0;
+    return o;
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_03", func_80018224);
+/* CobjetTreeObj's destructor. */
+void func_800181CC(CobjetTreeObj *o, int flags) {
+    SET_VTABLE(o, D_800C4948);
+    if (o->m_40) {
+        __builtin_delete(o->m_40);
+        o->m_40 = 0;
+    }
+    CobjetDtor(o, flags);
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_03", func_800184A4);
+/* Puts g in the list's tree in front of c: g takes c's place and c
+ * becomes g's first child. */
+void func_80018224(CobjetList *l, CobjetTreeObj *g, Cobjet *c) {
+    int first;
+    Cobjet *parent;
+    Cobjet *last;
+    Cobjet *prev;
+    int n;
+
+    if (g && c) {
+        parent = func_80018008(l, c, &first);
+        last = c;
+        prev = parent;
+        if (first) {
+            prev = 0;
+        }
+        while (Next(last)) {
+            prev = last;
+            last = Next(last);
+        }
+        if (!last->m_40) {
+            last->m_40 = &g->m_tree;
+        }
+        if (first) {
+            n = func_80016A38(c);
+            if (n >= 2) {
+                if (parent) {
+                    parent->m_40->m_first = last;
+                }
+                last->m_40->m_next = Next(c);
+                prev->m_40->m_next = g;
+                c->m_40->m_next = First(g);
+                g->m_40->m_first = c;
+                g->m_54 = prev;
+                g->m_5C = 0;
+            } else if (n == 1) {
+                if (parent) {
+                    parent->m_40->m_first = last;
+                }
+                last->m_40->m_next = g;
+                c->m_40->m_next = First(g);
+                g->m_40->m_first = c;
+                g->m_54 = last;
+                g->m_5C = 0;
+            } else {
+                if (parent) {
+                    parent->m_40->m_first = g;
+                }
+                c->m_40->m_next = g->m_58;
+                g->m_40->m_first = c;
+                g->m_54 = parent;
+                g->m_5C = 1;
+            }
+        } else {
+            g->m_5C = 0;
+            if (parent) {
+                parent->m_40->m_next = last;
+            }
+            if (c == prev) {
+                last->m_40->m_next = g;
+                g->m_54 = last;
+            } else {
+                last->m_40->m_next = Next(c);
+                prev->m_40->m_next = g;
+                g->m_54 = prev;
+            }
+            g->m_40->m_first = c;
+            c->m_40->m_next = g->m_58;
+        }
+    }
+    func_80017730(l);
+}
+
+/* Next, computed into a local first */
+static inline Cobjet *NextOf(Cobjet *o) {
+    Cobjet *n = 0;
+
+    if (o->m_40) {
+        n = o->m_40->m_next;
+    }
+    return n;
+}
+
+/* Takes g out of the list's tree again (func_80018224's undo). */
+void func_800184A4(CobjetList *l, CobjetTreeObj *g) {
+    Cobjet *o;
+    Cobjet *next;
+    int found;
+
+    if (g) {
+        if (g->m_54) {
+            if (g->m_5C) {
+                Cobjet *c = g->m_40->m_first;
+
+                c->m_40->m_next = 0;
+                g->m_54->m_40->m_first = c;
+            } else {
+                g->m_54->m_40->m_next = g->m_40->m_first;
+            }
+        }
+        o = g->m_40->m_first;
+        if (o) {
+            next = NextOf(o);
+            found = 0;
+            if (g->m_58 && next) {
+            loop:
+                if (!o) {
+                    goto out;
+                }
+                if (next == g->m_58) {
+                    found = 1;
+                    o->m_40->m_next = 0;
+                } else {
+                    o = next;
+                    if (next) {
+                        next = NextOf(next);
+                    }
+                }
+                if (found) {
+                    goto out;
+                }
+                if (next) {
+                    goto loop;
+                }
+            }
+        }
+    out:
+        g->m_40->m_first = g->m_58;
+        g->m_54 = 0;
+    }
+    func_80017730(l);
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_03", func_800185F0);
 
@@ -351,13 +554,56 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_03", func_8001865C);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_03", func_80018814);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_03", func_8001885C);
+/* The destructor of the subclass with vtable D_800C4958. */
+void func_8001885C(Cobjet *o, int flags) {
+    CobjetDtor(o, flags);
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_03", func_8001887C);
+/* The destructor of the subclass with vtable D_800C4968. */
+void func_8001887C(Cobjet *o, int flags) {
+    CobjetDtor(o, flags);
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_03", func_8001889C);
+/* A rotation matrix from three angles (func_80097E4C). */
+void func_8001889C(MATRIX *m, SVECTOR *r) {
+    func_80097E4C(m, r->vx, r->vy, r->vz);
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_03", func_800188CC);
+/* An item's alignment flags (func_80015798's), from its bits 11-14. */
+int func_800188CC(int *item) {
+    int r = 0;
+
+    switch ((*(u32 *)item >> 11) & 0xF) {
+    case 0:
+        r = 0;
+        break;
+    case 1:
+        r = 0x10;
+        break;
+    case 2:
+        r = 0x20;
+        break;
+    case 3:
+        r = 0x100;
+        break;
+    case 4:
+        r = 0x110;
+        break;
+    case 5:
+        r = 0x120;
+        break;
+    case 6:
+        r = 0x200;
+        break;
+    case 7:
+        r = 0x210;
+        break;
+    case 8:
+        r = 0x220;
+        break;
+    }
+    return r;
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_03", func_80018954);
 
