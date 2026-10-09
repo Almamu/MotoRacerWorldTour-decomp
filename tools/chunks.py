@@ -16,7 +16,8 @@ The function list comes from build/<target>.elf, so build first (make).
   tools/chunks.py sync [--dry-run]        tick done functions in the open chunk issues
   tools/chunks.py check                   the tree's bookkeeping (needs no build): every
                                           INCLUDE_ASM/INCLUDE_RODATA has its .s, every .s under
-                                          asm/*/nonmatchings/ is included, handwritten.txt agrees
+                                          asm/*/nonmatchings/ is included, handwritten.txt agrees,
+                                          no file has a path into this checkout
   tools/chunks.py cleanup-issues DIR --naming N --headers N [--create]
                                           a blocked cleanup follow-up per game chunk
 """
@@ -381,6 +382,12 @@ def cmd_check(args):
         for name in sorted(handwritten(target)):
             if name not in names:
                 errors.append(f"config/{target}/handwritten.txt: {name} has no INCLUDE_ASM")
+    # Paths into one machine's checkout (a tool run with an absolute path
+    # writes them) break the build everywhere else.
+    for d in ("src", "include", "config", "asm"):
+        for path in sorted((ROOT / d).rglob("*")):
+            if path.is_file() and str(ROOT) in path.read_text(errors="ignore"):
+                errors.append(f"{path.relative_to(ROOT)}: contains the path {ROOT}")
     for e in errors:
         print(e)
     if errors:
