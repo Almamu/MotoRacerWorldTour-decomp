@@ -76,6 +76,37 @@ public:
     void Init();
 };
 
+// An object with a model to draw: Cobjet's subclasses' first fields
+class CobjetModel : public Cobjet {
+public:
+    int m_54;    // the texture page, or 0 for the prim's own?
+    int *m_prim; // 0x58: flags (& 7: its kind), then the page
+};
+
+// The camera's projection
+struct CameraLens {
+    u8 m_00[0x14];
+    int m_14;
+    int m_18;
+    int m_1C; // the screen distance?
+    u8 m_20[0x28];
+    int m_48; // LOD scale
+};
+
+// The camera
+struct Camera {
+    u8 m_00[0x60];
+    MATRIX m_view; // 0x60
+    u8 m_80[0x78];
+    Vector3 m_pos; // 0xF8
+    u8 m_104[0x38];
+    CameraLens *m_lens; // 0x13C
+};
+
+struct ModelTable {
+    int **m_items;
+};
+
 // A list of objects (a scene's?)
 struct CobjetList {
     Cobjet **m_items;
@@ -120,6 +151,24 @@ int func_800178DC(Cobjet *o, int n);
 void func_80017574(CobjetList *l, CobjetPartList *parts, int a, int b, int kind);
 void func_80017730(CobjetList *l);
 void *memset(void *p, int c, size_t n);
+void func_80016268(Cobjet *o, SVECTOR *rot, Vector3 *pos);
+void func_80016434(Cobjet *o, SVECTOR *rot, Vector3 *pos);
+void func_80016600(Cobjet *o, SVECTOR *rot, Vector3 *pos);
+void func_80016A8C(CobjetModel *o, int arg);
+void func_80016C3C(CobjetModel *o, MATRIX *m);
+extern Camera *D_800C8864;
+extern int D_800C8900;
+extern ModelTable *D_800C8C68;
+extern int D_800CBCA0;
+extern int D_800CBCA4;
+Vector3 *func_800998D0(Vector3 *dst, Vector3 *a, Vector3 *b); /* a - b */
+void func_8007C354(int *model, int arg);
+void func_80018AEC(int *prim, int page, int x, int y);
+void func_80019114(int *prim, int page, int x, int y);
+void func_8001889C(MATRIX *m, SVECTOR *rot);              // a rotation matrix
+MATRIX *func_80098674(MATRIX *a, MATRIX *b, MATRIX *out); // a product
+void func_8009887C(long *in, long *out);
+void func_800997D0(long *in, long *out);
 }
 
 #endif

@@ -1,6 +1,7 @@
 #include "common.h"
 #include "langimg/cobjet.h"
 #include "stdarg.h"
+#include "gte.h"
 
 /* Functions on Cobjet with C linkage, built with GCC 2.91.66 like the
  * game's other C files (docs/matching/issue-3-langimg-chunk02.md). */
@@ -53,11 +54,177 @@ void func_80016234(Cobjet *o, MATRIX *m, int own) {
     o->m_matp = m;
 }
 
+#ifdef NON_MATCHING
+/* Equivalent; the original computes each local's address anew for every
+ * call, where GCC keeps them in saved registers */
+/* Sets the object's rotation (x, then y, then z) and position; with no
+ * position it keeps its own. */
+void func_80016268(Cobjet *o, SVECTOR *rot, Vector3 *pos) {
+    Vector3 cur;
+    MATRIX mx;
+    SVECTOR a;
+    MATRIX my;
+    MATRIX mz;
+    MATRIX res;
+    MATRIX tmp;
+
+    if (!o->m_matp) {
+        func_80016798(o);
+    }
+    if (!pos) {
+        func_800167B8(o, &cur);
+    }
+    if (rot) {
+        MATRIX *m;
+
+        a.vx = rot->vx;
+        a.vy = 0;
+        a.vz = 0;
+        func_8001889C(&mx, &a);
+        mx.t[0] = mx.t[1] = mx.t[2] = 0;
+        a.vy = rot->vy;
+        a.vx = 0;
+        a.vz = 0;
+        func_8001889C(&my, &a);
+        my.t[0] = my.t[1] = my.t[2] = 0;
+        a.vz = rot->vz;
+        a.vx = 0;
+        a.vy = 0;
+        func_8001889C(&mz, &a);
+        mz.t[0] = mz.t[1] = mz.t[2] = 0;
+        m = o->m_matp;
+        func_80098674(&my, &mx, &tmp);
+        func_8009887C(mx.t, tmp.t);
+        func_800997D0(tmp.t, my.t);
+        func_80098674(&tmp, &mz, &res);
+        func_8009887C(mz.t, res.t);
+        func_800997D0(res.t, tmp.t);
+        *m = res;
+    }
+    if (pos) {
+        o->m_matp->t[0] = pos->vx;
+        o->m_matp->t[1] = pos->vy;
+        o->m_matp->t[2] = pos->vz;
+    } else if (rot) {
+        o->m_matp->t[0] = cur.vx;
+        o->m_matp->t[1] = cur.vy;
+        o->m_matp->t[2] = cur.vz;
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02b", func_80016268);
+#endif
 
+#ifdef NON_MATCHING
+/* Equivalent; as func_80016268 (registers for the locals' addresses) */
+/* As func_80016268, the rotation in the order x, z, y. */
+void func_80016434(Cobjet *o, SVECTOR *rot, Vector3 *pos) {
+    Vector3 cur;
+    MATRIX mx;
+    SVECTOR a;
+    MATRIX my;
+    MATRIX mz;
+    MATRIX res;
+    MATRIX tmp;
+
+    if (!o->m_matp) {
+        func_80016798(o);
+    }
+    if (!pos) {
+        func_800167B8(o, &cur);
+    }
+    if (rot) {
+        MATRIX *m;
+
+        a.vx = rot->vx;
+        a.vy = 0;
+        a.vz = 0;
+        func_8001889C(&mx, &a);
+        mx.t[0] = mx.t[1] = mx.t[2] = 0;
+        a.vy = rot->vy;
+        a.vx = 0;
+        a.vz = 0;
+        func_8001889C(&my, &a);
+        my.t[0] = my.t[1] = my.t[2] = 0;
+        a.vz = rot->vz;
+        a.vx = 0;
+        a.vy = 0;
+        func_8001889C(&mz, &a);
+        mz.t[0] = mz.t[1] = mz.t[2] = 0;
+        m = o->m_matp;
+        func_80098674(&mz, &mx, &tmp);
+        func_8009887C(mx.t, tmp.t);
+        func_800997D0(tmp.t, mz.t);
+        func_80098674(&tmp, &my, &res);
+        func_8009887C(my.t, res.t);
+        func_800997D0(res.t, tmp.t);
+        *m = res;
+    }
+    if (pos) {
+        o->m_matp->t[0] = pos->vx;
+        o->m_matp->t[1] = pos->vy;
+        o->m_matp->t[2] = pos->vz;
+    } else if (rot) {
+        o->m_matp->t[0] = cur.vx;
+        o->m_matp->t[1] = cur.vy;
+        o->m_matp->t[2] = cur.vz;
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02b", func_80016434);
+#endif
 
+#ifdef NON_MATCHING
+/* Equivalent; as func_80016268 (registers for the locals' addresses) */
+/* Sets the object's rotation (in the order z, y, x) and, if given, its
+ * position. */
+void func_80016600(Cobjet *o, SVECTOR *rot, Vector3 *pos) {
+    MATRIX mx;
+    SVECTOR a;
+    MATRIX my;
+    MATRIX mz;
+    MATRIX res;
+    MATRIX tmp;
+
+    if (!o->m_matp) {
+        func_80016798(o);
+    }
+    if (rot) {
+        MATRIX *m;
+
+        a.vx = rot->vx;
+        a.vy = 0;
+        a.vz = 0;
+        func_8001889C(&mx, &a);
+        mx.t[0] = mx.t[1] = mx.t[2] = 0;
+        a.vy = rot->vy;
+        a.vx = 0;
+        a.vz = 0;
+        func_8001889C(&my, &a);
+        my.t[0] = my.t[1] = my.t[2] = 0;
+        a.vz = rot->vz;
+        a.vx = 0;
+        a.vy = 0;
+        func_8001889C(&mz, &a);
+        mz.t[0] = mz.t[1] = mz.t[2] = 0;
+        m = o->m_matp;
+        func_80098674(&my, &mz, &tmp);
+        func_8009887C(mz.t, tmp.t);
+        func_800997D0(tmp.t, my.t);
+        func_80098674(&tmp, &mx, &res);
+        func_8009887C(mx.t, res.t);
+        func_800997D0(res.t, tmp.t);
+        *m = res;
+    }
+    if (pos) {
+        o->m_matp->t[0] = pos->vx;
+        o->m_matp->t[1] = pos->vy;
+        o->m_matp->t[2] = pos->vz;
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02b", func_80016600);
+#endif
 
 /* Points the object at its own matrix. */
 void func_80016798(Cobjet *o) {
@@ -173,9 +340,147 @@ int func_80016A38(Cobjet *o) {
     return n;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02b", func_80016A8C);
+#ifdef NON_MATCHING
+/* Registers only (20 off): the LOD sum and the lens fields */
+/* The level of detail for a point: its distance to the camera, scaled
+ * (0 to 3). */
+static inline int CameraLod(Vector3 *pos) {
+    Camera *c = D_800C8864;
+    Vector3 d;
+    CameraLens *l;
+    int x, y, z, m, lod;
 
+    func_800998D0(&d, pos, &c->m_pos);
+    l = c->m_lens;
+    x = d.vx;
+    y = d.vy;
+    z = d.vz;
+    if (x < 0) {
+        x = -x;
+    }
+    if (y < 0) {
+        y = -y;
+    }
+    if (z < 0) {
+        z = -z;
+    }
+    m = x;
+    if (m < y) {
+        m = y;
+    }
+    if (m < z) {
+        m = z;
+    }
+    lod = (((m * 2 + x + y + z) * l->m_48) >> 8) * 4 / ((l->m_14 << 13) + (l->m_14 << 12));
+    if ((u32)lod > 3) {
+        lod = 3;
+    }
+    return lod;
+}
+
+/* Draws the object's model, its level of detail chosen by its distance to
+ * the camera. */
+void func_80016A8C(CobjetModel *o, int arg) {
+    Vector3 pos;
+    int d;
+    int lod;
+
+    pos = *(Vector3 *)o->m_matp->t;
+    d = o->m_3C >= 2 ? CameraLod(&pos) : 0;
+    lod = d;
+    if (lod >= o->m_3C) {
+        lod = o->m_3C - 1;
+    }
+    o->m_3D = lod;
+    D_800C8900 = o->m_color;
+    {
+        int *model = D_800C8C68->m_items[o->m_38[lod]];
+
+        if (o->m_04 & 0x2000) {
+            D_800CBCA4 = o->m_54;
+            D_800CBCA0 = -1;
+        }
+        func_8007C354(model, arg);
+    }
+}
+#else
+INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02b", func_80016A8C);
+#endif
+
+#ifdef NON_MATCHING
+/* The prim pointer: the original keeps a copy of it in $a2 (the second
+ * call takes that), and the vector subtraction is scheduled apart */
+/* Projects the point at the matrix's position and, if the triangle
+ * around it faces the camera, draws the object's prim there. */
+void func_80016C3C(CobjetModel *o, MATRIX *m) {
+    Camera *c = D_800C8864;
+    MATRIX rot;
+    MATRIX *rp = &rot;
+    long d[3];
+    long *a;
+    long *b;
+    CameraLens *l;
+    int *prim;
+    int page;
+    int zsf3, zsf4;
+    int tx, ty, tz;
+    int flag;
+    int opz;
+    int sxy;
+    register int r asm("$9");
+
+    func_80098674(&c->m_view, m, rp);
+    a = m->t;
+    b = c->m_view.t;
+    d[0] = a[0] - b[0];
+    d[1] = a[1] - b[1];
+    d[2] = a[2] - b[2];
+    func_8009887C(d, rot.t);
+    l = D_800C8864->m_lens;
+    zsf3 = (l->m_1C << 16) / ((l->m_14 << 15) + (l->m_14 << 14));
+    zsf4 = (l->m_1C << 16) / (l->m_14 << 16);
+    GTE_SET_ZSF(zsf3, zsf4);
+    tx = rot.t[0] >> 2;
+    ty = rot.t[1] >> 2;
+    tz = rot.t[2] >> 2;
+    GTE_SET_ROT(rp);
+    GTE_SET_TRANS(tx, ty, tz);
+    prim = o->m_prim;
+    page = prim[1];
+    if (o->m_54) {
+        page = o->m_54;
+    }
+    r = 0xFF00FF00;
+    GTE_MTC2(r, 0);
+    r = 0;
+    GTE_MTC2(r, 1);
+    r = 0x1000000;
+    GTE_MTC2(r, 2);
+    r = 0;
+    GTE_MTC2(r, 3);
+    r = 0x100;
+    GTE_MTC2(r, 4);
+    r = 0;
+    GTE_MTC2(r, 5);
+    GTE_RTPT();
+    GTE_CFC2(flag, 31);
+    GTE_NCLIP();
+    GTE_MFC2(opz, 24);
+    if (opz > 0) {
+        GTE_MTC2(r, 0);
+        GTE_MTC2(r, 1);
+        GTE_RTPS();
+        GTE_MFC2(sxy, 14);
+        if ((prim[0] & 7) == 1) {
+            func_80018AEC(prim, page, (short)sxy, sxy >> 16);
+        } else {
+            func_80019114(prim, page, (short)sxy, sxy >> 16);
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02b", func_80016C3C);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02b", func_80016E34);
 
