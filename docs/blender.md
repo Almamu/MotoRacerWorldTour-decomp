@@ -120,6 +120,16 @@ free and written into each (`Sac.Vrm` and `SacB.Vrm`). Checked: the new
 gantry banner reaches all four Sachsenring files and both banks, and the
 disc plays.
 
+**Identical tracks** (export option, off by default): rider and draw-item
+edits also go to other tracks' level files where the rig / item is
+byte-identical. Riders are shared in groups (e.g. Sachsenring, Suzuka,
+Imola 2 and Isle of Man use one 250 cc rider; most 500 cc files share
+another; 2-player files often have their own), so a rider edit made on
+Sachsenring reaches the other three; files that end up unchanged are not
+written. Checked: a bigger rider head made on Sachsenring shows at Suzuka.
+Shared HUD sprites and fonts are handled by the workspace instead
+(`assets/shared/`, see the README).
+
 Free space for new textures is limited: a bank is mostly used. On
 Sachsenring about 5% is free, mainly two blocks in the first texture page
 (room for 256 × 71 and 256 × 40 four-bit texels); `vram_usage.py <bank>

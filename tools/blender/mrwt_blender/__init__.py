@@ -818,12 +818,15 @@ def find_root(context):
     return roots[0] if len(roots) == 1 else None
 
 
-def export_scene(root, out, base=None, variants=True):
+def export_scene(root, out, base=None, variants=True, everywhere=False):
     """Write the edited scene to `out`. With `variants`, the same edit also
     goes to the track's other level files found next to the source (two
     players, 500 cc: <code>2_PS, <code>B_PS, <code>B2_PS), written next to
     `out` under their own names, for every structure that was identical to
-    the source's; new textures go into every bank those files load."""
+    the source's; new textures go into every bank those files load. With
+    `everywhere`, other tracks' level files in the folder get the rider and
+    draw-item edits too, where their rig / item is identical (e.g. the bike
+    and rider shared by several tracks)."""
     bpy.context.view_layer.update()  # make matrix_world current after scripted moves
     s = root.get("mrwt_scale", 0.01)
     source = Path(base or root["mrwt_source"])
@@ -845,15 +848,24 @@ def export_scene(root, out, base=None, variants=True):
             collision = collision_faces(ob, s)
     rider = rider_from_blender(bpy.context, root, source)
     others = sc.variant_files(source) if variants else []
+    tracks = []
+    if everywhere:
+        known = {p.resolve() for p in [source] + others}
+        tracks = [f for f in sorted(source.parent.iterdir())
+                  if f.name.lower().endswith("_ps.sdf") and f.resolve() not in known]
     log = []
-    allocate_textures(root, items, out, log, [source] + others)
+    edited = {i: it for i, it in items.items()}
+    allocate_textures(root, items, out, log, [source] + others + tracks)
     log += sc.save(source, out, items, ground, objects, collision, track, rider)
     for v in others:
         old_v = sc.load(v)
         v_items, v_ground, v_objects, v_collision, v_track, skipped = sc.variant_edits(
             old, old_v, items, ground, objects, collision, track)
         v_rider, _ = rider_for_variant(rider, source, v)
-        v_log = sc.save(v, Path(out).parent / v.name, v_items, v_ground, v_objects, v_collision, v_track, v_rider)
+        dest = Path(out).parent / v.name
+        v_log = sc.save(v, dest, v_items, v_ground, v_objects, v_collision, v_track, v_rider)
+        if dest.read_bytes() == v.read_bytes():
+            dest.unlink()
         log += [f"{v.name}: {line}" for line in v_log]
         changed = " ".join(log)
         skipped = [x for x in skipped
@@ -862,6 +874,25 @@ def export_scene(root, out, base=None, variants=True):
                    or (x.startswith("object ") and "objects:" in changed)]
         if skipped:
             log.append(f"{v.name}: differs from {source.name} in {', '.join(skipped)}, not applied there")
+    for t in tracks:
+        old_t = sc.load(t)
+        by_sig = {}
+        for i, it in old_t.items.items():
+            by_sig.setdefault(sc._item_sig(it), i)
+        t_items = {}
+        for i, new in edited.items():
+            j = by_sig.get(sc._item_sig(old.items[i]))
+            if j is not None:
+                t_items[j] = new
+        t_rider, same_rig = rider_for_variant(rider, source, t)
+        if not same_rig and t_rider:
+            t_rider["vertices"], t_rider["poses"] = None, {}
+        dest = Path(out).parent / t.name
+        t_log = sc.save(t, dest, t_items, None, [], None, None, t_rider)
+        if dest.read_bytes() == t.read_bytes():
+            dest.unlink()   # nothing shared with this track
+        else:
+            log += [f"{t.name}: {line}" for line in t_log]
     return log
 
 
@@ -898,6 +929,10 @@ class MRWT_OT_export(bpy.types.Operator, ExportHelper):
     filename_ext = ".sdf"
     filter_glob: StringProperty(default="*.sdf;*.Sdf;*.SDF", options={"HIDDEN"})
     base: StringProperty(name="Base file", description="File to apply the edits to (empty: the imported one)", subtype="FILE_PATH")
+    variants: BoolProperty(name="Track variants", default=True,
+                           description="Also edit the track's 2-player and 500 cc level files (and their banks)")
+    everywhere: BoolProperty(name="Identical tracks", default=False,
+                             description="Also apply rider and draw-item edits to other tracks where they are identical (shared bike / rider)")
     check_existing: BoolProperty(default=True, options={"HIDDEN"})
 
     def invoke(self, context, event):
@@ -912,7 +947,8 @@ class MRWT_OT_export(bpy.types.Operator, ExportHelper):
             self.report({"ERROR"}, "select an object of an imported scene")
             return {"CANCELLED"}
         try:
-            log = export_scene(root, self.filepath, bpy.path.abspath(self.base) if self.base else None)
+            log = export_scene(root, self.filepath, bpy.path.abspath(self.base) if self.base else None,
+                               self.variants, self.everywhere)
         except ValueError as e:
             self.report({"ERROR"}, str(e))
             return {"CANCELLED"}
