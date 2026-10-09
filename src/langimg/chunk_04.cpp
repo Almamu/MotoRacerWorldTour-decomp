@@ -1,5 +1,6 @@
 #include "common.h"
 #include "langimg/seq.h"
+#include "langimg/ui.h"
 
 /* The game's code built with GCC 2.91.66, -G8, split addresses
  * (docs/matching/issue-5-langimg-chunk04.md). */
@@ -15,7 +16,12 @@ struct RangeDef {
     u16 m_0A;
     u16 m_0C;
     u16 m_0E;
-    int m_10[9];
+    short m_10; // the needle's width
+    short m_12; // its tail
+    int m_14;
+    int m_18;
+    int m_1C; // its colour
+    int m_20[5];
 };
 
 // A range: its definition and its state
@@ -41,6 +47,35 @@ void func_80019F0C(Range *r, RangeDef *def);
 void func_80019FA4(Range *r, int a, int b);
 void func_80019FB0(Range *r, int a, int b);
 void func_80019FBC(Range *r, int pos);
+void func_8001A4F0(Range *r, int id, int x, int y, int abr, int fill, int color);
+extern u8 *D_800CC030[];      // the textures, by id
+extern short D_800BF3A0[][2]; // sines and cosines by angle (4.12)
+void func_8001A2A0(Range *r);
+
+// A grid of 32-unit cells (0x38 bytes)
+struct Grid {
+    int m_x;
+    int m_y; // 24.8
+    int m_z;
+    u8 m_0C[0x1C];
+    int m_28;
+    u8 m_2C[0xC];
+};
+
+struct GridPair {
+    int m_00;
+    int m_04;
+};
+
+GridPair *func_8001A62C(GridPair *p);
+void func_8001A63C(GridPair *p, int flags);
+int func_8001A664(Grid *g, Vector3 *v);
+int func_8001A7F4(Grid *g, Vector3 *v, int n);
+int func_8001ABBC(Grid *g, SVECTOR *c, int a);
+int func_8001AD78(void *self, int a, int b);
+int func_8001AF3C(Grid *g, Vector3 *v, SVECTOR *c);
+void func_8001AFB0(Grid *g, SVECTOR *c, Vector3 *v);
+int func_8001B76C(Grid *g);
 }
 
 #ifdef NON_MATCHING
@@ -279,19 +314,126 @@ void func_80019FBC(Range *r, int pos) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_80019FF8);
 
+#ifdef NON_MATCHING
+/* Equivalent; the multiplications scheduled otherwise (141 off) */
+/* Draws the range's needle: a quad turned by the value m_3A. */
+void func_8001A2A0(Range *r) {
+    int i = r->m_3A & 0xFFF;
+    int bx = (D_800BF3A0[i][1] * r->m_40) >> 12;
+    int ax = (D_800BF3A0[i][0] * r->m_40) >> 12;
+    int by = -((D_800BF3A0[i][1] * r->m_42) >> 12);
+    int ay = -((D_800BF3A0[i][0] * r->m_42) >> 12);
+    int len = (r->m_36 + (short)r->m_def.m_0E / 2) << 4;
+    int tail = ((r->m_36 * 819) >> 11) << 4;
+    int x1 = bx * len;
+    int y1 = ay * len;
+    int x2 = ax * r->m_def.m_10;
+    int y2 = by * r->m_def.m_10;
+    int x3 = bx * tail;
+    int y3 = ay * tail;
+    int x4 = ax * r->m_def.m_12;
+    int y4 = by * r->m_def.m_12;
+    int cx = r->m_3C + 0x20;
+    int cy = r->m_3E + 0x14;
+    u_long *p = (u_long *)D_800C8C70;
+
+    p[0] = 0x05000000;
+    p[1] = r->m_def.m_1C | 0x28000000;
+    p[2] = XY(cx + ((x1 - x2 + 0x8000) >> 16), cy + ((y1 + y2 + 0x8000) >> 16));
+    p[3] = XY(cx + ((x1 + x2 + 0x8000) >> 16), cy + ((y1 - y2 + 0x8000) >> 16));
+    p[4] = XY(cx - ((x3 + x4 + 0x8000) >> 16), cy - ((y3 - y4 + 0x8000) >> 16));
+    p[5] = XY(cx - ((x3 - x4 + 0x8000) >> 16), cy - ((y3 + y4 + 0x8000) >> 16));
+    ADD_PRIM(D_800CBDC0 + 1, p);
+    D_800C8C70 = (u8 *)(p + 6);
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_8001A2A0);
+#endif
 
+#ifdef NON_MATCHING
+/* Registers: x copied to $t7, the texture and the table pointers in other
+ * registers */
+/* Draws a range as a sprite, its width filled to fill (4.12), then the
+ * draw mode for abr (-1: opaque) and back. */
+void func_8001A4F0(Range *r, int id, int x, int y, int abr, int fill, int color) {
+    u8 *t = D_800CC030[id];
+    u_long *p;
+    u_long *ot;
+    int w;
+    int h;
+
+    if (!t) {
+        return;
+    }
+    w = (t[0xA] - t[0] + 1) * fill >> 12;
+    ot = D_800CBDC0 + 1;
+    p = (u_long *)D_800C8C70;
+    h = t[0xB] - t[1] + 1;
+    p[0] = 0x04000000;
+    p[1] = color | (abr < 0 ? 0x64000000 : 0x66000000);
+    p[2] = XY(r->m_3C + x, r->m_3E + y);
+    p[3] = *(u_long *)t;
+    p[4] = (h << 16) + w;
+    ADD_PRIM(ot, p);
+    p += 5;
+    p[0] = 0x01000000;
+    p[1] = (((UiTexture *)t)->tpage & 0x1FF) | (((abr & 3) << 9) | 0xE1000000);
+    ADD_PRIM(ot, p);
+    p += 2;
+    p[0] = 0x01000000;
+    p[1] = 0xE1000200;
+    ADD_PRIM(ot, p);
+    p += 2;
+    D_800C8C70 = (u8 *)p;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_8001A4F0);
+#endif
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_8001A62C);
+GridPair *func_8001A62C(GridPair *p) {
+    p->m_00 = 0;
+    p->m_04 = 0;
+    return p;
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_8001A63C);
+void func_8001A63C(GridPair *p, int flags) {
+    if (flags & 1) {
+        __builtin_delete(p);
+    }
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_8001A664);
+/* Whether a position is in the grid and its cell is set (func_8001ABBC). */
+int func_8001A664(Grid *g, Vector3 *v) {
+    SVECTOR c;
+
+    if (!func_8001AF3C(g, v, &c)) {
+        return 0;
+    }
+    return func_8001ABBC(g, &c, 0);
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_8001A6AC);
 
+#ifdef NON_MATCHING
+/* Scheduling (7 off): the original sets i first and tests n again after
+ * the loop */
+/* The first of n grids a position is in, or -1. */
+int func_8001A7F4(Grid *g, Vector3 *v, int n) {
+    int i = 0;
+    int r;
+
+    while (n && (r = func_8001A664(g, v), g++, !r)) {
+        i++;
+        n--;
+    }
+    if (!n) {
+        i = -1;
+    }
+    return i;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_8001A7F4);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_8001A86C);
 
@@ -299,15 +441,45 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_8001ABBC);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_8001ACE4);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_8001AD78);
+/* a over a - b, 4.12; 0 if they're equal. */
+int func_8001AD78(void *self, int a, int b) {
+    if (a == b) {
+        return 0;
+    }
+    return (a << 12) / (a - b);
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_8001AD9C);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_8001AE40);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_8001AF3C);
+/* A position's cell in the grid; 0 if out of range. */
+int func_8001AF3C(Grid *g, Vector3 *v, SVECTOR *c) {
+    int x = (v->vx - g->m_x) >> 5;
+    int y = (v->vy - (g->m_y >> 8)) >> 5;
+    int z = (v->vz - g->m_z) >> 5;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_8001AFB0);
+    if ((short)x != x) {
+        return 0;
+    }
+    if ((short)z != z) {
+        return 0;
+    }
+    c->vx = x;
+    c->vy = y;
+    c->vz = z;
+    return 1;
+}
+
+/* A cell's position. */
+void func_8001AFB0(Grid *g, SVECTOR *c, Vector3 *v) {
+    int y;
+
+    v->vx = (c->vx << 5) + g->m_x;
+    y = g->m_y >> 8;
+    v->vy = (c->vy << 5) + y;
+    v->vz = (c->vz << 5) + g->m_z;
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_8001AFF4);
 
@@ -317,4 +489,6 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_8001B350);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_8001B6B4);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_8001B76C);
+int func_8001B76C(Grid *g) {
+    return g->m_28 != 0;
+}
