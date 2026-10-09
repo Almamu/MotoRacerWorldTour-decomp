@@ -98,14 +98,18 @@ typedef struct {
     u8 unk2[0xE];
 } DirRecord;
 
+/* The bank file starts with it; its pointers are offsets in the file
+ * until func_80011E44 relocates them. */
 typedef struct {
-    int unk0;
+    u8 flags; /* 0x80: (D_800C46FC 4, else 2) */
+    u8 unk1[3];
     u32 count; /* entries */
     int nNames;
-    int unkC;
+    u8 *notes; /* 44 bytes each (D_800C4744) */
     DirEntry *entries;
     DirName *names;
-    u8 *records; /* a header, then a DirRecord per name */
+    u8 *records; /* a VAB header, then a DirRecord per name */
+    u8 *samples; /* the VAB's samples, freed once in SPU memory */
 } Dir;
 
 #ifdef __cplusplus
@@ -120,6 +124,10 @@ void SpuSetReverbModeDepth(short depth_left, short depth_right);
 long SpuClearReverbWorkArea(long mode);
 void SpuGetAllKeysStatus(char *status);
 void SpuQuit(void);
+long SpuSetTransferMode(long mode);
+unsigned long SpuSetTransferStartAddr(unsigned long addr);
+unsigned long SpuRead(unsigned char *addr, unsigned long size);
+long SpuIsTransferCompleted(long flag);
 void SpuSetKey(long on_off, unsigned long voice_bit);
 unsigned long SpuSetPitchLFOVoice(long on_off, unsigned long voice_bit);
 unsigned long SpuSetReverbVoice(long on_off, unsigned long voice_bit);
@@ -131,7 +139,9 @@ char *strncpy(char *dst, const char *src, size_t n);
 int VSync(int mode);
 void free(void *p);
 long ratan2(long y, long x);
-int func_80097AC8(int x); /* a square root */
+int func_80097AC8(int x);                           /* a square root */
+Dir *func_800A06AC(const char *name, int a, int b); /* loads a file */
+Dir *func_800B5730(void *p, size_t size);           /* shrinks a block */
 /* The game's vector functions (fixed point, 1.0 = 0x1000) */
 int func_8009923C(SndVector *v);                                      /* the length */
 SndVector *func_800998D0(SndVector *dst, SndVector *a, SndVector *b); /* a - b */
@@ -150,18 +160,20 @@ extern int D_800C4738; /* voices to key on (a bit each) */
 extern s8 D_800C473C;
 extern int D_800C46FC; /* the SPU is set up */
 extern int D_800C46F8;
-extern u8 *D_800C46F4;
+extern u8 *D_800C46F4; /* volume by pan (128) */
 extern u8 D_800C4750[];
 extern u8 D_800C47D0[];
 extern int D_800C4724;
-extern void *D_800C46F0; /* a block to free at shutdown */
+extern Dir *D_800C46F0; /* the bank, freed at shutdown */
 extern s8 D_800C473D;
 extern s8 D_800C473E;
 extern int D_800C4740;
-extern int D_800C470C;    /* distance where the volume starts to fall */
-extern int D_800C4710;    /* and where it reaches 0 */
-extern u8 D_800C4850[];   /* volume by distance (128) */
-extern int D_800C4708;    /* the master volume */
+extern int D_800C470C;  /* distance where the volume starts to fall */
+extern int D_800C4710;  /* and where it reaches 0 */
+extern u8 D_800C4850[]; /* volume by distance (128) */
+extern int D_800C4708;  /* the master volume */
+extern int D_800C4700;  /* 1: stereo */
+extern int D_800C4704;
 extern s8 D_800C9F58[24]; /* each voice's last key status */
 extern int D_800CA0F0;    /* voices playing */
 extern SoundSlot D_800CA0F8[30];
@@ -173,6 +185,7 @@ extern int D_800C471C;
 extern int D_800C4720;
 extern Dir *D_800C472C; /* the sound bank's directory */
 extern u8 *D_800C4744;  /* the bank's note records, 44 bytes each */
+extern u8 *D_800C4728;
 extern Voice D_800C9F70[24];
 
 /* A voice's bookkeeping. The loops over the voices only compile like the
@@ -188,6 +201,7 @@ void func_800118C4(int reserved);
 int func_80011924(int voice);
 int func_80011BA4(void);
 int func_80011E08(void);
+int func_80011E44(const char *name);
 int func_80011F84(void);
 int func_80011960(void);
 void func_80011A68(void);
@@ -205,8 +219,14 @@ void func_800A638C(char *s);
 void func_8001280C(SndVector *a, SndVector *b, int angle, int *out);
 void func_80013450(SndListener *l, SndVector *a, SndVector *b, SndVector *c, SndVector *d);
 u8 func_800128E8(int dist);
-void func_80012504(int a, int b, int c, int left, int right);
-void func_80012A88(int a, int vol, int pan, int c, int d);
+/* Starts a voice for a note; its number goes in sv->voice */
+s8 func_80012504(SlotVoice *sv, int a, int pitch, int left, int right);
+int func_8001295C(int a, int vol, int pitch, SlotVoice *sv);
+int func_80012AF0(u8 *note, int vol, int pitch, int *place, SlotVoice *sv);
+int func_80012C18(u32 handle, int vol, int pitch, SndVector *from, SndVector *at, int angle,
+                  int unkA, int flag);
+int func_80012A88(int a, int vol, int pan, int c, SlotVoice *d);
+int func_80012D38(u32 handle, int vol, int pan, int pitch, int unkA);
 int func_80012F7C(void);
 void func_800121C0(int mode);
 void func_80012E58(SoundSlot *slot);

@@ -232,7 +232,59 @@ int func_80011E08(void) {
     return 1;
 }
 
+#ifdef NON_MATCHING
+/* Equivalent; the original reads the four offsets before storing any and
+ * sets its constants before storing D_800C46FC: scheduling only */
+/* Loads the sound bank: relocates its directory, numbers the VAB's
+ * samples in SPU memory, sends them there and frees them. */
+/* Loads the sound bank: relocates its directory, numbers the VAB's
+ * samples in SPU memory, sends them there and frees them. */
+int func_80011E44(const char *name) {
+    Dir *dir = func_800A06AC(name, 0, 0);
+    u8 *vab;
+    u16 *p;
+    int n;
+    int addr;
+    int size;
+    int off;
+
+    if (dir->flags & 0x80) {
+        D_800C46FC |= 4;
+    } else {
+        D_800C46FC |= 2;
+    }
+    dir->notes += (u32)dir;
+    dir->entries = (DirEntry *)((u8 *)dir->entries + (u32)dir);
+    dir->names = (DirName *)((u8 *)dir->names + (u32)dir);
+    dir->records += (u32)dir;
+    D_800C4734 = vab = dir->records;
+    dir->samples += (u32)dir;
+    n = *(u16 *)(vab + 0x16);
+    off = *(u16 *)(vab + 0x12) * 0x200 + 0x820;
+    size = *(int *)(vab + 0xC) - off - 0x200;
+    p = (u16 *)(vab + off);
+    *(u16 **)(vab + 0x1C) = p;
+    addr = 0x202;
+    do {
+        int len = *p;
+
+        *p++ = addr;
+        addr += len;
+    } while (n-- != 0);
+    SpuSetTransferMode(0);
+    SpuSetTransferStartAddr(0x1010);
+    SpuRead(dir->samples, size);
+    SpuIsTransferCompleted(1);
+    dir = func_800B5730(dir, dir->samples - (u8 *)dir);
+    D_800C46F0 = dir;
+    D_800C472C = dir;
+    D_800C4744 = dir->notes;
+    D_800C4728 = dir->notes;
+    return 1;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_80011E44);
+#endif
 
 int func_80011F84(void) {
     func_80012F7C();
@@ -373,24 +425,135 @@ u8 func_800128E8(int dist) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_800128E8);
 #endif
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_8001295C);
+/* Plays a note on two voices, panned left and right, the second a little
+ * higher; returns the voices started. Only in stereo. */
+int func_8001295C(int a, int vol, int pitch, SlotVoice *sv) {
+    int r = 0;
 
-/* Plays with a volume and a pan (0 left, 127 right). */
-void func_80012A88(int a, int vol, int pan, int c, int d) {
-    int v = vol * D_800C4708;
+    if (D_800C4700 == 1) {
+        u8 *pan = D_800C46F4;
+        int v = vol * D_800C4708 * D_800C4704 >> 7;
 
-    func_80012504(d, a, c, v * D_800C46F4[127 - pan], v * D_800C46F4[pan]);
+        r = func_80012504(sv, a, pitch, v * pan[127 - 87], v * pan[87]);
+        r += (sv[1].voice =
+                  func_80012504(&sv[1], a, pitch * 1050 / 1000, v * pan[127 - 17], v * pan[17]));
+    }
+    return r;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_80012AF0);
+/* Plays with a volume and a pan (0 left, 127 right). */
+int func_80012A88(int a, int vol, int pan, int c, SlotVoice *d) {
+    int v = vol * D_800C4708;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_80012C18);
-
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_80012D38);
+    return func_80012504(d, a, c, v * D_800C46F4[127 - pan], v * D_800C46F4[pan]);
+}
 
 #ifdef NON_MATCHING
-/* Equivalent; the original keeps 0xFF in a saved register and jumps back
- * to the top of the outer loop */
+/* Equivalent; the original copies vol to its saved register first and
+ * loads D_800C4708 before the second multiplication: scheduling only */
+/* Plays a note placed in 3D (place: func_8001280C's angle and distance):
+ * the volume falls with the distance, the pan follows the angle. */
+int func_80012AF0(u8 *note, int vol, int pitch, int *place, SlotVoice *sv) {
+    u8 *pans = D_800C46F4;
+    u32 v = (u32)(vol * func_800128E8(place[1])) >> 7;
+    int pan;
+
+    if (*(u16 *)(note + 4) & 0x200) {
+        pan = 64;
+    } else {
+        pan = place[0] << 20 >> 20;
+        if (pan > 0x400) {
+            pan = 0x7FF - pan;
+        } else if (pan < -0x400) {
+            pan = -0x800 - pan;
+        }
+        pan = 64 - (pan >> 5);
+    }
+    if (D_800C471C) {
+        pan = D_800C4720;
+    }
+    {
+        int right = pans[127 - pan] * v * D_800C4708;
+        int left = pans[pan] * v * D_800C4708;
+
+        return func_80012504(sv, (int)note, pitch, left, right);
+    }
+}
+#else
+INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_80012AF0);
+#endif
+
+/* Plays a sound's notes, placed at `at` as heard from `from`; returns
+ * whether any voice started. */
+int func_80012C18(u32 handle, int vol, int pitch, SndVector *from, SndVector *at, int angle,
+                  int unkA, int flag) {
+    int n = 0;
+    SoundSlot *slot = func_80013348(handle);
+
+    if (slot) {
+        int place[2];
+        u8 *note = D_800C4744;
+        int i = slot->unk0;
+        int again = slot->unk4 != 0;
+
+        func_8001280C(from, at, angle, place);
+        do {
+            SlotVoice *sv;
+
+            note += i * 44;
+            sv = &slot->voices[n];
+            sv[0].unk1 = again;
+            sv[1].unk1 = again;
+            *(short *)(note + 0xA) = unkA;
+            *(u16 *)(note + 4) |= flag;
+            n += func_80012AF0(note, vol, pitch, place, sv);
+            *(u16 *)(note + 4) &= ~flag;
+            i = note[3];
+        } while (i != 0xFF);
+        slot->unk4 = n;
+    }
+    return n != 0;
+}
+
+/* Plays a sound's notes: in stereo on two voices each where the note
+ * asks for it, else panned; returns whether any voice started. */
+/* Plays a sound's notes: in stereo on two voices each where the note
+ * asks for it, else panned; returns whether any voice started. */
+int func_80012D38(u32 handle, int vol, int pan, int pitch, int unkA) {
+    int n = 0;
+    SoundSlot *slot = func_80013348(handle);
+
+    if (slot) {
+        u8 *note = D_800C4744;
+        int again = slot->unk4 != 0;
+        int i = slot->unk0;
+
+        do {
+            u8 end = 0xFF; /* in the loop: kept in a register */
+            SlotVoice *sv;
+
+            note += i * 44;
+            sv = &slot->voices[n];
+            sv[0].unk1 = again;
+            sv[1].unk1 = again;
+            *(short *)(note + 0xA) = unkA;
+            if (*(u16 *)(note + 4) & 0x100) {
+                if (!again) {
+                    n += func_8001295C((int)note, vol, pitch, sv);
+                }
+            } else {
+                n += func_80012A88((int)note, vol, pan, pitch, sv);
+            }
+            i = note[3];
+            if (i == end) {
+                break;
+            }
+        } while (1);
+        slot->unk4 = n;
+    }
+    return n != 0;
+}
+
 /* Keys off the voices of a sound, and those of the notes chained after it
  * while they're marked to follow. */
 void func_80012E58(SoundSlot *slot) {
@@ -398,21 +561,20 @@ void func_80012E58(SoundSlot *slot) {
     int i;
 
     while (1) {
+        u8 end = 0xFF; /* in the loop: kept in a register */
+
         for (i = 0; i < slot->unk4; i++) {
             func_80011924(slot->voices[i].voice);
         }
         if (!(*(u16 *)(note + 4) & 1)) {
             break;
         }
-        if (note[3] == 0xFF) {
+        if (note[3] == end) {
             break;
         }
         note += note[3] * 44;
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_00", func_80012E58);
-#endif
 
 int func_80012F40(u32 handle) {
     int r = 0;
