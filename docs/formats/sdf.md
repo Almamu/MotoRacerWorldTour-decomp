@@ -1034,7 +1034,7 @@ level: `PAUSEWITHRESTART` `PAUSEWITHOUTRESTART` `PAUSERETIRE`
 |  8 | L+0x3E0      | runtime effect list head (0 in the files; nodes: next at +0x94, active at +0xB0; 0x800925A8 update, 0x80092684 draw) |
 |  9 | L+0x3E4      | rider rig and appearance, see below |
 | 10 | L+0x3E8      | first-person (cockpit) view: +0x00 enabled (0 in FSt), +0x04/+0x08 eye offset rotated by the bike's matrix (4200, 500 on road; 6000, −800 off-road), +0x0C pitch (s16, −200 ≈ −17.6°), +0x10 speed-needle gain (needle angle = speed × gain × 16 >> 16), +0x18 / +0x24 rotation axes of the rev and speed needles, +0x3C smoothed rev-needle angle (runtime), +0x44 → the **cockpit model**: a rig with `Corps` (bodywork), `Guidon` (handlebar), `Aiguille1/2` (needles), `Embrayage`/`Frein` (clutch/brake levers), grips, hands and fingers. Each frame 0x80033E4C writes the speed digits (texture-atlas patching), rotates the needles, blinks a warning light and poses the levers and hands; +0x14, +0x30…+0x38, +0x40 not read on that path |
-| 11 | 0x800C5E0C   | rider animations (see Rider animations): `{AnimRec*, Triple* (3 × 16 bytes, purpose unknown), char* path}` (the `.san` source path, e.g. `Data\Bikes\speed\Anims\C_dummy.san`; the data is in the level) |
+| 11 | 0x800C5E0C   | the rider animation files: a linked list of 16-byte nodes `{AnimRec*, next*, char* source path, 0xCD}`, one per `.san` file the exporter read (e.g. `Data\Bikes\speed\Anims\c_glisg1.san` → `C_GLISG1`; 18 nodes on road levels, 28 in supercross), root 11 being the first node; only the loader uses it (the game reaches the animations through root 9) |
 | 12 | 0x800C5E10   | an object handled by 0x80020200–0x80020AB0: 200-entry ring buffer of 24-byte entries plus up to 1600 56-byte records in a buffer it's given (skid marks / decals?) |
 | 13 | 0x800C7F28   | sound state (runtime): 0x988 bytes of channel slots (0x40 each), then +0x988 → s16[112] sound → slot map; reset 0x8006CA50, play 0x8006CA84, update 0x8006DF68. Zeroed in RAM, the race freezes at the countdown |
 | 14 | 0x800C9F30   | HUD sprite hash list |
@@ -1207,7 +1207,10 @@ with poses 14 and 13 (slight lean either side), with a larger lean poses
 at rider +0x104 (the start); pose 15 is blended in over a 1000 ms timer
 (+0x110) once a race-time condition holds, and blends back towards pose 2
 (not observed: zeroing it changes nothing at the start, in crashes, or at a
-won or lost single-player arcade finish).
+won or lost single-player arcade finish). The trigger in 0x80021154 is
+`rider+0x110 == 0 && rider[0x44] * 200 + 2600 < clock (0x800D60FC, ms) &&
+rider[1] == 1`; in an arcade race `rider[1]` is 2 for every rider, and
+forcing it to 1 in RAM still shows nothing, so another state blocks it.
 
 The rider **models** (+0x290) are rigs: `{s16 part count, …, +0x0A s16
 type (draw-function pair from 0x800C8D34), …, +0x28 Part** parts}`; their 31
@@ -1296,5 +1299,5 @@ a flag bit: an 8-bit value, a 16-bit button mask (1 = accelerate), another
 
 ## Next steps
 
-- Riders: pose 15's trigger (another mode?); root 11's Triple table.
+- Riders: what state enables pose 15.
 
