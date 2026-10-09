@@ -546,3 +546,90 @@ def write_track(sdf, old, new):
             p += 4
     sdf.data = bytes(data)
     return ng, nl
+
+
+# --- level variants ------------------------------------------------------------
+
+def variant_files(source):
+    """The other level files of the same track: <code>_PS, <code>2_PS (two
+    players), <code>B_PS (500 cc), <code>B2_PS, found next to `source`."""
+    p = Path(source)
+    stem = p.stem
+    if not stem.lower().endswith("_ps"):
+        return []
+    code = stem[:-3]
+    if code.endswith("2"):
+        code = code[:-1]
+    if code.endswith("B"):
+        code = code[:-1]
+    names = {f.name.lower(): f for f in p.parent.iterdir()}
+    out = []
+    for v in (code, code + "2", code + "B", code + "B2"):
+        f = names.get(f"{v}_ps.sdf".lower())
+        if f is not None and f.resolve() != p.resolve():
+            out.append(f)
+    return out
+
+
+def _item_sig(item):
+    return (tuple(map(tuple, item.verts)),
+            tuple((tuple(f.idx), f.type, tuple(f.uv) if f.uv else None, f.tpage, f.clut,
+                   tuple(f.colors) if f.colors else None) for f in item.faces),
+            tuple(item.lines))
+
+
+def variant_edits(old_base, old_v, items, ground, objects, collision, track):
+    """The part of an edit (new states relative to `old_base`) that applies
+    to a variant: only structures that were identical in both files.
+    Returns (items, ground, objects, collision, track, skipped) where
+    skipped lists what was left out."""
+    skipped = []
+    v_items = {}
+    for i, new in (items or {}).items():
+        if i in old_v.items and _item_sig(old_v.items[i]) == _item_sig(old_base.items[i]):
+            v_items[i] = new
+        elif _item_sig(new) != _item_sig(old_base.items[i]):
+            skipped.append(f"item {i}")
+    v_ground = None
+    if ground is not None and old_v.ground is not None:
+        if old_v.ground.verts == old_base.ground.verts:
+            v_ground = ground
+        elif ground.verts != old_base.ground.verts:
+            skipped.append("ground")
+    v_objects = []
+    if objects:
+        by_key = {}
+        for p in old_v.objects:
+            by_key.setdefault((p.name, tuple(p.matrix), tuple(p.t)), []).append(p.object)
+        base_key = {p.object: (p.name, tuple(p.matrix), tuple(p.t)) for p in old_base.objects}
+        for o in objects:
+            cands = by_key.get(base_key.get(o.object))
+            if cands:
+                v_objects.append(Placed(cands.pop(0), o.name, o.item, o.matrix, o.t))
+            elif (tuple(o.matrix), tuple(o.t)) != base_key.get(o.object, (None, None, None))[1:]:
+                skipped.append(f"object {o.name}")
+    v_collision = None
+    if collision is not None and old_v.collision is not None:
+        same = [c.corners for c in old_v.collision] == [c.corners for c in old_base.collision]
+        if same:
+            v_collision = collision
+        elif any(n.corners != o.corners for n, o in zip(collision, old_base.collision)):
+            skipped.append("collision")
+    v_track = None
+    if track is not None and old_v.track is not None:
+        import copy
+        if [gl.gates for gl in old_v.track] == [gl.gates for gl in old_base.track]:
+            v_track = copy.deepcopy(track)
+            for nl, ob, ov in zip(v_track, old_base.track, old_v.track):
+                if len(ob.lines) != len(ov.lines):
+                    nl.lines = copy.deepcopy(ov.lines)   # different set of AI lines: keep the variant's
+                    continue
+                for j, (lb, lv) in enumerate(zip(ob.lines, ov.lines)):
+                    if lb != lv:
+                        # the variant has its own racing line (e.g. 500 cc): keep it,
+                        # or let a gate-count change resample it from its own data
+                        if nl.orig is None or nl.orig == list(range(len(ob.gates))):
+                            nl.lines[j] = copy.deepcopy(lv)
+        elif any(n.gates != o.gates for n, o in zip(track, old_base.track)):
+            skipped.append("gates")
+    return v_items, v_ground, v_objects, v_collision, v_track, skipped

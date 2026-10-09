@@ -258,13 +258,24 @@ def add_texture(bank_vrm, used, rgba):
         raise ValueError("no free palette slot in the texture bank")
     cx, cy = cl
     used[cy, cx:cx + 16] = True
-    idx, words = quantize(rgba)
-    padded = np.zeros((h, vw * 4), np.uint16)
-    padded[:, :w] = idx
-    packed = (padded[:, 0::4] | padded[:, 1::4] << 4 | padded[:, 2::4] << 8 | padded[:, 3::4] << 12).astype(np.uint16)
-    bank_vrm.vram[y:y + h, x:x + vw] = packed
-    bank_vrm.vram[cy, cx:cx + 16] = np.array(words, np.uint16)
     vx, vy = BANK_X + x, BANK_Y + y
     tpage = (vx // 64) | ((vy // 256) << 4)      # 4-bit colour, no blending
     clut = ((BANK_X + cx) // 16) | ((BANK_Y + cy) << 6)
-    return {"tpage": tpage, "clut": clut, "u": (vx % 64) * 4, "v": vy % 256, "w": w, "h": h}
+    t = {"tpage": tpage, "clut": clut, "u": (vx % 64) * 4, "v": vy % 256, "w": w, "h": h}
+    if bank_vrm is not None:
+        write_texture(bank_vrm, t, rgba)
+    return t
+
+
+def write_texture(bank_vrm, t, rgba):
+    """Write a texture placed by add_texture (t) into another bank too."""
+    idx, words = quantize(rgba)
+    h, w = idx.shape
+    vw = -(-w // 4)
+    x = (t["tpage"] & 0xF) * 64 - BANK_X + t["u"] // 4
+    y = ((t["tpage"] >> 4) & 1) * 256 - BANK_Y + t["v"]
+    padded = np.zeros((h, vw * 4), np.uint16)
+    padded[:, :w] = idx
+    bank_vrm.vram[y:y + h, x:x + vw] = padded[:, 0::4] | padded[:, 1::4] << 4 | padded[:, 2::4] << 8 | padded[:, 3::4] << 12
+    cx, cy = (t["clut"] & 0x3F) * 16 - BANK_X, (t["clut"] >> 6) - BANK_Y
+    bank_vrm.vram[cy, cx:cx + 16] = np.array(words, np.uint16)

@@ -104,6 +104,22 @@ lines after re-importing. On Stade de France, Barcelona and Reygades the
 game also uses hard-coded gate numbers (0x46, 0xE8, 0x1CD) for the branch
 crossings, so inserting or removing gates before those points breaks them.
 
+**Level variants.** A track has up to four level files: `<code>_PS`,
+`<code>2_PS` (two players, split screen), `<code>B_PS` (500 cc) and
+`<code>B2_PS`; the 250 cc ones load `<code>.Vrm`, the 500 cc ones
+`<code>B.Vrm`. Export applies the same edit to the variants found next to
+the source and writes them next to the output under their own names, for
+every structure that was identical to the source's: draw items, ground,
+placements (matched by name and position), collision, gates (shared by
+all variants), rider rig and animations (matched by name). The variants'
+own racing lines (500 cc and two-player lines differ) are kept, or
+resampled from their own data when the gate count changes. What differs
+(e.g. the 500 cc bike, two-player Barcelona's simplified items) is left
+alone and logged. New textures are placed where every bank involved is
+free and written into each (`Sac.Vrm` and `SacB.Vrm`). Checked: the new
+gantry banner reaches all four Sachsenring files and both banks, and the
+disc plays.
+
 Free space for new textures is limited: a bank is mostly used. On
 Sachsenring about 5% is free, mainly two blocks in the first texture page
 (room for 256 × 71 and 256 × 40 four-bit texels); `vram_usage.py <bank>

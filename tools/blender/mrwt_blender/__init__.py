@@ -725,56 +725,87 @@ def bank_scenes(vrm_path, source):
     return out or [Path(source)]
 
 
-def allocate_textures(root, items, out, log):
+def allocate_textures(root, items, out, log, scene_files):
     """Faces with your own image materials: put each image into free texture
-    bank VRAM (4-bit, 16 colours), point the faces at it and write the bank
-    next to `out`. An image keeps its place across exports (stored on the
-    material as mrwt_alloc) while its size doesn't change."""
+    bank VRAM (4-bit, 16 colours) at a place that is free in every bank the
+    scene files load (e.g. Sac.Vrm and the 500 cc SacB.Vrm), point the faces
+    at it and write the banks next to `out`. An image keeps its place across
+    exports (stored on the material as mrwt_alloc) while its size doesn't
+    change."""
     new_faces = [f for it in items.values() for f in it.faces if getattr(f, "new_texture", None)]
     if not new_faces:
         return
-    if "mrwt_vrm" not in root:
-        raise ValueError("new textures need the scene's texture bank (import it with one)")
     import vram_usage
     import vrm as V
     from sdf import parse
-    bank_path = Path(root["mrwt_vrm"])
-    out_bank = Path(out).parent / bank_path.name
-    src_bank = out_bank if out_bank.exists() else bank_path
-    bank = V.Vrm(src_bank.read_bytes())
-    scenes = [parse(p.read_bytes()) for p in bank_scenes(bank_path, root["mrwt_source"])]
-    used = vram_usage.usage(src_bank.read_bytes(), scenes)
+    bank_paths = []
+    for f in scene_files:
+        b = find_vrm(f)
+        if b is not None and Path(b).resolve() not in [p.resolve() for p in bank_paths]:
+            bank_paths.append(Path(b))
+    if not bank_paths:
+        raise ValueError("new textures need the scene's texture bank")
+    banks, used = {}, None
+    for bp in bank_paths:
+        out_bank = Path(out).parent / bp.name
+        src = out_bank if out_bank.exists() else bp
+        banks[bp.name] = V.Vrm(src.read_bytes())
+        loaders = [parse(f.read_bytes()) for f in scene_files
+                   if find_vrm(f) is not None and Path(find_vrm(f)).resolve() == bp.resolve()]
+        u = vram_usage.usage(src.read_bytes(), loaders)
+        used = u if used is None else (used | u)
     placed = {}
     for name in sorted({f.new_texture for f in new_faces}):
         mat = bpy.data.materials[name]
-        img = material_image(mat)
-        rgba = image_rgba(img)
+        rgba = image_rgba(material_image(mat))
         h, w = rgba.shape[:2]
         if w > 256 or h > 256:
             raise ValueError(f"{name}: textures can be at most 256 x 256 (is {w} x {h})")
         prev = mat.get("mrwt_alloc")
         if prev is not None and (prev["w"], prev["h"]) == (w, h):
-            t = dict(prev)
-            idx, words = vram_usage.quantize(rgba)
-            vw = -(-w // 4)
-            x, y = (t["tpage"] & 0xF) * 64 - vram_usage.BANK_X + t["u"] // 4, ((t["tpage"] >> 4) & 1) * 256 + t["v"]
-            padded = np.zeros((h, vw * 4), np.uint16)
-            padded[:, :w] = idx
-            bank.vram[y:y + h, x:x + vw] = padded[:, 0::4] | padded[:, 1::4] << 4 | padded[:, 2::4] << 8 | padded[:, 3::4] << 12
-            cx, cy = (t["clut"] & 0x3F) * 16 - vram_usage.BANK_X, t["clut"] >> 6
-            bank.vram[cy, cx:cx + 16] = np.array(words, np.uint16)
+            t = {k: prev[k] for k in ("tpage", "clut", "u", "v", "w", "h")}
         else:
-            t = vram_usage.add_texture(bank, used, rgba)
+            t = vram_usage.add_texture(None, used, rgba)
             mat["mrwt_alloc"] = t
+        for bank in banks.values():
+            vram_usage.write_texture(bank, t, rgba)
         placed[name] = t
-        log.append(f"texture {name}: {w}x{h} at tpage {t['tpage']:04x} clut {t['clut']:04x} uv ({t['u']}, {t['v']})")
+        log.append(f"texture {name}: {w}x{h} at tpage {t['tpage']:04x} clut {t['clut']:04x} "
+                   f"uv ({t['u']}, {t['v']}) in {', '.join(banks)}")
     for f in new_faces:
         t = placed[f.new_texture]
         f.tpage, f.clut = t["tpage"], t["clut"]
         f.uv = [(min(255, t["u"] + round(u * (t["w"] - 1))), min(255, t["v"] + round((1 - v) * (t["h"] - 1))))
                 for u, v in f.uv] if f.uv else [(t["u"], t["v"])] * len(f.idx)
-    out_bank.write_bytes(bank.to_bytes())
-    log.append(f"texture bank -> {out_bank}")
+        f.new_texture = None
+    for name, bank in banks.items():
+        (Path(out).parent / name).write_bytes(bank.to_bytes())
+        log.append(f"texture bank -> {Path(out).parent / name}")
+
+
+def rider_for_variant(rider, base_path, variant_path):
+    """The rider edit for a variant file, if its rig is the same as the base's."""
+    if not rider:
+        return None, False
+    import sdf_rig
+    from sdf import parse
+    a, b = parse(Path(base_path).read_bytes()), parse(Path(variant_path).read_bytes())
+    ra, rb = sdf_rig.read(a), sdf_rig.read(b)
+    same = ra.vertices == rb.vertices and [(p.rotations, p.translations) for p in ra.poses] == \
+        [(p.rotations, p.translations) for p in rb.poses]
+    anims_a = {x.record: x for x in sdf_rig.read_anims(a)}
+    anims_b = {x.name: x for x in sdf_rig.read_anims(b)}
+    out = dict(rider)
+    if not same:
+        out["vertices"], out["poses"] = None, {}
+    out["anims"] = {}
+    for rec, keys in (rider.get("anims") or {}).items():
+        xa, xb = anims_a.get(rec), anims_b.get(anims_a[rec].name) if rec in anims_a else None
+        if xb is not None and [(t, k.rotations, k.translations) for t, k in xa.keys] == \
+                [(t, k.rotations, k.translations) for t, k in xb.keys]:
+            out["anims"][xb.record] = [sdf_rig.Pose(k.index, n.rotations, n.translations, k.record)
+                                        for (_, k), n in zip(xb.keys, keys)]
+    return out, same
 
 
 def find_root(context):
@@ -787,11 +818,17 @@ def find_root(context):
     return roots[0] if len(roots) == 1 else None
 
 
-def export_scene(root, out, base=None):
+def export_scene(root, out, base=None, variants=True):
+    """Write the edited scene to `out`. With `variants`, the same edit also
+    goes to the track's other level files found next to the source (two
+    players, 500 cc: <code>2_PS, <code>B_PS, <code>B2_PS), written next to
+    `out` under their own names, for every structure that was identical to
+    the source's; new textures go into every bank those files load."""
     bpy.context.view_layer.update()  # make matrix_world current after scripted moves
     s = root.get("mrwt_scale", 0.01)
+    source = Path(base or root["mrwt_source"])
     items, ground, objects, collision = {}, None, [], None
-    old = sc.load(base or root["mrwt_source"])
+    old = sc.load(source)
     track = track_from_blender(root, s, old.track) if old.track else None
     for ob in root.all_objects:
         if "mrwt_object" in ob:
@@ -806,10 +843,26 @@ def export_scene(root, out, base=None):
             ground = mesh_item(me, s, ob.matrix_world)
         if me.get("mrwt_collision"):
             collision = collision_faces(ob, s)
-    rider = rider_from_blender(bpy.context, root, base or root["mrwt_source"])
+    rider = rider_from_blender(bpy.context, root, source)
+    others = sc.variant_files(source) if variants else []
     log = []
-    allocate_textures(root, items, out, log)
-    return log + sc.save(base or root["mrwt_source"], out, items, ground, objects, collision, track, rider)
+    allocate_textures(root, items, out, log, [source] + others)
+    log += sc.save(source, out, items, ground, objects, collision, track, rider)
+    for v in others:
+        old_v = sc.load(v)
+        v_items, v_ground, v_objects, v_collision, v_track, skipped = sc.variant_edits(
+            old, old_v, items, ground, objects, collision, track)
+        v_rider, _ = rider_for_variant(rider, source, v)
+        v_log = sc.save(v, Path(out).parent / v.name, v_items, v_ground, v_objects, v_collision, v_track, v_rider)
+        log += [f"{v.name}: {line}" for line in v_log]
+        changed = " ".join(log)
+        skipped = [x for x in skipped
+                   if (x.startswith("item ") and f"{x}:" in changed) or (x == "ground" and "ground:" in changed)
+                   or (x == "collision" and "collision:" in changed) or (x == "gates" and "track:" in changed)
+                   or (x.startswith("object ") and "objects:" in changed)]
+        if skipped:
+            log.append(f"{v.name}: differs from {source.name} in {', '.join(skipped)}, not applied there")
+    return log
 
 
 # --- operators ---------------------------------------------------------------
