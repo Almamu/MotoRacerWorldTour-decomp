@@ -380,7 +380,7 @@ static inline int CameraLod(Vector3 *pos) {
 
 /* Draws the object's model, its level of detail chosen by its distance to
  * the camera. */
-void func_80016A8C(CobjetModel *o, int arg) {
+void func_80016A8C(CobjetModel *o, MATRIX *m) {
     Vector3 pos;
     int d;
     int lod;
@@ -400,7 +400,7 @@ void func_80016A8C(CobjetModel *o, int arg) {
             D_800CBCA4 = o->m_54;
             D_800CBCA0 = -1;
         }
-        func_8007C354(model, arg);
+        func_8007C354(model, m);
     }
 }
 #else
@@ -482,7 +482,162 @@ void func_80016C3C(CobjetModel *o, MATRIX *m) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02b", func_80016C3C);
 #endif
 
+#ifdef NON_MATCHING
+/* Equivalent; the original recomputes the stack locals' addresses for
+ * each call (as func_80016268), so it has one saved register fewer */
+/* Draws an object and its tree: its matrix put on the matrix stack
+ * (composed with its parent's, or the camera's for a camera-attached
+ * one), the object drawn as its flags say, then its next sibling and its
+ * first child. Returns whether it was drawn. */
+int func_80016E34(CobjetModel *o, MATRIX *parent, int hidden) {
+    int r = 0;
+    int flags;
+    MATRIX *mat;
+    int draw;
+    int vis;
+
+    D_800C4944++;
+    flags = o->m_04;
+    if (!hidden) {
+        if (!(flags & 2) && (!o->m_40 || (!o->m_40->m_first && !o->m_40->m_next))) {
+            o->m_46 = 1;
+        } else if ((flags & 0x300) == 0x100 || (flags & 0x100000)) {
+            o->m_46 = 1;
+        }
+    }
+    if (!o->m_46) {
+        Camera *c;
+
+        if ((flags & 0x20000) && (c = D_800C8864)) {
+            MATRIX *m = o->m_matp;
+
+            mat = &D_800CA350[D_800C4944];
+            {
+                MATRIX tmp;
+
+                func_80098674(&c->m_20, m, &tmp);
+                func_8009887C(m->t, tmp.t);
+                func_800997D0(tmp.t, c->m_20.t);
+                *mat = tmp;
+            }
+            {
+                Vector3 pos;
+                Vector3 v;
+
+                c = D_800C8864;
+                func_80098768(&c->m_20, o->m_matp->t, (long *)&v);
+                func_800997D0((long *)&v, c->m_20.t);
+                func_80099898(&pos, &D_800C8864->m_pos, &v);
+                *(Vector3 *)mat->t = pos;
+            }
+            flags |= 0x12;
+            draw = 0;
+        } else {
+            MATRIX *m = o->m_matp;
+
+            if (parent) {
+                MATRIX tmp;
+
+                mat = &D_800CA350[D_800C4944];
+                func_80098674(parent, m, &tmp);
+                func_8009887C(m->t, tmp.t);
+                func_800997D0(tmp.t, parent->t);
+                *mat = tmp;
+            } else {
+                mat = m;
+            }
+            draw = 0;
+        }
+        if (((flags & 0x12) == 0x12 || (flags & 0x10000000)) && !hidden) {
+            draw = 1;
+        }
+        vis = 0;
+        if (o->m_38 && o->m_3D != -1 && o->m_38[o->m_3D] != -1) {
+            vis = !(flags & 0x2000000);
+        }
+        if (draw) {
+            r = 1;
+            if (flags & 0x40) {
+                func_80016C3C(o, mat);
+            } else if (vis) {
+                if (flags & 0x20) {
+                    if (flags & 0x200000) {
+                        int lod = o->m_3C > 0 ? 0 : o->m_3C - 1;
+
+                        o->m_3D = lod;
+                        func_80079DC0(D_800C8C68->m_items[o->m_38[lod]], mat);
+                    } else if (flags & 0x400) {
+                        Vector3 pos = *(Vector3 *)mat->t;
+
+                        *(Vector3 *)D_800C8864->m_C0.t = pos;
+                        func_80016A8C(o, &D_800C8864->m_C0);
+                    } else if (flags & 0x8000000) {
+                        int lod = o->m_3C > 0 ? 0 : o->m_3C - 1;
+
+                        o->m_3D = lod;
+                        func_8007A198(D_800C8C68->m_items[o->m_38[lod]], &D_800C8864->m_C0);
+                    } else {
+                        Vector3 pos = *(Vector3 *)mat->t;
+
+                        *(Vector3 *)D_800C8864->m_A0.t = pos;
+                        func_80016A8C(o, &D_800C8864->m_A0);
+                    }
+                } else {
+                    D_800C88FC = o->m_47 << 24;
+                    func_80016A8C(o, mat);
+                }
+            }
+        }
+        {
+            Vector3 pos = *(Vector3 *)mat->t;
+
+            o->m_pos = pos;
+        }
+        if (o->m_40) {
+            CobjetModel *child;
+
+            if (o->m_40->m_next) {
+                func_80016E34((CobjetModel *)o->m_40->m_next, parent, hidden);
+            }
+            child = (CobjetModel *)o->m_40->m_first;
+            if (child) {
+                if (flags & 0x1000) {
+                    MATRIX save = *child->m_matp;
+                    Vector3 pos;
+                    Cobjet *g;
+
+                    if (child->m_40 && (g = child->m_40->m_next) && g->m_matp) {
+                        Vector3 v;
+
+                        pos = child->m_pos;
+                        func_80099898(&v, &o->m_68, &pos);
+                        *(Vector3 *)g->m_matp->t = v;
+                    }
+                    pos = *(Vector3 *)child->m_matp->t;
+                    *child->m_matp = *o->m_matp;
+                    child->m_matp->t[0] = pos.vx;
+                    child->m_matp->t[1] = pos.vy;
+                    child->m_matp->t[2] = pos.vz;
+                    func_80016E34(child, mat, hidden);
+                    pos = *(Vector3 *)child->m_matp->t;
+                    *child->m_matp = save;
+                    child->m_matp->t[0] = pos.vx;
+                    child->m_matp->t[1] = pos.vy;
+                    child->m_matp->t[2] = pos.vz;
+                } else {
+                    func_80016E34(child, mat, hidden);
+                }
+            }
+        }
+        o->m_46 = 1;
+        o->m_04 &= ~0x10;
+    }
+    D_800C4944--;
+    return r;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02b", func_80016E34);
+#endif
 
 /* Scales the parts that the list's objects of a kind use. */
 void func_80017574(CobjetList *l, CobjetPartList *parts, int a, int b, int kind) {

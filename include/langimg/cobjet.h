@@ -65,7 +65,7 @@ public:
     CobjetTree *m_40;
     s8 m_44;
     u8 m_45;
-    u8 m_46;
+    s8 m_46; // drawn this frame
     u8 m_47;
     int m_color; // 0x48
     CobjetLink *m_links;
@@ -81,6 +81,8 @@ class CobjetModel : public Cobjet {
 public:
     int m_54;    // the texture page, or 0 for the prim's own?
     int *m_prim; // 0x58: flags (& 7: its kind), then the page
+    u8 m_5C[0xC];
+    Vector3 m_68; // an offset for the child's child's position
 };
 
 // The camera's projection
@@ -95,9 +97,14 @@ struct CameraLens {
 
 // The camera
 struct Camera {
-    u8 m_00[0x60];
+    u8 m_00[0x20];
+    MATRIX m_20;
+    u8 m_40[0x20];
     MATRIX m_view; // 0x60
-    u8 m_80[0x78];
+    u8 m_80[0x20];
+    MATRIX m_A0;
+    MATRIX m_C0;
+    u8 m_E0[0x18];
     Vector3 m_pos; // 0xF8
     u8 m_104[0x38];
     CameraLens *m_lens; // 0x13C
@@ -154,7 +161,7 @@ void *memset(void *p, int c, size_t n);
 void func_80016268(Cobjet *o, SVECTOR *rot, Vector3 *pos);
 void func_80016434(Cobjet *o, SVECTOR *rot, Vector3 *pos);
 void func_80016600(Cobjet *o, SVECTOR *rot, Vector3 *pos);
-void func_80016A8C(CobjetModel *o, int arg);
+void func_80016A8C(CobjetModel *o, MATRIX *m);
 void func_80016C3C(CobjetModel *o, MATRIX *m);
 extern Camera *D_800C8864;
 extern int D_800C8900;
@@ -162,7 +169,15 @@ extern ModelTable *D_800C8C68;
 extern int D_800CBCA0;
 extern int D_800CBCA4;
 Vector3 *func_800998D0(Vector3 *dst, Vector3 *a, Vector3 *b); /* a - b */
-void func_8007C354(int *model, int arg);
+void func_8007C354(int *model, MATRIX *m);
+int func_80016E34(CobjetModel *o, MATRIX *parent, int hidden);
+extern int D_800C4944;      // the matrix stack's depth
+extern MATRIX D_800CA350[]; // the matrix stack
+extern int D_800C88FC;
+void func_80098768(MATRIX *m, long *in, long *out);
+void func_80099898(Vector3 *out, Vector3 *a, Vector3 *b);
+void func_80079DC0(int *model, MATRIX *m);
+void func_8007A198(int *model, MATRIX *m);
 void func_80018AEC(int *prim, int page, int x, int y);
 void func_80019114(int *prim, int page, int x, int y);
 void func_8001889C(MATRIX *m, SVECTOR *rot);              // a rotation matrix
