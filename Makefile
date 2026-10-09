@@ -135,8 +135,9 @@ sdk: compare
 clean:
 	rm -rf $(BUILD)
 
-# Keep the ELFs (tools/diff_func.py and tools/chunks.py read them).
-.SECONDARY: $(foreach t,$(TARGETS),$($(t)_ELF))
+# Keep every intermediate file: the ELFs (tools/diff_func.py and
+# tools/chunks.py read them) and the objects make sdk links again.
+.SECONDARY:
 
 # The ELF links whatever objects the linker script lists; it is
 # re-evaluated after the script is (re)generated.
