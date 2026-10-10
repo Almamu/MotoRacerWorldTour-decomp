@@ -58,12 +58,39 @@ struct Mgr46 {
     u8 m_980[8];
     short *m_988;
 };
+// A sound's definition: its samples and the spreads of its values
 struct Def46 {
-    u8 m_00[0x2E];
-    u16 m_2E;
-    u8 m_30[0xC];
+    u8 m_00[8];
+    u16 *m_08; // the samples
+    s8 m_0C;   // how many
+    s8 m_0D;   // the pan
+    s8 m_0E;   // its spread
+    u8 m_0F;
+    int m_10;
+    int m_14;
+    int m_18;
+    int m_1C;
+    u8 m_20[0xE];
+    u16 m_2E; // flags
+    short m_30;
+    short m_32;
+    u8 m_34[2];
+    u16 m_36;
+    u8 m_38[4];
     short m_3C;
     short m_3E;
+};
+// A bank of definitions, played in turn
+struct Bank46 {
+    int m_00;
+    Def46 **m_04;
+};
+struct Vec46 {
+    int vx, vy, vz;
+};
+struct Time46 {
+    int m_t : 30;
+    u32 m_f : 2;
 };
 // A voice's attributes, as func_800144B8 takes them
 struct Attr46 {
@@ -78,17 +105,26 @@ struct Attr46 {
 };
 // A playing voice
 struct Voice46 {
-    u8 m_00[4];
+    Bank46 *m_00;
     Def46 *m_04;
-    u8 m_08[6];
-    short m_0E;
-    int m_10; // the voice, or -1
-    u8 m_14[0xC];
+    u8 m_08[4];
+    short m_0C; // the bank's next
+    short m_0E; // the sample
+    int m_10;   // the voice, or -1
+    int m_14;   // when it started
+    int m_18;
+    int m_1C;
     short m_20;
-    u8 m_22[2];
+    short m_22;
     u16 m_24;
-    u8 m_26[4];
+    short m_26;
+    u8 m_28;
+    s8 m_29;
     s8 m_2A;
+    u8 m_2B;
+    int m_2C;
+    int m_30;
+    Vec46 m_34;
 };
 
 extern Mgr46 *D_800C7F28;
@@ -116,6 +152,27 @@ void func_8006D388(Mgr46 *m, int a);
 void func_8006D420(Mgr46 *m, int k);
 void func_8006D6C8(Voice46 *v);
 void func_8006D748(Voice46 *v);
+void func_8006D4B0(Voice46 *v);
+// What a bike's sounds read
+struct Ride46 {
+    u8 m_00[0x110];
+    int m_110; // the speed
+    u8 m_114[0x44];
+    s8 m_158;
+};
+struct Bike46 {
+    u8 m_00[0x30];
+    Ride46 *m_30;
+    u8 m_34[0x155];
+    s8 m_189;
+};
+extern int D_800CB5D0; // the game's mode
+extern short D_800C8330[], D_800C8340[], D_800C8350[];
+int func_80063A30(Ride46 *r);
+void func_80014368(u8 *w, int v, int vol);
+void func_8006E144(Snd46 *s, Bike46 *b);
+int func_800B6318(void); // rand
+extern Time46 D_800D6124;
 void func_8006D7E4(Voice46 *v);
 void func_8006F21C(Ent46 *e);
 
@@ -133,6 +190,12 @@ void func_8006E0FC(Snd46 *s);
 void func_8006EA48(Snd46 *s);
 void func_8006F1E0(Ent46 *e);
 void func_8006F270(Ent46 *e);
+}
+
+static inline void VecZero46(Vec46 *v) {
+    v->vx = 0;
+    v->vy = 0;
+    v->vz = 0;
 }
 
 // A voice stopped, if there is one
@@ -170,7 +233,69 @@ void func_8006D420(Mgr46 *m, int k) {
     }
 }
 
+/* A voice set up from its bank's next definition, its values spread at
+ * random. */
+#ifdef NON_MATCHING
+// Registers: the definition and the running value swap $s0 and $s1
+void func_8006D4B0(Voice46 *v) {
+    Def46 *d = v->m_04;
+
+    v->m_10 = -1;
+    v->m_2A = 1;
+    v->m_28 = 0;
+    v->m_20 = 0x1000;
+    v->m_14 = D_800D6124.m_t;
+    if (d) {
+        u16 *p;
+        int x;
+
+        d = v->m_00->m_04[v->m_0C++];
+        if (v->m_0C == v->m_00->m_00) {
+            v->m_0C = 0;
+        }
+        if (d->m_2E & 0x2000) {
+            v->m_28 = 2;
+        }
+        if (d->m_2E & 0x4000) {
+            v->m_28 = 1;
+        }
+        p = d->m_08;
+        if (d->m_0C) {
+            p += func_800B6318() % d->m_0C;
+        }
+        v->m_0E = *p;
+        x = d->m_30;
+        if (d->m_32) {
+            x += func_800B6318() % d->m_32;
+        }
+        v->m_20 = x;
+        x = d->m_10;
+        if (d->m_14) {
+            x += func_800B6318() % d->m_14;
+        }
+        v->m_18 = x;
+        x = d->m_18;
+        if (d->m_1C) {
+            x += func_800B6318() % d->m_1C;
+        }
+        v->m_1C = x;
+        x = d->m_0D;
+        if (d->m_0E) {
+            x += func_800B6318() % d->m_0E;
+        }
+        v->m_29 = x;
+    }
+    v->m_04 = d;
+    v->m_26 = 0x40;
+    v->m_2C = 0;
+    v->m_30 = 0;
+    VecZero46(&v->m_34);
+    v->m_24 = d->m_36;
+    v->m_22 = v->m_20;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_46", func_8006D4B0);
+#endif
 
 #ifdef NON_MATCHING
 // The original stores the mask three times (1, 9, 0x89); ours once
@@ -278,7 +403,65 @@ void func_8006E0FC(Snd46 *s) {
     }
 }
 
+#ifdef NON_MATCHING
+// Registers ($s1-$s4 in another order) and the table's choice
+/* The engine's sound: by the gear, its volume from the speed. */
+void func_8006E144(Snd46 *s, Bike46 *b) {
+    Ride46 *r = b->m_30;
+    short *t;
+    int k;
+    int sp;
+    int vol;
+    s8 g;
+
+    if (r->m_158) {
+        s->m_00 = D_800D6124.m_t;
+    }
+    s->m_09 = s->m_08;
+    {
+        int n = func_80063A30(r);
+
+        s->m_08 = n;
+        g = n;
+    }
+    sp = r->m_110;
+    if (D_800CB5D0 != 5) {
+        t = D_800C8350;
+        if (D_800CB5D0 == 1) {
+            t = D_800C8340;
+        }
+    } else {
+        t = D_800C8330;
+    }
+    k = t[g];
+    sp = (sp ^ (sp >> 31)) - (sp >> 31);
+    if (sp > 0) {
+        if (sp > 0x13FFF) {
+            vol = 0x7F;
+        } else {
+            vol = sp * 127 / 0x14000;
+        }
+    } else {
+        vol = 0;
+    }
+    if (vol && k != -1 && !b->m_189) {
+        if ((s8)s->m_09 != g) {
+            StopVoice46(&s->m_04);
+        }
+        if (s->m_04 == -1) {
+            int n = func_80014A98(D_800D11D0, k, 0);
+
+            s->m_04 = n;
+            func_80014B18(D_800D11D0, n);
+        }
+        func_80014368(D_800D11D0, s->m_04, vol);
+    } else {
+        StopVoice46(&s->m_04);
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_46", func_8006E144);
+#endif
 
 void func_8006E328(SndB46 *s) {
     func_8006E088(s);
