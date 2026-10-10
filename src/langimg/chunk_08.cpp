@@ -92,13 +92,13 @@ Vector3 *func_80022D20(Vector3 *out, Vector3 *in);
 void func_80022D44(Vector3 *v, int shift, int a, int b);
 void func_80022DE4(Vector3 *v, int shift, int a, int as, int b, int bs);
 int func_80022FA4(Vector3 *a, Vector3 *b, int s);
-void func_80099B60(Vector3 *out, Vector3 *a, Vector3 *b, int shift); // a cross product
+Vector3 *func_80099B60(Vector3 *out, Vector3 *a, Vector3 *b, int shift); // a cross product
 void func_80023004(Vector3 *v, Vector3 n);
 void func_8002309C(Vector3 *v, Vector3 n);
 void func_80023140(Vector3 *v, int len, int shift);
-int func_80097A68(int a, int shift, int b); // (a << shift) / b
-int func_8009931C(Vector3 *v);              // its length
-void func_800994F0(Vector3 *v, int a, int shift);
+int func_80097A68(int a, int shift, int b);           // (a << shift) / b
+int func_8009931C(Vector3 *v);                        // its length
+Vector3 *func_800994F0(Vector3 *v, int a, int shift); // v * a >> shift
 }
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_08", func_80021154);

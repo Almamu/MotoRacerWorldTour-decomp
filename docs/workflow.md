@@ -94,10 +94,15 @@ PATH=/tmp/perm/<function>/bin:$PATH python3 ../decomp-permuter/permuter.py /tmp/
 ```
 
 `base.c` is the function as plain C with every declaration it needs above
-it (the permuter parses C, not C++). It compiles with the chunk's own
+it (the permuter parses C, not C++, and no `asm`: functions using
+`MULSHIFT` can't be permuted). The permuter needs pycparser 2.x; the dev
+shell's is 3.x, so put a 2.x copy first on `PYTHONPATH` (nothing to
+install: any unpacked pycparser 2.x directory will do). It compiles with the chunk's own
 command, wrapped in `extern "C"` for a C++ chunk. Most of what it finds is
 noise; read the best result's `diff.txt` for the idea behind it and write
-that plainly.
+that plainly. A changed declaration is often the real finding: a callee
+declared `void` that returns something changes the registers around the
+call (`func_80026648`, `func_80024064`).
 
 ## 6. Match or park
 
