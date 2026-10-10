@@ -139,7 +139,6 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006B854);
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006B914);
 
 /* The first free slot, or -1. */
-/* The first free slot, or -1. */
 int func_8006B9B0(Slots45 *s) {
     int i;
     int n = s->m_count;
