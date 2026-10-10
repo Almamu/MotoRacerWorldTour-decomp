@@ -41,7 +41,8 @@ struct Mat31 {
 // A bike, 0x568 bytes
 struct Bike31 {
     int m_00; // flags; bits 1-5: a mode
-    u8 m_04[8];
+    u8 m_04[6];
+    short m_0A;
     short m_0C;
     u8 m_0E[0x22];
     Def31 *m_30;
@@ -119,7 +120,6 @@ extern int D_800C8868;
 extern int *D_800C9EF0;
 extern Ent31 *D_800C9EE0;
 extern int D_800D5FAC; // a table of 5
-void func_8004F83C(void *a, void *b);
 void func_80097E4C(void *a, int x, int y, int z);
 int func_80050EBC(int k);
 void func_80033E4C(int a, Bike31 *b);
@@ -128,7 +128,7 @@ void func_8004F828(int a, int b);
 int func_8004FFAC(int *a, int *b);
 int func_8004FFC8(int *a, int *b);
 int func_80050F1C(int *a, int *b);
-void func_8004FE38(void *a, u8 *b);
+void func_8004FE38(void *a, u8 *b, int c);
 void func_80051094(Bike31 *b);
 void func_80050F38(Run31 *r);
 void func_80051060(Bike31 *b, Ctl31 *c);
@@ -150,6 +150,22 @@ void func_8004F76C(Two31 *o);
 void func_80050F5C(Run31 *r);
 void func_80050CA4(Run31 *r);
 void qsort(void *base, int n, int size, int (*cmp)(int *, int *));
+// Eight bytes a bike
+struct Slot31 {
+    u8 m_00;
+    u8 m_01[7];
+};
+// Both named for their fifth entry (the bikes are walked from the last)
+extern Slot31 D_800D5E69;
+extern int D_800D5F68;
+int func_8004F908(void *o, Vec31 *v, int c, Vec31 *n);
+Vec31 *func_80099834(Vec31 *v, Vec31 *a);
+int func_80099B88(Vec31 *a, Vec31 *b);
+Vec31 *func_800996D4(Vec31 *d, int k, Vec31 *s);
+Vec31 *func_8009975C(Vec31 *d, Vec31 *s, int k);
+Vec31 *func_800997D0(Vec31 *v, Vec31 *a);
+int func_8004F83C(void *o, Vec31 *v, int c);
+void func_800507B0(Run31 *r);
 }
 
 #ifdef NON_MATCHING
@@ -198,12 +214,35 @@ void func_8004F828(int a, int b) {
     D_800C8868 = b + 0x40;
 }
 
+#ifdef NON_MATCHING
+// Registers: the original keeps five saved registers, the local vectors' addresses set before the dot product's call
+/* v moved by func_8004F908; when it hit (bit 1), pushed back out along the normal, flat. */
+int func_8004F83C(void *o, Vec31 *v, int c) {
+    Vec31 d;
+    Vec31 n;
+    Vec31 a;
+    Vec31 b;
+    int r;
+
+    d = *v;
+    r = func_8004F908(o, &d, c, &n);
+    if (r & 2) {
+        func_80099834(&d, v);
+        func_800996D4(&b, func_80099B88(&d, &n), &n);
+        func_8009975C(&a, &b, 0x1000);
+        a.y = 0;
+        func_800997D0(v, &a);
+    }
+    return r;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_31", func_8004F83C);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_31", func_8004F908);
 
-void func_8004FE38(void *a, u8 *b) {
-    func_8004F83C(a, b + 0xF8);
+void func_8004FE38(void *a, u8 *b, int c) {
+    func_8004F83C(a, (Vec31 *)(b + 0xF8), c);
 }
 
 void func_8004FE58(void *a, short *v) {
@@ -230,7 +269,38 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_31", func_8005044C);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_31", func_800505BC);
 
+#ifdef NON_MATCHING
+// The constant 1 for the mode's test: the original sets it before the count's other values (4 off)
+/* Each bike's slot: the first two from a table when that many bikes are in mode 1. */
+void func_800507B0(Run31 *r) {
+    int i;
+
+    for (i = 4; i >= 0; i--) {
+        if (i < 2) {
+            int n = 0;
+            Bike31 *end = &r->m_2E8[0];
+            Bike31 *p = &r->m_2E8[4];
+
+            do {
+                if (((u32)p->m_00 >> 6) & 1) {
+                    if (((p->m_00 << 26) >> 27) == 1) {
+                        n++;
+                    }
+                }
+            } while (p-- != end);
+            if (i < n) {
+                (&D_800D5E69)[i - 4].m_00 = (&D_800D5F68)[i - 4];
+                goto done;
+            }
+        }
+        (&D_800D5E69)[i - 4].m_00 = i;
+    done:
+        r->m_2E8[i].m_0A = i;
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_31", func_800507B0);
+#endif
 
 /* The bikes' values at 0x0C saved to, or loaded from, a table. */
 void func_80050850(Run31 *r, int load) {
