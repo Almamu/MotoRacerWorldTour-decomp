@@ -1,4 +1,5 @@
 #include "common.h"
+#include "mulshift.h"
 
 /* A bike's state, the race's bikes (docs/matching/issue-32-langimg-chunk31.md) */
 
@@ -121,6 +122,58 @@ extern Opt31 *D_800C5E14;
 int func_800A0420(Lap31 *l, int t, void *p, int a, int b);
 int func_80050D7C(Run31 *r, int k);
 void func_8004FE88(Run31 *r);
+// The track: its segments' starts and lengths
+struct Trk31 {
+    u8 m_00[0x14];
+    short m_14;
+    u8 m_16[0x1E6E];
+    int m_1E84[16];
+    int m_1EC4[16];
+    u8 m_1F04[0x20];
+    short m_1F24;
+    short m_1F26;
+    u8 m_1F28[0x23];
+    s8 m_1F4B;
+};
+// A segment
+struct Seg31 {
+    u8 m_00[2];
+    s8 m_02;
+    u8 m_03[5];
+    int m_08;
+};
+// What moves along it
+struct Mob31 {
+    u8 m_00[0x10];
+    int m_10;
+    int m_14;
+    int m_18;
+    u8 m_1C[4];
+    short m_20;
+    short m_22;
+    u8 m_24[0x18];
+    short m_3C;
+    short m_3E;
+};
+// An object made by func_800508B4
+struct Made31 {
+    u8 m_00[4];
+    int m_04;
+    u8 m_08[0x5C];
+    Vec31 m_64;
+    SVec31 m_70;
+    u8 m_78[0x1A8];
+    void *m_220[5];
+};
+void func_8005044C(Trk31 *t, Mob31 *o, Seg31 *s, int d);
+Made31 *func_800508B4(void *a, const char *name, int kind);
+Made31 *func_80064340(void *p);
+Made31 *func_80024064(void *p);
+void func_80016144(Made31 *o, Vec31 *v, SVec31 *r, int a);
+void func_80016268(Made31 *o, SVec31 *r, Vec31 *v);
+void *func_8001A62C(void *p);
+// CName::Set(const char *)
+void CName_Set31(Made31 *o, const char *s) asm("Set__5CNamePCc");
 // What func_8004F6C8 sets a matrix from
 struct Pos31 {
     u8 m_00[0x20];
@@ -342,7 +395,46 @@ int func_8004FFC8(int *a, int *b) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_31", func_8004FFE4);
 
+#ifdef NON_MATCHING
+// Registers: each value one register later than ours, and the flag at 0x3E read before the two stores
+/* Where o is along its segment: the segment's start plus its length times the fraction, plus d. */
+void func_8005044C(Trk31 *t, Mob31 *o, Seg31 *s, int d) {
+    int n = s->m_08;
+    int k = s->m_02;
+    u32 f;
+    int p;
+    int a;
+
+    if (n >= 2) {
+        u32 pos = o->m_22;
+
+        if (o->m_20 == t->m_1F26) {
+            u32 start = t->m_1F24;
+
+            if (pos >= start) {
+                f = ((pos - start) << 11) / (n - start);
+            } else {
+                k = t->m_1F4B;
+                f = (pos << 11) / start;
+            }
+        } else {
+            f = (pos << 11) / (n - 1);
+        }
+    } else {
+        f = 0x800;
+    }
+    o->m_10 = t->m_1EC4[k] + MULSHIFT(f, t->m_1E84[k], 11);
+    p = o->m_10 + MULSHIFT(d, t->m_1E84[k] / s->m_08, 12);
+    a = o->m_3E;
+    o->m_10 = p;
+    o->m_14 = p;
+    if (a != -0x7FFF) {
+        o->m_18 = (a << 18) / (t->m_14 + o->m_3C) + (d << 6) / (t->m_14 + o->m_3C);
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_31", func_8005044C);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_31", func_800505BC);
 
@@ -397,7 +489,54 @@ void func_80050850(Run31 *r, int load) {
     }
 }
 
+static inline void VecZero31(Vec31 *v) {
+    v->x = 0;
+    v->y = 0;
+    v->z = 0;
+}
+
+#ifdef NON_MATCHING
+// The struct copies: the original copies through address registers ($v0, $v1) and passes $v0 on to the call; ours fold the offsets
+/* An object of a kind made, placed and named, with its five parts. */
+Made31 *func_800508B4(void *a, const char *name, int kind) {
+    Made31 *o = 0;
+    Vec31 v;
+    SVec31 r;
+
+    VecZero31(&v);
+    r.x = 0;
+    r.y = 0;
+    r.z = 0;
+    switch (kind) {
+    case -1:
+    case 0:
+        break;
+    case 2:
+        o = func_80064340(operator new(0x49C));
+        break;
+    case 1:
+    case 3:
+        o = func_80024064(operator new(0x5D4));
+        break;
+    }
+    if (o) {
+        func_80016144(o, &v, &r, 0);
+        o->m_64 = v;
+        o->m_70 = r;
+        func_80016268(o, &o->m_70, &o->m_64);
+        CName_Set31(o, name);
+        o->m_220[0] = func_8001A62C(operator new(0x20));
+        o->m_220[1] = func_8001A62C(operator new(0x20));
+        o->m_220[2] = func_8001A62C(operator new(0x20));
+        o->m_220[3] = func_8001A62C(operator new(0x20));
+        o->m_220[4] = func_8001A62C(operator new(0x20));
+        o->m_04 = (o->m_04 | 0x10002) & ~4;
+    }
+    return o;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_31", func_800508B4);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_31", func_80050A4C);
 
