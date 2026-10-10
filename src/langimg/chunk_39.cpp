@@ -11,7 +11,9 @@ struct Rec39 {
 // An entry, 0x330 bytes
 struct Ent39 {
     u16 m_00; // flags
-    u8 m_02[5];
+    u16 m_02; // more flags
+    s8 m_04;
+    u8 m_05[2];
     s8 m_07;
     u8 m_08;
     u8 m_09;
@@ -31,9 +33,23 @@ struct Ent39 {
     u16 m_1AA; // the last frame's
     u8 m_1AC[0x184];
 };
+struct Run39 {
+    u8 m_00[0x1E08];
+    int m_1E08; // the race's kind
+};
+struct Sub39 {
+    u8 m_00[0x170];
+    int m_170;
+};
 struct Own39 {
-    u8 m_00[0x2F0];
+    u8 m_00[0xB8];
+    Sub39 *m_B8;
+    u8 m_BC[0x234];
     Ent39 *m_2F0;
+    u8 m_2F4[0x10];
+    int m_304;
+    u8 m_308[0x70];
+    Run39 *m_378;
 };
 struct Obj39 {
     u8 m_00[0x185];
@@ -55,6 +71,15 @@ void func_8005FEB0(int *st, Own39 *o, int *i);
 void func_8005FF34(int *st, Own39 *o, int *i);
 void func_8005FFB8(int *st, Own39 *o, int *i);
 void func_80060038(int *st, Own39 *o, int *i);
+void func_8005FB98(int *st, Own39 *o, int *i);
+void func_8005FC40(int *st, Own39 *o, int *i);
+void func_80060298(int *st, Own39 *o, int *i);
+void func_800605A4(int *st, Own39 *o, int *i);
+void func_80060410(int *st, Own39 *o, int *i);
+void func_800608A8(int *st, Own39 *o, int *i);
+void func_8004C430(Own39 *o, int i);
+void func_8005F380(Ent39 *e);
+void func_80060668(int *st, Own39 *o, int *i);
 void func_80060650(void);
 void func_80060658(void);
 void func_80060660(void);
@@ -119,9 +144,49 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_39", func_8005F638);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_39", func_8005FAB8);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_39", func_8005FB98);
+void func_8005FB98(int *st, Own39 *o, int *i) {
+    if (o) {
+        Ent39 *e = &o->m_2F0[*i];
+        int v = *st;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_39", func_8005FC40);
+        e->m_08 = 0;
+        e->m_0B = 1;
+        if (v == 0xFF) {
+            e->m_04 = -0x7F;
+            e->m_00 |= 4;
+        } else if (v == 0) {
+            e->m_00 &= ~4;
+            if (e->m_00 & 8) {
+                e->m_04 = 0x7F;
+            } else {
+                e->m_04 = 0;
+            }
+        }
+        func_8005F480(e, 0x80, v);
+    }
+}
+
+void func_8005FC40(int *st, Own39 *o, int *i) {
+    if (o) {
+        Ent39 *e = &o->m_2F0[*i];
+        int v = *st;
+
+        e->m_08 = 0;
+        e->m_0B = 1;
+        if (v == 0xFF) {
+            e->m_04 = 0x7F;
+            e->m_00 |= 8;
+        } else if (v == 0) {
+            e->m_00 &= ~8;
+            if (e->m_00 & 4) {
+                e->m_04 = -0x7F;
+            } else {
+                e->m_04 = 0;
+            }
+        }
+        func_8005F480(e, 0x20, v);
+    }
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_39", func_8005FCE8);
 
@@ -248,15 +313,60 @@ void func_8006022C(int *st, Own39 *o, int *i) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_39", func_80060298);
+void func_80060298(int *st, Own39 *o, int *i) {
+    if (o) {
+        int k = *i;
+        int v = *st;
+
+        func_8005F480(&o->m_2F0[k], 0x1000, v);
+        if (!o->m_304 && (u32)(o->m_378->m_1E08 - 2) < 2 && v == 0xFF) {
+            func_8004C430(o, k);
+        }
+    }
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_39", func_80060340);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_39", func_80060410);
+void func_80060410(int *st, Own39 *o, int *i) {
+    if (o) {
+        Ent39 *e = &o->m_2F0[*i];
+        int x = *st;
+
+        e->m_08 = 1;
+        e->m_0B = 0;
+        e->m_02 &= ~0xC;
+        e->m_04 = x * 127 / 98;
+        if (x < 0) {
+            e->m_00 = (e->m_00 | 4) & ~8;
+        } else if (x > 0) {
+            e->m_00 = (e->m_00 | 8) & ~4;
+        } else {
+            e->m_00 &= ~0xC;
+        }
+    }
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_39", func_800604D0);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_39", func_800605A4);
+/* A value from -98 to 98 scaled to a byte; past 21 either way, a direction's bit. */
+void func_800605A4(int *st, Own39 *o, int *i) {
+    if (o) {
+        int x = *st;
+        Ent39 *e = &o->m_2F0[*i];
+        u16 f = e->m_02 & ~0x300;
+
+        e->m_02 = f;
+        e->m_07 = x * 127 / 98;
+        if (e->m_07 >= 22) {
+            e->m_02 = f | 0x200;
+        } else if (e->m_07 < -21) {
+            e->m_02 = f | 0x100;
+        } else {
+            e->m_07 = 0;
+        }
+        e->m_0A = 1;
+    }
+}
 
 void func_80060650(void) {
 }
@@ -269,7 +379,21 @@ void func_80060660(void) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_39", func_80060668);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_39", func_800608A8);
+void func_800608A8(int *st, Own39 *o, int *i) {
+    int buf[4];
+
+    if (o) {
+        if (i && o->m_2F0) {
+            func_8005F380(&o->m_2F0[*i]);
+        }
+        if (*st == 0) {
+            memset(buf, 0, sizeof(buf));
+            buf[0] = 0xFF;
+            o->m_B8->m_170 = 0;
+            func_80060668(buf, o, i);
+        }
+    }
+}
 
 int func_8006095C(int *a, int *b) {
     int x = *a;
