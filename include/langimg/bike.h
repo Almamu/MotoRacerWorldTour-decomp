@@ -36,7 +36,8 @@ struct AnimChan {
 struct BikeOwner {
     u8 m_pad0[0x188];
     u8 m_188;
-    u8 m_pad189[0x17B];
+    s8 m_189;
+    u8 m_pad18A[0x17A];
     SVECTOR m_304;
     u8 m_pad30C[0x258];
     int m_564;
@@ -48,9 +49,11 @@ struct Bike {
     void *m_vtable;
     BikeOwner *m_54;
     s8 m_58; // the motor's kind
-    u8 m_59;
+    s8 m_59;
     u8 m_5A;
-    u8 m_pad5B[0x89];
+    u8 m_pad5B[0x9];
+    Vector3 m_pos;
+    u8 m_pad70[0x74];
     int m_E4; // the engine speed asked for
     int m_E8;
     int m_EC;
@@ -60,8 +63,9 @@ struct Bike {
     u8 m_padF8[0x18];
     int m_110;
     u8 m_pad114[0x4];
-    int m_118; // the top engine speed
-    u8 m_pad11C[0x12];
+    int m_118;     // the top engine speed
+    Vector3 m_11C; // its velocity
+    u8 m_pad128[0x6];
     short m_12E;
     short m_130;
     short m_132;
@@ -154,7 +158,8 @@ struct Bike {
     u8 m_4DA;
     u8 m_pad4DB[0x5];
     AnimChan m_4E0;
-    u8 m_pad4FC[0x30];
+    u8 m_pad4FC[0x2F];
+    s8 m_52B;
     u8 m_52C[4];
     u8 m_pad530[0x4];
     AnimChan m_534;
