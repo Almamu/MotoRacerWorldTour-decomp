@@ -13,11 +13,26 @@ struct Sphere {
     int m_radius;
 };
 
+// What a particle is
+struct ParticleDef {
+    u8 m_00[0xC];
+    int m_gravity; // 0x0C
+    int m_drag;
+};
+
 // A particle (0x60 bytes)
 struct Particle {
-    u8 m_00[0x2A];
-    short m_2A;
-    u8 m_2C[0x34];
+    ParticleDef *m_def;
+    Vector3 m_pos;  // 0x04
+    Vector3 m_prev; // 0x10
+    Vector3 m_vel;  // 0x1C
+    short m_28;
+    short m_life; // 0x2A
+    u8 m_2C[0x20];
+    short m_alpha; // 0x4C
+    short m_4E;
+    int m_fade; // 0x50
+    u8 m_54[0xC];
 };
 struct Particles {
     u8 m_00[0x2580];
@@ -26,14 +41,18 @@ struct Particles {
     short m_4B04;
     short m_4B06;
     int m_4B08;
-    short m_4B0C;
+    short m_live; // 0x4B0C
     short m_4B0E;
 };
+extern int D_800D6100; // the frame's time
+void func_80099574(Vector3 *v, int drag);
+void func_8001DFD8(Racer *r, int dist);
+void func_8001F67C(Particles *p);
 
 extern int D_800CA7D0;  // the static racer's users
 extern u8 D_800CA7D8[]; // a Racer; its size not known here
 extern Camera *D_800C8864;
-int func_8009707C(long *plane, Vector3 *v);
+int func_8009707C(RacePlane *plane, Vector3 *v);
 void func_8001D99C(Racer *r);
 void func_8001DA10(Racer *r);
 int func_8001DF10(Racer *r, Vector3 *v, int lo, int hi, int *depth);
@@ -78,7 +97,7 @@ int func_8001DF10(Racer *r, Vector3 *v, int lo, int hi, int *depth) {
     int i;
 
     for (i = 0; i < 3; i++) {
-        int d = func_8009707C(r->m_B8[i], v);
+        int d = func_8009707C(&r->m_B8[i], v);
 
         if (lo < d) {
             ok = 0;
@@ -95,7 +114,24 @@ int func_8001DF10(Racer *r, Vector3 *v, int lo, int hi, int *depth) {
     return ok;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_06", func_8001DFD8);
+/* The racer's distance (or its own), and its planes' normals as the
+ * light matrix. */
+void func_8001DFD8(Racer *r, int dist) {
+    MATRIX m;
+
+    r->m_13C = 1;
+    r->m_140 = dist ? dist >> 8 : r->m_15C >> 8;
+    m.m[0][0] = r->m_B8[0].m_n->vx >> 14;
+    m.m[0][1] = r->m_B8[0].m_n->vy >> 14;
+    m.m[0][2] = r->m_B8[0].m_n->vz >> 14;
+    m.m[1][0] = r->m_B8[1].m_n->vx >> 14;
+    m.m[1][1] = r->m_B8[1].m_n->vy >> 14;
+    m.m[1][2] = r->m_B8[1].m_n->vz >> 14;
+    m.m[2][0] = r->m_B8[2].m_n->vx >> 14;
+    m.m[2][1] = r->m_B8[2].m_n->vy >> 14;
+    m.m[2][2] = r->m_B8[2].m_n->vz >> 14;
+    GTE_SET_LIGHT_M(&m);
+}
 
 void func_8001E110(Racer *r) {
     r->m_13C = 0;
@@ -164,13 +200,13 @@ void func_8001F10C(Particles *p) {
     int i;
 
     p->m_4B04 = 0;
-    p->m_4B0C = 0;
+    p->m_live = 0;
     p->m_4B0E = 0;
     p->m_4B08 = 0;
     i = 100;
     q = p->m_items;
     do {
-        q->m_2A = 0;
+        q->m_life = 0;
         q++;
     } while (--i);
     p->m_2580 = 0;
@@ -178,4 +214,47 @@ void func_8001F10C(Particles *p) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_06", func_8001F13C);
 
+#ifdef NON_MATCHING
+/* Registers and scheduling (79 off); 0x1000 not hoisted as in the original */
+/* The particles' frame: moved, slowed, aged and faded; the live ones
+ * counted. */
+void func_8001F67C(Particles *ps) {
+    int i = 100;
+    Particle *p = ps->m_items;
+    int dt = (D_800D6100 << 12) / 1000;
+    int live = 0;
+
+    do {
+        int full = 0x1000;
+        int life = p->m_life;
+
+        if (life) {
+            if (dt < life) {
+                int x = p->m_pos.vx;
+                int y = p->m_pos.vy;
+                int z = p->m_pos.vz;
+                ParticleDef *d = p->m_def;
+
+                p->m_prev.vx = x;
+                p->m_prev.vy = y;
+                p->m_prev.vz = z;
+                p->m_pos.vx = x + p->m_vel.vx;
+                p->m_pos.vy = y + p->m_vel.vy;
+                p->m_pos.vz = z + p->m_vel.vz;
+                p->m_vel.vy -= (d->m_gravity * dt) >> 12;
+                func_80099574(&p->m_vel, d->m_drag);
+                live++;
+                p->m_alpha = full - ((life * p->m_fade) >> 6);
+                life -= dt;
+            } else {
+                life = 0;
+            }
+            p->m_life = life;
+        }
+        p++;
+    } while (--i);
+    ps->m_live = live;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_06", func_8001F67C);
+#endif

@@ -92,6 +92,12 @@ struct RacerSlot {
     int m_34;
 };
 
+// A plane: its normal (4.12... << 2) and distance
+struct RacePlane {
+    Vector3 *m_n;
+    long m_d;
+};
+
 // A racer
 struct Racer {
     int *m_00;
@@ -103,7 +109,7 @@ struct Racer {
     int m_20;
     int m_24;
     u8 m_28[0x90];
-    long (*m_B8)[2]; // 0xB8: 3 planes
+    struct RacePlane *m_B8; // 0xB8: 3 planes
     u8 m_BC[0x80];
     int m_13C;
     int m_140;
