@@ -29,3 +29,4 @@ issue it worked on, and add it below.
 | [issue-24-langimg-chunk23.md](issue-24-langimg-chunk23.md) | The game's chunk_23: a named object and its stage; 2.91.66 past chunk_12, old-style varargs |
 | [issue-46-langimg-chunk45.md](issue-46-langimg-chunk45.md) | The game's chunk_45: sound banks, slots, a settings stream; bitfields, `la` vs split, a void virtual call |
 | [issue-67-langimg-chunk66.md](issue-67-langimg-chunk66.md) | The game's chunk_66: a bit stream, CD reads, planes; PsyQ's `va_arg`, products in locals |
+| [issue-73-langimg-chunk72.md](issue-73-langimg-chunk72.md) | The game's chunk_72: memory cards and the CD loader; globals as arrays, volatile event counters |

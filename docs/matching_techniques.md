@@ -92,6 +92,7 @@ settings
 | `src/langimg` chunk_23 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=D_800CABB7` |
 | `src/langimg` chunk_45 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (eleven) |
 | `src/langimg` chunk_66 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (five) |
+| `src/langimg` chunk_72 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (four) |
 | `src/langimg` chunk_06 to chunk_12 (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_02b (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `SCES_030.37` (`src/sces`) | GCC 2.91.66 | 0 | `-fsigned-char` | `--expand-div` |
@@ -143,7 +144,9 @@ with sizes, so this isn't the compiler's doing.
 Under split addresses a global declared with a size of 8 bytes or less
 (`extern int D_800CB480;`) is still one `la`, which stays out of delay
 slots; declared as an array of unknown size it's split and scheduled.
-chunk_45 has both (`func_8006BA80`, `func_8006C77C`).
+chunk_45 has both (`func_8006BA80`, `func_8006C77C`). chunk_72 reads most
+of its globals split, a few through `$gp`: the split ones are declared as
+arrays of unknown size and used as `x[0]`.
 
 ### Divisions
 
