@@ -1,5 +1,7 @@
 #include "common.h"
 #include "langimg/race.h"
+#include "langimg/cobjet.h"
+#include "gte.h"
 
 /* The game's code built with GCC 2.91.66, -G8, unsplit addresses
  * (docs/matching/issue-8-langimg-chunk07.md). */
@@ -52,9 +54,12 @@ void func_80021138(SVECTOR *out, Vector3 *in);
 void func_800203A8(NodePool *p, int a, Vector3 *pos, int c, int slot);
 int func_80020868(NodePool *p, int a, Vector3 *pos, int c);
 int func_80020998(NodePool *p, int handle, int a, Vector3 *pos, int c);
-void func_80020AB0(void *x);
-void func_80020AE4(void *x, void *scratch);
-void func_80020C48(void *x, void *scratch);
+void func_80020AB0(NodePool *p);
+void func_80020AE4(NodePool *p, u8 *seen);
+void func_80020C48(NodePool *p, u8 *seen);
+void func_8001DFD8(Racer *r, int dist);
+void func_8001E110(Racer *r);
+extern Racer D_800CA7D8;
 void func_800210B0(void);
 int func_800B6318(void); // rand
 extern int D_800CA960;
@@ -246,12 +251,61 @@ int func_80020998(NodePool *p, int handle, int a, Vector3 *pos, int c) {
     return handle;
 }
 
-void func_80020AB0(void *x) {
-    func_80020AE4(x, (void *)0x1F800000);
-    func_80020C48(x, (void *)0x1F800000);
+/* The slots seen, in the scratchpad, then drawn. */
+void func_80020AB0(NodePool *p) {
+    func_80020AE4(p, (u8 *)0x1F800000);
+    func_80020C48(p, (u8 *)0x1F800000);
 }
 
+#ifdef NON_MATCHING
+/* Registers, and the loop's pointers based at other fields (29 off) */
+/* Which slots the camera sees: a sphere 1.5 times the slot's size, in
+ * front of the camera and within the racer's distance. */
+void func_80020AE4(NodePool *p, u8 *seen) {
+    Racer *r = &D_800CA7D8;
+    NodeSlot *s = p->m_slots;
+    int i = 200;
+    int far = r->m_15C >> 8;
+    int cx = D_800C8864->m_pos.vx;
+    int cy = D_800C8864->m_pos.vy;
+    int cz = D_800C8864->m_pos.vz;
+
+    func_8001DFD8(r, 0);
+    do {
+        int v = 0;
+
+        if (s->m_first != NODE_NONE) {
+            int radius = s->m_0C;
+            int x = s->m_pos.vx;
+            int y = s->m_pos.vy;
+            int z = s->m_pos.vz;
+            int ok;
+
+            x -= cx;
+            y -= cy;
+            z -= cz;
+            radius = (radius + (radius >> 1)) >> 8;
+            x >>= 8;
+            y >>= 8;
+            z >>= 8;
+            GTE_SET_IR(x, y, z);
+            GTE_MVMVA_LIR();
+            GTE_GET_MAC(x, y, z);
+            ok = 0;
+            if (x < radius && y < radius && z < radius) {
+                ok = -y < far + radius;
+            }
+            v = ok;
+        }
+        *seen = v;
+        s++;
+        seen++;
+    } while (--i);
+    func_8001E110(r);
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_07", func_80020AE4);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_07", func_80020C48);
 
