@@ -92,7 +92,7 @@ settings
 | `src/langimg` chunk_23 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=D_800CABB7` |
 | `src/langimg` chunk_45 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (eleven) |
 | `src/langimg` chunk_66 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (five) |
-| `src/langimg` chunk_25, chunk_31, chunk_44, chunk_46, chunk_47, chunk_51, chunk_56, chunk_60, chunk_68, chunk_70, chunk_71, chunk_72, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
+| `src/langimg` chunk_25, chunk_31, chunk_39, chunk_44, chunk_46, chunk_47, chunk_51, chunk_56, chunk_60, chunk_68, chunk_70, chunk_71, chunk_72, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_06 to chunk_12 (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_02b (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `SCES_030.37` (`src/sces`) | GCC 2.91.66 | 0 | `-fsigned-char` | `--expand-div` |
@@ -271,6 +271,10 @@ globals), a script that tries every order is quicker than guessing:
   each case loads the same pointer itself. Without `case 7: break; case 8:
   break;` the table stopped at 6 and GCC hoisted the shared load above
   the jump.
+- **Which block comes first.** GCC lays out an `if`'s block before its
+  `else`. chunk_39's `func_80060668` has the restart menu's call first,
+  so its condition is the negated one: `if (a != b || (c != 8 && c != 4))
+  restart; else retire;`.
 - **Sometimes two returns.** Unlike `FindEntry`, chunk_56's
   `func_80081330` returns 3 from two `if`s in a row (`if (x > 224) return
   3; if (y > 224) return 3;`); `||` put the return's block elsewhere.
@@ -422,8 +426,12 @@ globals), a script that tries every order is quicker than guessing:
 - **`do { } while (0)` around statements.** Twice the permuter's whole
   fix: around `i = 0` before a loop (`func_80017FB4`, its order against
   the loads) and around a loop's body (`func_8001865C`, its registers: the
-  statements inside count as one loop deeper). A workaround; say so at the
-  use.
+  statements inside count as one loop deeper). chunk_39 has two more:
+  around a search loop written with `goto`s (`func_8005F4A4`), where it
+  keeps the counter live on the found path (GCC then undoes the `i--` it
+  took into a delay slot, as the original does), and around a whole
+  function's body (`func_80060668`, its registers). A workaround; say so
+  at the use.
 - **A second pointer against cross-jumping.** Two identical statement
   runs that end at the same label are merged into one; the original's
   separate copies came from a second pointer for the loop
@@ -716,6 +724,10 @@ What's left once the instructions are right is usually register choice.
 
 - Declaration order of locals made no difference to registers in the
   cases tried (`FindEntry`); it does decide their stack slots (above).
+- **One counter per loop.** chunk_39's `func_8005FAB8` has a loop with
+  no call and one with calls. One `i` for both put the first loop's
+  counter in the second's saved register; a counter of its own left it
+  in `$v1`.
 - **One variable per path.** chunk_56's `func_800816F8` allocates in one
   branch (the pointer kept across calls) and frees in the other (the
   pointer only read before them). One variable for both put it in a saved
@@ -885,6 +897,13 @@ what still differs, and its `INCLUDE_ASM` under `#else`. Its `.s` stays.
   link to the original size, `tools/diff_func.py` shows differences in
   every later function (their relocated addresses moved). Compare with
   `tools/try_func.py` until the chunk is back to size.
+- **A struct's padding moves a stride.** A struct of 0x35 bytes holding
+  a pointer pads to 0x38. Nested in chunk_39's bike, it made the bike
+  0x56C bytes: its index's multiply was wrong while everything else
+  matched. Compare the stride's shifts with the asm's.
+- **The original's own bugs.** chunk_39's `func_8005FCE8` fills a local
+  copy of the pad with a bit masked out, then passes the pad itself on.
+  The dead stores stay in the original, so the C keeps them too.
 - **Call targets aren't compared.** `tools/try_func.py` compares
   instructions, not relocations: a `jal` to `__builtin_vec_new` where the
   original calls `__builtin_new` reports 0 differences, and `make` fails
