@@ -32,8 +32,9 @@ struct St41 {
 };
 struct Obj41 {
     u8 m_00[0x50];
-    void *m_50; // the vtable
-    u8 m_54[5];
+    void *m_50;        // the vtable
+    struct Bk41 *m_54; // its bike
+    u8 m_58;
     u8 m_59;
     u8 m_5A;
     u8 m_5B[9];
@@ -44,14 +45,22 @@ struct Obj41 {
     u8 m_84[0x48];
     int m_CC;
     int m_D0; // an angle, in 2pi * 4096ths
-    u8 m_D4[0x60];
+    u8 m_D4[0x38];
+    int m_10C;
+    u8 m_110[0xC];
+    u8 m_11C[0x18];
     int m_134;
-    u8 m_138[0x20];
+    u8 m_138[0x15];
+    s8 m_14D;
+    u8 m_14E[0xA];
     u8 m_158;
     u8 m_159[3];
     u32 m_15C; // up to 16
     int m_160; // two bits shifted in each time
-    u8 m_164[0x90];
+    u8 m_164[0x50];
+    struct Bk41 *m_1B4; // the next bike on the track
+    struct Bk41 *m_1B8; // the one before
+    u8 m_1BC[0x38];
     int m_1F4;
     int m_1F8;
     u8 m_1FC[0x24];
@@ -96,6 +105,34 @@ void func_8009887C(Vec41 *v, Vec41 *out);
 void func_800997D0(Vec41 *v, Vec41 *a);
 void func_80098768(Mat41 *m, Vec41 *v, Vec41 *out);
 void func_800643E4(Obj41 *o);
+// A bike (chunk_31's Bike31): its mode in bits 1-5, its object
+struct Bk41 {
+    int m_00;
+    u8 m_04[0x2C];
+    Obj41 *m_30;
+};
+struct Trk41 {
+    u8 m_00[0x34];
+    int m_34;
+    int m_38; // the range
+};
+struct Rul41 {
+    u8 m_00[0x52C];
+    int m_52C;
+};
+struct Rc41 {
+    u8 m_00[0x10];
+    Rul41 *m_10;
+};
+struct Game41 {
+    u8 m_00[0x378];
+    Rc41 *m_378;
+    u8 m_37C[0x70];
+    Trk41 *m_3EC;
+};
+int func_8001D018(Trk41 *t, void *a, void *b);
+void func_80063C60(Obj41 *o, int *p, u8 *q, int a, int k, Obj41 *other, int d);
+void func_80063A68(Obj41 *o, Game41 *g);
 struct Cell41 {
     u8 m_00[0xE];
     u8 m_0E;
@@ -204,7 +241,71 @@ int func_80063A5C(Obj41 *o) {
     return o->m_134;
 }
 
+#ifdef NON_MATCHING
+// The outer loop's shape (the original enters it with a jump into the body, 2 kept in $s7) and the registers: far off (114 differ)
+/* Each bike of mode 2 in turn: the others within range ahead and behind passed to func_80063C60. */
+void func_80063A68(Obj41 *o, Game41 *g) {
+    Bk41 *self = o->m_54;
+    int k;
+
+    switch (g->m_378->m_10->m_52C) {
+    case 1:
+    case 4:
+        k = 0x3000;
+        break;
+    case 2:
+    case 5:
+    case 6:
+        k = 0x4000;
+        break;
+    case 3:
+    case 7:
+    case 8:
+        k = 0x2000;
+        break;
+    }
+    do {
+        if (!o->m_14D) {
+            Trk41 *t = g->m_3EC;
+
+            if (t->m_34 && o->m_1B4) {
+                Bk41 *b = o->m_1B8;
+
+                for (;;) {
+                    Obj41 *p = b->m_30;
+                    int d = func_8001D018(t, &o->m_1B4, &p->m_1B4);
+
+                    if (t->m_38 < d || d < -0x1FFF) {
+                        break;
+                    }
+                    func_80063C60(o, p->m_64, p->m_11C, p->m_10C, k, p, d);
+                    b = p->m_1B8;
+                    if (b == o->m_54) {
+                        break;
+                    }
+                }
+                b = o->m_1B4;
+                for (;;) {
+                    Obj41 *p = b->m_30;
+                    int d = func_8001D018(t, &o->m_1B4, &p->m_1B4);
+
+                    if (t->m_38 < d || d <= 0) {
+                        break;
+                    }
+                    func_80063C60(o, p->m_64, p->m_11C, p->m_10C, k, p, d);
+                    b = p->m_1B4;
+                    if (b == o->m_54) {
+                        break;
+                    }
+                }
+            }
+        }
+        o = o->m_1B4->m_30;
+    } while (((o->m_54->m_00 << 26) >> 27) == 2 && o->m_54 != self);
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_41", func_80063A68);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_41", func_80063C60);
 
