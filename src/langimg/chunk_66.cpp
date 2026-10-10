@@ -8,6 +8,22 @@
 /* (docs/matching/issue-67-langimg-chunk66.md) */
 
 extern "C" {
+// A plane: its normal, and its distance with the normal's side in the top bit
+struct Plane66 {
+    Vector3 *m_n;
+    int m_d : 31;
+    int m_flip : 1;
+};
+
+// What an object keeps at 0xA0
+struct Sub66 {
+    u8 m_00[0x1C];
+    int m_1C;
+    u8 m_20[0x24];
+    int m_44; // a scale: 0x1555 or 0x1000
+    u8 m_48[8];
+};
+
 // An object whose settings mark it to be redone (m_38 cleared)
 struct Obj66 {
     int m_00, m_04, m_08, m_0C;
@@ -22,7 +38,7 @@ struct Obj66 {
     int m_94;
     struct Virt66 *m_98;
     int m_9C;
-    u8 m_A0[0x50];
+    Sub66 m_sub; // 0xA0
     int m_F0, m_F4;
     short m_F8, m_FA, m_FC, m_FE;
     int m_100, m_104, m_108, m_10C;
@@ -50,11 +66,6 @@ struct Virt66 {
 struct Ent66 {
     int m_00, m_04;
     int m_id;
-};
-
-// Where a vector goes, and what's done with it
-struct Dest66 {
-    Vector3 *m_00;
 };
 
 // A bit stream
@@ -112,14 +123,7 @@ extern void *D_800C8D94;
 extern Ent66 *D_800CBE80;
 extern int D_800CBE88;
 extern int D_800BF3A0[]; // sines and cosines by angle, two shorts each
-void func_80096EC8(Dest66 *d, int a);
-
-// A plane: its normal, and its distance with the normal's side in the top bit
-struct Plane66 {
-    Vector3 *m_n;
-    int m_d : 31;
-    int m_flip : 1;
-};
+void func_80096EC8(Plane66 *p, Vector3 *v);
 
 // A named item of a list
 struct Item66 {
@@ -170,6 +174,19 @@ int func_800955C4(List66 *l, char *name);
 Rec66 *func_800952E0(int i, Rec66 *recs);
 void func_80095684(Obj66 *o);
 
+extern s8 D_800C9D74;
+void *__builtin_new(unsigned int n);
+Virt66 *func_800897C0(void *p);
+void *malloc(unsigned int n);
+
+#define VCALL2(o, i, a, b) \
+    (((int (*)(void *, int, int))(o)->m_vtable[i].m_func)((char *)(o) + (o)->m_vtable[i].m_delta, \
+                                                          a, b))
+
+int func_800960D0(Obj66 *o, int a, int n, int x);
+void func_80096CA8(Bits66 *b, int v, ...);
+void func_8009674C(Bits66 *b, u32 size, u32 *words, u32 cap, Blk66 *blks, u32 bytes);
+
 void func_8009682C(Bits66 *b);
 int func_800958E0(Obj66 *o);
 void func_80096918(Bits66 *b, int mode);
@@ -185,7 +202,7 @@ int func_80096884(Bits66 *b);
 int func_800968D4(Bits66 *b);
 int func_80096508(void);
 void func_800958A0(RECT *r);
-void func_80096E8C(Dest66 *d, Vector3 *v, int a);
+void func_80096E8C(Plane66 *p, Vector3 *n, Vector3 *v);
 int func_8009574C(Obj66 *o, RECT *r);
 void func_800966DC(Bits66 *b);
 void func_800961A0(Obj66 *o);
@@ -431,7 +448,33 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_66", func_8009593C);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_66", func_80095F84);
 
+#ifdef NON_MATCHING
+/* The scale's two branches and the saved registers in another order (42 off) */
+int func_800960D0(Obj66 *o, int a, int n, int x) {
+    int r = 0;
+    Sub66 *s = &o->m_sub;
+    int k;
+
+    if (D_800C9D74) {
+        k = 0x1555;
+    } else {
+        k = 0x1000;
+    }
+    s->m_44 = k;
+    if (n > 0) {
+        if (!o->m_98) {
+            if (!(o->m_98 = func_800897C0(__builtin_new(0x18)))) {
+                return r;
+            }
+        }
+        r = VCALL2(o->m_98, 2, n, x);
+        s->m_1C = n;
+    }
+    return r;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_66", func_800960D0);
+#endif
 
 void func_800961A0(Obj66 *o) {
     if (o->m_98) {
@@ -537,7 +580,41 @@ void func_80096724(Bits66 *b) {
     b->m_14 = b->m_1C;
 }
 
+#ifdef NON_MATCHING
+/* The blocks' size and the minimum in other registers (13 off) */
+/* The stream over the blocks first, then the words (allocated if none are
+ * given); its size, what fitted. */
+void func_8009674C(Bits66 *b, u32 size, u32 *words, u32 cap, Blk66 *blks, u32 bytes) {
+    int left = (size >> 2) << 2;
+    int n;
+
+    cap = (cap >> 2) << 2;
+    bytes = (bytes >> 4) << 4;
+    if (blks && bytes) {
+        int h = bytes >> 2;
+
+        b->m_blks = blks;
+        n = h < left ? h : left;
+        b->m_1C = (u32)n >> 1;
+        left -= n;
+    }
+    if (left) {
+        if (words) {
+            b->m_words = words;
+            n = cap ? (cap < left ? cap : left) : left;
+        } else {
+            b->m_words = (u32 *)malloc(left);
+            b->m_26 = 1;
+            n = left;
+        }
+        b->m_18 = (u32)n >> 2;
+        left -= n;
+    }
+    b->m_20 = size - left;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_66", func_8009674C);
+#endif
 
 /* The destructor. */
 void func_8009682C(Bits66 *b) {
@@ -674,7 +751,31 @@ void func_80096C14(Bits66 *d, Bits66 *s) {
     }
 }
 
+#ifdef NON_MATCHING
+/* The limit and its negation in each other's registers (38 off) */
+/* v written with the first width of the list (to -1) it fits, after a 1 bit
+ * (a 0 bit for each width it doesn't). */
+void func_80096CA8(Bits66 *b, int v, ...) {
+    va_list ap;
+    int w;
+
+    va_start(ap, v);
+    w = va_arg(ap, int);
+    while (w != -1) {
+        int lim = 1 << (w - 1);
+
+        if (v >= -lim && v <= lim - 1) {
+            func_80096ACC(b, 1, 1);
+            func_80096ACC(b, w, v);
+            return;
+        }
+        func_80096ACC(b, 1, 0);
+        w = va_arg(ap, int);
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_66", func_80096CA8);
+#endif
 
 /* For each width of the list (to -1), a bit: when it's set, a value of that
  * width read. */
@@ -713,19 +814,28 @@ Pair66 *func_80096E7C(Pair66 *p) {
     return p;
 }
 
-void func_80096E8C(Dest66 *d, Vector3 *v, int a) {
-    Vector3 *p = d->m_00;
-    int x = v->vx;
-    int y = v->vy;
-    int z = v->vz;
+/* The plane through v with the normal n. */
+void func_80096E8C(Plane66 *p, Vector3 *n, Vector3 *v) {
+    Vector3 *d = p->m_n;
+    int x = n->vx;
+    int y = n->vy;
+    int z = n->vz;
 
-    p->vx = x;
-    p->vy = y;
-    p->vz = z;
-    func_80096EC8(d, a);
+    d->vx = x;
+    d->vy = y;
+    d->vz = z;
+    func_80096EC8(p, v);
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_66", func_80096EC8);
+/* The plane's distance set from a point on it. */
+void func_80096EC8(Plane66 *p, Vector3 *v) {
+    int x = MULSHIFT(p->m_n->vx, v->vx, 26);
+    int y = MULSHIFT(p->m_n->vy, v->vy, 26);
+    int z = MULSHIFT(p->m_n->vz, v->vz, 26);
+
+    p->m_d = -(x + y + z);
+    p->m_flip = 0;
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_66", func_80096F8C);
 
