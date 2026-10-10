@@ -11,6 +11,11 @@ extern "C" {
 void func_800990E8(Vector3 *v, int shift);
 Vector3 *func_80099D48(Vector3 *v, int shift); // v >> shift
 int ratan2(long y, long x);
+void func_8002434C(Bike *b);
+void func_80033D1C(MATRIX *m, SVECTOR *rot); // a rotation matrix
+Vector3 *func_800997A4(Vector3 *a, Vector3 *b);
+Vector3 *func_80099B60(Vector3 *out, Vector3 *a, Vector3 *b, int shift); // a cross product
+Vector3 *func_80022D20(Vector3 *out, Vector3 *in);
 }
 
 static inline void VecCopy(Vector3 *d, Vector3 *s) {
@@ -21,6 +26,12 @@ static inline void VecCopy(Vector3 *d, Vector3 *s) {
     d->vx = x;
     d->vy = y;
     d->vz = z;
+}
+
+static inline void VecCopyF(Vector3 *d, Vector3 *s) {
+    d->vx = s->vx;
+    d->vy = s->vy;
+    d->vz = s->vz;
 }
 
 static inline void FrameCopy(Frame *d, Frame *s) {
@@ -193,7 +204,64 @@ void func_800242A4(Bike *b, int flags) {
     func_80062EEC(b, flags);
 }
 
+#ifdef NON_MATCHING
+/* The stack layout matches; GCC here keeps the locals' addresses in saved registers where the original recomputes them (the open problem of func_80016E34) */
+/* The bike's matrix from its three angles (y, then x, then z) and its
+ * position: its heading the matrix's z (4.26), its side and up from it. */
+void func_8002434C(Bike *b) {
+    {
+        MATRIX a, m, my;
+        SVECTOR ry;
+        MATRIX mx;
+        SVECTOR rx;
+        MATRIX mz;
+        SVECTOR rz;
+
+        ry.vx = 0;
+        ry.vy = b->m_ry;
+        ry.vz = 0;
+        func_80033D1C(&my, &ry);
+        my.t[0] = my.t[1] = my.t[2] = 0;
+        rx.vy = 0;
+        rx.vz = 0;
+        rx.vx = b->m_rx;
+        func_80033D1C(&mx, &rx);
+        mx.t[0] = mx.t[1] = mx.t[2] = 0;
+        func_80098674(&my, &mx, &m);
+        func_8009887C(mx.t, m.t);
+        func_800997D0(m.t, my.t);
+        rz.vx = 0;
+        rz.vy = 0;
+        rz.vz = -b->m_rz;
+        func_80033D1C(&mz, &rz);
+        mz.t[0] = mz.t[1] = mz.t[2] = 0;
+        func_80098674(&m, &mz, &a);
+        func_8009887C(mz.t, a.t);
+        func_800997D0(a.t, m.t);
+        b->m_mat = a;
+    }
+    {
+        Vector3 w, u;
+
+        u.vx = 0;
+        u.vy = 0;
+        u.vz = 0x4000000;
+        func_80098768(&b->m_mat, &u.vx, &w.vx);
+        func_800997D0(&w.vx, b->m_mat.t);
+        VecCopyF(&b->m_330, &w);
+        VecCopyF(&b->m_33C, &b->m_330);
+        VecCopyF(&b->m_360, &b->m_33C);
+        func_80022D20(&u, &b->m_33C);
+        func_800997A4(&w, &u);
+        func_80099B60(&u, &w, &b->m_33C, 26);
+        VecCopy(&b->m_348, &u);
+        func_800990E8(&b->m_348, 26);
+        VecCopy(&b->m_354, &b->m_330);
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_09", func_8002434C);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_09", func_80024584);
 
