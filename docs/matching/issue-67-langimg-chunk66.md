@@ -1,0 +1,74 @@
+# The game's chunk_66: a bit stream, CD reads, planes (#67)
+
+The bit stream that chunk_45's settings are written to and read from,
+over plain words or over halves of words kept in 16-byte blocks; CD
+sector reads with retries; a pack of entries loaded from a file; an
+object of settings with a "placed" flag; planes stored as a normal and a
+31-bit distance. One file, `src/langimg/chunk_66.cpp`,
+0x800950B0-0x80097128.
+
+59 functions: 49 match, 5 are parked, 5 are still asm.
+
+## The settings
+
+GCC 2.91.66 (`func_800968B0`'s registers came out right only with it),
+`-G8`, split addresses (`func_80096E28` builds the sine table's address
+with `lui`/`addiu`), divisions without checks, five small globals
+(`langimg.chunk_66_*`).
+
+## The types
+
+- `Bits66`: the stream. The words (`m_words`) or the blocks (`m_blks`),
+  the position in each, how many words and halves are left, the size, a
+  mode (2 when written), whether the words are its own to free, and the
+  bit in the current word.
+- `Plane66`: a pointer to the normal and one word holding a 31-bit
+  distance and, in its top bit, the side of the normal (`m_d : 31`,
+  `m_flip : 1`).
+- `Obj66`: an object with a rectangle, a size, values set by setters that
+  clear its "up to date" flag (0x38), the one placed before it (0x50), a
+  sub-object (0x98, with a vtable at 0x14) and a sub-struct at 0xA0.
+
+## The functions
+
+| Function | State | Notes |
+|---|---|---|
+| `func_800950B0`, `func_800953A4`, `func_8009593C` | asm | 141, 137 and 402 instructions |
+| `func_800952E0` | parked | a track point into the camera's frame: the loads' order (43 off) |
+| `func_800955C4` to `func_800958E0` | match | a lookup by name, the constructor, setters, the placement |
+| `func_80095F84` | asm | 83 instructions of the sub-struct's maths |
+| `func_800960D0` | parked | the sub-object made and called: the branches and registers (42 off) |
+| `func_800961A0` to `func_80096240` | match | a virtual call, a rate, a lookup by id |
+| `func_80096290` | parked | a pack loaded: GCC folds `size - (size - x)` (65 off) |
+| `func_800963BC` | matches | the pack freed |
+| `func_800963E8` | asm | a 0x800-byte copy and a string |
+| `func_80096508` to `func_8009662C` | match | the CD's shell, sectors read, retried |
+| `func_800966DC`, `func_80096724` | match | the stream emptied, back to its start |
+| `func_8009674C` | parked | the stream over a buffer: registers (13 off) |
+| `func_8009682C` to `func_80096C14` | match | the stream freed, its words and bits, its copy |
+| `func_80096CA8` | parked | a value written with the first width it fits: registers (38 off) |
+| `func_80096D84` to `func_8009707C` | match | a varargs read, planes |
+
+- **A varargs list read with PsyQ's `va_arg`, the named argument
+  copied.** `func_80096D84` keeps the width in a register and the named
+  argument in its stack slot: `int w = n;` and `w = va_arg(ap, int);`.
+  Reassigning `n` itself kept it in memory; a pointer walked by hand
+  loaded before adding.
+- **`n = 32 - n` in place.** `func_80096B74` and `func_80096ACC` compute
+  the shift into the parameter's own register: `n = 32 - n; return (int)(v
+  << n) >> n;`.
+- **A product in each local.** `func_80096EC8`'s three `MULSHIFT`s matched
+  as three locals summed; `func_80096F8C`'s two as `d = ...; d += ...;`;
+  `func_8009707C` with the shift a literal, not a variable.
+- **Bitfields for a flag in a word's top bit.** `if (p->m_flip)` tests
+  the word's sign, `p->m_d` reads it with `sll`/`sra` by 1, and storing
+  both makes one masked store (`func_80096EC8`).
+- **An `int` stored into a `short` is loaded as a halfword.**
+  `func_8009574C` reads the rectangle's `int`s with `lhu`; the fields are
+  `int`s (the constructor stores whole words to them), GCC narrows the
+  load.
+- **A callee's return.** `func_800955C4`'s registers after
+  `func_800A6344` (a string upcased) needed it to return `char *`.
+- **The test that controls the loop.** `func_800955C4` loops while the
+  result is -1, the count an inner `break`: `for (i = 0; r == -1 && i <
+  n; i++)`.

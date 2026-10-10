@@ -31,7 +31,7 @@ What git holds and what it doesn't:
 | Code                          | Compiler                           | Language |
 |-------------------------------|------------------------------------|----------|
 | `LANGIMG.DAT` (`src/langimg`) | GCC 2.95.2, PlayStation build      | C++      |
-| `LANGIMG.DAT`'s functions between the classes (`src/langimg` chunk_02 to chunk_12, chunk_23, chunk_45) | GCC 2.91.66, PlayStation build | C++ |
+| `LANGIMG.DAT`'s functions between the classes (`src/langimg` chunk_02 to chunk_12, chunk_23, chunk_45, chunk_66) | GCC 2.91.66, PlayStation build | C++ |
 | `LANGIMG.DAT`'s sound engine (`lib/sound`) | GCC 2.91.66, PlayStation build | C++ (or C) |
 | `SCES_030.37` (`src/sces`)    | GCC 2.91.66 (egcs 1.1.2), PlayStation build | C++      |
 | Sony's libraries in both (`lib/psyq`) | not identified yet ([libraries.md](libraries.md)) | C |

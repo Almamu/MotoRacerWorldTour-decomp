@@ -91,6 +91,7 @@ settings
 | `src/langimg` chunk_04, chunk_05 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=` |
 | `src/langimg` chunk_23 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=D_800CABB7` |
 | `src/langimg` chunk_45 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (eleven) |
+| `src/langimg` chunk_66 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (five) |
 | `src/langimg` chunk_06 to chunk_12 (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_02b (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `SCES_030.37` (`src/sces`) | GCC 2.91.66 | 0 | `-fsigned-char` | `--expand-div` |
@@ -366,6 +367,9 @@ globals), a script that tries every order is quicker than guessing:
 - **How a subtraction is associated.** `x - 10 - y` folds to
   `x - (y + 10)`; `x - (10 + y)` gives the original's `addiu -10`, `subu`
   (`func_8006B3B0`).
+- **A parameter reused.** `n = 32 - n; return (int)(v << n) >> n;` puts
+  the shift in the parameter's register, as chunk_66's bit stream does
+  (`func_80096B74`).
 - **An offset folded into the load.** `(&a[i])[1]` loads at `a + 4*i + 4`
   with the 4 in the offset; `a[i + 1]` computes `i + 1` first
   (`func_8006C4A0`).
@@ -423,6 +427,10 @@ assignments were further off.
 A 2-aligned struct copied with `lw`/`sw` can also be copied through a
 cast to a struct of three `int`s, when nothing else about the struct
 says it held one (`Words3`, chunk_45's `func_8006C330`).
+
+An `int` field stored into a `short` can be loaded with `lhu`: GCC
+narrows the load (chunk_66's `func_8009574C`). An `lhu` doesn't by itself
+mean a `short` field.
 
 ### Types
 
@@ -490,6 +498,9 @@ says it held one (`Words3`, chunk_45's `func_8006C330`).
   pass its own argument on: `func_80012F40` calls `func_80013348` with
   `$a0` untouched, so it takes the handle and passes it. Written without
   parameters it can even match, and is wrong.
+- **A varargs argument copied.** chunk_66's `func_80096D84` keeps its
+  last named argument in its slot and a copy in a register: `int w = n;`
+  then `w = va_arg(ap, int);`.
 - **Variadic functions, PsyQ's way.** `include/stdarg.h` is PsyQ's:
   `va_start` takes the address of the last named argument, which keeps
   the named arguments in their stack slots as the original does. GCC's own
@@ -556,6 +567,12 @@ What's left once the instructions are right is usually register choice.
   values at a volatile `asm`, so a constant operand used by two of them is
   loaded twice; with a plain `asm` it's loaded once. `MULSHIFT` is
   volatile (`func_800236F0`).
+- **The shape around `MULSHIFT`s shows in the shift's loads.** Three
+  products in one expression load the constant shift once
+  (`func_8009707C`); three products in three locals, then summed, load it
+  for the first two and again for the third (`func_80096EC8`); a sum built
+  with `d = ...; d += ...;` keeps it in the result's register
+  (`func_80096F8C`, chunk_66).
 - **Two nops between `mflo` and a multiply.** The R3000 needs two
   instructions between a move from HI/LO and the next `mult`/`div`;
   ASPSX fills them with `nop`s, and so does `--div-no-checks`
