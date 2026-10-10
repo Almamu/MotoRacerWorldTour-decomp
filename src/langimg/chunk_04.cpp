@@ -39,12 +39,26 @@ struct Range {
     short m_42;
     short m_44;
     short m_46;
-    u8 m_48;
-    u8 m_49;
+    s8 m_48;
+    s8 m_49;
 };
 
 // What D_800C5E14 points at: 4 flags at 0xE4, one per object type
 extern u8 *D_800C5E14;
+extern u8 D_800C885C;  // the text's mode
+extern u8 D_800C885D;  // its brightness
+extern int D_800C8860; // its colour
+extern int D_800C89D0;
+extern u8 D_800C89D4; // the font's size
+extern u8 D_800C89D5;
+extern int D_800C89D8;
+extern int D_800CBD58;    // the font
+extern char D_800C498C[]; // "%d"
+extern "C" int sprintf(char *buf, const char *fmt, ...);
+void func_80080F8C(void);
+void func_80080040(int font, char *s, int x, int y, int *h);
+void func_80019FF8(Range *r, int wide);
+void func_8001A2A0(Range *r);
 void func_80019F0C(Range *r, RangeDef *def);
 void func_80019FA4(Range *r, int a, int b);
 void func_80019FB0(Range *r, int a, int b);
@@ -59,7 +73,8 @@ struct Grid {
     int m_x;
     int m_y; // 24.8
     int m_z;
-    u8 m_0C[0x1C];
+    short m_nb[4]; // 0x0C: the neighbours, as distances (-0x7FFF: none)
+    u8 m_14[0x14];
     int m_28;
     u8 m_2C[0xC];
 };
@@ -85,7 +100,7 @@ struct GridSet {
     short (*m_index)[2]; // 0x24: each index cell's first and last grid
 };
 int func_8001A6AC(GridSet *gs, Vector3 *v, int a, int exact);
-int func_8001A86C(Grid *g, Vector3 *v, int n, int a);
+int func_8001A86C(Grid *base, Vector3 *v, int n, Grid *g);
 int func_8001ABBC(Grid *g, SVECTOR *c, int a);
 int func_8001AD78(void *self, int a, int b);
 int func_8001AF3C(Grid *g, Vector3 *v, SVECTOR *c);
@@ -332,7 +347,57 @@ void func_80019FBC(Range *r, int pos) {
     r->m_3A = r->m_def.m_06 - (r->m_def.m_06 - r->m_def.m_08) * pos / 4096;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_80019FF8);
+/* A range's draw: its frame (wide, or narrow), its value as text, and in
+ * the wide one its needle; in the narrow one, two more pieces. */
+void func_80019FF8(Range *r, int wide) {
+    int x, y;
+    int h[2];
+    char buf[8];
+
+    if (wide) {
+        x = 0x4C;
+        y = 0xE;
+    } else {
+        x = 0;
+        y = 0x25;
+    }
+    if (r->m_48) {
+        func_8001A4F0(r, 0x9A, 0x4C, 0x25, -1, 0x1000, 0xFF);
+    }
+    if (r->m_49) {
+        func_8001A4F0(r, 0x9A, x, y, -1, 0x1000, 0xFF);
+    }
+    func_8001A4F0(r, 0x99, 0xD, 0x25, -1, r->m_44, 0xFFFFFF);
+    sprintf(buf, D_800C498C, r->m_46);
+    D_800C885C = 4;
+    D_800C885D = 0x80;
+    D_800C8860 = 0xFFFFFF;
+    D_800C89D0 = 0;
+    if (D_800C89D4 != 8 || D_800C89D5) {
+        D_800C89D4 = 8;
+        D_800C89D5 = 0;
+        func_80080F8C();
+    }
+    if (D_800C89D8 != 0xFFFF) {
+        D_800C89D8 = 0xFFFF;
+        func_80080F8C();
+    }
+    {
+        /* the font through a pointer: the original reads it there */
+        int *font = &D_800CBD58;
+
+        func_80080040(*font, buf, r->m_3C + x - 2, r->m_3E + y - 11, h);
+    }
+    if (wide) {
+        func_8001A4F0(r, 0x9B, 0x1B, 0x12, -1, 0x1000, 0x808080);
+        func_8001A2A0(r);
+        func_8001A4F0(r, 0x98, 0, 0, 0, 0x1000, 0x808080);
+    } else {
+        func_8001A4F0(r, 0x9D, 0x49, 0x24, -1, 0x1000, 0x808080);
+        func_8001A4F0(r, 0x9D, x - 3, y - 1, -1, 0x1000, 0x808080);
+        func_8001A4F0(r, 0x9C, 0xC, 0x24, -1, 0x1000, 0x404040);
+    }
+}
 
 #ifdef NON_MATCHING
 /* Equivalent; the multiplications scheduled otherwise (141 off) */
@@ -435,7 +500,7 @@ int func_8001A664(Grid *g, Vector3 *v) {
 /* The set's grid a position is in: func_8001A86C's, else (unless exact)
  * the first through the index, or -1. */
 int func_8001A6AC(GridSet *gs, Vector3 *v, int a, int exact) {
-    int r = func_8001A86C(gs->m_grids, v, gs->m_count, a);
+    int r = func_8001A86C(gs->m_grids, v, gs->m_count, (Grid *)a);
     int x;
     int z;
     int i;
@@ -487,7 +552,85 @@ int func_8001A7F4(Grid *g, Vector3 *v, int n, int a) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_8001A7F4);
 #endif
 
+#ifdef NON_MATCHING
+/* A first draft, right in effect: the original runs out of saved registers and spills g and two constants around the calls (0x98 frame, here 0x88) */
+/* The index of the grid holding v, from base: g, one of its neighbours,
+ * or one of theirs not tried yet; -1 if none. */
+int func_8001A86C(Grid *base, Vector3 *v, int n_unused, Grid *g) {
+    Grid *seen[14];
+    Vector3 p = *v;
+    int r = -1;
+    int n = 0;
+    int i, j, k;
+
+    if (!g) {
+        return r;
+    }
+    if (func_8001A664(g, &p)) {
+        return g - base;
+    }
+    for (i = 0; i < 4; i++) {
+        Grid *h;
+
+        if (r != -1) {
+            return r;
+        }
+        h = g->m_nb[i] == -0x7FFF ? 0 : g + g->m_nb[i];
+        if (h && func_8001A664(h, &p)) {
+            r = h - base;
+        }
+    }
+    if (r != -1) {
+        return r;
+    }
+    seen[n++] = g;
+    for (i = 0; i < 4; i++) {
+        if (g->m_nb[i] != -0x7FFF) {
+            seen[n++] = g + g->m_nb[i];
+        }
+    }
+    for (i = 0; i < 4; i++) {
+        Grid *h;
+
+        if (r != -1) {
+            return r;
+        }
+        h = g->m_nb[i] == -0x7FFF ? 0 : g + g->m_nb[i];
+        if (!h) {
+            continue;
+        }
+        for (j = 0; j < 4; j++) {
+            Grid *q;
+            int found;
+
+            if (r != -1) {
+                break;
+            }
+            q = h->m_nb[j] == -0x7FFF ? 0 : h + h->m_nb[j];
+            if (!q) {
+                continue;
+            }
+            found = 0;
+            for (k = 0; k < n; k++) {
+                if (seen[k] == q) {
+                    found = 1;
+                    break;
+                }
+            }
+            if (found) {
+                continue;
+            }
+            seen[n++] = q;
+            if (func_8001A664(q, &p)) {
+                r = q - base;
+            }
+        }
+    }
+    return r;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_8001A86C);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_8001ABBC);
 

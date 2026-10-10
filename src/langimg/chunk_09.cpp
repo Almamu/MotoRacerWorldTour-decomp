@@ -13,6 +13,9 @@ Vector3 *func_80099D48(Vector3 *v, int shift); // v >> shift
 int ratan2(long y, long x);
 void func_8002434C(Bike *b);
 void func_80025174(Bike *b);
+void func_80024D0C(Bike *b);
+void func_80097F68(MATRIX *m, SVECTOR *r);
+void func_80022DE4(Vector3 *v, int shift, int a, int as, int b, int bs, int c, int cs);
 Vector3 *func_80099D74(Vector3 *v, int shift); // v << shift
 void func_80030CFC(Bike *b);
 void func_80026648(Bike *b, Motion *m);
@@ -25,6 +28,8 @@ Vector3 *func_800997A4(Vector3 *a, Vector3 *b);
 Vector3 *func_80099B60(Vector3 *out, Vector3 *a, Vector3 *b, int shift); // a cross product
 Vector3 *func_80022D20(Vector3 *out, Vector3 *in);
 }
+
+#define IABS(x) ((x) < 0 ? -(x) : (x))
 
 static inline void VecCopy(Vector3 *d, Vector3 *s) {
     int x = s->vx;
@@ -417,9 +422,95 @@ void func_80024C90(Bike *b) {
     FrameCopy(&b->m_580, b->m_230);
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_09", func_80024D0C);
+#ifdef NON_MATCHING
+/* A first draft: right in shape, but registers differ throughout (the bike in $s1, the original's in $s2) and the matrix's column is read through a pointer there */
+/* The bike's angles from its 4.12 radians; its heading from its matrix,
+ * or (on the ground, under way, not turning too far) turned towards its
+ * yaw; its side and up from the heading. */
+void func_80024D0C(Bike *b) {
+    int d, ad;
 
-#define IABS(x) ((x) < 0 ? -(x) : (x))
+    b->m_rx = (b->m_3B0 << 12) / 0x6488;
+    b->m_ry = (((b->m_394 >> 4) + b->m_F8) << 12) / 0x6488;
+    b->m_rz = (b->m_39C << 12) / 0x6488;
+    if (!b->m_58 && !b->m_F8) {
+        d = b->m_394 - b->m_398;
+        ad = IABS(d);
+        if (ad > 0x3243F) {
+            if (d > 0) {
+                d -= 0x6487E;
+            } else if (d < 0) {
+                d += 0x6487E;
+            } else {
+                goto same;
+            }
+            ad = IABS(d);
+        }
+    same:
+        if (b->m_F0 > 500 || b->m_14F || b->m_29C < 0x1000 || ad >= 0x3334 || b->m_2E0) {
+            b->m_330.vx = b->m_mat.m[0][2];
+            b->m_330.vy = b->m_mat.m[1][2];
+            b->m_330.vz = b->m_mat.m[2][2];
+            func_80099D74(&b->m_330, 14);
+        } else {
+            int dx = b->m_3B0 - b->m_3B4;
+            int r;
+
+            if (dx < -0x4CC) {
+                r = -0x4CC;
+            } else if (dx <= 0x4CC) {
+                r = dx;
+            } else {
+                r = 0x4CC;
+            }
+            func_80022DE4(&b->m_330, 26, r, 12, d, 16, b->m_3A0 - b->m_39C, 12);
+        }
+        VecCopy(&b->m_33C, &b->m_330);
+        if (ad > 0x200) {
+            func_80025074(b);
+        }
+    } else {
+        MATRIX m;
+        struct {
+            SVECTOR r;
+            Vector3 t;
+        } p;
+
+        p.r.vx = b->m_rx;
+        p.r.vy = b->m_ry;
+        p.r.vz = -b->m_rz;
+        func_80097F68(&m, &p.r);
+        p.t.vx = 0;
+        p.t.vy = 0;
+        p.t.vz = 0;
+        m.t[0] = 0;
+        m.t[1] = 0;
+        m.t[2] = 0;
+        b->m_330.vx = b->m_mat.m[0][2];
+        b->m_330.vy = b->m_mat.m[1][2];
+        b->m_330.vz = b->m_mat.m[2][2];
+        func_80099D74(&b->m_330, 14);
+        b->m_33C.vx = m.m[0][2];
+        b->m_33C.vy = m.m[1][2];
+        b->m_33C.vz = m.m[2][2];
+        func_80099D74(&b->m_33C, 14);
+    }
+    if ((u8)(b->m_58 - 1) >= 2) {
+        Vector3 w, u;
+
+        func_80022D20(&u, &b->m_33C);
+        func_800997A4(&w, &u);
+        func_80099B60(&u, &w, &b->m_33C, 26);
+        VecCopy(&b->m_348, &u);
+        func_800990E8(&b->m_348, 26);
+    }
+    b->m_3B4 = b->m_3B0;
+    b->m_398 = b->m_394 + (b->m_F8 << 4);
+    b->m_3A0 = b->m_39C;
+}
+#else
+INCLUDE_ASM("asm/langimg/nonmatchings/chunk_09", func_80024D0C);
+#endif
 
 #ifdef NON_MATCHING
 /* Registers, and the original compares with 0x3243 in a register (47 off) */

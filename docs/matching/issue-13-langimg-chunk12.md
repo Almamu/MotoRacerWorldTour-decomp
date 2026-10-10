@@ -4,7 +4,8 @@ Bike methods (chunk_09): running into the back of another bike, a push
 sideways, the motion's two limits from the motor, and larger ones. One
 file, `src/langimg/chunk_12.cpp`, 0x800297B4-0x8002B800.
 
-11 functions: 3 match, 2 are parked, 6 are still asm.
+11 functions: 3 match, 3 are parked, 5 are still asm (after the pass
+over the large functions).
 
 ## The settings
 
@@ -20,7 +21,8 @@ checks, no small globals (`langimg.chunk_12_*`).
 | `func_8002A260` | matches | empty |
 | `func_8002A268` | parked | a push sideways, scaled by `m_3AC`: `MULSHIFT`'s temporary register, one instruction more |
 | `func_8002A394` | matches | one of two setups by the motor's flags, then a third call |
-| `func_8002A3F0`, `func_8002A7A0`, `func_8002ABE8`, `func_8002AF8C`, `func_8002B40C` | asm | 213 to 288 instructions |
+| `func_8002A3F0`, `func_8002A7A0`, `func_8002AF8C`, `func_8002B40C` | asm | 236 to 288 instructions |
+| `func_8002ABE8` | parked | the slope's pull: a first draft |
 | `func_8002AF3C` | matches | the motions' limits from the motor |
 
 The bike's header gained its position (0x64), its velocity (0x11C) and
