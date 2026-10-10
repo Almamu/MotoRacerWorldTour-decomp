@@ -48,7 +48,12 @@ struct Obj47 {
 };
 // The 124-byte entries at D_800CB5E0
 struct Ent47 {
-    u8 m_00[0x7C];
+    u8 m_00[0xC];
+    void *m_0C; // the first part's vtable
+    u8 m_10[0x30];
+    u8 m_40[0xC]; // the second part
+    void *m_4C;   // its vtable
+    u8 m_50[0x2C];
 };
 
 // A position, an angle (12 bits) and a length
@@ -129,6 +134,24 @@ void func_80096C14(void *d, void *s);
 void func_800153FC(int v);
 void func_80012120(void *c, int v);
 void func_8006F21C(Ent47 *e);
+// Five positions, the newest last, and the differences between them
+struct Hist47 {
+    Vec47 m_00;
+    Vec47 m_0C;
+    Vec47 m_18;
+    Vec47 m_24;
+    Vec47 m_30;
+};
+void func_80099898(Vec47 *d, Vec47 *a, Vec47 *b);
+void func_800998D0(Vec47 *d, Vec47 *a, Vec47 *b);
+void func_80070A40(Hist47 *h, Vec47 *v);
+void func_80070B2C(Hist47 *h, Vec47 *v);
+void func_8006FB74(void);
+void func_80013CFC(World47 *w);
+void func_8006E054(void *p);
+extern int D_800CB5DC;
+extern int D_800C83D8; // the entries' two vtables (built with la)
+extern int D_800C8400;
 void func_8006F29C(Ent47 *e, u8 *x);
 
 void func_8006F7A0(void);
@@ -287,7 +310,44 @@ void func_8006FB3C(void) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_47", func_8006FB74);
+/* The static objects' construction, by their first users: D_800D11D0 (its
+ * arrays' elements have empty constructors), then the five entries. */
+/* The static objects' construction, by their first users: D_800D11D0 (its
+ * arrays' elements have empty constructors), then the five entries. */
+void func_8006FB74(void) {
+    int i;
+    Ent47 *e;
+
+    if (++D_800CB5D8 == 1) {
+        World47 *w = &D_800D11D0;
+        int j;
+        int k;
+
+        u8 *q = (u8 *)w;
+
+        j = 63;
+        do {
+            q += 4;
+        } while (--j != -1);
+        k = 1;
+        do {
+            q += 4;
+        } while (--k != -1);
+        func_80013CFC(w);
+    }
+    if (++D_800CB5DC == 1) {
+        e = ENTS47;
+        i = 4;
+        do {
+            func_8006E054(e);
+            e->m_0C = &D_800C83D8;
+            func_8006E054(e->m_40);
+            e->m_4C = &D_800C8400;
+            func_8006F1E0(e);
+            e++;
+        } while (--i != -1);
+    }
+}
 
 Obj47 *func_8006FC70(Obj47 *o) {
     func_800966DC(o->m_08);
@@ -390,9 +450,29 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_47", func_80070314);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_47", func_8007057C);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_47", func_80070A40);
+void func_80070A40(Hist47 *h, Vec47 *v) {
+    Vec47 t;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_47", func_80070B2C);
+    VecCopyL(&h->m_24, &h->m_30);
+    VecCopyL(&h->m_0C, &h->m_18);
+    VecCopyL(&h->m_00, v);
+    func_80099898(&t, &h->m_00, &h->m_0C);
+    VecCopyL(&h->m_18, &t);
+    func_80099898(&t, &h->m_18, &h->m_24);
+    VecCopyL(&h->m_30, &t);
+}
+
+void func_80070B2C(Hist47 *h, Vec47 *v) {
+    Vec47 t;
+
+    VecCopyL(&h->m_24, &h->m_30);
+    VecCopyL(&h->m_0C, &h->m_18);
+    VecCopyL(&h->m_30, v);
+    func_800998D0(&t, &h->m_30, &h->m_24);
+    VecCopyL(&h->m_18, &t);
+    func_800998D0(&t, &h->m_18, &h->m_0C);
+    VecCopyL(&h->m_00, &t);
+}
 
 #ifdef NON_MATCHING
 // Registers and the order of the stores (the entry's two loads as in func_80070CCC)
