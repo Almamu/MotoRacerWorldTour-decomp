@@ -39,6 +39,65 @@ struct Table45 {
     s8 m_416;
 };
 
+// A list's head (0xC bytes)
+struct Head45 {
+    u8 m_00[8];
+    Node45 *m_next;
+};
+
+// A bank (0x4C0 bytes): 16 lists
+struct Bank45 {
+    u8 m_00[0x400];
+    Head45 m_lists[16];
+};
+
+// A slot of 0x24 bytes
+struct Slot45 {
+    int m_00;
+    int m_04; // in use
+    u8 m_08[0x1C];
+};
+
+// A set of slots
+struct Slots45 {
+    int m_count;
+    u8 m_04[0x10];
+    Slot45 *m_slots; // 0x14
+};
+
+// What owns a sound object at 0x42C
+struct Owner45 {
+    u8 m_00[0x42C];
+    u8 m_42C[0x10];
+};
+
+extern int D_800CB5C8;
+extern int D_800CB480;
+int func_8006C140(Table45 *t);
+void func_80014B74(int *a, int id);
+void func_800966DC(void *p);
+void func_8006BECC(Owner45 *o);
+void func_8006D0BC(Bank45 *b, int a);
+void func_8006A494(int *a, int b);
+void func_8006D4B0(Node45 *n);
+void func_8006D7E4(Node45 *n);
+int func_8009674C(void *p, int a, int b, int c, int d, int e);
+void func_80096724(void *p);
+
+int func_8006C110(Table45 *t);
+void func_8006C82C(void);
+void func_8006CB38(int id);
+Owner45 *func_8006BDDC(Owner45 *o);
+void func_8006D2E0(Bank45 *b, int a, int i);
+void func_8006BA80(void);
+void func_8006CE24(Head45 *h);
+void func_8006CE68(Head45 *h);
+void func_8006CF48(Bank45 *b);
+void func_8006CF8C(Bank45 *b);
+void func_8006D1EC(Bank45 *b);
+void func_8006D230(Bank45 *b);
+int func_8006B9B0(Slots45 *s);
+int func_8006BE7C(Owner45 *o, int a, int b, int c, int d, int e);
 extern u8 D_800C7F2D;
 extern int D_800C7F28;
 extern int D_800D11D0[]; // a sound channel set
@@ -79,11 +138,35 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006B854);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006B914);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006B9B0);
+/* The first free slot, or -1. */
+/* The first free slot, or -1. */
+int func_8006B9B0(Slots45 *s) {
+    int i;
+    int n = s->m_count;
+    Slot45 *p;
+
+    if (n > 0) {
+        p = s->m_slots;
+        i = 0;
+        do {
+            if (!p->m_04) {
+                return i;
+            }
+            i++;
+            p++;
+        } while (i < n);
+    }
+    return -1;
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006B9F8);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006BA80);
+/* The last user gone, the bank released. */
+void func_8006BA80(void) {
+    if (--D_800CB5C8 == 0) {
+        func_8006A494(&D_800CB480, 2);
+    }
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006BABC);
 
@@ -119,11 +202,20 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006BBC4);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006BD78);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006BDDC);
+Owner45 *func_8006BDDC(Owner45 *o) {
+    func_800966DC(o->m_42C);
+    func_8006BECC(o);
+    return o;
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006BE10);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006BE7C);
+int func_8006BE7C(Owner45 *o, int a, int b, int c, int d, int e) {
+    int r = func_8009674C(o->m_42C, a, b, c, d, e);
+
+    func_80096724(o->m_42C);
+    return r;
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006BECC);
 
@@ -152,7 +244,12 @@ int func_8006C064(Table45 *t, short s) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006C094);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006C110);
+int func_8006C110(Table45 *t) {
+    int r = func_8006C140(t);
+
+    t->m_00++;
+    return r;
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006C140);
 
@@ -181,7 +278,10 @@ void func_8006C7A0(void) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006C7CC);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006C82C);
+void func_8006C82C(void) {
+    func_80014774(D_800D11D0);
+    ((u8 *)D_800D11D0)[3] = 0;
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006C85C);
 
@@ -198,7 +298,11 @@ void func_8006CA78(u8 c) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006CA84);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006CB38);
+void func_8006CB38(int id) {
+    if (id != -1) {
+        func_80014B74(D_800D11D0, id);
+    }
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006CB68);
 
@@ -224,9 +328,21 @@ int func_8006CE18(Node45 *l) {
     return l->m_next != 0;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006CE24);
+void func_8006CE24(Head45 *h) {
+    Node45 *p;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006CE68);
+    for (p = h->m_next; p; p = p->m_next) {
+        func_8006D4B0(p);
+    }
+}
+
+void func_8006CE68(Head45 *h) {
+    Node45 *p;
+
+    for (p = h->m_next; p; p = p->m_next) {
+        func_8006D7E4(p);
+    }
+}
 
 void func_8006CEAC(Node45 *l) {
     Node45 *p;
@@ -238,9 +354,21 @@ void func_8006CEAC(Node45 *l) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006CED8);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006CF48);
+void func_8006CF48(Bank45 *b) {
+    u32 i;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006CF8C);
+    for (i = 0; i < 16; i++) {
+        func_8006CE24(&b->m_lists[i]);
+    }
+}
+
+void func_8006CF8C(Bank45 *b) {
+    u32 i;
+
+    for (i = 0; i < 16; i++) {
+        func_8006CE68(&b->m_lists[i]);
+    }
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006CFD0);
 
@@ -250,12 +378,26 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006D12C);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006D18C);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006D1EC);
+void func_8006D1EC(Bank45 *b) {
+    u32 i;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006D230);
+    for (i = 0; i < 2; i++) {
+        func_8006CF48(&b[i]);
+    }
+}
+
+void func_8006D230(Bank45 *b) {
+    u32 i;
+
+    for (i = 0; i < 2; i++) {
+        func_8006CF8C(&b[i]);
+    }
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006D274);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006D2E0);
+void func_8006D2E0(Bank45 *b, int a, int i) {
+    func_8006D0BC(&b[i], a);
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006D314);
