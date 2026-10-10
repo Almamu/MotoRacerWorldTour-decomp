@@ -121,6 +121,7 @@ Pair66 *func_80096E7C(Pair66 *p);
 
 extern void *D_800C8D94;
 extern Ent66 *D_800CBE80;
+extern char *D_800CBE84; // the entries' data
 extern int D_800CBE88;
 extern int D_800BF3A0[]; // sines and cosines by angle, two shorts each
 void func_80096EC8(Plane66 *p, Vector3 *v);
@@ -163,6 +164,10 @@ struct Rec66 {
 extern Game66 *D_800C5E14;
 int func_80096538(int pos, u32 *buf, int n);
 int func_80096F8C(Plane66 *p, Vector3 *v);
+void *func_800A06AC(char *name, int a, int *size);
+void func_800AC0B0(void *a, void *b);
+void *func_800B5730(void *p, int size);
+int func_80096290(char *name);
 char *func_800A6344(char *s);
 int func_800A60AC(char *a, char *b);
 void ApplyRotMatrixLV(Vector3 *a, Vector3 *b);
@@ -508,7 +513,40 @@ Ent66 *func_80096240(int id) {
     return r;
 }
 
+#ifdef NON_MATCHING
+/* GCC folds the size's size - (size - x) to x, which the original computes; the rest follows (65 off) */
+/* A pack loaded: its entries, an image sent to VRAM, the rest freed; the
+ * PLAL entries' pointers made absolute. */
+int func_80096290(char *name) {
+    int size;
+    int *h = (int *)func_800A06AC(name, 0, &size);
+    int n;
+    int x;
+    int i;
+
+    D_800C8D94 = h;
+    n = h[0];
+    D_800CBE88 = n;
+    D_800CBE80 = (Ent66 *)(h + 2);
+    D_800CBE84 = (char *)(h + 2) + n * 12;
+    x = h[1] + n * 12;
+    size -= size - (h[1] + (n * 12 + 16));
+    DrawSync(0);
+    func_800AC0B0((char *)h + x + 8, (char *)h + x + 16);
+    DrawSync(0);
+    D_800C8D94 = func_800B5730(D_800C8D94, size);
+    for (i = 0; i < D_800CBE88; i++) {
+        if (D_800CBE80[i].m_04 == 0x4C41504C) {
+            int *p = (int *)(D_800CBE84 + D_800CBE80[i].m_00);
+
+            p[2] += (int)D_800CBE84;
+        }
+    }
+    return 1;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_66", func_80096290);
+#endif
 
 int func_800963BC(void) {
     if (D_800C8D94) {
