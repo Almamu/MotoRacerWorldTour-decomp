@@ -38,8 +38,17 @@ struct Ent39 {
     u8 m_1AC[0x184];
 };
 struct Sub39 {
-    u8 m_00[0x170];
+    u8 m_00[0x130];
+    int m_130; // the open menu, -1 when none
+    u8 m_134[0x1C];
+    int m_150;
+    u8 m_154[0x1C];
     int m_170;
+};
+// A list of choices: its kind in the top 5 bits, then the choices
+struct Sel39b {
+    int m_00;
+    int m_04[7];
 };
 struct VtEntry39 {
     short m_delta;
@@ -62,6 +71,10 @@ struct Own39 {
     int m_3EC;
     u8 m_3F0[4];
     int m_3F4;
+    u8 m_3F8[0x6C];
+    int *m_464;
+    u8 m_468[0x30];
+    Sel39b *m_498;
 };
 struct Vec39 {
     int x;
@@ -134,7 +147,8 @@ struct Obj39 {
     u8 m_53C[0x2C];
 };
 struct Run39 {
-    u8 m_00[0x2E8];
+    int m_00;
+    u8 m_04[0x2E4];
     struct Obj39 m_2E8[5];
     u8 m_1DF0[0x18];
     int m_1E08; // the race's kind
@@ -210,6 +224,17 @@ extern int D_800D5F6C;
 void func_80048CFC(Own39 *o);
 void func_8005F638(Ent39 *e);
 void func_8005FCE8(Pad39 *p, Own39 *o, int *i);
+extern char D_800C718C[]; // "PauseTwoPlayers"
+extern char D_800C719C[]; // "PauseWithRestart"
+extern char D_800C71B0[]; // "PauseRetire"
+extern int D_800D5FC8;
+extern int D_800D5F40;
+extern int D_800CB410;
+void func_80017A30(int a, int b);
+void func_80019B2C(int a, int b);
+void func_8005663C(Own39 *o);
+void func_80042FC0(Sub39 *m, char *name, int a, int b);
+void func_80040034(Sub39 *m, int a);
 void func_80060650(void);
 void func_80060658(void);
 void func_80060660(void);
@@ -641,7 +666,67 @@ void func_80060658(void) {
 void func_80060660(void) {
 }
 
+#ifdef NON_MATCHING
+// Registers: the kind's store swaps $v0 and $v1 (5 off)
+/* Start pressed: a choice made when a list is up; else the pause menu, by the race's kind. */
+void func_80060668(int *st, Own39 *o, int *i) {
+    if (o && *st == 0xFF) {
+        Sub39 *m = o->m_B8;
+        int none = m->m_130;
+
+        if (none == -1) {
+            Sel39b *l;
+            int k;
+
+            if (o->m_304) {
+                m->m_150 = none;
+            }
+            l = o->m_498;
+            k = l->m_00 >> 27;
+            if ((u32)k < 7) {
+                int c = l->m_04[k];
+
+                if (*o->m_464) {
+                    func_80017A30(*o->m_464, -1);
+                }
+                func_80019B2C(c, -1);
+                o->m_498->m_00 = (o->m_498->m_00 & 0x7FFFFFF) | 0x38000000;
+                func_8005663C(o);
+            } else if (o->m_B8 && o->m_B8->m_170 <= 0) {
+                int f = 1;
+
+                if (o->m_304) {
+                    if (o->m_378->m_1E08 == 4) {
+                        D_800CB410 = f;
+                    }
+                    f = 0;
+                } else if (o->m_378->m_00 & 0xA8) {
+                    func_80042FC0(o->m_B8, D_800C718C, 3, 0);
+                    func_80040034(o->m_B8, 2);
+                } else {
+                    func_80040034(o->m_B8, 1);
+                    if (D_800D5FC8 != none || (D_800D5F40 != 8 && D_800D5F40 != 4)) {
+                        func_80042FC0(o->m_B8, D_800C719C, 3, 0);
+                    } else {
+                        func_80042FC0(o->m_B8, D_800C71B0, 3, 0);
+                    }
+                }
+                if (f) {
+                    int j;
+
+                    VCALL39(o, 22, 0);
+                    VCALL39(o, 24, 0);
+                    for (j = 0; j < 2; j++) {
+                        func_8005F380(&o->m_2F0[j]);
+                    }
+                }
+            }
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_39", func_80060668);
+#endif
 
 void func_800608A8(int *st, Own39 *o, int *i) {
     int buf[4];
