@@ -39,8 +39,9 @@ struct Named {
     u8 m_84[0x18];
     void *m_9C;
     void *m_A0;
-    u8 m_A4[4];
-    u8 m_A8[0x90];
+    int m_A4;
+    u8 m_A8[0x8C];
+    struct Named *m_134;
     NamedOwner *m_138;
     int m_13C;
     u8 m_140;
@@ -188,7 +189,20 @@ struct Stage {
     int *m_C0;
     u8 m_C4[4];
     int m_C8, m_CC, m_D0, m_D4;
+    u8 m_D8[4];
+    int m_DC;
+    u8 m_E0[0x7C];
+    int *m_15C;
+    int *m_160;
+    u8 m_164[0x938];
+    u8 *m_A9C;
 };
+
+// Seven words copied into a stage's m_A9C + 0x40
+struct Seven {
+    int m_00[7];
+};
+extern Seven D_800D497C;
 
 // The race's settings
 struct Config {
@@ -208,6 +222,9 @@ extern int D_800C8D8C;
 extern char D_800C4FC8[], D_800C4FD4[];
 void func_800A6168(char *buf, const char *fmt, char *ap); // vsprintf
 int func_80040A24(Named *o, int *a);
+int func_800406E0(Named *o, int a);
+void func_80044D0C(Named *o);
+void *__builtin_vec_new(unsigned int n);
 void func_800405A0(Named *o);
 void func_80040B04(Named *o);
 void func_8009D350(void);
@@ -632,7 +649,60 @@ int func_800406A4(Named *o) {
     return 1;
 }
 
+#ifdef NON_MATCHING
+/* Temporaries' registers and the prologue's order (20 off) */
+/* The stage set up: virtual call 25, its numbers and sounds, its two
+ * tables (21 and 9 entries). */
+int func_800406E0(Named *o, int a) {
+    u8 *p = ((Stage *)o->m_A0)->m_A9C;
+    int r;
+    int *t;
+
+    func_80044D0C(o);
+    r = VCALL1(o, 25, a);
+    func_80040B04(o);
+    func_800405A0(o);
+    o->m_138 = 0;
+    o->m_A4 = 0;
+    o->m_134 = o;
+    *(Seven *)(p + 0x40) = D_800D497C;
+    ((Stage *)o->m_A0)->m_DC = 9;
+    ((Stage *)o->m_A0)->m_15C = new int[21];
+    ((Stage *)o->m_A0)->m_15C[1] = 0;
+    ((Stage *)o->m_A0)->m_15C[2] = 1;
+    ((Stage *)o->m_A0)->m_15C[3] = 2;
+    ((Stage *)o->m_A0)->m_15C[4] = 3;
+    ((Stage *)o->m_A0)->m_15C[5] = 4;
+    ((Stage *)o->m_A0)->m_15C[6] = 5;
+    ((Stage *)o->m_A0)->m_15C[7] = 6;
+    ((Stage *)o->m_A0)->m_15C[8] = 7;
+    ((Stage *)o->m_A0)->m_15C[9] = 8;
+    ((Stage *)o->m_A0)->m_15C[10] = 9;
+    ((Stage *)o->m_A0)->m_15C[11] = -1;
+    ((Stage *)o->m_A0)->m_15C[12] = -1;
+    ((Stage *)o->m_A0)->m_15C[13] = -1;
+    ((Stage *)o->m_A0)->m_15C[14] = -1;
+    ((Stage *)o->m_A0)->m_15C[15] = -1;
+    ((Stage *)o->m_A0)->m_15C[16] = -1;
+    ((Stage *)o->m_A0)->m_15C[17] = -1;
+    ((Stage *)o->m_A0)->m_15C[18] = -1;
+    ((Stage *)o->m_A0)->m_15C[19] = -1;
+    ((Stage *)o->m_A0)->m_15C[20] = -1;
+    ((Stage *)o->m_A0)->m_160 = new int[9];
+    ((Stage *)o->m_A0)->m_160[0] = 7;
+    ((Stage *)o->m_A0)->m_160[1] = -1;
+    ((Stage *)o->m_A0)->m_160[2] = 3;
+    ((Stage *)o->m_A0)->m_160[3] = 1;
+    ((Stage *)o->m_A0)->m_160[4] = 9;
+    ((Stage *)o->m_A0)->m_160[5] = -1;
+    ((Stage *)o->m_A0)->m_160[6] = 0;
+    ((Stage *)o->m_A0)->m_160[7] = 7;
+    ((Stage *)o->m_A0)->m_160[8] = -1;
+    return r;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_800406E0);
+#endif
 
 int func_80040A24(Named *o, int *a) {
     func_80078FC4(D_800CBC94, *a);
