@@ -336,7 +336,29 @@ int func_8006B9B0(Slots45 *s) {
     return -1;
 }
 
+#ifdef NON_MATCHING
+/* The call is the loop's test, as in the original; its registers and the counter's place still differ (8 off) */
+int func_8006B9F8(Obj50 *o, int n) {
+    int r = -1;
+    int i = 0;
+    int v;
+
+    if (n > 0) {
+        while (v = VCALL(o, 6), n--, v) {
+            i++;
+            o++;
+            if (n == 0) {
+                goto done;
+            }
+        }
+        r = i;
+    }
+done:
+    return r;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006B9F8);
+#endif
 
 /* The last user gone, the bank released. */
 void func_8006BA80(void) {
@@ -345,7 +367,24 @@ void func_8006BA80(void) {
     }
 }
 
+#ifdef NON_MATCHING
+/* The loop's counter set before the array's address in the original (3 off) */
+void func_8006BABC(void) {
+    int i;
+    Unit4C *u;
+
+    if (++D_800CB5C8 == 1) {
+        func_8006A460(&D_800CB480);
+    }
+    if (++D_800CB490 == 1) {
+        for (u = D_800CB498, i = 3; i != -1; i--, u++) {
+            func_8006A7D8(u);
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006BABC);
+#endif
 
 int func_8006BB48(Flagged *o) {
     return o->m_48 != -1;
@@ -565,7 +604,24 @@ void func_8006C82C(void) {
     ((u8 *)D_800D11D0)[3] = 0;
 }
 
+#ifdef NON_MATCHING
+/* The original builds each field's address from the symbol; here they're offsets from one base (27 off) */
+SndDef *func_8006C85C(int a, int b, int c) {
+    SndDef *r = 0;
+    u32 i;
+
+    for (i = 0; i < 11; i++) {
+        if (D_800C7E94[i].m_04 == a && D_800C7E94[i].m_05 == b &&
+            (D_800C7E94[i].m_06 == -1 || D_800C7E94[i].m_06 == c)) {
+            r = &D_800C7E94[i];
+            break;
+        }
+    }
+    return r;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006C85C);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006C8EC);
 
