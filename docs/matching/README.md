@@ -32,3 +32,4 @@ issue it worked on, and add it below.
 | [issue-73-langimg-chunk72.md](issue-73-langimg-chunk72.md) | The game's chunk_72: memory cards and the CD loader; globals as arrays, volatile event counters |
 | [issue-72-langimg-chunk71.md](issue-72-langimg-chunk71.md) | The game's chunk_71: the memory card menus; scalar or array globals by their registers |
 | [issue-61-langimg-chunk60.md](issue-61-langimg-chunk60.md) | The game's chunk_60: pools, ids and frame buffers; an empty constructor's loop |
+| [issue-52-langimg-chunk51.md](issue-52-langimg-chunk51.md) | The game's chunk_51: buffered objects and their parts |
