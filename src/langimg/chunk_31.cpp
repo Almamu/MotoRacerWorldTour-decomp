@@ -15,27 +15,43 @@ struct SVec31 {
     short z;
     short pad;
 };
-// A bike's definition
+// A vtable's entry
+struct VtEntry31 {
+    short m_delta;
+    short m_index;
+    void *m_func;
+};
+// A bike's model, an object with a virtual destructor (its vtable at 0x50)
 struct Def31 {
-    u8 m_00[0x64];
+    u8 m_00[0x50];
+    VtEntry31 *m_50;
+    u8 m_54[0x10];
     Vec31 m_64;
     SVec31 m_70;
+};
+// A virtual destructor called with 3 (destroy and free)
+#define VDELETE31(p) \
+    ((void (*)(void *, int))(p)->m_50[1].m_func)((char *)(p) + (p)->m_50[1].m_delta, 3)
+// A matrix: 3x3 shorts and a translation
+struct Mat31 {
+    short m[3][3];
+    short pad;
+    Vec31 t;
 };
 // A bike, 0x568 bytes
 struct Bike31 {
     int m_00; // flags; bits 1-5: a mode
     u8 m_04[8];
     short m_0C;
-    u8 m_0E[0xA];
-    int m_18[5];
-    u8 m_2C[4];
+    u8 m_0E[0x22];
     Def31 *m_30;
     int m_34;
     u8 m_38[0x10];
     int m_48;
     void *m_4C;
     int m_50;
-    u8 m_54[0x137];
+    u8 m_54[0x74]; // freed by func_80081EC8
+    u8 m_C8[0xC3]; // freed by func_80081EC8
     u8 m_18B;
     u8 m_18C[0x18C];
     int m_318;
@@ -57,8 +73,37 @@ struct Bike31 {
     int m_564;
 };
 struct Run31 {
-    u8 m_00[0x2E8];
+    u8 m_00[0x18];
+    int m_18[5]; // the bikes in order
+    u8 m_2C[0x2BC];
     Bike31 m_2E8[5];
+    u8 m_1DF0[0x168];
+    Def31 *m_1F58;
+};
+// What func_8004F6C8 sets a matrix from
+struct Pos31 {
+    u8 m_00[0x20];
+    Mat31 m_20;
+    u8 m_40[0xB8];
+    Vec31 m_F8;
+};
+// The object a vtable call returns
+struct Got31 {
+    u8 m_00[0x9C];
+    Pos31 *m_9C;
+};
+struct Sys31 {
+    u8 m_00[0x68];
+    VtEntry31 *m_68;
+};
+// The menu-like object of func_8004F76C
+struct Two31 {
+    u8 m_00[0xBC];
+    int m_BC[2];
+    u8 m_C4[0x3C4];
+    int m_488[2];
+    u8 m_490[0xC];
+    u8 m_49C[2][0x184];
 };
 struct Ctl31 {
     u8 m_00[0x3E8];
@@ -85,20 +130,69 @@ int func_8004FFC8(int *a, int *b);
 int func_80050F1C(int *a, int *b);
 void func_8004FE38(void *a, u8 *b);
 void func_80051094(Bike31 *b);
-void func_80050F38(Bike31 *b);
+void func_80050F38(Run31 *r);
 void func_80051060(Bike31 *b, Ctl31 *c);
 void func_8004FE58(void *a, short *v);
 void func_80050E88(int i);
-int func_8005102C(Bike31 *b, int k);
+int func_8005102C(Run31 *r, int k);
 void func_80051114(Bike31 *b);
 void func_800510B4(Bike31 *b, int k);
 void func_80050850(Run31 *r, int load);
 void func_8005148C(Bike31 *b, int v);
+extern Sys31 *D_800C886C;
+void func_800788D8(Pos31 *p);
+void func_8007857C(Pos31 *p);
+void func_8001DA44(void *a, Mat31 *m);
+void func_80081EC8(void *p);
+int func_80050EBC(int k);
+void func_8004F6C8(Two31 *o, Pos31 *p, void *m);
+void func_8004F76C(Two31 *o);
+void func_80050F5C(Run31 *r);
+void func_80050CA4(Run31 *r);
+void qsort(void *base, int n, int size, int (*cmp)(int *, int *));
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_31", func_8004F6C8);
+#ifdef NON_MATCHING
+// The struct copies' registers: the original has the translation's address and the call's first argument in registers before the copies, and copies the matrix through $t0-$t3
+/* A matrix from p's rotation and position, passed to func_8001DA44. */
+void func_8004F6C8(Two31 *o, Pos31 *p, void *m) {
+    Mat31 t;
 
+    func_800788D8(p);
+    func_8007857C(p);
+    t = p->m_20;
+    t.t = p->m_F8;
+    func_8001DA44(m, &t);
+}
+#else
+INCLUDE_ASM("asm/langimg/nonmatchings/chunk_31", func_8004F6C8);
+#endif
+
+#ifdef NON_MATCHING
+// Registers: the counter and the flags' pointer swap $s0 and $s3 (9 off)
+void func_8004F76C(Two31 *o) {
+    int *f = o->m_488;
+    u8 *m = o->m_49C[0];
+    int *id = o->m_BC;
+    int i;
+
+    for (i = 0; i < 2; i++) {
+        if (*f & 1) {
+            VtEntry31 *e = &D_800C886C->m_68[14];
+            Got31 *g = ((Got31 * (*)(void *, int)) e->m_func)((char *)D_800C886C + e->m_delta, *id);
+
+            if (g->m_9C) {
+                func_8004F6C8(o, g->m_9C, m);
+            }
+        }
+        m += 0x184;
+        id++;
+        f++;
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_31", func_8004F76C);
+#endif
 
 void func_8004F828(int a, int b) {
     D_800C8868 = b + 0x40;
@@ -160,7 +254,26 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_31", func_800508B4);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_31", func_80050A4C);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_31", func_80050CA4);
+void func_80050CA4(Run31 *r) {
+    int i;
+    Bike31 *b = r->m_2E8;
+
+    i = 0;
+    while (i < 5) {
+        if (b->m_30) {
+            VDELETE31(b->m_30);
+            b->m_30 = 0;
+        }
+        func_80081EC8(b->m_54);
+        func_80081EC8(b->m_C8);
+        i++;
+        b++;
+    }
+    if (r->m_1F58) {
+        VDELETE31(r->m_1F58);
+        r->m_1F58 = 0;
+    }
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_31", func_80050D7C);
 
@@ -168,7 +281,33 @@ void func_80050E88(int i) {
     func_80050EBC(D_800C9EF0[i]);
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_31", func_80050EBC);
+int func_80050EBC(int k) {
+    int r = 0;
+
+    switch (k) {
+    case 0:
+        break;
+    case 1:
+        r = 1;
+        break;
+    case 5:
+        r = 3;
+        break;
+    case 6:
+        r = 4;
+        break;
+    case 2:
+        r = 2;
+        break;
+    case 3:
+        r = 5;
+        break;
+    case 7:
+        r = 6;
+        break;
+    }
+    return r;
+}
 
 int func_80050F1C(int *a, int *b) {
     int x = *a & ~15;
@@ -177,7 +316,7 @@ int func_80050F1C(int *a, int *b) {
     return y - x;
 }
 
-void func_80050F38(Bike31 *b) {
+void func_80050F38(Run31 *b) {
     int i;
 
     for (i = 4; i >= 0; i--) {
@@ -185,9 +324,26 @@ void func_80050F38(Bike31 *b) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_31", func_80050F5C);
+/* The bikes that are in, ordered by their value at 0x0C. */
+void func_80050F5C(Run31 *r) {
+    int n = 0;
+    int i;
 
-int func_8005102C(Bike31 *b, int k) {
+    func_80050F38(r);
+    for (i = 4; i >= 0; i--) {
+        if (((u32)r->m_2E8[i].m_00 >> 6) & 1) {
+            r->m_18[n++] = i | (r->m_2E8[i].m_0C << 8);
+        }
+    }
+    if (n >= 2) {
+        qsort(r->m_18, n, 4, func_80050F1C);
+    }
+    for (i = n - 1; i >= 0; i--) {
+        r->m_18[i] &= 0xF;
+    }
+}
+
+int func_8005102C(Run31 *b, int k) {
     int i = 4;
     int *p = &b->m_18[4];
 
