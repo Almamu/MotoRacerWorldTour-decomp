@@ -135,6 +135,14 @@ void func_8006F1E0(Ent46 *e);
 void func_8006F270(Ent46 *e);
 }
 
+// A voice stopped, if there is one
+static inline void StopVoice46(int *v) {
+    if (*v != -1) {
+        func_80014B74(D_800D11D0, *v);
+        *v = -1;
+    }
+}
+
 #define VCALL46(p, i) ((p)->m_0C[i].m_func((char *)(p) + (p)->m_0C[i].m_delta))
 
 void func_8006D388(Mgr46 *m, int a) {
@@ -290,7 +298,13 @@ void func_8006E378(SndB46 *s) {
     VCALL46(s, 3);
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_46", func_8006E3C8);
+void func_8006E3C8(SndB46 *s) {
+    func_8006E0FC(s);
+    StopVoice46(&s->m_10[0]);
+    StopVoice46(&s->m_10[1]);
+    StopVoice46(&s->m_10[2]);
+    StopVoice46(&s->m_10[3]);
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_46", func_8006E474);
 
@@ -319,7 +333,14 @@ void func_8006EA48(Snd46 *s) {
     VCALL46(s, 3);
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_46", func_8006EA88);
+void func_8006EA88(SndA46 *s) {
+    func_8006E0FC(s);
+    StopVoice46(&s->m_10[0]);
+    StopVoice46(&s->m_10[1]);
+    StopVoice46(&s->m_10[2]);
+    StopVoice46(&s->m_10[3]);
+    StopVoice46(&s->m_10[4]);
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_46", func_8006EB54);
 
