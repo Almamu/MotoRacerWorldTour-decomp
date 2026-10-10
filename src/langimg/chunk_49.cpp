@@ -42,6 +42,13 @@ struct Base49 {
     int m_0C;
     int m_10;
 };
+// A link: the next, the previous, two values by direction
+struct Lnk49 {
+    Lnk49 *m_00;
+    Lnk49 *m_04;
+    int m_08;
+    int m_0C[2];
+};
 struct Flags49 {
     unsigned m_lo : 8;
     unsigned m_a : 2;
@@ -51,13 +58,16 @@ struct Obj49 {
     int m_00;
     int m_04;
     int m_08;
-    struct {
-        unsigned m_a : 4;
-        unsigned m_b : 4;
-        unsigned m_c : 4;
-        unsigned m_pad : 4;
-        unsigned m_d : 16;
-    } m_0C;
+    union {
+        int m_0C;
+        struct {
+            int m_a : 4; // a direction
+            int m_b : 4; // which time
+            unsigned m_c : 4;
+            unsigned m_e : 4;
+            unsigned m_d : 16;
+        } m_0Cf;
+    };
     int m_10;
     int m_14;
     int m_18;
@@ -67,8 +77,8 @@ struct Obj49 {
     };
     Node49 *m_20;
     int m_24;
-    int m_28;
-    int m_2C;
+    struct Lnk49 *m_28;
+    struct Lnk49 *m_2C;
     int m_30;
     void *m_34; // the vtable
 };
@@ -93,6 +103,9 @@ void func_80074D20(void);
 void func_80074D28(void);
 Obj49 *func_80074D30(Obj49 *o);
 void func_80074D78(Obj49 *o, int f);
+int func_80098D1C(int i);
+Lnk49 *func_80074924(Obj49 *o);
+void func_800746B0(Obj49 *o, int dflt, int dir, int e, int sub);
 }
 void CobjetLinkDtor49(Node49 *l, int f) asm("_._10CobjetLink");
 
@@ -211,10 +224,10 @@ Obj49 *func_80074534(Obj49 *o) {
     o->m_10 = 0;
     o->m_30 = 0;
     o->m_1C = 0;
-    o->m_0C.m_a = 1;
-    o->m_0C.m_c = 0;
-    o->m_0C.m_d = 0;
-    o->m_0C.m_b = 0;
+    o->m_0Cf.m_a = 1;
+    o->m_0Cf.m_c = 0;
+    o->m_0Cf.m_d = 0;
+    o->m_0Cf.m_b = 0;
     return o;
 }
 #else
@@ -263,11 +276,75 @@ int func_800746A8(void) {
     return 0;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_49", func_800746B0);
+void func_800746B0(Obj49 *o, int dflt, int dir, int e, int sub) {
+    Lnk49 *l;
+    int v;
+
+    o->m_24 = (&D_800CB880)[o->m_0Cf.m_b];
+    if (sub != -1) {
+        o->m_24 -= sub;
+    }
+    if (dir) {
+        o->m_0Cf.m_a = dir;
+    }
+    l = func_80074924(o);
+    o->m_2C = l;
+    v = -1;
+    if (l) {
+        v = l->m_0C[((u32)o->m_0C >> 3) & 1];
+    }
+    if (v >= 0) {
+        o->m_14 = v;
+    } else {
+        o->m_14 = dflt;
+    }
+    o->m_0Cf.m_e = e;
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_49", func_800747A8);
 
+#ifdef NON_MATCHING
+// The mode's tests (the original's tree: == 2, < 3, == 3) and the loads' order
+/* The link |direction| steps along, the direction chosen first by the mode. */
+Lnk49 *func_80074924(Obj49 *o) {
+    int d = o->m_0Cf.m_a;
+    int n = d < 0 ? -d : d;
+    Lnk49 *r = 0;
+
+    switch (o->m_08) {
+    case 2: {
+        Lnk49 *c = o->m_28;
+
+        if ((c->m_08 && d > 0) || (c->m_04->m_08 && d < 0)) {
+            o->m_0Cf.m_a = -o->m_0Cf.m_a;
+        }
+        break;
+    }
+    case 3:
+        n = func_80098D1C(5) & 0xF;
+        o->m_0Cf.m_a = (func_80098D1C(5) & 2) - 1;
+        break;
+    }
+    if (n) {
+        Lnk49 *l = o->m_28;
+
+        r = l;
+        if (o->m_0Cf.m_a > 0) {
+            // Always one step from the start: the original's
+            while (n--) {
+                r = l->m_00;
+            }
+        } else if (o->m_0Cf.m_a < 0) {
+            while (n--) {
+                r = l->m_04;
+            }
+        }
+    }
+    return r;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_49", func_80074924);
+#endif
 
 /* CobjetLink's destructor: its list walked (its elements' destructors are empty). */
 void CobjetLinkDtor49(Node49 *l, int f) {
