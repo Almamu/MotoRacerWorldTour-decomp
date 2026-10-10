@@ -51,10 +51,76 @@ struct Item70 {
     u8 m_00[0xA];
     short m_0A;
 };
+struct Rect70 {
+    short x, y, w, h;
+};
 struct Dst70 {
-    u8 m_00[0xE0];
+    u8 m_00[8];
+    int m_08; // the selected entry
+    u8 m_0C[8];
+    int m_14[5];
+    int m_28[10][2];
+    u8 m_78[4];
+    Rect70 m_7C;
+    u8 m_84[0x4C];
+    int m_D0;
+    int m_D4;
+    u8 m_D8[8];
     u8 m_E0[0x54];
     int m_134;
+};
+struct Sel70 {
+    u8 m_00[8];
+    int m_08;
+    int m_0C;
+    int m_10;
+};
+struct Src70 {
+    u8 m_00[8];
+    Sel70 m_08;
+};
+// The page object again, as func_8009E72C and func_8009E954 see it
+struct Num70 {
+    u8 m_00[0x28];
+    int *m_28;
+};
+struct Dig70 {
+    u8 m_00[0x28];
+    u8 *m_28;
+};
+struct Txt70 {
+    u8 m_00[0xC];
+    char *m_0C;
+};
+struct Cell70 {
+    u8 m_00[0x38];
+    short *m_38;
+};
+struct Img70 {
+    u8 m_00[0x18];
+    Rect70 *m_18;
+};
+struct Pic70 {
+    u8 m_00[0x20];
+    Img70 *m_20;
+    u8 m_24[0x58];
+    Rect70 m_7C;
+};
+struct Page70 {
+    int m_00;
+    int m_04;
+    int m_08;
+    Num70 *m_0C;
+    Num70 *m_10;
+    Dig70 *m_14[6];
+    int m_2C;
+    Pic70 *m_30;
+    Cell70 *m_34[8];
+    Cell70 *m_54[8];
+    Lbl70 *m_74;
+    Txt70 *m_78[4];
+    Pair70 *m_88;
+    Pair70 *m_8C;
 };
 // The table made by func_8009D2E0 and func_8009D350
 struct Tab70 {
@@ -112,7 +178,7 @@ struct Menu70 {
     int m_A90;
     int m_A94;
     Dst70 *m_A98;
-    void *m_A9C;
+    Src70 *m_A9C;
     u8 m_AA0[4];
     Box70 *m_AA4;
 };
@@ -128,7 +194,7 @@ int func_800A41BC(void);
 void func_800A4608(int a);
 void func_8009E0E8(Obj70 *o);
 void func_8009E360(Obj70 *o);
-void func_8009E72C(Menu70 *m, Hold70 *h);
+int func_8009E72C(Menu70 *m, Hold70 *h);
 void func_8009D9CC(Obj70 *o);
 void func_8009E360(Obj70 *o);
 extern int D_800D5F0C;
@@ -151,6 +217,14 @@ void func_80080F30(int a, char *b, int c, int d);
 int func_800A4284(int a);
 void func_8009E3C0(Obj70 *o, int x, int y, int w);
 int func_8009D830(Obj70 *o);
+int func_800A4614(int a, int *p);
+int func_800A44F8(int a);
+void func_800A42EC(int a, void *b, u8 *c, int d);
+int func_800A6100(const char *a, const char *b, int n);
+int func_80037C80(int a, Num70 *b);
+extern char D_800C9C10[];
+void func_80037D58(int a, int y);
+void func_8009E954(Menu70 *m);
 struct Hold70 *func_8003CC78(Menu70 *m, struct Hold70 *h, int c);
 void *func_8009E01C(Obj70 *o, void *a, int b, void *c, int n);
 void func_8009E24C(Obj70 *o);
@@ -318,7 +392,56 @@ void func_8009D804(Obj70 *o) {
     func_8009E0AC(o);
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_70", func_8009D830);
+/* The demo's playback, each frame. */
+int func_8009D830(Obj70 *o) {
+    if (o->m_54) {
+        o->m_08 = func_800A4614(0, &o->m_0C);
+        switch (o->m_00) {
+        case 0:
+            break;
+        case 1:
+            if (++o->m_10 > 800) {
+                o->m_14 = 0;
+                o->m_54 = 0;
+                func_8009E0E8(o);
+            }
+            if (func_800A44F8(0) == 0x12 && !o->m_16) {
+                func_800A42EC(0, o->m_3C, o->m_34, o->m_38);
+                func_8009E0E8(o);
+                o->m_00 = 2;
+                func_8009D7A0(o, 5);
+                func_8009E2E0(o);
+            }
+            break;
+        case 2:
+            o->m_10++;
+            func_8009E2FC(o);
+            if (o->m_10 > 800) {
+                o->m_14 = 0;
+                o->m_54 = 0;
+            }
+            if (func_800A44F8(0) == 0x12 && o->m_08 == 1) {
+                o->m_14 = 1;
+                o->m_54 = 0;
+            }
+            break;
+        }
+        switch (o->m_08) {
+        case 2:
+        case 4:
+        case 7:
+        case 11:
+        case 14:
+        case 15:
+        case 17:
+            o->m_14 = 0;
+            o->m_54 = 0;
+            o->m_16 = 1;
+            break;
+        }
+    }
+    return 0;
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_70", func_8009D9CC);
 
@@ -467,13 +590,101 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_70", func_8009E3C0);
 void func_8009E724(void) {
 }
 
+#ifdef NON_MATCHING
+// Registers and the digits' table address (the permuter's best is 450)
+/* The selected entry's four digits shown; returns its index. */
+int func_8009E72C(Menu70 *m, Hold70 *h) {
+    Dst70 *d;
+    Sel70 *q;
+    Page70 *p;
+    int k;
+    int j;
+    int r;
+    Dig70 **e;
+
+    if (func_800A6100(h->m_00, D_800C9C10, 5)) {
+        return -1;
+    }
+    d = m->m_A98;
+    q = &m->m_A9C->m_08;
+    p = (Page70 *)h->m_60;
+    k = d->m_14[d->m_08];
+    j = p->m_0C->m_28[k];
+    r = func_80037C80(p->m_2C, p->m_0C);
+    q->m_0C = r;
+    q->m_10 = p->m_10->m_28[k];
+    e = &p->m_14[q->m_10 * (d->m_28[d->m_08][j] + 1)];
+    p->m_78[0]->m_0C[0] = (*e)->m_28[r * 4] + '0';
+    p->m_78[0]->m_0C[1] = 0;
+    p->m_78[1]->m_0C[0] = (*e)->m_28[r * 4 + 0x20] + '0';
+    p->m_78[1]->m_0C[1] = 0;
+    p->m_78[2]->m_0C[0] = (*e)->m_28[r * 4 + 0x40] + '0';
+    p->m_78[2]->m_0C[1] = 0;
+    p->m_78[3]->m_0C[0] = (*e)->m_28[r * 4 + 0x60] + '0';
+    p->m_78[3]->m_0C[1] = 0;
+    return j + d->m_28[d->m_08][j] * 2;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_70", func_8009E72C);
+#endif
 
 void func_8009E930(Menu70 *m) {
     func_8009E72C(m, m->m_A80);
 }
 
+#ifdef NON_MATCHING
+// Registers: the shape matches, d and its field swap $a2 and $a3
+void func_8009E954(Menu70 *m) {
+    Dst70 *d = m->m_A98;
+    Sel70 *q = &m->m_A9C->m_08;
+    Hold70 *h = m->m_A80;
+    Page70 *p = (Page70 *)h->m_60;
+    int y = d->m_D0;
+    int r;
+    int i;
+    Lbl70 *l;
+    u16 v;
+    Rect70 rc;
+    Pic70 *pic;
+    Img70 *img;
+    Rect70 *pr;
+
+    if (d->m_08 == 1) {
+        if (q->m_08 == d->m_08) {
+            l = p->m_74;
+            v = p->m_00;
+        } else {
+            l = p->m_74;
+            v = p->m_04;
+            y = d->m_D4;
+        }
+    } else {
+        l = p->m_74;
+        v = p->m_08;
+    }
+    l->m_08 = v;
+    r = func_8009E72C(m, h);
+    if (r < 0) {
+        return;
+    }
+    func_80037D58(p->m_2C, y);
+    pic = p->m_30;
+    img = pic->m_20;
+    pr = &rc;
+    pr->x = 0;
+    pr->y = y << 9;
+    pr->w = 0;
+    *img->m_18 = rc;
+    rc.y--;
+    pic->m_7C = rc;
+    for (i = 0; i < 8; i++) {
+        *p->m_34[i]->m_38 = p->m_88[r].m_00;
+        *p->m_54[i]->m_38 = p->m_8C[r * 8 + i].m_00;
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_70", func_8009E954);
+#endif
 
 void func_8009EAD0(Menu70 *m, int a) {
     Sub70 *p = &m->m_AA4->m_08;
