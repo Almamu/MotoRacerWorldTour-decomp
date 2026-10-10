@@ -97,8 +97,22 @@ extern int D_800C9D60[];
 extern int *D_800C9EEC;
 extern char D_800BC88C[];
 extern char D_800D4958[];
-void *func_800A1EFC(int a, int b, int c, int d);
-int func_800A2148(int a, void *x, int c, int d);
+// A block's header: its CRC, its size
+struct Blk72 {
+    u32 m_crc;
+    int m_size;
+    u8 m_08[1];
+};
+
+// A file's header: its entries' count, then the entries from 0x18
+struct Hdr72 {
+    u32 m_count;
+    int m_04;
+    int m_08;
+};
+
+Blk72 *func_800A1EFC(int a, char *name, void *buf, int *out);
+void *func_800A2148(int a, Blk72 *b, void *buf, int *out);
 int TestEvent(int ev);
 extern int D_800D6074[], D_800D6078[], D_800D607C[], D_800D6080[], D_800D6084[], D_800D6088[];
 extern int D_800D60B0[], D_800D60B8[]; // the card's events
@@ -134,7 +148,25 @@ void func_800A12C4(Card72 *c);
 
 int func_800A1110(Card72 *c);
 void func_800A13C0(Card72 *c);
-int func_800A2234(int a, int b, int c, int d);
+void *func_800A2234(int a, char *name, void *buf, int *out);
+int DisableEvent(int ev);
+int CloseEvent(int ev);
+int func_800A5DA4(const char *fmt, ...);
+// A range of characters with glyphs: its first glyph, its first character
+struct Range72 {
+    u16 m_glyph;
+    u16 m_char;
+};
+extern Range72 D_800BC8BC[];
+extern u16 D_800BC8C8[]; // the punctuation's glyphs
+void func_800A63FC(void);
+u32 func_800A645C(void *p, int n, int a);
+u32 func_800A6448(void);
+void *func_800A1CF8(int mode, void *src, int size, void *buf);
+
+void func_800A28B8(void);
+int func_800A2380(int ch);
+Hdr72 *func_800A207C(char *name, void *buf);
 void func_800A2490(void);
 void func_800A24CC(void);
 void func_800A2510(void);
@@ -485,19 +517,77 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A1CF8);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A1EFC);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A207C);
+/* A file's header read; its entries' sectors made positions on the CD. */
+Hdr72 *func_800A207C(char *name, void *buf) {
+    CdlFILE fp;
+    Hdr72 *h = 0;
+    u32 i;
 
+    if (func_800A1C74(&fp, name)) {
+        int step;
+        u8 *e;
+
+        h = (Hdr72 *)func_800A1CF8(2, &fp, 0x800, buf);
+        step = func_800A1BEC((Item72 *)h);
+        i = 0;
+        if (h->m_count) {
+            e = (u8 *)h + 0x18;
+            do {
+                CdIntToPos(CdPosToInt(&fp.pos) + ((*(u32 *)e + 0x7FF) >> 11), (CdlLOC *)e);
+                e += step;
+                i++;
+            } while (i < h->m_count);
+        }
+    }
+    if (h) {
+        h->m_08 = 0;
+    }
+    return h;
+}
+
+#ifdef NON_MATCHING
+/* The block's CRC loaded into $v1, not $v0 (2 off) */
+/* A block read into buf (allocated if none is given), read again once if its
+ * CRC is wrong; its size to *out. */
+void *func_800A2148(int a, Blk72 *b, void *buf, int *out) {
+    int tries = 1;
+    int ours = buf == 0;
+    u32 crc;
+
+again:
+    buf = func_800A1CF8(0, b->m_08, b->m_size, buf);
+    func_800A63FC();
+    crc = func_800A645C(buf, b->m_size, 0);
+    func_800A6448();
+    if (crc != b->m_crc) {
+        if (tries) {
+            if (ours) {
+                free(buf);
+                buf = 0;
+            }
+            tries--;
+            goto again;
+        }
+        func_800A5DA4("Unrecoverable CRC error on block load.\n");
+    }
+    if (out) {
+        *out = b->m_size;
+    }
+    return buf;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A2148);
+#endif
 
 #ifdef NON_MATCHING
 /* The first and last arguments in each other's saved registers (6 off) */
-int func_800A2234(int a, int b, int c, int d) {
-    void *x = func_800A1EFC(a, b, c, d);
+void *func_800A2234(int a, char *name, void *buf, int *out) {
+    Blk72 *b = func_800A1EFC(a, name, buf, out);
 
-    if (x) {
-        c = func_800A2148(a, x, c, d);
+    if (b) {
+        buf = func_800A2148(a, b, buf, out);
     }
-    return c;
+    return buf;
 }
 #else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A2234);
@@ -550,7 +640,40 @@ void func_800A2304(u8 *d, u32 c, int n) {
     }
 }
 
+#ifdef NON_MATCHING
+/* The two endings in the other order, and punct + 0x1F folded (23 off) */
+/* A character's glyph. */
+int func_800A2380(int ch) {
+    int range = 0;
+    int punct = 0;
+
+    ch &= 0xFF;
+    if ((u32)(ch - 0x20) < 16) {
+        punct = 1;
+    } else if ((u32)(ch - 0x30) < 10) {
+        range = 0;
+    } else if ((u32)(ch - 0x3A) < 7) {
+        punct = 0xB;
+    } else if ((u32)(ch - 0x41) < 26) {
+        range = 1;
+    } else if ((u32)(ch - 0x5B) < 6) {
+        punct = 0x25;
+    } else if ((u32)(ch - 0x61) < 26) {
+        range = 2;
+    } else if ((u32)(ch - 0x7B) < 4) {
+        punct = 0x3F;
+    } else {
+        func_800A5DA4("bad ASCII code 0x%x\n", ch);
+        return 0;
+    }
+    if (punct) {
+        return D_800BC8C8[ch - (punct + 0x1F)];
+    }
+    return D_800BC8BC[range].m_glyph + ch - D_800BC8BC[range].m_char;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A2380);
+#endif
 
 void func_800A2490(void) {
     int ch = _card_chan();
@@ -627,7 +750,27 @@ void func_800A26A0(void) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A26DC);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A28B8);
+/* The card's events closed. */
+void func_800A28B8(void) {
+    DisableEvent(D_800D6080[0]);
+    DisableEvent(D_800D60B8[0]);
+    DisableEvent(D_800D6078[0]);
+    DisableEvent(D_800D6088[0]);
+    DisableEvent(D_800D607C[0]);
+    DisableEvent(D_800D60B0[0]);
+    DisableEvent(D_800D6074[0]);
+    DisableEvent(D_800D6084[0]);
+    EnterCriticalSection();
+    CloseEvent(D_800D6080[0]);
+    CloseEvent(D_800D60B8[0]);
+    CloseEvent(D_800D6078[0]);
+    CloseEvent(D_800D6088[0]);
+    CloseEvent(D_800D607C[0]);
+    CloseEvent(D_800D60B0[0]);
+    CloseEvent(D_800D6074[0]);
+    CloseEvent(D_800D6084[0]);
+    ExitCriticalSection();
+}
 
 void func_800A29E0(void) {
     TestEvent(D_800D6080[0]);
