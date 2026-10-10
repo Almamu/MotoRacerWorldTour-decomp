@@ -6,6 +6,13 @@
 /* (docs/matching/issue-52-langimg-chunk51.md) */
 
 extern "C" {
+// A GCC 2 vtable entry
+struct VtEntry {
+    short m_delta;
+    short m_index;
+    int (*m_func)(void *self);
+};
+
 // An object with a part at 0x30
 struct A51 {
     int m_00, m_04, m_08;
@@ -22,7 +29,11 @@ struct A51 {
 struct F51 {
     u8 m_00[8];
     int m_08;
-    u8 m_0C[0x140];
+    u8 m_0C[0x10];
+    int m_1C;
+    u8 m_20[0x48];
+    VtEntry *m_vt; // 0x68
+    u8 m_6C[0xE0];
     int m_14C, m_150, m_154, m_158, m_15C, m_160, m_164, m_168;
     u8 m_16C, m_16D, m_16E;
     u8 m_16F[5];
@@ -33,7 +44,9 @@ struct F51 {
 
 // Something with four halfwords at 0x0C
 struct G51 {
-    int m_00, m_04, m_08;
+    int m_00;
+    struct F51 *m_04;
+    int m_08;
     short m_0C, m_0E, m_10, m_12;
     int m_14, m_18, m_1C;
 };
@@ -166,6 +179,7 @@ G51 *func_80078DA8(G51 *g, int a, int b, int c, int d, int e);
 void func_80078A34(A51 *o, int flags);
 A51 *func_800789C4(A51 *o);
 int func_80078BA0(A51 *o, int n);
+F51 *func_80079078(void *p);
 Val51 *func_80078FE8(Ref51 *r, int b);
 void func_80078FFC(void);
 }
@@ -453,7 +467,35 @@ G51 *func_80078DA8(G51 *g, int a, int b, int c, int d, int e) {
     return g;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_51", func_80078E00);
+/* The object made for mode 6 and started; deleted if it fails or isn't
+ * ready. */
+int func_80078E00(G51 *g) {
+    int r = 0;
+    F51 *o;
+
+    g->m_18 = 1;
+    if (g->m_00 == 6) {
+        g->m_04 = func_80079078(__builtin_new(0x184));
+    }
+    o = g->m_04;
+    if (o) {
+        o->m_160 = g->m_0C;
+        o->m_164 = g->m_0E;
+        if (!((int (*)(void *, int, int, int, int))g->m_04->m_vt[2].m_func)(
+                (char *)g->m_04 + g->m_04->m_vt[2].m_delta, 0, g->m_10, g->m_12, 16) ||
+            !g->m_04->m_1C) {
+            if (g->m_04) {
+                ((void (*)(void *, int))g->m_04->m_vt[1].m_func)(
+                    (char *)g->m_04 + g->m_04->m_vt[1].m_delta, 3);
+                g->m_04 = 0;
+            }
+        } else {
+            r = 1;
+        }
+    }
+    g->m_18 = 0;
+    return r;
+}
 
 Slot51 *func_80078F10(Slot51 *t) {
     int i;
