@@ -41,8 +41,16 @@ struct Sub39 {
     u8 m_00[0x170];
     int m_170;
 };
+struct VtEntry39 {
+    short m_delta;
+    short m_index;
+    void (*m_func)(void *self, int a);
+};
+#define VCALL39(o, i, a) (o)->m_68[i].m_func((char *)(o) + (o)->m_68[i].m_delta, a)
 struct Own39 {
-    u8 m_00[0xB8];
+    u8 m_00[0x68];
+    VtEntry39 *m_68;
+    u8 m_6C[0x4C];
     Sub39 *m_B8;
     u8 m_BC[0x234];
     Ent39 *m_2F0;
@@ -133,9 +141,11 @@ struct Run39 {
 };
 // A pad's buttons, now and before
 struct Pad39 {
-    u8 m_00[8];
+    int m_00;
+    u8 m_04[4];
     u16 m_08;
-    u8 m_0A[4];
+    u16 m_0A;
+    u16 m_0C;
     u16 m_0E;
 };
 // A sprite's frames
@@ -196,6 +206,10 @@ void func_800604D0(int *st, Own39 *o, int *i);
 void func_8005FAB8(Ent39 *e, Pad39 *p);
 void func_8005F514(Ent39 *e, int key, int st);
 void func_8006139C(Anim39 *a, int f);
+extern int D_800D5F6C;
+void func_80048CFC(Own39 *o);
+void func_8005F638(Ent39 *e);
+void func_8005FCE8(Pad39 *p, Own39 *o, int *i);
 void func_80060650(void);
 void func_80060658(void);
 void func_80060660(void);
@@ -355,7 +369,49 @@ void func_8005FC40(int *st, Own39 *o, int *i) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_39", func_8005FCE8);
+/* The frame's input: the analogue values past 85 as directions, then the pad's buttons. */
+void func_8005FCE8(Pad39 *p, Own39 *o, int *i) {
+    Ent39 *e;
+
+    if (D_800D5F6C && p->m_08) {
+        func_80048CFC(o);
+        VCALL39(o, 24, 0);
+        VCALL39(o, 23, 0);
+        VCALL39(o, 22, 0);
+    }
+    e = &o->m_2F0[*i];
+    if (!o->m_304) {
+        Pad39 t;
+
+        func_8005F464(e);
+        if (e->m_04 < -84) {
+            func_8005F480(e, 0x80, 0xFF);
+        } else if (e->m_04 >= 85) {
+            func_8005F480(e, 0x20, 0xFF);
+        }
+        if (e->m_05 < -84) {
+            func_8005F480(e, 0x1000, 0xFF);
+        } else if (e->m_05 >= 85) {
+            func_8005F480(e, 0x4000, 0xFF);
+        }
+        if (e->m_07 < -84) {
+            func_8005F480(e, 0x10, 0xFF);
+        } else if (e->m_07 >= 85) {
+            func_8005F480(e, 0x40, 0xFF);
+        }
+        func_8005FAB8(e, (Pad39 *)&e->m_19C);
+        t.m_0A = 0;
+        t.m_0C = 0;
+        t.m_00 = 0;
+        t.m_08 = p->m_08;
+        t.m_0E = p->m_0E;
+        t.m_08 &= ~0x100;
+        t.m_0E &= ~0x100;
+        // The copy without bit 8 is never used: the pad goes on as it is
+        func_8005FAB8(e, p);
+        func_8005F638(e);
+    }
+}
 
 void func_8005FEB0(int *st, Own39 *o, int *i) {
     if (o) {
