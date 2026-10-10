@@ -8,6 +8,31 @@ static inline void VecZero(Vector3 *v) {
     v->vx = v->vy = v->vz = 0;
 }
 
+static inline void VecCopy(Vector3 *d, Vector3 *s) {
+    d->vx = s->vx;
+    d->vy = s->vy;
+    d->vz = s->vz;
+}
+
+static inline void VecCopyL(Vector3 *d, Vector3 *s) {
+    int x = s->vx;
+    int y = s->vy;
+    int z = s->vz;
+
+    d->vx = x;
+    d->vy = y;
+    d->vz = z;
+}
+
+extern "C" {
+extern short D_800BF3A0[][2]; // sines and cosines by angle (4.12)
+void func_8001C8C0(Track *t, Vector3 *out, int sec, int pt, int lane, int frac, Vector3 *dir);
+Vector3 *func_80099834(Vector3 *v, Vector3 *w); // v -= w
+Vector3 *func_8009964C(Vector3 *v, int k);      // v * k
+Vector3 *func_80099D48(Vector3 *v, int shift);  // v >> shift
+void func_80098E9C(Vector3 *v);
+}
+
 /* Sorts the race's entries of kind 0x44 by their m_474, and resets the
  * rest. */
 void func_8001B778(RaceSort *t, RaceWorld *w) {
@@ -80,7 +105,60 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_05", func_8001B974);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_05", func_8001C4A0);
 
+#ifdef NON_MATCHING
+/* A first draft, right in shape: the two sections' offsets swap saved registers and the lane reads are scheduled otherwise (95 off) */
+/* A position on the track: between point pt of section sec and the next
+ * one (frac in 4.12), across in lane by its interpolated width along the
+ * line's normal on the ground; that normal in dir if asked. */
+void func_8001C8C0(Track *t, Vector3 *out, int sec, int pt, int lane, int frac, Vector3 *dir) {
+    TrackSection *a;
+    TrackSection *b;
+    int ns = sec;
+    int np = pt + 1;
+    int w0, w1, w;
+    Vector3 r1, r2, q;
+
+    if (np >= t->m_sections[sec].m_count) {
+        np = 0;
+        if (sec) {
+            np = t->m_sections[sec].m_next;
+            ns = 0;
+        }
+    }
+    a = &t->m_sections[sec];
+    b = &t->m_sections[ns];
+    w0 = a->m_lanes[lane][pt].m_width;
+    w1 = b->m_lanes[lane][np].m_width;
+    r1.vx = D_800BF3A0[a->m_pts[pt].m_angle & 0xFFF][1];
+    r1.vy = 0;
+    r1.vz = D_800BF3A0[a->m_pts[pt].m_angle & 0xFFF][0];
+    r2.vx = D_800BF3A0[b->m_pts[np].m_angle & 0xFFF][1];
+    r2.vy = 0;
+    r2.vz = D_800BF3A0[b->m_pts[np].m_angle & 0xFFF][0];
+    w = ((((w1 << 9) - (w0 << 9)) * frac) >> 12) + (w0 << 9);
+    func_80099834(&r2, &r1);
+    func_8009964C(&r2, frac);
+    func_80099D48(&r2, 12);
+    func_800997D0(&r2.vx, &r1.vx);
+    func_80098E9C(&r2);
+    r1.vx = r2.vz;
+    r1.vz = -r2.vx;
+    if (dir) {
+        VecCopy(dir, &r1);
+    }
+    func_8009964C(&r1, w);
+    func_80099D48(&r1, 12);
+    q = t->m_sections[sec].m_pts[pt].m_pos;
+    VecCopyL(out, &t->m_sections[ns].m_pts[np].m_pos);
+    func_80099834(out, &q);
+    func_8009964C(out, frac);
+    func_80099D48(out, 12);
+    func_800997D0(&out->vx, &q.vx);
+    func_800997D0(&out->vx, &r1.vx);
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_05", func_8001C8C0);
+#endif
 
 /* The highest kind index along an entry's chain, of the entries of kind 2. */
 void func_8001CBA0(RaceSort *t, RaceEntry *e) {

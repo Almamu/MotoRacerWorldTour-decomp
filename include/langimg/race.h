@@ -77,9 +77,34 @@ struct RaceSort {
     int m_180;
 };
 
+// A point of a track section's line (0x14 bytes)
+struct TrackPoint {
+    Vector3 m_pos;
+    int m_0C;
+    u16 m_angle; // 0x10: its heading (low 12 bits)
+    u8 m_12[2];
+};
+
+// A point of a lane (0x20 bytes)
+struct TrackLane {
+    u8 m_00[7];
+    s8 m_width; // 0x07
+    u8 m_08[0x18];
+};
+
+// A section of track (0x14 bytes)
+struct TrackSection {
+    int m_count;         // its points
+    TrackPoint *m_pts;   // 0x04
+    TrackLane **m_lanes; // 0x08: per lane
+    int m_0C;
+    int m_next; // 0x10: the point the next section starts at
+};
+
 struct Track {
-    u8 m_00[0x2C];
-    int m_len; // a lap's length
+    u8 m_00[0x28];
+    TrackSection *m_sections; // 0x28
+    int m_len;                // a lap's length
 };
 
 // What a racer's m_180 points at
