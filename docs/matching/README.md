@@ -34,3 +34,4 @@ issue it worked on, and add it below.
 | [issue-61-langimg-chunk60.md](issue-61-langimg-chunk60.md) | The game's chunk_60: pools, ids and frame buffers; an empty constructor's loop |
 | [issue-52-langimg-chunk51.md](issue-52-langimg-chunk51.md) | The game's chunk_51: buffered objects and their parts |
 | [issue-45-langimg-chunk44.md](issue-45-langimg-chunk44.md) | The game's chunk_44: sound objects and their lists; new T[n]'s loop |
+| [issue-69-langimg-chunk68.md](issue-69-langimg-chunk68.md) | The game's chunk_68: the vectors' operators, a menu's slots; a 64-bit square as an asm macro |
