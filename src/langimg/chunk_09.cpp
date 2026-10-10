@@ -238,7 +238,7 @@ void func_800254F0(Bike *b) {
     int d;
 
     if (b->m_5CC->m_10) {
-        b->m_2F8 += b->m_motor->m_148 * -196 / 10;
+        b->m_2F4.vy += b->m_motor->m_148 * -196 / 10;
         return;
     }
     d = -b->m_motor->m_A0 * b->m_motor->m_148 / 4096;
@@ -253,7 +253,7 @@ void func_800254F0(Bike *b) {
             }
         }
     }
-    b->m_2F8 += d;
+    b->m_2F4.vy += d;
 }
 #else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_09", func_800254F0);

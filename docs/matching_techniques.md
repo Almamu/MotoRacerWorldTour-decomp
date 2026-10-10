@@ -89,7 +89,7 @@ settings
 | `lib/cdaudio` chunk_01b | GCC 2.91.66 | 0 | (split addresses) | `--expand-div` |
 | `src/langimg` chunk_02, chunk_03 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --small-externs=...` |
 | `src/langimg` chunk_04, chunk_05 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=` |
-| `src/langimg` chunk_06 to chunk_10 (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
+| `src/langimg` chunk_06 to chunk_11 (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_02b (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `SCES_030.37` (`src/sces`) | GCC 2.91.66 | 0 | `-fsigned-char` | `--expand-div` |
 
@@ -523,6 +523,10 @@ What's left once the instructions are right is usually register choice.
   instructions between a move from HI/LO and the next `mult`/`div`;
   ASPSX fills them with `nop`s, and so does `--div-no-checks`
   (`func_80023788`).
+- **Divisors from the magic number.** A division by a constant is a
+  multiply by `2^(32+s) / d`; compute `d` from the multiplier and the
+  shift rather than guessing a round value nearby (`func_80027EE0`: 820,
+  not 819).
 - **Operands load in the order they're written.** `a > b` and `b < a`
   are the same test, but GCC loads `a` first in the one and `b` in the
   other (`func_800264B0`).

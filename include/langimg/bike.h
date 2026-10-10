@@ -11,7 +11,10 @@
 extern "C" {
 // A body's motion (0x24 bytes)
 struct Motion {
-    int m_00;
+    union {
+        int m_00;
+        u8 m_bytes[4];
+    };
     Vector3 m_04;
     int m_10, m_14, m_18;
     int m_1C, m_20;
@@ -63,18 +66,27 @@ struct Bike {
     short m_130;
     short m_132;
     int m_134;
-    u8 m_pad138[0xF4];
+    u8 m_pad138[0x10];
+    u8 m_148;
+    s8 m_149; // on the ground
+    s8 m_14A;
+    u8 m_pad14B[0xE1];
     Frame *m_22C;
     Frame *m_230;
     Vector3 m_234;
     Vector3 m_240;
-    u8 m_pad24C[0x40];
+    u8 m_pad24C[0x8];
+    Vector3 m_254;
+    Vector3 m_260;
+    u8 m_pad26C[0x20];
     short m_28C;
     short m_28E;
     int m_290;
     u8 m_pad294[0x4];
     short m_298;
-    u8 m_pad29A[0x1E];
+    u8 m_pad29A[0x2];
+    int m_29C; // its speed
+    u8 m_pad2A0[0x18];
     int m_2B8;
     short m_2BC; // the engine speed
     short m_2BE;
@@ -84,15 +96,23 @@ struct Bike {
     int m_clutch; // the gearbox's state
     int m_2D0;
     int m_2D4;
-    u8 m_pad2D8[0x8];
+    u8 m_pad2D8[0x4];
+    u8 m_2DC;
+    u8 m_2DD;
+    u8 m_2DE;
+    s8 m_2DF;
     u8 m_2E0;
-    u8 m_pad2E1[0x3];
+    u8 m_2E1;
+    u8 m_pad2E2[0x2];
     int m_2E4;
-    u8 m_pad2E8[0x8];
+    int m_2E8;
+    u8 m_pad2EC[0x4];
     int m_2F0;
-    u8 m_pad2F4[0x4];
-    int m_2F8;
-    u8 m_pad2FC[0x34];
+    Vector3 m_2F4; // the force on it
+    u8 m_pad300[0x8];
+    int m_308;
+    int m_30C;
+    u8 m_pad310[0x20];
     Vector3 m_330; // its heading
     u8 m_pad33C[0x3C];
     AnimChan m_378;
@@ -109,7 +129,7 @@ struct Bike {
     u8 m_pad3F7[0x3];
     short m_gear; // the gear
     u8 m_pad3FC[0x10];
-    u8 m_40C;
+    s8 m_40C;
     u8 m_pad40D[0x3];
     s8 m_410;
     u8 m_pad411[0x1];
@@ -121,7 +141,9 @@ struct Bike {
     u8 m_417;
     int m_418;
     int m_41C;
-    u8 m_pad420[0x1E];
+    u8 m_pad420[0xC];
+    int m_42C;
+    u8 m_pad430[0xE];
     short m_43E;
     u8 m_pad440[0x5C];
     AnimChan m_49C;
@@ -133,10 +155,7 @@ struct Bike {
     u8 m_pad4DB[0x5];
     AnimChan m_4E0;
     u8 m_pad4FC[0x30];
-    u8 m_52C;
-    u8 m_52D;
-    u8 m_52E;
-    u8 m_52F;
+    u8 m_52C[4];
     u8 m_pad530[0x4];
     AnimChan m_534;
     u8 m_pad550[0x10];

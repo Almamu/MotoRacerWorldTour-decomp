@@ -24,3 +24,4 @@ issue it worked on, and add it below.
 | [issue-9-langimg-chunk08.md](issue-9-langimg-chunk08.md) | The game's chunk_08: rider poses, fixed-point vectors; the game's `MULSHIFT` asm macro |
 | [issue-10-langimg-chunk09.md](issue-10-langimg-chunk09.md) | The game's chunk_09: the motor's gearing, the bike; `MULSHIFT` is volatile, two nops after a division |
 | [issue-11-langimg-chunk10.md](issue-11-langimg-chunk10.md) | The game's chunk_10: the bike's gearbox; `Bike` moves to a header |
+| [issue-12-langimg-chunk11.md](issue-12-langimg-chunk11.md) | The game's chunk_11: the bike's frame flags, drag and drive |

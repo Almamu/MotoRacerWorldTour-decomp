@@ -20,7 +20,10 @@ struct Motor {
     int m_34;
     u8 m_38[4];
     int m_3C;
-    u8 m_40[0x22];
+    u8 m_40[0xC];
+    int m_4C; // 0x4C: the grip's force on the ground
+    int m_50; // 0x50: on the rear wheel
+    u8 m_54[0xE];
     short m_62;
     u8 m_64[8];
     int m_ratio[6]; // 0x6C: the gears' ratios
@@ -31,6 +34,10 @@ struct Motor {
     u8 m_14A[4];
     short m_14E;
     int m_150;
+    int m_154;
+    short m_158;
+    u8 m_15A[6];
+    int m_160;
 };
 
 int func_800236F0(Motor *m, int x, int gear);
