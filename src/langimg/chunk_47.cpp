@@ -1,5 +1,6 @@
 #include "common.h"
 #include "mulshift.h"
+#include "psyq.h"
 
 /* Lists, a table of entries, and their counts (docs/matching/issue-48-langimg-chunk47.md) */
 
@@ -19,22 +20,43 @@ struct Node47 {
     Node47 *m_00;
     int m_04;
 };
+struct Vec47 {
+    int vx, vy, vz;
+};
 struct Obj47 {
     int m_00;
     int m_04;
-    u8 m_08[0x58]; // a sound
-    Node47 m_60;   // the list's head
+    u8 m_08[0x28]; // a sound
+    int m_30;
+    u8 m_34[0x18];
+    Vec47 m_4C;
+    u8 m_58[8];
+    int m_60; // with m_64.vx, the list's head (func_80070E20)
+    Vec47 m_64;
+    u8 m_70[0x18];
+    Vec47 m_88;
+    u8 m_94[0xC];
+    Vec47 m_A0;
+    u8 m_AC[0x34];
+    int m_E0;
+    int m_E4;
+    int m_E8;
+    int m_EC;
+    int m_F0;
+    int m_F4[8];
+    int m_114;
 };
 // The 124-byte entries at D_800CB5E0
 struct Ent47 {
     u8 m_00[0x7C];
 };
 
-// A position and an angle (12 bits)
+// A position, an angle (12 bits) and a length
 struct Ang47 {
     int m_00;
     int m_04;
     u16 m_08;
+    short m_0A;
 };
 struct Pos47 {
     int m_00;
@@ -56,6 +78,11 @@ struct World47 {
     Cam47 *m_1CD0;
 };
 extern SinCos47 D_800BF3A0[];
+extern int D_800C838C[];
+extern short D_800D2EC4[];
+extern s8 D_800C7F2D;
+extern s8 D_800C8388;
+extern void *D_800C83C0[];
 extern short D_800C7F18[];
 extern int D_800CB5E0; // the five entries (built with la)
 #define ENTS47 ((Ent47 *)&D_800CB5E0)
@@ -93,10 +120,20 @@ void func_8006FD40(Obj47 *o);
 void func_8006FF0C(Obj47 *o);
 int func_80070CCC(Ang47 *a, Pos47 *p);
 void func_80070D54(Ang47 *a, int *out);
+void func_8006FE64(Obj47 *o, int a);
+void func_8006FA30(int ch, int vol);
+Obj47 *func_8006FDAC(Obj47 *o, Obj47 *src);
+void func_80070C10(Ang47 *a, Pos47 *f, Pos47 *b);
+void func_8006F88C(int i, u8 *x, int d);
+void func_80096C14(void *d, void *s);
+void func_800153FC(int v);
+void func_80012120(void *c, int v);
+void func_8006F21C(Ent47 *e);
+void func_8006F29C(Ent47 *e, u8 *x);
 
 void func_8006F7A0(void);
 void func_8006F824(int i);
-void func_8006F858(int i);
+void func_8006F858(int i, void *x);
 short func_8006FADC(int i);
 void func_8006FB3C(void);
 int func_8006FD78(Obj47 *o);
@@ -108,6 +145,28 @@ Elem47 *func_80070DB0(List47 *l);
 Elem47 *func_80070DD0(List47 *l);
 int func_80070DF4(Obj47 *o, int key, Node47 *n);
 int func_80070E20(Obj47 *o, int key);
+}
+
+static inline void VecZero(Vec47 *v) {
+    v->vx = 0;
+    v->vy = 0;
+    v->vz = 0;
+}
+
+static inline void VecCopyL(Vec47 *d, Vec47 *s) {
+    int x = s->vx;
+    int y = s->vy;
+    int z = s->vz;
+
+    d->vx = x;
+    d->vy = y;
+    d->vz = z;
+}
+
+static inline void VecCopy(Vec47 *d, Vec47 *s) {
+    d->vx = s->vx;
+    d->vy = s->vy;
+    d->vz = s->vz;
 }
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_47", func_8006F29C);
@@ -131,11 +190,32 @@ void func_8006F824(int i) {
     func_8006F1E0(&ENTS47[i]);
 }
 
-void func_8006F858(int i) {
-    func_8006F270(&ENTS47[i]);
+void func_8006F858(int i, void *x) {
+    // x goes on in $a1 untouched
+    ((void (*)(Ent47 *, void *))func_8006F270)(&ENTS47[i], x);
 }
 
+#ifdef NON_MATCHING
+// Registers: $v0 and $v1 swap around the table's address
+void func_8006F88C(int i, u8 *x, int d) {
+    int v = 0x40;
+
+    if (D_800C7F2D) {
+        v = *(int *)((i << 2) + (u8 *)D_800C838C);
+    }
+    D_800D2EC4[0] = v;
+    if (((s8 *)x)[0x185]) {
+        func_8006F858(i, x);
+    }
+    if (d <= 0x95FFF && !D_800C8388) {
+        func_8006F29C(&ENTS47[i], x);
+    } else {
+        func_8006F21C(&ENTS47[i]);
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_47", func_8006F88C);
+#endif
 
 void func_8006F968(int i, int a, int b, int d, int e) {
     World47 *w = &D_800D11D0;
@@ -162,7 +242,34 @@ void func_8006F9BC(int mode) {
     }
 }
 
+/* Sets one of the volumes (0 to 63): 5 the master, 6 the CD's, the others
+ * a channel's. */
+#ifdef NON_MATCHING
+// Registers: $v0 and $v1 swap around the tables' addresses
+void func_8006FA30(int ch, int vol) {
+    int v;
+
+    if (vol >= 0) {
+        if (vol < 0x40) {
+            v = vol;
+        } else {
+            v = 0x3F;
+        }
+    } else {
+        v = 0;
+    }
+    if (ch == 5) {
+        SpuSetCommonMasterVolume((short)(v << 6), (short)(v << 6));
+    } else if (ch == 6) {
+        func_800153FC(v * 2);
+    } else {
+        func_80012120(*(void **)((ch << 2) + (u8 *)D_800C83C0), v * 2);
+    }
+    *(short *)((ch << 1) + (u8 *)D_800C7F18) = v;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_47", func_8006FA30);
+#endif
 
 short func_8006FADC(int i) {
     i <<= 1;
@@ -221,13 +328,48 @@ int func_8006FD98(int *q) {
     return q[1] < q[0] - 1;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_47", func_8006FDAC);
+Obj47 *func_8006FDAC(Obj47 *o, Obj47 *src) {
+    int i;
+
+    if (func_80096884(o->m_08) && func_80096884(src->m_08)) {
+        func_80096C14(o->m_08, src->m_08);
+        o->m_00 = src->m_00;
+        o->m_F0 = src->m_F0;
+        for (i = 0; i < 8; i++) {
+            o->m_F4[i] = src->m_F4[i];
+        }
+        func_8006FF44(o);
+    }
+    return o;
+}
 
 void func_8006FE5C(int *p) {
     *p = 0;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_47", func_8006FE64);
+void func_8006FE64(Obj47 *o, int a) {
+    Vec47 z;
+    int i;
+
+    o->m_30 = 0;
+    o->m_04 = 0;
+    o->m_E4 = 0;
+    o->m_E8 = 0;
+    o->m_E0 = 0;
+    o->m_EC = 0;
+    VecZero(&z);
+    VecCopy(&o->m_64, &z);
+    VecCopyL(&o->m_4C, &o->m_64);
+    VecZero(&z);
+    VecCopy(&o->m_A0, &z);
+    VecCopyL(&o->m_88, &o->m_A0);
+    if (a) {
+        o->m_F0 = -1;
+        for (i = 0; i < 8; i++) {
+            o->m_114 = -1;
+        }
+    }
+}
 
 void func_8006FF0C(Obj47 *o) {
     func_8006FE64(o, 1);
@@ -252,23 +394,41 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_47", func_80070A40);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_47", func_80070B2C);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_47", func_80070C10);
-
 #ifdef NON_MATCHING
-// The original computes the entry's address twice (t + i and i + t); ours once
+// Registers and the order of the stores (the entry's two loads as in func_80070CCC)
+/* The points ahead of and behind a, at its length along its angle. */
+void func_80070C10(Ang47 *a, Pos47 *f, Pos47 *b) {
+    Vec47 v;
+    int s = D_800BF3A0[(a->m_08 + 0x400) & 0xFFF].m_02;
+    int c = D_800BF3A0[(a->m_08 + 0x400) & 0xFFF].m_00;
+
+    v.vx = (s * a->m_0A) >> 6;
+    v.vy = 0;
+    v.vz = (c * a->m_0A) >> 6;
+    if (f) {
+        f->m_04 = 0;
+        f->m_00 = a->m_00 + v.vx;
+        f->m_08 = a->m_04 + v.vz;
+    }
+    if (b) {
+        b->m_04 = 0;
+        b->m_00 = a->m_00 - v.vx;
+        b->m_08 = a->m_04 - v.vz;
+    }
+}
+#else
+INCLUDE_ASM("asm/langimg/nonmatchings/chunk_47", func_80070C10);
+#endif
+
 /* How far p is ahead of a, along a's angle (4.12). */
 int func_80070CCC(Ang47 *a, Pos47 *p) {
-    SinCos47 *t = D_800BF3A0;
     int dx = p->m_00 - a->m_00;
     int dz = p->m_08 - a->m_04;
-    int s = t[a->m_08 & 0xFFF].m_02;
-    int c = t[a->m_08 & 0xFFF].m_00;
+    int s = D_800BF3A0[a->m_08 & 0xFFF].m_02;
+    int c = D_800BF3A0[a->m_08 & 0xFFF].m_00;
 
     return MULSHIFT(dx, s, 12) + MULSHIFT(dz, c, 12);
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_47", func_80070CCC);
-#endif
 
 /* The angle's sine and cosine, and 0 between. */
 void func_80070D54(Ang47 *a, int *out) {
@@ -306,7 +466,7 @@ next:
 }
 
 int func_80070E20(Obj47 *o, int key) {
-    return func_80070DF4(o, key, &o->m_60);
+    return func_80070DF4(o, key, (Node47 *)&o->m_60);
 }
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_47", func_80070E40);
