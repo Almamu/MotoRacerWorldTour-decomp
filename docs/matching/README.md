@@ -43,3 +43,4 @@ issue it worked on, and add it below.
 | [issue-75-langimg-chunk74.md](issue-75-langimg-chunk74.md) | The game's chunk_74: strings, times as text, CRC-32, relocations, overlays; seven handwritten |
 | [issue-32-langimg-chunk31.md](issue-32-langimg-chunk31.md) | The game's chunk_31: the race's bikes and their objects; tables named for their last entry, struct copies open |
 | [issue-40-langimg-chunk39.md](issue-40-langimg-chunk39.md) | The game's chunk_39: a player's controls, a ring of key records, the pause button; one family of setters |
+| [issue-30-langimg-chunk29.md](issue-30-langimg-chunk29.md) | The game's chunk_29: a race's players and its menus; scalar declarations, a string copied from the data |
