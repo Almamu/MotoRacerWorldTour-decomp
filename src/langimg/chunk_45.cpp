@@ -1,5 +1,6 @@
 #include "common.h"
 #include "langimg/cobjet.h"
+#include "mulshift.h"
 
 /* (docs/matching/issue-46-langimg-chunk45.md) */
 
@@ -34,6 +35,17 @@ struct VtEntry {
     (((void (*)(void *, int))(o)->m_vtable[i].m_func)((char *)(o) + (o)->m_vtable[i].m_delta, a))
 #define VCALL1(o, i, a) \
     (((int (*)(void *, int))(o)->m_vtable[i].m_func)((char *)(o) + (o)->m_vtable[i].m_delta, a))
+
+// A value eased towards a target
+struct Ease45 {
+    int m_00; // the value, within -0x1000..0x1000
+    int m_04; // the target
+    int m_08; // the rate
+    int m_0C; // how far back from the value the ease starts (/4096)
+    int m_10; // the target last seen
+    int m_14; // the ease's start
+    int m_18; // its end
+};
 
 // A list's node
 struct Node45 {
@@ -346,6 +358,7 @@ int func_8006A5D0(int *a, int b, int c);
 short func_800803C4(int a, int b);
 
 int func_8006B658(Slots45 *o, int a, int b, int c, int d, int e, int f, int g);
+int func_8006BBC4(Ease45 *o, int dt);
 extern u8 D_800C7F2D;
 extern Banks45 *D_800C7F28;
 extern int D_800D11D0[]; // a sound channel set
@@ -640,7 +653,57 @@ void func_8006BB9C(AnimChan *c, int a) {
     c->m_0C = 0x333;
 }
 
+#ifdef NON_MATCHING
+/* The layout matches; the value and the object in other registers, which moves the scheduling (85 off; MULSHIFT keeps it from the permuter) */
+/* The value eased towards its target for dt; the new value. */
+int func_8006BBC4(Ease45 *o, int dt) {
+    int cur = o->m_00;
+    int tgt = o->m_04;
+    int back;
+    int step;
+
+    if (tgt != cur) {
+        if (dt <= 0) {
+            return cur;
+        }
+        if (tgt != o->m_10) {
+            o->m_14 = cur;
+            o->m_18 = tgt;
+            o->m_10 = tgt;
+            back = (tgt - cur) * o->m_0C / 4096;
+            if ((back > 0 && !(cur < cur - back)) || (back < 0 && !(cur - back < cur))) {
+                o->m_14 = o->m_00 - back;
+            }
+            cur = o->m_00;
+        }
+        if (o->m_14 != o->m_18) {
+            tgt = o->m_18;
+            step =
+                MULSHIFT(o->m_08 * (tgt - cur), dt * (o->m_14 - cur), 12) / ((o->m_14 - tgt) * 38);
+            if (step == 0) {
+                if (cur < tgt) {
+                    step = 1;
+                } else if (tgt < cur) {
+                    step = -1;
+                }
+            }
+            if ((cur < tgt && tgt < cur + step) || (tgt < cur && cur + step < tgt)) {
+                step = tgt - cur;
+            }
+            o->m_00 = cur = cur + step;
+        }
+        if (cur < -0x1000) {
+            cur = -0x1000;
+        } else if (cur > 0x1000) {
+            cur = 0x1000;
+        }
+        o->m_00 = cur;
+    }
+    return cur;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006BBC4);
+#endif
 
 /* Three values packed into a word: 13 bits, 5 and 14 (-1 is 0x3FFF). */
 int func_8006BD78(Packed45 *out, u32 a, u32 b, u32 c) {
