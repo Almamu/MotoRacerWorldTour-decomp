@@ -33,3 +33,4 @@ issue it worked on, and add it below.
 | [issue-72-langimg-chunk71.md](issue-72-langimg-chunk71.md) | The game's chunk_71: the memory card menus; scalar or array globals by their registers |
 | [issue-61-langimg-chunk60.md](issue-61-langimg-chunk60.md) | The game's chunk_60: pools, ids and frame buffers; an empty constructor's loop |
 | [issue-52-langimg-chunk51.md](issue-52-langimg-chunk51.md) | The game's chunk_51: buffered objects and their parts |
+| [issue-45-langimg-chunk44.md](issue-45-langimg-chunk44.md) | The game's chunk_44: sound objects and their lists; new T[n]'s loop |
