@@ -1,5 +1,6 @@
 #include "common.h"
 #include "psyq.h"
+#include "stdarg.h"
 
 /* Small helpers: strings, relocations, a global object (docs/matching/issue-75-langimg-chunk74.md) */
 
@@ -52,6 +53,15 @@ struct VtEntry74 {
     short m_index;
     void (*m_func)(void *self, int a);
 };
+// A button sequence (a cheat): how far it's matched, the key held, the time
+// since the last key, what it gives, and its keys (0 at the end)
+struct Seq74 {
+    int m_00;
+    int m_04;
+    int m_08;
+    int m_0C;
+    u16 m_10[8];
+};
 struct Game74 {
     u8 m_00[0x68];
     VtEntry74 *m_68;
@@ -93,6 +103,9 @@ void func_800793C0(Game74 *g);
 void func_800AEBF0(int a, int b);
 void func_80015684(int a);
 void func_8006C750(void);
+int func_800A68BC(int key, Seq74 *s, int n);
+void func_800A59D4(Obj74 *o);
+int func_800A6168(s8 *d, s8 *fmt, va_list ap);
 int func_800A54F8(u8 *base, int *offs, int n);
 void func_800A5888(void *p, int flags);
 void func_800A5908(Obj74 *o);
@@ -196,7 +209,62 @@ void func_800A594C(Obj74 *o) {
     o->m_04 = 0;
 }
 
+#ifdef NON_MATCHING
+// Registers: the walking pointer and the counter swap $a1 and $a2 (8 off)
+/* The timer each frame: the frame's length, the last four's average. */
+void func_800A59D4(Obj74 *o) {
+    int e;
+    int r;
+    int i;
+    int *q;
+
+    o->m_54 = o->m_4C;
+    if (o->m_50) {
+        func_800A5CBC(o);
+        o->m_50 = 0;
+    }
+    if (o->m_58) {
+        o->m_3Cw = (o->m_3Cw & 0xC0000000) | (func_800A58B0() & 0x3FFFFFFF);
+        o->m_00 = o->m_3C.m_t - 0x23;
+    } else {
+        o->m_00 = o->m_3C.m_t;
+        o->m_3Cw = (o->m_3Cw & 0xC0000000) | (func_800A58B0() & 0x3FFFFFFF);
+    }
+    e = o->m_3C.m_t - o->m_00;
+    if (e > 0) {
+        r = e > 0x7FFFFFFF ? 0x7FFFFFFF : e;
+    } else {
+        r = 1;
+    }
+    o->m_40 = r;
+    if (!o->m_54) {
+        o->m_04 += r;
+    }
+    o->m_18 = o->m_40;
+    if (o->m_14 && !o->m_58) {
+        o->m_08 = 0;
+        o->m_0C = 0;
+    }
+    q = o->m_28;
+    q[o->m_38] = o->m_40;
+    if (++o->m_38 >= 4) {
+        o->m_38 = 0;
+    }
+    o->m_24 = 0;
+    for (i = 0; i < 4; i++) {
+        o->m_24 += *q++;
+    }
+    if (o->m_24) {
+        o->m_24 = 0xFA00000 / o->m_24;
+    } else {
+        o->m_24 = 999;
+    }
+    o->m_58 = 0;
+    o->m_20 = 0x3E80000 / o->m_40;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_74", func_800A59D4);
+#endif
 
 /* The frame's time: its length (20 to 66, or n), and the running total. */
 void func_800A5BB8(Obj74 *o, int n) {
@@ -437,7 +505,91 @@ int func_800A6100(const char *a, const char *b, int n) {
     return 0;
 }
 
+/* A small sprintf: %d and %s, with a width (digits or *) and 0 to pad
+ * with zeroes. Returns the length. */
+/* A small vsprintf: %d and %s, with a width (digits or *) and 0 to pad
+ * with zeroes. Returns the length. */
+#ifdef NON_MATCHING
+// The original hoists six constants out of the loop into $t4-$t9 (and 10 into $s0); ours loads them in place. Only -fmove-all-movables hoists them here
+int func_800A6168(s8 *d, s8 *fmt, va_list ap) {
+    s8 *start = d;
+    s8 buf[16];
+    s8 *p;
+    s8 *str;
+    s8 c;
+    int pad;
+    int skip;
+    int w;
+    int n;
+    int i;
+    int base;
+
+    c = *fmt++;
+    while (c) {
+        if (c == '%') {
+            pad = ' ';
+            if (*fmt == '0') {
+                skip = 1;
+                pad = '0';
+            } else {
+                skip = 0;
+            }
+            fmt += skip;
+            c = *fmt;
+            w = 0;
+            if (c == '*') {
+                w = va_arg(ap, int);
+                skip = 1;
+            } else {
+                while (c >= '0' && c <= '9') {
+                    fmt++;
+                    w = w * 10 + c - '0';
+                    c = *fmt;
+                }
+                skip = 1;
+            }
+            if (c == 'd') {
+                i = 0;
+                n = va_arg(ap, int);
+                if (n < 0) {
+                    *d++ = '-';
+                    n = -n;
+                }
+                buf[0] = 0;
+                p = &buf[1];
+                base = 10;
+                do {
+                    *p++ = n % base + '0';
+                    n /= base;
+                    i++;
+                } while (n);
+                for (n = w - i; n > 0; n--) {
+                    *d++ = pad;
+                }
+                p--;
+                while (*p) {
+                    *d++ = *p--;
+                }
+            } else if (c == 's') {
+                str = va_arg(ap, s8 *);
+                while (*str) {
+                    *d++ = *str++;
+                }
+            } else {
+                skip = 0;
+            }
+            fmt += skip;
+        } else {
+            *d++ = c;
+        }
+        c = *fmt++;
+    }
+    *d = 0;
+    return d - start;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_74", func_800A6168);
+#endif
 
 /* strupr */
 s8 *func_800A6344(s8 *s) {
@@ -623,7 +775,74 @@ int func_800A6850(int x) {
     return x * 85 / 0x26000;
 }
 
+/* Feeds a key to n sequences; returns the longest one completed's value, or
+ * -1. */
+#ifdef NON_MATCHING
+// Registers: the original keeps a pointer to each field (85 off)
+int func_800A68BC(int key, Seq74 *s, int n) {
+    int best = 0;
+    int r = -1;
+    int i;
+    int p;
+    int c;
+
+    if (!s) {
+        return -1;
+    }
+    if (n <= 0) {
+        return -1;
+    }
+    for (i = 0; i < n; i++, s++) {
+        p = s->m_00;
+        if (p > 8) {
+            s->m_00 = 0;
+            p = 0;
+        }
+        if (p < 0) {
+            s->m_00 = 0;
+            p = 0;
+        }
+        c = s->m_10[p];
+        if (!c) {
+            continue;
+        }
+        if (p) {
+            s->m_08++;
+        }
+        if (key) {
+            if (c == key) {
+                if (!s->m_04) {
+                    p = s->m_00 + 1;
+                    s->m_00 = p;
+                    s->m_08 = 0;
+                    s->m_04 = 1;
+                    if (!s->m_10[p]) {
+                        if (best < p) {
+                            r = s->m_0C;
+                            best = p;
+                        }
+                        s->m_00 = 0;
+                    }
+                }
+            } else if (s->m_00 <= 0 || s->m_10[s->m_00 - 1] != key) {
+                s->m_00 = 0;
+                s->m_04 = 0;
+                s->m_08 = 0;
+            }
+        } else {
+            s->m_04 = 0;
+        }
+        if (s->m_00 && s->m_08 > 60) {
+            s->m_00 = 0;
+            s->m_08 = 0;
+            s->m_04 = 0;
+        }
+    }
+    return r;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_74", func_800A68BC);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_74", func_800A6A4C);
 
