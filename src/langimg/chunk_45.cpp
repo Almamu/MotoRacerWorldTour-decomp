@@ -165,6 +165,11 @@ struct Virt45 {
     u8 m_18[0x10];
     int m_28;
     int m_2C;
+    u8 m_30[8];
+    int m_38, m_3C, m_40, m_44;
+    short m_48; // its index in the bank
+    short m_4A;
+    int m_4C;
 };
 
 // A slot of 0x24 bytes
@@ -172,9 +177,9 @@ struct Slot45 {
     Virt45 *m_00;
     int m_04; // its state: 0 free, 1 to 3
     int m_08;
-    int m_0C;
-    short m_10;
-    u8 m_12[0xA];
+    short m_0C, m_0E, m_10, m_12;
+    int m_14; // its number
+    int m_18;
     Slot45 *m_prev; // 0x1C
     Slot45 *m_next; // 0x20
 };
@@ -182,7 +187,10 @@ struct Slot45 {
 // A set of slots
 struct Slots45 {
     int m_count;
-    int m_04, m_08, m_0C, m_10;
+    int m_04;
+    int m_08; // the next slot's number
+    int m_0C;
+    Virt45 *m_10;
     Slot45 *m_slots; // 0x14
     Slot45 *m_first; // 0x18
     Slot45 *m_last;  // 0x1C
@@ -332,6 +340,12 @@ int func_80096B74(void *p, int n);
 int func_800968B0(void *p);
 void func_80096ACC(void *p, int n, int v);
 int func_800968D4(void *p);
+extern Virt45 *D_800CB484;
+extern int D_800CC030[];
+int func_8006A5D0(int *a, int b, int c);
+short func_800803C4(int a, int b);
+
+int func_8006B658(Slots45 *o, int a, int b, int c, int d, int e, int f, int g);
 extern u8 D_800C7F2D;
 extern Banks45 *D_800C7F28;
 extern int D_800D11D0[]; // a sound channel set
@@ -421,7 +435,69 @@ void func_8006B570(Slots45 *o) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006B658);
+/* A slot added at the end of the list, with an object from the bank; its
+ * number, or -1. */
+int func_8006B658(Slots45 *o, int a, int b, int c, int d, int e, int f, int g) {
+    int r = -1;
+    int i = func_8006B9B0(o);
+    Slot45 *s;
+    Slot45 *p;
+    Virt45 *v;
+    int len;
+    int x;
+    int k;
+
+    if (i != -1) {
+        s = &o->m_slots[i];
+        len = 0x200;
+        x = o->m_0C;
+        if (o->m_10) {
+            len = o->m_10->m_08;
+        }
+        k = func_8006A5D0(&D_800CB480, a, -1);
+        if (k != -1) {
+            v = &D_800CB484[k];
+            v->m_10 = len;
+            v->m_14 = 0;
+            v->m_38 = d;
+            v->m_04 = r;
+            v->m_48 = k;
+            v->m_4A = c;
+            v->m_3C = e;
+            v->m_44 = g;
+            s->m_00 = v;
+            r = o->m_08++;
+            s->m_14 = r;
+            s->m_08 = x;
+            s->m_04 = 1;
+            s->m_18 = b;
+            s->m_12 = 0;
+            s->m_10 = 0;
+            s->m_0E = 0;
+            s->m_0C = 0;
+            s->m_next = 0;
+            s->m_prev = o->m_last;
+            if (o->m_last) {
+                o->m_last->m_next = s;
+            }
+            o->m_last = s;
+            if (!o->m_first) {
+                o->m_first = s;
+            }
+            p = o->m_last;
+            if (f < 0) {
+                f = 0;
+            }
+            func_8006A028(s->m_00, x, s->m_00->m_14, 0, (short)f);
+            p->m_10 = func_800803C4(D_800CC030[p->m_00->m_4A], p->m_00->m_4C);
+            o->m_0C = 0;
+            if (p) {
+                o->m_0C = p->m_08 + p->m_10 + 10;
+            }
+        }
+    }
+    return r;
+}
 
 /* A slot released and taken out of the list. */
 void func_8006B854(Slots45 *o, Slot45 *s) {
