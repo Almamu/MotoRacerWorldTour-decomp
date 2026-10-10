@@ -38,12 +38,14 @@ struct Motor {
     int m_150;
     int m_154;
     short m_158;
-    u8 m_15A[6];
+    short m_15A; // 0x15A: rolling resistance
+    u8 m_15C[4];
     int m_160;
 };
 
 int func_800236F0(Motor *m, int x, int gear);
 void func_8002385C(Motor *m);
+int func_80023E48(Motor *m, int *out, int dt, int n);
 int func_80023788(Motor *m, int x, int gear);
 void func_800237E8(Motor *m, int *out);
 int func_8002357C(Motor *m, int x, int gear);
