@@ -31,6 +31,8 @@ struct Motor {
     u8 m_14A[4];
     short m_14E;
     int m_150;
+    u8 m_154[0xC];
+    int m_160;
 };
 
 int func_800236F0(Motor *m, int x, int gear);

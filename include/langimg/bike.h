@@ -11,7 +11,10 @@
 extern "C" {
 // A body's motion (0x24 bytes)
 struct Motion {
-    int m_00;
+    union {
+        int m_00;
+        u8 m_bytes[4];
+    };
     Vector3 m_04;
     int m_10, m_14, m_18;
     int m_1C, m_20;
@@ -63,7 +66,11 @@ struct Bike {
     short m_130;
     short m_132;
     int m_134;
-    u8 m_pad138[0xF4];
+    u8 m_pad138[0x10];
+    u8 m_148;
+    s8 m_149; // on the ground
+    s8 m_14A;
+    u8 m_pad14B[0xE1];
     Frame *m_22C;
     Frame *m_230;
     Vector3 m_234;
@@ -74,7 +81,9 @@ struct Bike {
     int m_290;
     u8 m_pad294[0x4];
     short m_298;
-    u8 m_pad29A[0x1E];
+    u8 m_pad29A[0x2];
+    int m_29C; // its speed
+    u8 m_pad2A0[0x18];
     int m_2B8;
     short m_2BC; // the engine speed
     short m_2BE;
@@ -84,15 +93,23 @@ struct Bike {
     int m_clutch; // the gearbox's state
     int m_2D0;
     int m_2D4;
-    u8 m_pad2D8[0x8];
+    u8 m_pad2D8[0x4];
+    u8 m_2DC;
+    u8 m_2DD;
+    u8 m_2DE;
+    s8 m_2DF;
     u8 m_2E0;
-    u8 m_pad2E1[0x3];
+    u8 m_2E1;
+    u8 m_pad2E2[0x2];
     int m_2E4;
-    u8 m_pad2E8[0x8];
+    int m_2E8;
+    u8 m_pad2EC[0x4];
     int m_2F0;
     u8 m_pad2F4[0x4];
     int m_2F8;
-    u8 m_pad2FC[0x34];
+    u8 m_pad2FC[0xC];
+    int m_308;
+    u8 m_pad30C[0x24];
     Vector3 m_330; // its heading
     u8 m_pad33C[0x3C];
     AnimChan m_378;
@@ -121,7 +138,9 @@ struct Bike {
     u8 m_417;
     int m_418;
     int m_41C;
-    u8 m_pad420[0x1E];
+    u8 m_pad420[0xC];
+    int m_42C;
+    u8 m_pad430[0xE];
     short m_43E;
     u8 m_pad440[0x5C];
     AnimChan m_49C;
