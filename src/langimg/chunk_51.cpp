@@ -53,10 +53,28 @@ struct B51 {
 
 // An object with an animation channel at 0x160
 struct C51 {
-    u8 m_00[0x154];
-    int m_154;
-    u8 m_158[8];
+    u8 m_00[0x140];
+    int m_140;
+    u8 m_144[0xC];
+    int m_150, m_154, m_158, m_15C;
     u8 m_160[0x1C];
+    int m_17C, m_180, m_184, m_188, m_18C, m_190;
+};
+
+// Something with two matrices at 0xA0
+struct M51 {
+    u8 m_00[0xA0];
+    MATRIX m_A0, m_C0;
+};
+
+// An updated object
+struct U51 {
+    u8 m_00[0x14];
+    int m_14;
+    u8 m_18[0x14];
+    int m_2C, m_30;
+    u8 m_34[4];
+    int m_38;
 };
 
 struct D51 {
@@ -92,6 +110,16 @@ void func_80074510(void *p);
 void *func_80074534(void *p);
 void func_8006BB70(void *p);
 void func_80078280(C51 *o);
+void func_8006BB9C(void *c, int a);
+int func_80074AC8(U51 *o);
+int func_80076E20(U51 *o, int a, int *t);
+int func_8007702C(U51 *o, int a, int *t);
+void func_80098224(MATRIX *m, M51 *o);
+void func_80098354(MATRIX *m, M51 *o);
+
+int func_800773E8(U51 *o);
+void func_800783A8(C51 *o, int *src, int *t1, int *t2, int i);
+void func_800788D8(M51 *o);
 
 void *func_80077490(void);
 B51 *func_800774E4(B51 *o);
@@ -142,7 +170,28 @@ Val51 *func_80078FE8(Ref51 *r, int b);
 void func_80078FFC(void);
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_51", func_800773E8);
+int func_800773E8(U51 *o) {
+    int r = 0;
+
+    if (func_80074AC8(o)) {
+        int a = o->m_2C;
+        int b = o->m_30;
+
+        if (a || b) {
+            int *t = D_800C8C68->m_items[o->m_38];
+
+            if (!a) {
+                a = b;
+            }
+            if (o->m_14 <= 0) {
+                r = func_80076E20(o, a, t);
+            } else {
+                r = func_8007702C(o, a, t);
+            }
+        }
+    }
+    return r;
+}
 
 void *func_80077490(void) {
     return func_80076588(__builtin_new(0x18));
@@ -216,13 +265,53 @@ C51 *func_80078244(C51 *o) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_51", func_80078280);
 
+#ifdef NON_MATCHING
+/* The original copies each field as it loads it; GCC moves the stack argument's load earlier (26 off) */
+void func_800783A8(C51 *o, int *src, int *t1, int *t2, int i) {
+    o->m_17C = src[0];
+    o->m_180 = src[1];
+    o->m_184 = src[2];
+    o->m_188 = src[3];
+    o->m_18C = src[4];
+    o->m_190 = src[5];
+    o->m_150 = src[6];
+    o->m_154 = i;
+    o->m_140 = src[9];
+    o->m_190 = t1[i];
+    o->m_150 = -t2[i];
+    o->m_158 = 0;
+    o->m_15C = 0;
+    func_8006BB9C(o->m_160, 0);
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_51", func_800783A8);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_51", func_80078458);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_51", func_8007857C);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_51", func_800788D8);
+/* Two matrices; the second transposed. */
+void func_800788D8(M51 *o) {
+    MATRIX m;
+    MATRIX *p;
+    short t;
+
+    func_80098224(&m, o);
+    o->m_A0 = m;
+    func_80098354(&m, o);
+    o->m_C0 = m;
+    p = &o->m_C0;
+    t = p->m[0][1];
+    p->m[0][1] = p->m[1][0];
+    p->m[1][0] = t;
+    t = p->m[0][2];
+    p->m[0][2] = p->m[2][0];
+    p->m[2][0] = t;
+    t = p->m[1][2];
+    p->m[1][2] = p->m[2][1];
+    p->m[2][1] = t;
+}
 
 A51 *func_800789C4(A51 *o) {
     o->m_vt = D_800C8884;
