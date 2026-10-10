@@ -7,6 +7,18 @@ struct Kind41 {
     u8 m_00[4];
     s8 m_04;
 };
+struct Vec41 {
+    int x;
+    int y;
+    int z;
+};
+// A state: its kind, a value, two vectors
+struct St41 {
+    Kind41 *m_00;
+    int m_04;
+    Vec41 m_08;
+    Vec41 m_14;
+};
 struct Obj41 {
     u8 m_00[0x50];
     void *m_50; // the vtable
@@ -29,9 +41,12 @@ struct Obj41 {
     u8 m_164[0x90];
     int m_1F4;
     int m_1F8;
-    u8 m_1FC[0x30];
-    Kind41 **m_22C;
-    Kind41 **m_230;
+    u8 m_1FC[0x24];
+    St41 *m_220;
+    St41 *m_224;
+    St41 *m_228;
+    St41 *m_22C;
+    St41 *m_230;
     u8 m_234[0x1BC];
     int m_3F0;
     u8 m_3F4[0x74];
@@ -50,6 +65,7 @@ int func_80063A04(Obj41 *o);
 int func_80063A30(Obj41 *o);
 int func_80063A5C(Obj41 *o);
 void func_800643BC(Obj41 *o, int f);
+void func_80063848(Obj41 *d, Obj41 *s);
 struct Cell41 {
     u8 m_00[0xE];
     u8 m_0E;
@@ -109,13 +125,38 @@ void func_8006348C(Obj41 *o, int *a, int *b) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_41", func_800634BC);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_41", func_80063848);
+// A vector copied with all three loads first (chunk_47's VecCopyL)
+static inline void VecCopyL41(Vec41 *d, Vec41 *s) {
+    int x = s->x;
+    int y = s->y;
+    int z = s->z;
+
+    d->x = x;
+    d->y = y;
+    d->z = z;
+}
+
+static inline void StCopy41(St41 *d, St41 *s) {
+    d->m_00 = s->m_00;
+    d->m_04 = s->m_04;
+    VecCopyL41(&d->m_08, &s->m_08);
+    VecCopyL41(&d->m_14, &s->m_14);
+}
+
+/* The states copied from s. */
+void func_80063848(Obj41 *d, Obj41 *s) {
+    StCopy41(d->m_220, s->m_220);
+    StCopy41(d->m_224, s->m_224);
+    StCopy41(d->m_228, s->m_228);
+    StCopy41(d->m_230, s->m_230);
+    StCopy41(d->m_22C, s->m_22C);
+}
 
 int func_80063A04(Obj41 *o) {
     int r = 0;
 
-    if (o->m_22C && *o->m_22C) {
-        r = (*o->m_22C)->m_04;
+    if (o->m_22C && o->m_22C->m_00) {
+        r = o->m_22C->m_00->m_04;
     }
     return r;
 }
@@ -123,8 +164,8 @@ int func_80063A04(Obj41 *o) {
 int func_80063A30(Obj41 *o) {
     int r = 0;
 
-    if (o->m_230 && *o->m_230) {
-        r = (*o->m_230)->m_04;
+    if (o->m_230 && o->m_230->m_00) {
+        r = o->m_230->m_00->m_04;
     }
     return r;
 }
