@@ -5,7 +5,8 @@ A C++ class of named objects with a small state machine, its vtable at
 stage: its tables, its sounds, its numbers from the race's settings.
 One file, `src/langimg/chunk_23.cpp`, 0x8003F6B8-0x8004184C.
 
-55 functions: 48 match, 5 are parked, 2 are still asm.
+55 functions: 49 match, 4 are parked, 2 are still asm (the constructor
+matched during chunk_45, #46).
 
 ## The settings
 
@@ -32,12 +33,12 @@ return 0 or 1, or nothing.
 | `func_8003F6B8` | matches | a scene's items' object lists |
 | `func_8003F740`, `func_80040E98` | asm | 314 and 621 instructions |
 | `func_8003FC28` | parked | a sound from one of two tables: -1 kept in another register (7 off) |
-| `func_8003FC94` | parked | the constructor: -1 loaded before the vtable's store here (8 off) |
+| `func_8003FC94` | matches | the constructor: its zeros as one chained assignment (found with the permuter, during #46) |
 | `func_8003FCF8` to `func_8003FF68` | match | the destructor, the states, the name, flags, the default virtuals |
 | `func_8003FF70` | matches | a scene event: a name compared, two lists started |
 | `func_80040034`, `func_80040178` to `func_8004047C`, `func_80040578` | match | entries by name, their text and flags, varargs wrappers, a subclass's destructor |
 | `func_8004009C` | parked | an entry's text from a format, cut to its room (9 off) |
-| `func_800404D0` | parked | the subclass's constructor: as `func_8003FC94` (7 off) |
+| `func_800404D0` | parked | the subclass's constructor: -1 in another register (7 off; the chained assignments didn't help) |
 | `func_800405A0`, `func_800406A4` | match | the stage's numbers from the settings; a sound bank |
 | `func_800406E0` | parked | the stage's setup, its two tables (20 off) |
 | `func_80040A24` to `func_80040E50` | match | the stage's start, its sounds, virtual calls, the destructor's cleanup |
