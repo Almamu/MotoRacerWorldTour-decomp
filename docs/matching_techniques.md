@@ -89,7 +89,7 @@ settings
 | `lib/cdaudio` chunk_01b | GCC 2.91.66 | 0 | (split addresses) | `--expand-div` |
 | `src/langimg` chunk_02, chunk_03 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --small-externs=...` |
 | `src/langimg` chunk_04, chunk_05 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=` |
-| `src/langimg` chunk_06 to chunk_08 (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
+| `src/langimg` chunk_06 to chunk_09 (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_02b (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `SCES_030.37` (`src/sces`) | GCC 2.91.66 | 0 | `-fsigned-char` | `--expand-div` |
 
@@ -515,6 +515,14 @@ What's left once the instructions are right is usually register choice.
   in a fixed-point multiply). They can still be C: the game used an `asm`
   macro, `MULSHIFT` (`include/mulshift.h`), and GCC built the rest around
   it (chunk_08).
+- **A volatile `asm` makes GCC load constants again.** CSE forgets its
+  values at a volatile `asm`, so a constant operand used by two of them is
+  loaded twice; with a plain `asm` it's loaded once. `MULSHIFT` is
+  volatile (`func_800236F0`).
+- **Two nops between `mflo` and a multiply.** The R3000 needs two
+  instructions between a move from HI/LO and the next `mult`/`div`;
+  ASPSX fills them with `nop`s, and so does `--div-no-checks`
+  (`func_80023788`).
 - **Field-by-field inlines for vectors.** `v->vx = 0; v->vy = 0; v->vz =
   0;` stores in that order, where a chained assignment stores the last
   field first; and a field-by-field copy lets GCC reuse values it knows,

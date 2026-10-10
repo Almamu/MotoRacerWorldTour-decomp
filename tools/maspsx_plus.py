@@ -24,7 +24,8 @@ Takes maspsx's arguments, and these:
   LO (or HI), without the divide-by-zero and overflow checks ASPSX 2.79
   adds (what --expand-div emulates), and a nop before the next
   instruction that reads the result, even past a label: that assembler
-  gave mflo a delay slot like a load's. The game's sound engine was
+  gave mflo a delay slot like a load's; two before a mult or div that
+  follows it directly (the HI/LO hazard; func_80023788). The game's sound engine was
   assembled that way (docs/libraries.md).
 
 docs/matching_techniques.md, "Small globals" and "Divisions".
@@ -103,14 +104,20 @@ def reads(line, reg):
     return any(re.search(rf"(^|[(,]){re.escape(reg)}($|[),])", a) for a in sources)
 
 
+MULDIV = ("mult", "multu", "div", "divu")
+
+
 def mflo_delay(lines):
     """A nop before the first instruction after an inserted mflo/mfhi that
-    reads its register, labels and directives in between notwithstanding."""
+    reads its register, labels and directives in between notwithstanding;
+    two before a mult or div there (the hazard on HI/LO), as ASPSX does."""
     out, pending = [], None
     for line in lines:
         st = line.strip()
         if pending and st and not st.endswith(":") and not st.startswith((".", "#")):
-            if reads(st, pending):
+            if st.split(None, 1)[0] in MULDIV:
+                out.append("\tnop\n\tnop\n")
+            elif reads(st, pending):
                 out.append("\tnop\n")
             pending = None
         out.append(line)

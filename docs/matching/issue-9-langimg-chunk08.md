@@ -6,7 +6,8 @@ number of fraction bits: plane solves, a cross product, scaling to a
 length, clamped turns. One file, `src/langimg/chunk_08.cpp`,
 0x80021154-0x800236F0.
 
-17 functions: 10 match, 4 are parked, 3 are still asm.
+17 functions: 12 match, 2 are parked, 3 are still asm (two more matched
+during chunk_09, #10).
 
 ## The settings
 
@@ -34,7 +35,8 @@ It's the game's own `asm` macro, `MULSHIFT(a, b, s)` in
 early-clobber outputs and the three operands as plain `"r"` inputs. The
 `nop` before each `mult` (a load's delay) comes from the assembler.
 `func_80022FA4` matched with it as first written; copying the operands
-into locals inside the macro made others worse.
+into locals inside the macro made others worse. The macro is `volatile`
+(found in chunk_09), and with that `func_8002309C` matches too.
 
 ## The functions
 
@@ -47,10 +49,11 @@ into locals inside the macro made others worse.
 | `func_80022D20`, `func_80022D44`, `func_80022DE4` | match | a vector turned a quarter about y; turns about y and about the side |
 | `func_80022FA4` | matches | the cross product's y |
 | `func_80023004` | matches | a point's y on a plane through 0 (the normal passed by value) |
-| `func_8002309C` | parked | as `func_80023004` with 26 bits: one operand copy missing (21 off) |
+| `func_8002309C` | matches | as `func_80023004` with 26 bits (once `MULSHIFT` was volatile) |
 | `func_80023140` | matches | a vector scaled to a length |
 | `func_8002320C` | asm | 221 instructions |
-| `func_8002357C`, `func_800235F8` | parked | a motor's curves: the constants' scheduling, registers |
+| `func_8002357C` | matches | a motor's curve: nested `MULSHIFT`s, and two `nop`s after the division (chunk_09) |
+| `func_800235F8` | parked | a motor's curve: the original holds the shift in one register for three multiplies |
 
 - **A sum into one variable.** `func_80023004` matched only with the sum
   built in the result: `y = a + MULSHIFT(...); y = -((y << 12) / n.vy);`.
