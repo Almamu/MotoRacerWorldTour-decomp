@@ -5,7 +5,8 @@ ring of entries by distance, the racers' setup. One file,
 `src/langimg/chunk_05.cpp`, 0x8001B778-0x8001D760, built as chunk_04
 (GCC 2.91.66, `-G8`, split addresses, divisions without checks).
 
-14 functions: 8 match, 2 are parked, 4 are still asm.
+14 functions: 8 match, 3 are parked, 3 are still asm (after the pass
+over the large functions).
 
 The race types moved to `include/langimg/race.h`: the race's five
 entries (0x568 bytes from `Race` + 0x2E8), their records (`RaceEntryX`,
@@ -18,7 +19,8 @@ ring's first), a racer and its slot, a camera's state.
 | `func_8001B778` | matches | the entries sorted by kind (as chunk_04's `func_8001B6B4`, counts on the stack) |
 | `func_8001B84C` | matches | the race state's frame |
 | `func_8001B974` | asm | an entry's step (715 instructions) |
-| `func_8001C4A0`, `func_8001C8C0` | asm | vector work (264 and 184 instructions) |
+| `func_8001C4A0` | asm | vector work (264 instructions) |
+| `func_8001C8C0` | parked | a position on the track, between two points, across a lane: a first draft (the track's sections, points and lanes are in `race.h`) |
 | `func_8001CBA0` | matches | the highest kind index along a chain |
 | `func_8001CC14` | parked | the ring by distance and its biggest gap: registers (111 off) |
 | `func_8001CF34` | parked | places by distance: the loop pass's pointers |

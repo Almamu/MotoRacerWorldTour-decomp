@@ -4,7 +4,7 @@ The motor's gearing (wheel speed from engine speed, per gear) and the
 bike's object: its constructor and destructor, its frame helpers, its
 heading. One file, `src/langimg/chunk_09.cpp`, 0x800236F0-0x80025614.
 
-19 functions: 10 match, 6 are parked, 3 are still asm (after the
+19 functions: 10 match, 7 are parked, 2 are still asm (after the
 near-misses pass and the pass over the large functions). Two of chunk_08's
 parked functions match now too (#9).
 
@@ -59,7 +59,7 @@ chunk_08.
 | `func_80024584` | parked | placing the bike: the matrix copy's two pointers swap registers (26 off) |
 | `func_80024824` | asm | 271 instructions |
 | `func_80024C60`, `func_80024C90` | match | a motion cleared; the frames copied from their sources |
-| `func_80024D0C` | asm | 218 instructions |
+| `func_80024D0C` | parked | the bike's angles and heading: a first draft, registers throughout |
 | `func_80025074` | parked | the heading: registers, and a compare with the constant in a register (47 off) |
 | `func_80025174` | matches | the frame's flags (lean, tricks), forces cleared, the frame's steps |
 | `func_800253FC` | matches | the frame's end: the motions rotated |

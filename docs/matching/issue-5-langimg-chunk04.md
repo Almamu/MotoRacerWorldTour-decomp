@@ -5,7 +5,8 @@ More of the code GCC 2.91.66 built between the classes: the sequence set
 and grids of 32-unit cells with a coarse index and GTE plane tests.
 One file, `src/langimg/chunk_04.cpp`, 0x8001983C-0x8001B778.
 
-34 functions: 23 match, 5 are parked, 6 are still asm.
+34 functions: 23 match, 7 are parked, 4 are still asm (after the pass
+over the large functions).
 
 ## The settings
 
@@ -25,13 +26,14 @@ found through `CName::Get`; `SeqSet` holds them along `Seq::m_next`).
 | `func_80019C78`, `func_80019D0C`, `func_80019D60`, `func_80019DC0` | match | find by name, start, reset |
 | `func_80019E30` | matches | the set's frame; the state read into a local |
 | `func_80019F0C`, `func_80019FA4`, `func_80019FB0`, `func_80019FBC` | match | a range set up from its definition, moved |
-| `func_80019FF8` | asm | the range's draw (`sprintf`, 170 instructions) |
+| `func_80019FF8` | parked | the range's draw (`sprintf`): 3 off, `&h` taken before `r->m_3C` is read |
 | `func_8001A2A0` | parked | the needle: multiplications scheduled otherwise |
 | `func_8001A4F0` | parked | the range's sprite: registers |
 | `func_8001A62C`, `func_8001A63C` | match | a pair's constructor and destructor |
 | `func_8001A664`, `func_8001A6AC` | match | a position in a grid, in a set of grids |
 | `func_8001A7F4` | parked | the first of n grids: scheduling (7 off) |
-| `func_8001A86C`, `func_8001ABBC` | asm | the grids' search and their plane test (GTE) |
+| `func_8001A86C` | parked | the grids' search (a grid, its neighbours, theirs): the original spills `g` and two constants, a first draft |
+| `func_8001ABBC` | asm | their plane test (GTE) |
 | `func_8001ACE4` | parked | a plane test through the GTE: scheduling, registers |
 | `func_8001AD78`, `func_8001AD9C`, `func_8001AE40` | match | a ratio, an interpolation, a plane crossing |
 | `func_8001AF3C`, `func_8001AFB0` | match | positions to cells and back |
