@@ -8,7 +8,7 @@ dispatched once for each parity of the frame, and a menu's entries
 searched and chosen. One file, `src/langimg/chunk_60.cpp`,
 0x80089200-0x8008B208.
 
-51 functions: 40 match, 3 are parked, 8 are still asm.
+51 functions: 41 match, 3 are parked, 7 are still asm.
 
 ## The settings
 
