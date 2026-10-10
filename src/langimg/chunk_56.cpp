@@ -46,12 +46,24 @@ struct Lap56 {
     u8 m_00[0x40];
     int m_40;
 };
+struct Bike56 {
+    u32 m_00; // flags
+    u8 m_04[0x564];
+};
 struct Run56 {
-    u8 m_00[0x1E3C];
+    int m_00;
+    u8 m_04[0x2E4];
+    Bike56 m_2E8[5];
+    int m_1DF0; // the lap's time
+    u8 m_1DF4[0x14];
+    int m_1E08;
+    u8 m_1E0C[0x30];
     Lap56 *m_1E3C;
 };
 struct Race56 {
-    u8 m_00[0x378];
+    u8 m_00[4];
+    int m_04;
+    u8 m_08[0x370];
     Run56 *m_378;
 };
 
@@ -85,8 +97,16 @@ struct Grid56 {
     char m_80[2][8];
     char m_90[2][4];
     char m_98[2][16];
-    u8 m_B8[0x58];
+    u8 m_B8[0x22];
+    short m_DA; // a 3-byte string
+    u8 m_DC[0x24];
+    void *m_100[2];
+    u8 m_108[8];
 };
+// A colour stored where it isn't aligned
+struct Packed56 {
+    int v;
+} __attribute__((packed));
 struct Str4 {
     char c[4];
 };
@@ -128,6 +148,35 @@ void func_80082840(Grid56 *g);
 int func_80082B64(Grid56 *g, Who56 *w);
 void func_80082F1C(Grid56 *g, int row, int v, int max);
 void func_80082DE4(Grid56 *g, int row, Who56 *w, int mode);
+struct VtEntry56 {
+    short m_delta;
+    short m_index;
+    int (*m_func)(void *self);
+};
+struct Ot56 {
+    u8 m_00[0x14];
+    VtEntry56 *m_14;
+};
+struct Draw56 {
+    u8 m_00[0x40];
+    u8 m_40[0x2C];
+    int m_6C[2];
+};
+struct Item56 {
+    u8 m_00;
+    u8 m_01; // its kind
+};
+extern short D_800C8AC0[2]; // a 3-byte string
+extern Ot56 *D_800CBDC4;
+extern int D_800CBDC0;
+extern int D_800C88FC;
+extern u8 D_800C8B10[], D_800C8B1C[], D_800C8B28[], D_800C8B34[];
+void func_8007C428(void *a, Draw56 *d, int b);
+char *func_800A5ED0(char *d, int ms, int flags);
+void func_80082A8C(Grid56 *g, Race56 *r);
+void func_80082E74(Grid56 *g, int k, Item56 *it, Race56 *r, int f);
+void func_8008259C(Draw56 *d, int i);
+void func_80082FA8(Grid56 *g, Run56 *run);
 void func_80082DA4(Grid56 *g, int row, Tab56 *t, int flag, int col);
 }
 
@@ -312,7 +361,15 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_56", func_80081FE0);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_56", func_80082468);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_56", func_8008259C);
+void func_8008259C(Draw56 *d, int i) {
+    if (d->m_6C[i]) {
+        D_800C88FC = 0;
+        D_800CBDC0 =
+            D_800CBDC4->m_14[5].m_func((char *)D_800CBDC4 + D_800CBDC4->m_14[5].m_delta) - 0xC0;
+        func_8007C428(d->m_40, d, 0x100000);
+        D_800CBDC0 = D_800CBDC4->m_14[5].m_func((char *)D_800CBDC4 + D_800CBDC4->m_14[5].m_delta);
+    }
+}
 
 void func_8008264C(void) {
     D_800CBD58 = D_800CC030[19];
@@ -371,7 +428,34 @@ void func_80082840(Grid56 *g) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_56", func_80082904);
 
+#ifdef NON_MATCHING
+// The 3-byte string's copy: the original's is the block-move pattern (its address in $t3), ours lh and lb straight from the symbol (9 off)
+/* How many bikes are in (a flag's bit 6), and the mode's marker. */
+void func_80082A8C(Grid56 *g, Race56 *r) {
+    char *b = (char *)g;
+    Bike56 *p;
+    Bike56 *end;
+    int n;
+
+    b[0xD8] = '/';
+    n = 0;
+    end = &r->m_378->m_2E8[0];
+    p = &r->m_378->m_2E8[4];
+    do {
+        if ((p->m_00 >> 6) & 1) {
+            n++;
+        }
+    } while (p-- != end);
+    b[0xD9] = n + '0';
+    if (r->m_378->m_00 & 0xA8) {
+        b[0xDA] = 0;
+    } else {
+        memcpy(&g->m_DA, D_800C8AC0, 3);
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_56", func_80082A8C);
+#endif
 
 void func_80082B14(char *p, Race56 *r) {
     int t = r->m_378->m_1E3C->m_40;
@@ -432,7 +516,32 @@ void func_80082DE4(Grid56 *g, int row, Who56 *w, int mode) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_56", func_80082DE4);
 #endif
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_56", func_80082E74);
+void func_80082E74(Grid56 *g, int k, Item56 *it, Race56 *r, int f) {
+    void *v = 0;
+    Run56 *run = r->m_378;
+
+    if (r->m_04 & 4) {
+        switch (it->m_01) {
+        case 1:
+            v = D_800C8B10;
+            break;
+        case 3:
+            if (run->m_1E08 == 3) {
+                v = D_800C8B1C;
+            }
+            break;
+        case 4:
+            v = D_800C8B28;
+            break;
+        default:
+            if (f == -1) {
+                v = D_800C8B34;
+            }
+            break;
+        }
+    }
+    g->m_100[k] = v;
+}
 
 void func_80082F1C(Grid56 *g, int row, int v, int max) {
     char *q = g->m_80[row];
@@ -454,6 +563,43 @@ void func_80082F1C(Grid56 *g, int row, int v, int max) {
     }
 }
 
+#ifdef NON_MATCHING
+// Registers: the time and the colour's pointer swap $s0 and $s1, and the dashes' colour is stored through the pointer
+/* The lap's time, coloured by how fast; dashes past 9999998. */
+void func_80082FA8(Grid56 *g, Run56 *run) {
+    char *b = (char *)g;
+    int t = run->m_1DF0;
+    char *q = b + 0xBB;
+    int c;
+
+    b[0xB8] = 2;
+    b[0xB9] = 0x1F;
+    b[0xBA] = 0x20;
+    if (t <= 9999998) {
+        if (t >= 0) {
+            func_800A5ED0(b + 0xBF, t, 2);
+            if (t < 5000) {
+                c = 0xFF;
+            } else if (t < 15000) {
+                c = 0x80FF;
+            } else {
+                c = 0xFFFF;
+            }
+            ((Packed56 *)q)->v = (c << 8) | 1;
+        } else {
+            b[0xBB] = 0;
+        }
+    } else {
+        ((Packed56 *)q)->v = 0xC0C0C001;
+        q = b + 0xBF;
+        q[4] = '-';
+        q[5] = '-';
+        q[6] = '-';
+        q[7] = 0;
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_56", func_80082FA8);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_56", func_80083078);
