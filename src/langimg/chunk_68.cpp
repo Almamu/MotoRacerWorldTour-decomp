@@ -12,21 +12,64 @@ struct Vector3 {
 };
 
 // Something with a table of states at 0xF4
+struct Laps68 {
+    u8 m_00[0xC0];
+    int m_C0;
+};
 struct Sub68 {
     u8 m_00[0x18F];
     u8 m_18F;
+    u8 m_190[4];
+    Laps68 *m_194;
 };
 struct Tab68 {
     u8 m_00[0x48];
-    u8 *m_48;
+    int *m_48;
+    u8 m_4C[4];
+    int m_50;
+};
+struct Obj68 {
+    u8 m_00[0x50];
+    int m_50;
 };
 struct Snd68 {
     u8 m_00[4];
     Sub68 *m_04;
-    u8 m_08[0xEC];
+    u8 m_08[0xA0];
+    int m_A8;
+    int m_AC;
+    int m_B0;
+    int m_B4;
+    u8 m_B8[0x20];
+    Obj68 *m_D8[2];
+    int m_E0[2];
+    u8 m_E8[0xC];
     int m_F4[9];
     u8 m_118[0x2048];
     Tab68 *m_2160;
+};
+struct Dst68 {
+    u8 m_00[0x114];
+    int m_114[2];
+    int m_11C[2];
+};
+struct Pair68 {
+    u8 m_00[0x18];
+    int m_18[2];
+};
+struct Src68 {
+    u8 m_00[8];
+    Pair68 m_08;
+};
+// What func_800AE8A8 returns
+struct Opt68 {
+    int m_00;
+    s8 m_04[2];
+};
+// The callback's key: a slot, 1 or 2, and the menu
+struct Key68b {
+    int m_00;
+    struct Menu68 *m_04;
 };
 struct Hold68 {
     u8 m_00[0x60];
@@ -38,13 +81,15 @@ struct Menu68 {
     Hold68 *m_A84;
     u8 m_A88[8];
     int m_A90;
+    u8 m_A94[4];
+    Dst68 *m_A98;
+    Src68 *m_A9C;
 };
 struct Key68 {
     u8 m_00[8];
     s8 m_08; // '1' to '9'
 };
 
-void func_80099A38(Vector3 *v);
 void func_8009A0B0(Snd68 *s, Menu68 *m);
 
 Vector3 *func_8009964C(Vector3 *v, int k);
@@ -59,7 +104,7 @@ Vector3 *func_80099834(Vector3 *v, Vector3 *a);
 Vector3 *func_8009986C(Vector3 *v, int k);
 Vector3 *func_80099898(Vector3 *d, Vector3 *a, Vector3 *b);
 Vector3 *func_800998D0(Vector3 *d, Vector3 *a, Vector3 *b);
-Vector3 *func_80099B60(Vector3 *v);
+Vector3 *func_80099B60(Vector3 *d, Vector3 *a, Vector3 *b, int sh);
 Vector3 *func_80099D48(Vector3 *v, int k);
 Vector3 *func_80099D74(Vector3 *v, int k);
 Vector3 *func_80099DA0(Vector3 *d, Vector3 *s, int k);
@@ -92,9 +137,64 @@ u32 func_80099454(Vector3 *v, int sh);
 void func_8009A93C(Menu68 *m, int b);
 int func_8009A9A4(int a, int b, int c, int d, int e);
 void func_80099F2C(void);
+typedef void (*Cb68)(int *v, int a, Key68b *k);
+void func_8003EC6C(Menu68 *m, int a, Cb68 cb);
+Opt68 *func_800AE8A8(void);
+int func_80097A68(int x, int sh, int n);
+extern int D_800CC030[];
+Vector3 *func_80099A38(Vector3 *d, Vector3 *a, Vector3 *b, int sh);
+Vector3 *func_80099908(Vector3 *d, Vector3 *a, Vector3 *b);
+void func_80099F88(int *d);
+void func_800990E8(Vector3 *v, int sh);
+int func_8009931C(Vector3 *v);
+void func_8009A524(int *v, int a, Key68b *k);
+void func_8009A61C(Menu68 *m);
+void func_8009A764(Menu68 *m, int b);
+void func_8009A888(Menu68 *m);
 }
 
+// The game's abs, as a macro: sra, xor, subu where GCC's builtin branches
+#define ABS(x) (((x) ^ ((x) >> 31)) - ((x) >> 31))
+
+// A value shifted left by sh and divided by n, through func_80097A68
+// when the shift would overflow
+static inline int ScaleDiv(int x, int sh, int n, int lim) {
+    if (ABS(x) < lim) {
+        return (x << sh) / n;
+    }
+    return func_80097A68(x, sh, n);
+}
+
+#ifdef NON_MATCHING
+// Registers: the original copies each value before its abs, and computes
+// the limit after the first load
+/* The vector scaled to a length of 1 << sh. */
+void func_800990E8(Vector3 *v, int sh) {
+    int n = func_8009931C(v);
+    int lim;
+    int x;
+    if (n < 0) {
+        int vx, vy, vz;
+
+        n = (u32)n >> 1;
+        vx = v->vx >> 1;
+        vy = v->vy >> 1;
+        vz = v->vz >> 1;
+        v->vx = vx;
+        v->vy = vy;
+        v->vz = vz;
+    }
+    if (n) {
+        x = v->vx;
+        lim = 1 << (30 - sh);
+        v->vx = ScaleDiv(x, sh, n, lim);
+        v->vy = ScaleDiv(v->vy, sh, n, lim);
+        v->vz = ScaleDiv(v->vz, sh, n, lim);
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_68", func_800990E8);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_68", func_8009923C);
 
@@ -292,13 +392,25 @@ Vector3 *func_800998D0(Vector3 *d, Vector3 *a, Vector3 *b) {
     return d;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_68", func_80099908);
+/* The cross product (4.12). */
+Vector3 *func_80099908(Vector3 *d, Vector3 *a, Vector3 *b) {
+    d->vx = MULSHIFT(a->vy, b->vz, 12) - MULSHIFT(a->vz, b->vy, 12);
+    d->vy = MULSHIFT(a->vz, b->vx, 12) - MULSHIFT(a->vx, b->vz, 12);
+    d->vz = MULSHIFT(a->vx, b->vy, 12) - MULSHIFT(a->vy, b->vx, 12);
+    return d;
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_68", func_80099A38);
+/* The cross product, with sh bits of fraction. */
+Vector3 *func_80099A38(Vector3 *d, Vector3 *a, Vector3 *b, int sh) {
+    d->vx = MULSHIFT(a->vy, b->vz, sh) - MULSHIFT(a->vz, b->vy, sh);
+    d->vy = MULSHIFT(a->vz, b->vx, sh) - MULSHIFT(a->vx, b->vz, sh);
+    d->vz = MULSHIFT(a->vx, b->vy, sh) - MULSHIFT(a->vy, b->vx, sh);
+    return d;
+}
 
-Vector3 *func_80099B60(Vector3 *v) {
-    func_80099A38(v);
-    return v;
+Vector3 *func_80099B60(Vector3 *d, Vector3 *a, Vector3 *b, int sh) {
+    func_80099A38(d, a, b, sh);
+    return d;
 }
 
 /* The dot product (4.12). */
@@ -437,19 +549,129 @@ void func_80099F2C(void) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_68", func_80099F88);
+/* The settings, copied out of D_800CC030. */
+void func_80099F88(int *d) {
+    d[2] = D_800CC030[59];
+    d[3] = D_800CC030[59];
+    d[0] = D_800CC030[60];
+    d[1] = D_800CC030[60];
+    d[4] = D_800CC030[66];
+    d[5] = D_800CC030[65];
+    d[6] = D_800CC030[67];
+    d[7] = D_800CC030[68];
+    d[10] = D_800CC030[71];
+    d[11] = D_800CC030[72];
+    d[8] = D_800CC030[73];
+    d[9] = D_800CC030[74];
+    d[12] = D_800CC030[70];
+    d[13] = D_800CC030[69];
+    d[14] = D_800CC030[85];
+    d[15] = D_800CC030[86];
+    d[16] = D_800CC030[87];
+    d[17] = D_800CC030[88];
+    d[18] = D_800CC030[89];
+    d[19] = D_800CC030[90];
+    d[20] = D_800CC030[91];
+    d[21] = D_800CC030[92];
+    d[22] = D_800CC030[93];
+    d[23] = D_800CC030[94];
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_68", func_8009A0B0);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_68", func_8009A524);
+/* A slot's choice changed: the values swapped to match. */
+void func_8009A524(int *v, int a, Key68b *k) {
+    Menu68 *m = k->m_04;
+    Hold68 *h;
+    Src68 *src;
+    Pair68 *q;
+    Snd68 *s;
+    Dst68 *d;
+    int n;
+    int i;
+    int x;
+    if ((m->m_A90 == 1) || (m->m_A90 == 4)) {
+        h = m->m_A84;
+    } else {
+        h = m->m_A80;
+    }
+    src = m->m_A9C;
+    n = k->m_00;
+    s = h->m_60;
+    q = &src->m_08;
+    i = n - 1;
+    d = m->m_A98;
+    if (s->m_E0[i] != 7) {
+        d->m_114[i] = src->m_08.m_18[i];
+    } else {
+        d->m_114[n + 1] = src->m_08.m_18[i];
+    }
+    x = *v;
+    s->m_E0[i] = x;
+    if (x != 7) {
+        q->m_18[i] = d->m_114[i];
+        s->m_D8[i]->m_50 = 7;
+    } else {
+        q->m_18[i] = d->m_114[i + 2];
+        s->m_D8[i]->m_50 = 6;
+    }
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_68", func_8009A61C);
+void func_8009A61C(Menu68 *m) {
+    Dst68 *d = m->m_A98;
+    Src68 *src = m->m_A9C;
+    Snd68 *s = m->m_A80->m_60;
+    Pair68 *q = &src->m_08;
+    Opt68 *o = func_800AE8A8();
+    int n = o->m_00;
+    int i;
+
+    if (n >= 3) {
+        n = 2;
+    }
+    q->m_18[0] = d->m_114[0];
+    q->m_18[1] = d->m_114[1];
+    for (i = 0; i < n; i++) {
+        s->m_E0[i] = o->m_04[i];
+        if (o->m_04[i] != 7) {
+            src->m_08.m_18[i] = d->m_114[i];
+        } else {
+            src->m_08.m_18[i] = d->m_11C[i];
+        }
+    }
+    func_8003EC6C(m, 0, func_8009A524);
+    func_8003EC6C(m, 1, func_8009A524);
+}
 
 void func_8009A740(Menu68 *m, int a, Key68 *k) {
     m->m_A80->m_60->m_F4[k->m_08 - 0x31] = 5;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_68", func_8009A764);
+void func_8009A764(Menu68 *m, int b) {
+    Hold68 *h;
+    int i;
+
+    if (m->m_A90 == 1 || m->m_A90 == 4) {
+        h = m->m_A84;
+    } else {
+        h = m->m_A80;
+    }
+    func_8003EC6C(m, 0, 0);
+    func_8003EC6C(m, 1, 0);
+    if (b) {
+        Dst68 *d = m->m_A98;
+        Src68 *src = m->m_A9C;
+        Snd68 *s = h->m_60;
+
+        for (i = 0; i < 2; i++) {
+            if (s->m_E0[i] != 7) {
+                d->m_114[i] = src->m_08.m_18[i];
+            } else {
+                d->m_11C[i] = src->m_08.m_18[i];
+            }
+        }
+    }
+}
 
 void func_8009A84C(Menu68 *m) {
     if (m->m_A80->m_60) {
@@ -457,7 +679,27 @@ void func_8009A84C(Menu68 *m) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_68", func_8009A888);
+void func_8009A888(Menu68 *m) {
+    Snd68 *s = m->m_A80->m_60;
+    Sub68 *p = s->m_04;
+    int i;
+    int j;
+
+    s->m_2160->m_50 = p->m_194->m_C0;
+    *s->m_2160->m_48 = p->m_18F + 1;
+    s->m_A8 = 0;
+    s->m_AC = 0;
+    s->m_B0 = 0x7FFFFFFF;
+    s->m_B4 = 0x7FFFFFFF;
+    for (i = 0; i < p->m_194->m_C0; i++) {
+        for (j = 0; j < 3; j++) {
+            s->m_A8 = 0x1068;
+            s->m_AC = 0x1388;
+            s->m_B0 = 0;
+            s->m_B4 = 0;
+        }
+    }
+}
 
 void func_8009A93C(Menu68 *m, int b) {
     Hold68 *h;
