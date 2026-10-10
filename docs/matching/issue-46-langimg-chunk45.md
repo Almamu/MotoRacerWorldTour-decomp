@@ -48,7 +48,7 @@ mode (its `lui` before the call, `addiu` in the delay slot).
 | `func_8006C7CC` | parked | a bank loaded: a call's arguments in the other order (3 off) |
 | `func_8006C82C` | matches | |
 | `func_8006C85C`, `func_8006C8EC` | parked | a sound's settings looked up; a scene's sounds and music |
-| `func_8006CA50` to `func_8006CFCC` | match | sounds started, one at random; the lists' contexts and nodes |
+| `func_8006CA50` to `func_8006CF8C` | match | sounds started, one at random; the lists' contexts and nodes |
 | `func_8006CFD0` | parked | an entry's nodes given to an empty list: a second pointer for a halfword (44 off) |
 | `func_8006D0BC` to `func_8006D314` | match | the banks' lists |
 
