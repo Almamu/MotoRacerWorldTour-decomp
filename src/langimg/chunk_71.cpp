@@ -70,9 +70,13 @@ struct Menu71 {
 
 // A sound option's values
 struct Opt71 {
-    u8 m_00[0xFC];
+    int m_00[2];
+    int m_08;
+    u8 m_0C[0xF0];
     int m_FC;  // -10 to 20
     int m_100; // 0 to 40
+    u8 m_104[0x40];
+    int m_144, m_148;
 };
 
 // What a menu's callbacks get
@@ -130,9 +134,9 @@ struct Card71 {
 };
 
 extern int D_800C9CE0;
-extern u8 D_800C9CE8;
-extern u8 D_800C9CE9;
-extern u16 D_800CBF18;
+extern s8 D_800C9CE8;
+extern s8 D_800C9CE9;
+extern short D_800CBF18;
 extern void *D_800D4788[];
 void func_8006CB38(int id);
 void func_800A0884(u8 *p);
@@ -234,6 +238,32 @@ int func_800A5530(char *name, void **t, int n, int a, int b, int c, int d);
 void func_8009FB58(Menu71 *m);
 void func_8009F760(Menu71 *m, int b);
 int func_800A048C(void);
+// A frame counter in the low 30 bits
+struct Clock71 {
+    int m_t : 30;
+};
+extern Clock71 D_800D6124;
+extern int D_800C9CE4;
+extern int D_800D11D0[];
+void func_8006FA30(int a, int b);
+int func_8006CA84(int id, int a);
+void func_80014368(int *a, int h, int b);
+struct Item32 {
+    u8 m_00[32];
+};
+struct Res71 {
+    u8 m_00[0x28];
+    Item32 *m_28;
+    u8 m_2C[4];
+    int m_30;
+};
+extern char D_800C9D1C[], D_800C9D28[];
+Res71 *func_8003AA90(Snd71 *n, char *name);
+Res71 *func_8003B3C4(Snd71 *n, Item32 *a);
+void func_80019578(int a, int b, int c, int d);
+
+void func_8009F5A8(void);
+void func_8009FC00(Menu71 *m);
 }
 
 #ifdef NON_MATCHING
@@ -381,7 +411,33 @@ void func_8009F580(int a, int b, Ev71 *c) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_8009F5A8);
+/* The menu's music: started, at the options' volume, or stopped. */
+void func_8009F5A8(void) {
+    int t = D_800D6124.m_t;
+
+    if (D_800C9CE8) {
+        if ((u32)(t - D_800C9CE4) > 100) {
+            int vol = 0x3F;
+            int h;
+
+            if (!D_800C9CE9) {
+                vol = D_800CBF18 * 63 / 100;
+            }
+            func_8006FA30(4, vol);
+            h = D_800C9CE0;
+            if (h == -1) {
+                h = D_800C9CE0 = func_8006CA84(10, 0x7F);
+            }
+            func_80014368(D_800D11D0, h, 0x7F);
+        }
+    } else {
+        func_8006CB38(D_800C9CE0);
+        D_800C9CE0 = -1;
+        D_800C9CE4 = t;
+    }
+    D_800C9CE8 = 0;
+    D_800C9CE9 = 0;
+}
 
 void func_8009F690(void) {
     D_800C9CE9 = 0;
@@ -474,7 +530,31 @@ void func_8009FB58(Menu71 *m) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_8009FC00);
+void func_8009FC00(Menu71 *m) {
+    Snd71 *n = m->m_A80;
+    Opt71 *o = (Opt71 *)m->m_A98;
+    Spr71 *s = n->m_60;
+    Res71 *r;
+    Res71 *y;
+    int k;
+
+    func_8003AA90(n, D_800C9D1C);
+    s->m_13C = -1;
+    if (!o->m_08) {
+        k = o->m_144;
+        r = func_8003AA90(n, D_800C9D1C);
+    } else {
+        k = o->m_148;
+        r = func_8003AA90(n, D_800C9D28);
+    }
+    if (k) {
+        y = func_8003B3C4(n, &r->m_28[k - 1]);
+        func_80019578(y->m_30, 1, 0, -1);
+    } else {
+        y = func_8003B3C4(n, r->m_28);
+        func_80019578(y->m_30, 1, 1, -1);
+    }
+}
 
 void func_8009FCD8(Menu71 *m) {
     Spr71 *s = m->m_A80->m_60;
