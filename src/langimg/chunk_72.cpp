@@ -4,21 +4,6 @@
 /* The memory cards (docs/matching/issue-73-langimg-chunk72.md) */
 
 extern "C" {
-// A card's state
-struct Card72 {
-    u8 m_00[0x1630];
-    void *m_1630[11];
-    u8 m_165C[0x38];
-    int m_1694; // the file to start at
-    u8 m_1698[0x30];
-    int m_16C8;
-    u8 m_16CC[0x20];
-    int m_16EC;
-    u8 m_16F0[0x10];
-    int m_1700[5];
-    int m_1714[5];
-    int m_1728[2];
-};
 
 // A file's entry (24 bytes)
 struct File72 {
@@ -39,11 +24,52 @@ struct Pos72 {
     u8 m_08[0xC];
 };
 
-// The positions (at 0x40) and the current one
-struct Cards72 {
-    u8 m_00[0x40];
-    Pos72 m_pos[3];
-    int m_cur; // 0x7C
+// An object of 0x4C bytes the cards set up
+struct Obj4C {
+    u8 m_00[0x4C];
+};
+
+// Two of them
+struct Pair98 {
+    Obj4C m_a, m_b;
+};
+
+// A card slot (8 bytes)
+struct Slot72 {
+    u8 m_00[2];
+    s8 m_02; // a card in it
+    u8 m_03[5];
+};
+
+// The cards' state (D_800D4898)
+struct Card72 {
+    u8 m_00[4];
+    u8 m_04[0x3C];
+    Pos72 m_pos[3]; // 0x40
+    int m_cur;      // 0x7C
+    u8 m_80[4];
+    int m_84[11]; // flags
+    u8 m_B0[0xA4C];
+    Pair98 m_AFC[18];
+    u8 m_15AC[4];
+    Slot72 m_15B0[5];
+    Obj4C m_15D8;
+    u8 m_1624[4];
+    int m_1628; // flags
+    int m_162C;
+    void *m_1630[11];
+    u8 m_165C[0x38];
+    int m_1694; // the file to start at
+    u8 m_1698[0x10];
+    int m_16A8; // the state
+    u8 m_16AC[0x1C];
+    int m_16C8;
+    u8 m_16CC[0x20];
+    int m_16EC;
+    u8 m_16F0[0x10];
+    int m_1700[5];
+    int m_1714[5];
+    int m_1728[2];
 };
 
 // Something with a count at 6
@@ -59,7 +85,7 @@ extern volatile int D_800D60C0[]; // not one of the small globals
 extern Dir72 *D_800C9EE8[];       // not one of the small globals
 extern int D_800D4914[];          // not one of the small globals
 extern Pos72 D_800D48D8[];
-extern Cards72 D_800D4898;
+extern Card72 D_800D4898;
 void func_80015210(void);
 void func_800152E4(void);
 void func_80014CB8(void);
@@ -95,6 +121,16 @@ int func_800A1C10(int a);
 void func_800A1B54(void);
 void func_800A2304(u8 *d, u32 c, int n);
 CdlFILE *func_800A1C74(CdlFILE *fp, char *name);
+extern int D_800D4790[];
+void func_800A0C58(void *p);
+void func_800A0148(Obj4C *o);
+void func_800A084C(Slot72 *s);
+void qsort(void *base, int n, int size, int (*cmp)(int *, int *));
+
+int func_800A1420(Card72 *c);
+void func_800A15A0(void);
+int func_800A1170(Card72 *c);
+void func_800A12C4(Card72 *c);
 
 int func_800A1110(Card72 *c);
 void func_800A13C0(Card72 *c);
@@ -161,7 +197,42 @@ int func_800A1110(Card72 *c) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A1110);
 #endif
 
+#ifdef NON_MATCHING
+/* The original keeps the card in $a1 (copied at the start), and schedules around it (32 off) */
+/* On to the next file; past the last, every flag set. */
+int func_800A1170(Card72 *c) {
+    int r = 0;
+
+    if (c->m_16A8 == 4) {
+        if (c->m_162C) {
+            int n = c->m_1694;
+
+            if (n >= *D_800C9EEC - 1) {
+                c->m_84[0] = 1;
+                c->m_84[1] = 1;
+                c->m_84[2] = 1;
+                c->m_84[3] = 1;
+                c->m_84[4] = 1;
+                c->m_84[5] = 1;
+                c->m_84[6] = 1;
+                c->m_84[7] = 1;
+                c->m_84[8] = 1;
+                c->m_84[9] = 1;
+                c->m_84[10] = 1;
+                c->m_1628 |= 4;
+            } else {
+                c->m_1694 = n + 1;
+                r = 1;
+            }
+        } else {
+            func_800A1110(c);
+        }
+    }
+    return r;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A1170);
+#endif
 
 void func_800A1228(Card72 *c) {
     int i;
@@ -203,7 +274,24 @@ void func_800A12A0(Card72 *c) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A12C4);
+/* The slots with a card, by their counts. */
+void func_800A12C4(Card72 *c) {
+    int n = 0;
+    int i;
+
+    func_800A12A0(c);
+    for (i = 4; i >= 0; i--) {
+        if (c->m_15B0[i].m_02) {
+            c->m_1700[n++] = i | (c->m_1714[i] << 8);
+        }
+    }
+    if (n >= 2) {
+        qsort(c->m_1700, n, 4, func_800A1284);
+    }
+    for (i = n - 1; i >= 0; i--) {
+        c->m_1700[i] &= 0xF;
+    }
+}
 
 #ifdef NON_MATCHING
 /* What fills the match's delay slot: the original advances its pointer there (3 off) */
@@ -235,7 +323,20 @@ void func_800A13C0(Card72 *c) {
     c->m_1630[10] = D_800D4958 - 12;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A1420);
+/* The current file's number, at the directory's last file. */
+int func_800A1420(Card72 *c) {
+    int r = -1;
+
+    if (c->m_16A8 == 8) {
+        Dir72 *d = func_800A14CC();
+        Pos72 *p = func_800A1504();
+
+        if (p->m_04 >= d->m_files[p->m_file].m_10 - 1) {
+            r = c->m_cur * 3 + p->m_file;
+        }
+    }
+    return r;
+}
 
 Dir72 *func_800A14B8(int i) {
     return &D_800C9EE8[0][i];
@@ -268,7 +369,31 @@ int func_800A158C(int *p) {
     return *p >= 2;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A15A0);
+/* The cards' objects set up, by their first user. */
+void func_800A15A0(void) {
+    int i;
+    int j;
+    Pair98 *p;
+    Slot72 *s;
+
+    if (++D_800D4790[0] == 1) {
+        Card72 *c = &D_800D4898;
+
+        func_800A0C58(c->m_04);
+        p = c->m_AFC;
+        for (i = 17; i != -1; i--) {
+            func_800A0148(&p->m_a);
+            func_800A0148(&p->m_b);
+            p++;
+        }
+        s = c->m_15B0;
+        for (j = 4; j != -1; j--) {
+            func_800A084C(s);
+            s++;
+        }
+        func_800A0148(&c->m_15D8);
+    }
+}
 
 void func_800A164C(int *p) {
     *p = 0;
