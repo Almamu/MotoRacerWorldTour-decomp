@@ -16,6 +16,12 @@ struct List47 {
     Elem47 *m_0C;
 };
 // A singly linked node and its key
+// What func_80070E20 searches: a list's head at 0x60
+struct Owner47 {
+    u8 m_00[0x60];
+    struct Node47 *m_60;
+    int m_64;
+};
 struct Node47 {
     Node47 *m_00;
     int m_04;
@@ -23,21 +29,25 @@ struct Node47 {
 struct Vec47 {
     int vx, vy, vz;
 };
+// Five positions, the newest last, and the differences between them
+struct Hist47 {
+    Vec47 m_00;
+    Vec47 m_0C;
+    Vec47 m_18;
+    Vec47 m_24;
+    Vec47 m_30;
+};
+// A replay's recorder: its bit stream, and the positions' and angles'
+// histories
 struct Obj47 {
-    int m_00;
-    int m_04;
-    u8 m_08[0x28]; // a sound
-    int m_30;
-    u8 m_34[0x18];
-    Vec47 m_4C;
-    u8 m_58[8];
-    int m_60; // with m_64.vx, the list's head (func_80070E20)
-    Vec47 m_64;
-    u8 m_70[0x18];
-    Vec47 m_88;
-    u8 m_94[0xC];
-    Vec47 m_A0;
-    u8 m_AC[0x34];
+    int m_00;      // frames written
+    int m_04;      // frames read
+    u8 m_08[0x28]; // the bit stream
+    int m_30;      // ticks to the next frame
+    Hist47 m_34;
+    Hist47 m_70;
+    u8 m_AC[0x30];
+    int m_DC;
     int m_E0;
     int m_E4;
     int m_E8;
@@ -134,14 +144,6 @@ void func_80096C14(void *d, void *s);
 void func_800153FC(int v);
 void func_80012120(void *c, int v);
 void func_8006F21C(Ent47 *e);
-// Five positions, the newest last, and the differences between them
-struct Hist47 {
-    Vec47 m_00;
-    Vec47 m_0C;
-    Vec47 m_18;
-    Vec47 m_24;
-    Vec47 m_30;
-};
 void func_80099898(Vec47 *d, Vec47 *a, Vec47 *b);
 void func_800998D0(Vec47 *d, Vec47 *a, Vec47 *b);
 void func_80070A40(Hist47 *h, Vec47 *v);
@@ -159,6 +161,8 @@ int func_80096B74(void *s, int n);
 int func_80096D84(void *s, ...);
 void func_8006FF78(Obj47 *o, Frame47 *f);
 void func_80070140(Obj47 *o, Frame47 *f);
+void func_800995C4(Vec47 *v, int k);
+void func_80070314(Obj47 *o, int dt, Vec47 pos, SVECTOR ang);
 void func_80070B2C(Hist47 *h, Vec47 *v);
 void func_8006FB74(void);
 void func_80013CFC(World47 *w);
@@ -180,8 +184,8 @@ void func_8006FF44(Obj47 *o);
 Elem47 *func_80070D98(List47 *l, int i);
 Elem47 *func_80070DB0(List47 *l);
 Elem47 *func_80070DD0(List47 *l);
-int func_80070DF4(Obj47 *o, int key, Node47 *n);
-int func_80070E20(Obj47 *o, int key);
+int func_80070DF4(Owner47 *o, int key, Node47 *n);
+int func_80070E20(Owner47 *o, int key);
 }
 
 // The sine and cosine tables' lookups (a 12-bit angle)
@@ -437,11 +441,11 @@ void func_8006FE64(Obj47 *o, int a) {
     o->m_E0 = 0;
     o->m_EC = 0;
     VecZero(&z);
-    VecCopy(&o->m_64, &z);
-    VecCopyL(&o->m_4C, &o->m_64);
+    VecCopy(&o->m_34.m_30, &z);
+    VecCopyL(&o->m_34.m_18, &o->m_34.m_30);
     VecZero(&z);
-    VecCopy(&o->m_A0, &z);
-    VecCopyL(&o->m_88, &o->m_A0);
+    VecCopy(&o->m_70.m_30, &z);
+    VecCopyL(&o->m_70.m_18, &o->m_70.m_30);
     if (a) {
         o->m_F0 = -1;
         for (i = 0; i < 8; i++) {
@@ -515,7 +519,70 @@ void func_80070140(Obj47 *o, Frame47 *f) {
     o->m_04++;
 }
 
+/* The replay's recorder, each tick: every third, the position (scaled) and
+ * angle go through their histories and a frame of their changes is written. */
+#ifdef NON_MATCHING
+// The original saves $s5 (never used: its frame is 8 bytes larger) and the registers follow
+void func_80070314(Obj47 *o, int dt, Vec47 pos, SVECTOR ang) {
+    Frame47 f;
+    Vec47 p;
+    SVECTOR a;
+    int e;
+    int old;
+
+    if (!func_80096884(o->m_08) || func_8006FD78(o)) {
+        return;
+    }
+    o->m_E8 += dt;
+    if (o->m_30 == 0) {
+        p = pos;
+        a = ang;
+        func_800995C4(&p, 0x32);
+        a.vx >>= 4;
+        a.vy >>= 4;
+        a.vz >>= 4;
+        VecCopyL(&o->m_34.m_24, &o->m_34.m_30);
+        VecCopyL(&o->m_34.m_0C, &o->m_34.m_18);
+        VecCopyL(&o->m_34.m_30, &p);
+        {
+            Vec47 t;
+
+            func_800998D0(&t, &o->m_34.m_30, &o->m_34.m_24);
+            VecCopyL(&o->m_34.m_18, &t);
+            func_800998D0(&t, &o->m_34.m_18, &o->m_34.m_0C);
+            VecCopyL(&o->m_34.m_00, &t);
+        }
+        {
+            Vec47 t;
+
+            t.vx = a.vx;
+            t.vy = a.vy;
+            t.vz = a.vz;
+            func_80070B2C(&o->m_70, &t);
+        }
+        VecCopyL(&f.m_04, &o->m_34.m_00);
+        {
+            SVECTOR sv;
+
+            sv.vx = o->m_70.m_00.vx;
+            sv.vy = o->m_70.m_00.vy;
+            sv.vz = o->m_70.m_00.vz;
+            f.m_10 = sv;
+        }
+        e = o->m_E8 - o->m_E4;
+        old = o->m_E0;
+        o->m_E0 = e;
+        f.m_00 = e - old;
+        o->m_DC = old;
+        o->m_E4 = o->m_E8;
+        func_8006FF78(o, &f);
+        o->m_30 = 3;
+    }
+    o->m_30--;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_47", func_80070314);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_47", func_8007057C);
 
@@ -595,7 +662,7 @@ Elem47 *func_80070DD0(List47 *l) {
 
 /* Whether key is in the list from n. */
 /* Whether key is in the list from n. */
-int func_80070DF4(Obj47 *o, int key, Node47 *n) {
+int func_80070DF4(Owner47 *o, int key, Node47 *n) {
     int found = 0;
 
 next:
@@ -609,7 +676,7 @@ next:
     return found;
 }
 
-int func_80070E20(Obj47 *o, int key) {
+int func_80070E20(Owner47 *o, int key) {
     return func_80070DF4(o, key, (Node47 *)&o->m_60);
 }
 
