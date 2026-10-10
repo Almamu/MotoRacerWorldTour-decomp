@@ -32,8 +32,10 @@ struct Ev71 {
 
 // A sprite drawn in pairs of frames
 struct Spr71 {
-    int m_a[0x24]; // 0x00
-    int m_b[0x24]; // 0x90
+    int m_a[18]; // 0x00
+    int m_c[18]; // 0x48
+    int m_b[18]; // 0x90
+    int m_d[18]; // 0xD8
     u8 m_120[0xC];
     int m_12C, m_130, m_134, m_138;
     int m_13C; // the frame drawn
@@ -219,6 +221,19 @@ void func_8009F450(Menu71 *m);
 int func_800A0DC4(Card71 *c, int a, int b);
 char *func_8009FFCC(void);
 void func_8009FAB0(Menu71 *m);
+struct Seven71 {
+    int m_00[7];
+};
+extern Seven71 D_800D497C;
+extern u8 D_800D489C[];
+extern int D_800C9EDC, D_800C9EE0, D_800C9EE4, D_800C9EE8, D_800C9EEC, D_800C9EF0, D_800C9EF4,
+    D_800C9EF8, D_800C9EFC;
+extern int D_800C8D8C, D_800C6710;
+int func_800A5530(char *name, void **t, int n, int a, int b, int c, int d);
+
+void func_8009FB58(Menu71 *m);
+void func_8009F760(Menu71 *m, int b);
+int func_800A048C(void);
 }
 
 #ifdef NON_MATCHING
@@ -397,7 +412,23 @@ void func_8009F734(Menu71 *m) {
     func_8009F5A8();
 }
 
+#ifdef NON_MATCHING
+/* The block copies' registers, and the original builds each copy's address in its own branch (49 off) */
+/* Seven words saved, or restored. */
+void func_8009F760(Menu71 *m, int b) {
+    u8 *p = m->m_A9C;
+
+    if (!b) {
+        *(Seven71 *)(p + 0x40) = D_800D497C;
+    } else {
+        D_800D497C = *(Seven71 *)(p + 0x40);
+    }
+    func_800A0884(D_800D489C + 0xE0);
+    func_8009F690();
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_8009F760);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_8009F82C);
 
@@ -422,7 +453,26 @@ void func_8009FAB0(Menu71 *m) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_8009FB58);
+/* The sprite's frame drawn from its second half, if it changed. */
+void func_8009FB58(Menu71 *m) {
+    Snd71 *n;
+    Spr71 *s;
+
+    if (m->m_A90 == 1 || m->m_A90 == 4) {
+        n = m->m_A84;
+    } else {
+        n = m->m_A80;
+    }
+    s = n->m_60;
+    if (s) {
+        int i = s->m_140;
+
+        if (i != s->m_13C) {
+            func_80087468(s->m_120, s->m_c[i], 0, s->m_12C, s->m_130, s->m_d[i]);
+            s->m_13C = i;
+        }
+    }
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_8009FC00);
 
@@ -430,24 +480,24 @@ void func_8009FCD8(Menu71 *m) {
     Spr71 *s = m->m_A80->m_60;
 
     DrawSync(0);
-    func_80087468(s->m_120, s->m_a[35], 1, s->m_12C, s->m_130, s->m_b[35]);
-    func_80087468(s->m_120, s->m_a[34], 1, s->m_134, s->m_138, s->m_b[34]);
+    func_80087468(s->m_120, s->m_c[17], 1, s->m_12C, s->m_130, s->m_d[17]);
+    func_80087468(s->m_120, s->m_c[16], 1, s->m_134, s->m_138, s->m_d[16]);
 }
 
 void func_8009FD60(Menu71 *m) {
     Spr71 *s = m->m_A80->m_60;
 
     DrawSync(0);
-    func_80087468(s->m_120, s->m_a[30], 1, s->m_12C, s->m_130, s->m_b[30]);
-    func_80087468(s->m_120, s->m_a[29], 1, s->m_134, s->m_138, s->m_b[29]);
+    func_80087468(s->m_120, s->m_c[12], 1, s->m_12C, s->m_130, s->m_d[12]);
+    func_80087468(s->m_120, s->m_c[11], 1, s->m_134, s->m_138, s->m_d[11]);
 }
 
 void func_8009FDE8(Menu71 *m) {
     Spr71 *s = m->m_A80->m_60;
 
     DrawSync(0);
-    func_80087468(s->m_120, s->m_a[33], 1, s->m_12C, s->m_130, s->m_b[33]);
-    func_80087468(s->m_120, s->m_a[32], 1, s->m_134, s->m_138, s->m_b[32]);
+    func_80087468(s->m_120, s->m_c[15], 1, s->m_12C, s->m_130, s->m_d[15]);
+    func_80087468(s->m_120, s->m_c[14], 1, s->m_134, s->m_138, s->m_d[14]);
 }
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_8009FE70);
@@ -566,7 +616,24 @@ int func_800A0420(Group71 *g, u32 a, char *name, int d, int e) {
     return r;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_800A048C);
+int func_800A048C(void) {
+    void *t[11];
+    void **p = t;
+
+    t[0] = &D_800C9EE0;
+    t[1] = &D_800C9EE4;
+    t[2] = &D_800C9EE8;
+    t[3] = &D_800C9EEC;
+    t[4] = &D_800C9EF0;
+    t[5] = &D_800C9EF4;
+    t[6] = &D_800C9EF8;
+    t[7] = &D_800C9EFC;
+    t[8] = &D_800C8D8C;
+    t[9] = &D_800C6710;
+    t[10] = &D_800C9EDC;
+    func_8009FFCC();
+    return func_800A5530(D_800C9F00, p, 11, 0, 0, 0, 0) != 0;
+}
 
 /* n bytes copied backwards. */
 void func_800A0558(u8 *d, u8 *s, int n) {
