@@ -106,7 +106,9 @@ void func_80022CD4(MATRIX *a, SVECTOR *v);
 void func_80022D04(SVECTOR *out, Vector3 *in);
 Vector3 *func_80022D20(Vector3 *out, Vector3 *in);
 void func_80022D44(Vector3 *v, int shift, int a, int b);
+void func_80022DE4(Vector3 *v, int shift, int a, int as, int b, int bs);
 int func_80022FA4(Vector3 *a, Vector3 *b, int s);
+void func_80099B60(Vector3 *out, Vector3 *a, Vector3 *b, int shift); // a cross product
 void func_80023004(Vector3 *v, Vector3 n);
 void func_8002309C(Vector3 *v, Vector3 n);
 void func_80023140(Vector3 *v, int len, int shift);
@@ -236,7 +238,62 @@ void func_80022D44(Vector3 *v, int shift, int a, int b) {
     func_80023140(v, one, shift);
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_08", func_80022DE4);
+/* Turns v by up to 0.3 (as 4.12) about y and about its side, each angle
+ * clamped and with its own fraction bits; v renormalized if it turned.
+ * The first angle is also kept in b, which the test reads. */
+void func_80022DE4(Vector3 *v, int shift, int a, int as, int b, int bs) {
+    Vector3 t, u;
+    int la = 0x4CC;
+    int lb;
+    int still;
+    int cb, ca;
+
+    if (bs > 12) {
+        la <<= bs - 12;
+    } else if (bs < 12) {
+        la >>= 12 - bs;
+    }
+    lb = 0x4CC;
+    if (as > 12) {
+        lb <<= as - 12;
+    } else if (as < 12) {
+        lb >>= 12 - as;
+    }
+    if (b < -la) {
+        cb = -la;
+    } else if (b <= la) {
+        cb = b;
+    } else {
+        cb = la;
+    }
+    b = cb;
+    if (a < -lb) {
+        ca = -lb;
+    } else if (a <= lb) {
+        ca = a;
+    } else {
+        ca = lb;
+    }
+    still = 1;
+    if (b) {
+        func_80022D20(&t, v);
+        func_80023140(&t, 1 << shift, shift);
+        func_800994F0(&t, cb << (shift - bs), shift);
+        func_800997D0(&v->vx, &t.vx);
+        still = 0;
+    }
+    if (ca) {
+        func_80022D20(&t, v);
+        func_80099B60(&u, &t, v, shift);
+        func_80023140(&u, 1 << shift, shift);
+        func_800994F0(&u, ca << (shift - as), shift);
+        func_800997D0(&v->vx, &u.vx);
+        still = 0;
+    }
+    if (!still) {
+        func_80023140(v, 1 << shift, shift);
+    }
+}
 
 /* The cross product's y, in fixed point with s fraction bits. */
 int func_80022FA4(Vector3 *a, Vector3 *b, int s) {
