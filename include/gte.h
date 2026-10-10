@@ -40,6 +40,24 @@
 #define GTE_RTPS() __asm__ volatile("nop\n\tnop\n\t.word 0x4A180001")
 #define GTE_RTPT() __asm__ volatile("nop\n\tnop\n\t.word 0x4A280030")
 #define GTE_NCLIP() __asm__ volatile(".word 0x4B400006")
+// The light matrix, from a matrix's first 5 words (through $v0 and $v1;
+// the original declares only $v1 clobbered: func_8001DFD8)
+#define GTE_SET_LIGHT_M(m) \
+    __asm__ volatile("lw $2, 0(%0)\n\tlw $3, 4(%0)\n\t" \
+                     "ctc2 $2, $8\n\tctc2 $3, $9\n\t" \
+                     "lw $2, 8(%0)\n\tlw $3, 12(%0)\n\tctc2 $2, $10\n\t" \
+                     "lw $2, 16(%0)\n\tctc2 $3, $11\n\tctc2 $2, $12" \
+                     : \
+                     : "r"(m) \
+                     : "$3")
+// The light matrix times IR, nothing added (mvmva 1, 1, 3, 3, 0)
+#define GTE_MVMVA_LIR() __asm__ volatile("nop\n\tnop\n\t.word 0x4A4BE012")
+// IR1-IR3
+#define GTE_SET_IR(x, y, z) \
+    __asm__ volatile("mtc2 %0, $9\n\tmtc2 %1, $10\n\tmtc2 %2, $11" : : "r"(x), "r"(y), "r"(z))
+// MAC1-MAC3
+#define GTE_GET_MAC(x, y, z) \
+    __asm__ volatile("mfc2 %0, $25\n\tmfc2 %1, $26\n\tmfc2 %2, $27" : "=r"(x), "=r"(y), "=r"(z))
 // The light matrix times V0, plus the translation (mvmva 1, 1, 0, 1, 0)
 #define GTE_MVMVA_LV0TR() __asm__ volatile("nop\n\tnop\n\t.word 0x4A4A2012")
 
