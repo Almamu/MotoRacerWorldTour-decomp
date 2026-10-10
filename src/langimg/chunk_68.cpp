@@ -52,6 +52,7 @@ struct Dst68 {
     u8 m_00[0x114];
     int m_114[2];
     int m_11C[2];
+    int m_124[2];
 };
 struct Pair68 {
     u8 m_00[0x18];
@@ -71,8 +72,61 @@ struct Key68b {
     int m_00;
     struct Menu68 *m_04;
 };
+// The same object as Snd68, as func_8009A0B0 draws it: a player's HUD
+struct Flag68 {
+    u8 m_00[4];
+    int m_04;
+};
+struct Val68 {
+    u8 m_00[8];
+    int m_08;
+};
+struct Lbl68 {
+    u8 m_00[8];
+    short m_08;
+};
+struct Txt68 {
+    u8 m_00[0xC];
+    char *m_0C;
+};
+struct Cnt68 {
+    u8 m_00[0x48];
+    int *m_48;
+};
+struct Flags68 {
+    Flag68 *m_00;
+    Flag68 *m_04;
+};
+struct Hud68 {
+    int m_00[14];
+    u8 m_38[0x18];
+    int m_50;
+    int m_54;
+    int m_58;
+    int m_5C;
+    Val68 *m_60[20]; // ten per player
+    Lbl68 *m_B0[2];
+    Txt68 *m_B8[2];
+    Flag68 *m_C0[2];
+    Flags68 m_C8[2];
+    Cnt68 *m_D8[2];
+    int m_E0[2];
+    int m_E8;
+    int m_EC;
+    int m_F0;
+    int m_F4[2];
+};
+// Which of the HUD's values goes in each of its ten slots
+struct Layout68 {
+    u8 m_00[8];
+    int m_08[14];
+    u8 m_40[4];
+    int m_44[20]; // m_44[17] and m_44[19] also flags
+};
+
 struct Hold68 {
-    u8 m_00[0x60];
+    char *m_00; // a name
+    u8 m_04[0x5C];
     Snd68 *m_60;
 };
 struct Menu68 {
@@ -90,7 +144,14 @@ struct Key68 {
     s8 m_08; // '1' to '9'
 };
 
-void func_8009A0B0(Snd68 *s, Menu68 *m);
+void func_8009A0B0(Hud68 *s, Menu68 *m);
+int func_800A60AC(const char *a, const char *b);
+void func_800B031C(int i, int c);
+int func_800B0264(int i);
+int sprintf(char *buf, const char *fmt, ...);
+extern char D_800C92B0[];
+extern char D_800C92C0[];
+extern Layout68 *D_800C9290[];
 
 Vector3 *func_8009964C(Vector3 *v, int k);
 Vector3 *func_80099690(Vector3 *v, int k);
@@ -660,7 +721,93 @@ void func_80099F88(int *d) {
     d[23] = D_800CC030[94];
 }
 
+#ifdef NON_MATCHING
+// Registers: the original compares with 4, 7 and ~2 through $t6, the
+// reload register, which ours keeps in others
+/* The two players' HUD, each frame. */
+void func_8009A0B0(Hud68 *s, Menu68 *m) {
+    Hold68 *h = m->m_A80;
+    int *col;
+    int *sel;
+    Snd68 *t;
+    Layout68 *l;
+    int i;
+    int j;
+    u32 k;
+    int found;
+
+    if (func_800A60AC(h->m_00, D_800C92B0)) {
+        return;
+    }
+    col = m->m_A98->m_124;
+    sel = m->m_A9C->m_08.m_18;
+    t = h->m_60;
+    for (i = 0; i < 2; i++) {
+        sprintf(s->m_B8[i]->m_0C, D_800C92C0, *s->m_D8[i]->m_48 + 1);
+        if (t->m_F4[i] > 0) {
+            func_800B031C(i, col[i] * 0xFF01);
+            t->m_F4[i]--;
+        } else {
+            func_800B031C(i, 0);
+        }
+        s->m_C0[i]->m_04 |= 2;
+        if (s->m_E0[i] == 4) {
+            s->m_B0[i]->m_08 = s->m_E8;
+            l = D_800C9290[sel[i]];
+            for (j = 0; j < 10; j++) {
+                s->m_60[i * 10 + j]->m_08 = 0;
+                for (k = 0; k < 14; k++) {
+                    if (l->m_08[k] == j) {
+                        s->m_60[i * 10 + j]->m_08 = s->m_00[k];
+                        break;
+                    }
+                }
+            }
+        } else if (s->m_E0[i] == 7) {
+            s->m_B0[i]->m_08 = s->m_EC;
+            l = D_800C9290[sel[i]];
+            for (j = 0; j < 10; j++) {
+                s->m_60[i * 10 + j]->m_08 = 0;
+                found = 0;
+                if (j == 3) {
+                    if (l->m_44[17] == 2) {
+                        s->m_60[i * 10 + 2]->m_08 = s->m_50;
+                        s->m_60[i * 10 + 3]->m_08 = s->m_54;
+                        found = 1;
+                    } else if (l->m_44[19] == 2) {
+                        s->m_60[i * 10 + 2]->m_08 = s->m_58;
+                        s->m_60[i * 10 + 3]->m_08 = s->m_5C;
+                        found = 1;
+                    }
+                }
+                if (!found) {
+                    for (k = 0; k < 20; k++) {
+                        if (l->m_44[k] == j) {
+                            s->m_60[i * 10 + j]->m_08 = s->m_00[k];
+                            break;
+                        }
+                    }
+                }
+            }
+        } else {
+            s->m_B0[i]->m_08 = s->m_F0;
+            s->m_C0[i]->m_04 &= ~2;
+            for (j = 0; j < 10; j++) {
+                s->m_60[i * 10 + j]->m_08 = 0;
+            }
+        }
+        if (func_800B0264(i)) {
+            s->m_C8[i].m_00->m_04 |= 2;
+            s->m_C8[i].m_04->m_04 |= 2;
+        } else {
+            s->m_C8[i].m_00->m_04 &= ~2;
+            s->m_C8[i].m_04->m_04 &= ~2;
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_68", func_8009A0B0);
+#endif
 
 /* A slot's choice changed: the values swapped to match. */
 void func_8009A524(int *v, int a, Key68b *k) {
@@ -758,7 +905,7 @@ void func_8009A764(Menu68 *m, int b) {
 
 void func_8009A84C(Menu68 *m) {
     if (m->m_A80->m_60) {
-        func_8009A0B0(m->m_A80->m_60, m);
+        func_8009A0B0((Hud68 *)m->m_A80->m_60, m);
     }
 }
 
