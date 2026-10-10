@@ -5,7 +5,13 @@
 extern "C" {
 // A card's state
 struct Card72 {
-    u8 m_00[0x16EC];
+    u8 m_00[0x1630];
+    void *m_1630[11];
+    u8 m_165C[0x38];
+    int m_1694; // the file to start at
+    u8 m_1698[0x30];
+    int m_16C8;
+    u8 m_16CC[0x20];
     int m_16EC;
     u8 m_16F0[0x10];
     int m_1700[5];
@@ -47,15 +53,38 @@ struct Item72 {
 
 extern int D_800B887C[]; // not one of the small globals
 extern int D_800C9F34;
-extern int D_800D6094[];    // not one of the small globals
-extern int D_800D60C0[];    // not one of the small globals
-extern Dir72 *D_800C9EE8[]; // not one of the small globals
-extern int D_800D4914[];    // not one of the small globals
+extern volatile int D_800D6094[]; // not one of the small globals
+extern volatile int D_800D60C0[]; // not one of the small globals
+extern Dir72 *D_800C9EE8[];       // not one of the small globals
+extern int D_800D4914[];          // not one of the small globals
 extern Pos72 D_800D48D8[];
 extern Cards72 D_800D4898;
 void func_80015210(void);
 void func_800152E4(void);
 void func_80014CB8(void);
+int _card_chan(void);
+extern int D_800D6070[];
+extern volatile int D_800D60A0[]; // the events counted, by kind
+extern volatile int D_800D60C8[];
+extern int D_800C9D60[];
+extern int *D_800C9EEC;
+extern char D_800BC88C[];
+extern char D_800D4958[];
+void *func_800A1EFC(int a, int b, int c, int d);
+int func_800A2148(int a, void *x, int c, int d);
+
+int func_800A1110(Card72 *c);
+void func_800A13C0(Card72 *c);
+int func_800A2234(int a, int b, int c, int d);
+void func_800A2490(void);
+void func_800A24CC(void);
+void func_800A2510(void);
+void func_800A2554(void);
+void func_800A2598(void);
+void func_800A25D4(void);
+void func_800A2618(void);
+void func_800A265C(void);
+void func_800A26A0(void);
 
 void func_800A1228(Card72 *c);
 void func_800A1248(Card72 *c);
@@ -84,7 +113,30 @@ int func_800A2AA0(void);
 int func_800A2AB0(void);
 }
 
+#ifdef NON_MATCHING
+/* The clamp's value and the count's pointer in other registers (14 off) */
+/* The file to start at: the one asked for, within the directory. */
+int func_800A1110(Card72 *c) {
+    c->m_1694 = 0;
+    if (D_800C9D60[0] != -1) {
+        int v = 0;
+
+        if (D_800C9D60[0] >= 0) {
+            int m = *D_800C9EEC - 1;
+
+            v = m;
+            if (!(m < D_800C9D60[0])) {
+                v = D_800C9D60[0];
+            }
+        }
+        c->m_1694 = v;
+    }
+    c->m_16C8 = 0;
+    return 1;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A1110);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A1170);
 
@@ -146,7 +198,19 @@ int func_800A138C(Card72 *c, int x) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A138C);
 #endif
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A13C0);
+void func_800A13C0(Card72 *c) {
+    c->m_1630[0] = D_800BC88C;
+    c->m_1630[1] = (u8 *)c + 0xCC;
+    c->m_1630[2] = (u8 *)c + 0xC4;
+    c->m_1630[3] = D_800BC88C;
+    c->m_1630[4] = (u8 *)c + 0xD0;
+    c->m_1630[5] = (u8 *)c + 0xB8;
+    c->m_1630[6] = (u8 *)c + 0xBC;
+    c->m_1630[7] = (u8 *)c + 0xB0;
+    c->m_1630[8] = (u8 *)c + 0xC8;
+    c->m_1630[9] = D_800D4958;
+    c->m_1630[10] = D_800D4958 - 12;
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A1420);
 
@@ -231,7 +295,19 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A207C);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A2148);
 
+#ifdef NON_MATCHING
+/* The first and last arguments in each other's saved registers (6 off) */
+int func_800A2234(int a, int b, int c, int d) {
+    void *x = func_800A1EFC(a, b, c, d);
+
+    if (x) {
+        c = func_800A2148(a, x, c, d);
+    }
+    return c;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A2234);
+#endif
 
 void func_800A2290(void) {
     func_80015210();
@@ -257,23 +333,78 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A2304);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A2380);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A2490);
+void func_800A2490(void) {
+    int ch = _card_chan();
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A24CC);
+    D_800D6094[0] = 0;
+    D_800D6070[0] = ch;
+    D_800D60A0[0]++;
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A2510);
+void func_800A24CC(void) {
+    int ch = _card_chan();
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A2554);
+    D_800D6094[0] = 1;
+    D_800D6070[0] = ch;
+    D_800D60A0[1]++;
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A2598);
+void func_800A2510(void) {
+    int ch = _card_chan();
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A25D4);
+    D_800D6094[0] = 2;
+    D_800D6070[0] = ch;
+    D_800D60A0[2]++;
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A2618);
+void func_800A2554(void) {
+    int ch = _card_chan();
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A265C);
+    D_800D6094[0] = 3;
+    D_800D6070[0] = ch;
+    D_800D60A0[3]++;
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A26A0);
+void func_800A2598(void) {
+    int ch = _card_chan();
+
+    D_800D60C0[0] = 0;
+    D_800D6070[0] = ch;
+    D_800D60C8[0]++;
+}
+
+void func_800A25D4(void) {
+    int ch = _card_chan();
+
+    D_800D60C0[0] = 1;
+    D_800D6070[0] = ch;
+    D_800D60C8[1]++;
+}
+
+void func_800A2618(void) {
+    int ch = _card_chan();
+
+    D_800D60C0[0] = 2;
+    D_800D6070[0] = ch;
+    D_800D60C8[2]++;
+}
+
+void func_800A265C(void) {
+    int ch = _card_chan();
+
+    D_800D60C0[0] = 3;
+    D_800D6070[0] = ch;
+    D_800D60C8[3]++;
+}
+
+/* The events' counts cleared. */
+void func_800A26A0(void) {
+    int i;
+
+    for (i = 0; i < 4; i++) {
+        D_800D60A0[i] = D_800D60C8[i] = 0;
+    }
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A26DC);
 
