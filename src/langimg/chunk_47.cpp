@@ -145,6 +145,20 @@ struct Hist47 {
 void func_80099898(Vec47 *d, Vec47 *a, Vec47 *b);
 void func_800998D0(Vec47 *d, Vec47 *a, Vec47 *b);
 void func_80070A40(Hist47 *h, Vec47 *v);
+// A replay frame: a value, a position and an angle
+struct Frame47 {
+    int m_00;
+    Vec47 m_04;
+    SVECTOR m_10;
+};
+// The bit stream at an object's 0x08: a bit written or read, then a value
+// in one of the widths listed (the list ends 0x20, -1)
+void func_80096ACC(void *s, int n, int bit);
+void func_80096CA8(void *s, int v, ...);
+int func_80096B74(void *s, int n);
+int func_80096D84(void *s, ...);
+void func_8006FF78(Obj47 *o, Frame47 *f);
+void func_80070140(Obj47 *o, Frame47 *f);
 void func_80070B2C(Hist47 *h, Vec47 *v);
 void func_8006FB74(void);
 void func_80013CFC(World47 *w);
@@ -171,6 +185,12 @@ int func_80070E20(Obj47 *o, int key);
 }
 
 static inline void VecZero(Vec47 *v) {
+    v->vx = 0;
+    v->vy = 0;
+    v->vz = 0;
+}
+
+static inline void SVecZero(SVECTOR *v) {
     v->vx = 0;
     v->vy = 0;
     v->vz = 0;
@@ -442,9 +462,66 @@ void func_8006FF44(Obj47 *o) {
     func_80096918(o->m_08, 1);
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_47", func_8006FF78);
+/* A frame written: each part a bit (present or not), then its values. */
+void func_8006FF78(Obj47 *o, Frame47 *f) {
+    void *s = o->m_08;
+    int has;
 
+    has = f->m_00 != 0;
+    func_80096ACC(s, 1, has);
+    if (has) {
+        func_80096CA8(s, f->m_00, 4, 7, 0x20, -1);
+    }
+    has = (f->m_04.vx | f->m_04.vy | f->m_04.vz | f->m_10.vx | f->m_10.vy | f->m_10.vz) != 0;
+    func_80096ACC(s, 1, has);
+    if (has) {
+        func_80096CA8(s, f->m_04.vx, 4, 7, 10, 0x20, -1);
+        func_80096CA8(s, f->m_04.vy, 4, 7, 10, 0x20, -1);
+        func_80096CA8(s, f->m_04.vz, 4, 7, 10, 0x20, -1);
+        func_80096CA8(s, f->m_10.vx, 3, 5, 7, 9, 0x20, -1);
+        func_80096CA8(s, f->m_10.vy, 3, 5, 7, 9, 0x20, -1);
+        func_80096CA8(s, f->m_10.vz, 3, 5, 7, 9, 0x20, -1);
+    }
+    o->m_00++;
+}
+
+#ifdef NON_MATCHING
+// One copy: the original reads the second bit through a copy of the stream's pointer ($s0)
+/* A frame read back, its absent parts zero. */
+void func_80070140(Obj47 *o, Frame47 *f) {
+    void *s = o->m_08;
+
+    if (func_80096B74(s, 1)) {
+        f->m_00 = func_80096D84(s, 4, 7, 0x20, -1);
+    } else {
+        f->m_00 = 0;
+    }
+    if (func_80096B74(o->m_08, 1)) {
+        f->m_04.vx = func_80096D84(s, 4, 7, 10, 0x20, -1);
+        f->m_04.vy = func_80096D84(s, 4, 7, 10, 0x20, -1);
+        f->m_04.vz = func_80096D84(s, 4, 7, 10, 0x20, -1);
+        f->m_10.vx = func_80096D84(s, 3, 5, 7, 9, 0x20, -1);
+        f->m_10.vy = func_80096D84(s, 3, 5, 7, 9, 0x20, -1);
+        f->m_10.vz = func_80096D84(s, 3, 5, 7, 9, 0x20, -1);
+    } else {
+        {
+            Vec47 v;
+
+            VecZero(&v);
+            VecCopyL(&f->m_04, &v);
+        }
+        {
+            SVECTOR sv;
+
+            SVecZero(&sv);
+            f->m_10 = sv;
+        }
+    }
+    o->m_04++;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_47", func_80070140);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_47", func_80070314);
 
