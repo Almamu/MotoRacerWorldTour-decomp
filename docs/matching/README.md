@@ -33,6 +33,7 @@ issue it worked on, and add it below.
 | [issue-72-langimg-chunk71.md](issue-72-langimg-chunk71.md) | The game's chunk_71: the memory card menus; scalar or array globals by their registers |
 | [issue-61-langimg-chunk60.md](issue-61-langimg-chunk60.md) | The game's chunk_60: pools, ids and frame buffers; an empty constructor's loop |
 | [issue-52-langimg-chunk51.md](issue-52-langimg-chunk51.md) | The game's chunk_51: buffered objects and their parts |
+| [issue-26-langimg-chunk25.md](issue-26-langimg-chunk25.md) | The game's chunk_25: a list of six with bitfield flags, a class keeping five globals; unrotated loops |
 | [issue-45-langimg-chunk44.md](issue-45-langimg-chunk44.md) | The game's chunk_44: sound objects and their lists; new T[n]'s loop |
 | [issue-47-langimg-chunk46.md](issue-47-langimg-chunk46.md) | The game's chunk_46: the sound entries' classes, voices and their manager |
 | [issue-48-langimg-chunk47.md](issue-48-langimg-chunk47.md) | The game's chunk_47: a replay recorder, sounds, static objects; tables as scalars, goto loops |
