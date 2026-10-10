@@ -207,7 +207,7 @@ void func_800253FC(Bike *b);
 void func_800254F0(Bike *b);
 void func_80062E40(Bike *b);
 void func_80062EEC(Bike *b, int flags);
-void func_8006BB70(AnimChan *c);
+AnimChan *func_8006BB70(AnimChan *c); // its constructor
 Frame *func_8001A62C(Frame *f);
 void func_8001A63C(Frame *f, int flags);
 void func_80033720(Bike *b);

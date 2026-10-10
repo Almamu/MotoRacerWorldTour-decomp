@@ -23,6 +23,7 @@ int func_80026720(Bike *b);
 int func_8002675C(Bike *b, int x);
 int func_800269C4(Bike *b, int x);
 int func_800269F0(Bike *b, int x);
+void func_80026A1C(Bike *b);
 void func_80026FA0(Bike *b);
 int func_80027098(Bike *b);
 int func_800270FC(Bike *b);
@@ -210,7 +211,64 @@ int func_800269F0(Bike *b, int x) {
     return func_80023788(b->m_motor, x, b->m_gear);
 }
 
+#ifdef NON_MATCHING
+/* The first branch's clamp isn't cross-jumped into the last one's, as in the original (24 off) */
+/* The clutch's engagement (m_28E, 4.12): rising towards the engine's
+ * speed, held at 0.2 on the ground at a standstill, or set from the
+ * engine speed's ratio to m_2BE when shifting; clamped to 0 to 1. */
+void func_80026A1C(Bike *b) {
+    int e = func_800269C4(b, b->m_E4);
+
+    if (b->m_28C != 0x1000 && b->m_28E < 0x1000) {
+        if (b->m_2BC < e) {
+            short v = b->m_28E + b->m_290 * 5;
+
+            b->m_28E = v;
+            if (v >= 0) {
+                if (v > 0x1000) {
+                    v = 0x1000;
+                }
+            } else {
+                v = 0;
+            }
+            b->m_28E = v;
+            return;
+        }
+        if (b->m_149 && b->m_28E < 0x333) {
+            b->m_28E += b->m_290;
+            if (b->m_28E > 0x333) {
+                b->m_28E = 0x333;
+            }
+        }
+        return;
+    }
+    if (b->m_clutch == 2 || (!b->m_149 && (b->m_2BC <= b->m_motor->m_26 || e < b->m_motor->m_26))) {
+        b->m_28E = 0;
+    } else if (e < b->m_2BE) {
+        b->m_28E = (e << 12) / b->m_2BE;
+        if (b->m_149 && b->m_28E < 0x800) {
+            b->m_28E = 0x800;
+        }
+    } else {
+        b->m_28E = 0x1000;
+        b->m_2BE = b->m_motor->m_26;
+    }
+    {
+        u16 v = b->m_28E;
+
+        if (b->m_28E >= 0) {
+            if (b->m_28E > 0x1000) {
+                v = 0x1000;
+            }
+        } else {
+            v = 0;
+        }
+        b->m_28E = v;
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_10", func_80026A1C);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_10", func_80026BCC);
 

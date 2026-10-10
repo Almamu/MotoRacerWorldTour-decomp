@@ -66,8 +66,6 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_09", func_80023A30);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_09", func_80023E48);
 
-#ifdef NON_MATCHING
-/* The vtable's address goes through $v1 in the original, $v0 here (3 off) */
 Bike *func_80024064(Bike *b) {
     func_80062E40(b);
     b->m_vtable = D_800C4D60;
@@ -102,9 +100,6 @@ Bike *func_80024064(Bike *b) {
     b->m_5C0 = 0;
     return b;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_09", func_80024064);
-#endif
 
 /* The bike's top engine speed (higher in a mode, higher again in race
  * state 7) and gearing from its motor. */
