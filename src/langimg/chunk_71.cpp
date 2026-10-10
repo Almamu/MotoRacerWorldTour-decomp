@@ -589,7 +589,7 @@ void func_8009FDE8(Menu71 *m) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_8009FE70);
 
-/* The card's name, made by its first user. */
+/* A data file's name (Data\DB_D_n.sdf), made by its first user. */
 char *func_8009FFCC(void) {
     if (!D_800C9F00) {
         int v;
