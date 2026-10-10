@@ -87,15 +87,25 @@ struct Ref60 {
 struct T36 {
     T36 *m_next;
     T36 *m_prev;
-    u8 m_08[0x1C];
+    void *m_08;
+    int m_0C, m_10, m_14;
+    u8 m_18[0xC];
     T36() {
     }
 };
 
 // Indices handed out (0x20 bytes)
+// An id's description (12 bytes)
+struct Desc60 {
+    short m_x, m_y;
+    u8 m_04[2];
+    short m_06;
+    u8 m_08[4];
+};
+
 struct Ids60 {
-    int m_00;
-    int m_04;
+    u8 *m_00; // 8 bytes for each
+    Desc60 *m_04;
     Ref60 *m_08;
     T36 *m_items; // 0x0C
     T36 *m_10;
@@ -207,6 +217,7 @@ void func_8008AF5C(Cnt60 *o);
 void func_80089E24(Ids60 *o, int i);
 int func_800897FC(Buf60 *b, int a, int n);
 int func_80089200(Menu60 *m, int dir);
+T36 *func_80089CF4(Ids60 *o, int i);
 }
 
 #ifdef NON_MATCHING
@@ -471,10 +482,10 @@ void func_80089B28(void *p, int flags) {
 }
 
 void func_80089B6C(Ids60 *o, int n, int m, int a, int x) {
-    o->m_04 = a;
+    o->m_04 = (Desc60 *)a;
     o->m_18 = n;
     o->m_1C = m;
-    o->m_00 = x;
+    o->m_00 = (u8 *)x;
     o->m_08 = (Ref60 *)__builtin_vec_new(m * sizeof(Ref60));
     o->m_14 = (short *)__builtin_vec_new(n * sizeof(short));
     o->m_items = new T36[n];
@@ -512,7 +523,38 @@ void func_80089C7C(Ids60 *o) {
     o->m_1A = o->m_18;
 }
 
+#ifdef NON_MATCHING
+/* The layout matches; the item kept in the reference's register, and the stores scheduled around it (41 off) */
+/* A reference to an id: its item, made the first time. */
+T36 *func_80089CF4(Ids60 *o, int i) {
+    Ref60 *r = i + o->m_08;
+    T36 *t;
+    int k;
+
+    if (r->m_n > 0) {
+        r->m_n++;
+        return &o->m_items[o->m_08[i].m_item];
+    }
+    if (o->m_1A) {
+        k = o->m_14[--o->m_1A];
+        r->m_n = 1;
+        o->m_08[i].m_item = k;
+        t = &o->m_items[k];
+        t->m_08 = o->m_00 + o->m_04[i].m_06 * 8;
+        t->m_10 = 0;
+        t->m_0C = o->m_04[i].m_x << 12;
+        t->m_next = 0;
+        t->m_14 = o->m_04[i].m_y << 12;
+        t->m_prev = o->m_10;
+        o->m_10->m_next = t;
+        o->m_10 = t;
+        return t;
+    }
+    return 0;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_60", func_80089CF4);
+#endif
 
 /* An id released: its item unlinked and its index free again. */
 void func_80089E24(Ids60 *o, int i) {
