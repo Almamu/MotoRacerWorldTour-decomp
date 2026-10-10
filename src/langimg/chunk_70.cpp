@@ -16,20 +16,41 @@ struct Pair70 {
     u16 m_00;
     u16 m_02;
 };
+// A button: a nibble of state at bit 16, its flags' object at 0x28
+struct Btn70 {
+    int m_00;
+    u8 m_04[0x24];
+    Flag70 *m_28;
+};
+// The table made by func_8009D2E0 and func_8009D350
+struct Tab70 {
+    void *m_00;
+    int m_04;
+};
 struct Obj70 {
-    u8 m_00[0x18];
+    int m_00;
+    int m_04;
+    int m_08;
+    int m_0C;
+    int m_10;
+    short m_14;
+    short m_16;
     Lbl70 *m_18;
     u8 m_1C[8];
     Flag70 *m_24;
-    u8 m_28[8];
+    Btn70 *m_28;
+    Btn70 *m_2C;
     int *m_30;
     u8 *m_34;
-    u8 m_38[0xC];
+    int m_38;
+    void *m_3C;
+    int m_40;
     int m_44;
-    u8 m_48[8];
+    u8 m_48[4];
+    int *m_4C;
     Pair70 *m_50;
     int m_54;
-    u8 m_58[4];
+    struct Hold70 *m_58;
     Lbl70 *m_5C;
     u8 m_60[0xF0];
     int m_150;
@@ -60,15 +81,42 @@ void func_8009CF14();
 void func_800A6788(int a, int b);
 void func_8003E5B0(int a);
 void func_800A4244(void);
-void func_800A41BC(void);
+int func_800A41BC(void);
 void func_800A4608(int a);
 void func_8009E0E8(Obj70 *o);
+void func_8009E360(Obj70 *o);
 void func_8009E72C(Menu70 *m, Hold70 *h);
 void func_8009D9CC(Obj70 *o);
 void func_8009E360(Obj70 *o);
 extern int D_800D5F0C;
-extern void *D_800C935C;
-extern void *D_800C9360;
+extern Tab70 *D_800C935C;
+extern Tab70 *D_800C9360;
+extern int D_800D5FD4;
+extern int D_800C89E8;
+extern int D_800C89D0;
+extern char D_800C94DC[];
+extern char D_800C9BFC[];
+extern void *D_800BC884;
+extern int D_800C9C04;
+extern char D_800C9750[], D_800C98F4[], D_800C9A6C[], D_800CBEA0[];
+extern char D_800C9B30[], D_800C9B38[], D_800C9B58[], D_800C9B64[];
+void *__builtin_new(int n);
+void *__builtin_vec_new(int n);
+void *memset(void *d, int c, int n);
+int func_80081318(int a, int b);
+void func_80080F30(int a, char *b, int c, int d);
+int func_800A4284(int a);
+void func_8009E3C0(Obj70 *o, int x, int y, int w);
+int func_8009D830(Obj70 *o);
+struct Hold70 *func_8003CC78(Menu70 *m, struct Hold70 *h, int c);
+void *func_8009E01C(Obj70 *o, void *a, int b, void *c, int n);
+void func_8009E24C(Obj70 *o);
+void func_8009E1A0(Obj70 *o);
+void func_8009D1F8(void);
+void func_8009D2E0(void);
+void func_8009D350(void);
+void func_8009DDA8(Menu70 *m);
+void func_8009DF90(Menu70 *m);
 
 void func_8009D25C(Menu70 *m);
 void func_8009D288(void);
@@ -94,7 +142,15 @@ void func_8009EAD0(Menu70 *m, int a);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_70", func_8009D0E4);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_70", func_8009D1F8);
+void func_8009D1F8(void) {
+    if (D_800D5FD4 & 2) {
+        char *s = D_800C94DC;
+        int h = func_80081318(D_800C89E8, 1);
+
+        D_800C89D0 = 0x210;
+        func_80080F30(h, s, 0x100, 0x100);
+    }
+}
 
 void func_8009D25C(Menu70 *m) {
     func_8003EC90(m, 0x15, 0, func_8009CF14);
@@ -119,9 +175,33 @@ void func_8009D2D4(Obj70 *o) {
     o->m_150 = 0x84;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_70", func_8009D2E0);
+void func_8009D2E0(void) {
+    Tab70 *t = (Tab70 *)__builtin_new(0x20);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_70", func_8009D350);
+    t[0].m_00 = D_800C9750;
+    t[0].m_04 = 0x2C;
+    t[1].m_00 = D_800C98F4;
+    t[1].m_04 = 8;
+    t[2].m_00 = D_800C9A6C;
+    t[2].m_04 = 0x17;
+    t[3].m_00 = D_800CBEA0;
+    t[3].m_04 = 0xF;
+    D_800C935C = t;
+}
+
+void func_8009D350(void) {
+    Tab70 *t = (Tab70 *)__builtin_new(0x20);
+
+    t[0].m_00 = D_800C9B30;
+    t[0].m_04 = 1;
+    t[1].m_00 = D_800C9B38;
+    t[1].m_04 = 2;
+    t[2].m_00 = D_800C9B58;
+    t[2].m_04 = 1;
+    t[3].m_00 = D_800C9B64;
+    t[3].m_04 = 1;
+    D_800C9360 = t;
+}
 
 void func_8009D3B8(void) {
     if (D_800C935C) {
@@ -160,7 +240,14 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_70", func_8009D830);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_70", func_8009D9CC);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_70", func_8009DDA8);
+void func_8009DDA8(Menu70 *m) {
+    Obj70 *o = m->m_A80->m_60;
+
+    func_800A41BC();
+    func_800A4608(1);
+    func_8009E01C(o, D_800C9BFC, 0, D_800BC884, 0x15AC);
+    func_8009E0E8(o);
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_70", func_8009DE0C);
 
@@ -176,9 +263,29 @@ void func_8009DF58(Menu70 *m) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_70", func_8009DF90);
+void func_8009DF90(Menu70 *m) {
+    Obj70 *o = m->m_A80->m_60;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_70", func_8009E01C);
+    if (o && m->m_A80 != o->m_58) {
+        func_8009D830(o);
+        if (!o->m_54 && !D_800C9C04) {
+            func_8003CC78(m, o->m_58, 0);
+            D_800C9C04 = 1;
+        }
+    }
+}
+
+void *func_8009E01C(Obj70 *o, void *a, int b, void *c, int n) {
+    void *r;
+
+    o->m_3C = a;
+    o->m_34 = (u8 *)__builtin_vec_new(0x1FF0);
+    memset(o->m_34, 0, 0x1FF0);
+    r = memcpy(o->m_34 + 0x400, c, n + 0x400);
+    o->m_40 = b;
+    o->m_38 = 0x1FF0;
+    return r;
+}
 
 u8 *func_8009E0A0(Obj70 *o) {
     return o->m_34 + 0x400;
@@ -191,16 +298,43 @@ void func_8009E0AC(Obj70 *o) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_70", func_8009E0E8);
+void func_8009E0E8(Obj70 *o) {
+    o->m_04 = 0;
+    o->m_08 = 0;
+    o->m_0C = 0;
+    o->m_10 = 0;
+    o->m_14 = 0;
+    o->m_16 = 0;
+    *o->m_4C = 0;
+    o->m_00 = 1;
+    func_800A4284(0);
+    func_8009E24C(o);
+    func_8009E164(o);
+    func_8009E2FC(o);
+    o->m_18->m_08 = o->m_50[0].m_00;
+}
 
 void func_8009E164(Obj70 *o) {
     *o->m_30 &= 0xFFF0FFFF;
     func_8003E5B0(o->m_44);
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_70", func_8009E1A0);
+void func_8009E1A0(Obj70 *o) {
+    o->m_28->m_28->m_04 |= 2;
+    o->m_2C->m_28->m_04 |= 2;
+    o->m_28->m_00 = (o->m_28->m_00 & 0xFFF0FFFF) | 0x10000;
+    o->m_2C->m_00 = (o->m_2C->m_00 & 0xFFF0FFFF) | 0x10000;
+    func_8003E5B0(o->m_44);
+    *o->m_4C = 0;
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_70", func_8009E24C);
+void func_8009E24C(Obj70 *o) {
+    o->m_28->m_28->m_04 &= ~2;
+    o->m_2C->m_28->m_04 &= ~2;
+    o->m_28->m_00 &= 0xFFF0FFFF;
+    o->m_2C->m_00 &= 0xFFF0FFFF;
+    func_8003E5B0(o->m_44);
+}
 
 void func_8009E2E0(Obj70 *o) {
     o->m_24->m_04 &= ~2;
@@ -215,7 +349,9 @@ void func_8009E318(Obj70 *o, int i) {
     o->m_18->m_08 = o->m_50[i].m_00;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_70", func_8009E360);
+void func_8009E360(Obj70 *o) {
+    func_8009E3C0(o, 0x29, 0xBE, o->m_0C * 430 / 1000);
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_70", func_8009E3C0);
 
