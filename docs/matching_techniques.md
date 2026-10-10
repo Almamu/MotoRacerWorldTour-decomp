@@ -89,7 +89,7 @@ settings
 | `lib/cdaudio` chunk_01b | GCC 2.91.66 | 0 | (split addresses) | `--expand-div` |
 | `src/langimg` chunk_02, chunk_03 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --small-externs=...` |
 | `src/langimg` chunk_04, chunk_05 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=` |
-| `src/langimg` chunk_06 (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
+| `src/langimg` chunk_06, chunk_07 (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_02b (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `SCES_030.37` (`src/sces`) | GCC 2.91.66 | 0 | `-fsigned-char` | `--expand-div` |
 
@@ -510,6 +510,11 @@ What's left once the instructions are right is usually register choice.
   constant into `$t1` (`lui`/`ori`, `addu $t1, $zero, $zero` for 0, and
   reuses a 0 still there). That's a `register int r asm("$9")` set from C
   before each `GTE_MTC2(r, n)`; GCC picks the instructions.
+- **An address computed through an inline.** A struct member's address
+  inside an array element can come out as `p + (i * size + offset)` or as
+  `(p + i * size) + offset`; the second came from an inline taking the
+  member's address, where the same statements written in place gave the
+  first (`func_80020868`'s `VecCopy`).
 - **An undeclared clobber.** A macro that uses a register without
   declaring it changes GCC's choices around it; `GTE_SET_LIGHT_M` uses
   `$v0` and `$v1` but declares only `$v1`, as the original's must have
