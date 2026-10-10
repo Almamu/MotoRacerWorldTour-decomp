@@ -92,7 +92,7 @@ settings
 | `src/langimg` chunk_23 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=D_800CABB7` |
 | `src/langimg` chunk_45 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (eleven) |
 | `src/langimg` chunk_66 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (five) |
-| `src/langimg` chunk_25, chunk_29, chunk_31, chunk_39, chunk_44, chunk_46, chunk_47, chunk_51, chunk_56, chunk_60, chunk_68, chunk_70, chunk_71, chunk_72, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
+| `src/langimg` chunk_25, chunk_29, chunk_31, chunk_39, chunk_44, chunk_52, chunk_46, chunk_47, chunk_51, chunk_56, chunk_60, chunk_68, chunk_70, chunk_71, chunk_72, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_06 to chunk_12 (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_02b (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `SCES_030.37` (`src/sces`) | GCC 2.91.66 | 0 | `-fsigned-char` | `--expand-div` |
@@ -731,6 +731,10 @@ What's left once the instructions are right is usually register choice.
 
 - Declaration order of locals made no difference to registers in the
   cases tried (`FindEntry`); it does decide their stack slots (above).
+- **A result variable set at the top.** chunk_52's `func_800794E8` ends
+  with `return 1`; it matched as `int ok = 1;` at the top and `return
+  ok;` (the permuter). The constant is then set before the calls and kept
+  in a saved register, as in the original.
 - **One counter per loop.** chunk_39's `func_8005FAB8` has a loop with
   no call and one with calls. One `i` for both put the first loop's
   counter in the second's saved register; a counter of its own left it
