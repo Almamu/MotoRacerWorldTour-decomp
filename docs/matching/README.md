@@ -37,6 +37,7 @@ issue it worked on, and add it below.
 | [issue-45-langimg-chunk44.md](issue-45-langimg-chunk44.md) | The game's chunk_44: sound objects and their lists; new T[n]'s loop |
 | [issue-47-langimg-chunk46.md](issue-47-langimg-chunk46.md) | The game's chunk_46: the sound entries' classes, voices and their manager |
 | [issue-48-langimg-chunk47.md](issue-48-langimg-chunk47.md) | The game's chunk_47: a replay recorder, sounds, static objects; tables as scalars, goto loops |
+| [issue-57-langimg-chunk56.md](issue-57-langimg-chunk56.md) | The game's chunk_56: a height map, a camera, the race's panel; nested tests, empty trailing cases, `operator new` |
 | [issue-69-langimg-chunk68.md](issue-69-langimg-chunk68.md) | The game's chunk_68: the vectors' operators, a menu's slots; a 64-bit square as an asm macro |
 | [issue-71-langimg-chunk70.md](issue-71-langimg-chunk70.md) | The game's chunk_70: a demo menu page; callees' return types, bitfields, a table of entries |
 | [issue-75-langimg-chunk74.md](issue-75-langimg-chunk74.md) | The game's chunk_74: strings, times as text, CRC-32, relocations, overlays; seven handwritten |
