@@ -15,7 +15,7 @@ Around them:
 
 One file, `src/langimg/chunk_29.cpp`, 0x8004B4B0-0x8004D560.
 
-31 functions: 19 match, 3 are parked, 9 are still asm.
+31 functions: 20 match, 2 are parked, 9 are still asm.
 
 ## The settings
 
@@ -42,9 +42,11 @@ small globals.
 - **Destructors by hand.** The classes' destructors set their vtable and
   call the base's through `asm`-labelled declarations (`_._6Cobjet`,
   `_._5CName`), as chunk_03 does.
-- **One exit.** `func_8004C9D0` decides a player's state in three ways;
-  written as one `if`/`else if` chain with a single `return r`, its
-  blocks came out in the original's order (registers differ).
+- **One exit, and a `do { } while (0)`.** `func_8004C9D0` decides a
+  player's state in three ways. Written as one `if`/`else if` chain with
+  a single `return r`, its blocks came out in the original's order. Its
+  registers then matched with the last test inside a `do { } while (0)`
+  (the permuter; a workaround, marked at the use).
 
 ## The functions
 
@@ -67,7 +69,7 @@ small globals.
 | `func_8004C764` | matches | a player set up from tables |
 | `func_8004C7EC` | matches | a flag cleared on both players |
 | `func_8004C870` | matches | a player's state from their bike |
-| `func_8004C9D0` | parked | a player's state on a press: the result and the bike swap registers (10 off) |
+| `func_8004C9D0` | matches | a player's state on a press (a `do { } while (0)`) |
 | `func_8004CB5C` | asm | 128 instructions |
 | `func_8004CD5C` | asm | 104 instructions |
 | `func_8004CEFC` | asm | 91 instructions |

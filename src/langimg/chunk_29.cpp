@@ -373,8 +373,6 @@ void func_8004C870(Game29 *g, int i, Bk29 *b) {
     }
 }
 
-#ifdef NON_MATCHING
-// Registers: the result and the bike swap $s2 and $s3 (10 off)
 int func_8004C9D0(Game29 *g, int i) {
     int r = 1;
     int k = g->m_470[i];
@@ -392,16 +390,18 @@ int func_8004C9D0(Game29 *g, int i) {
     } else if (i == 0 && (g->m_304 ||
                           ((D_800CB3BC || x) && !(g->m_378->m_00 & 0xA8) && g->m_378->m_00 != 2))) {
         g->m_430[i] = 5;
-    } else if ((g->m_378->m_00 & 0xA8) || i == 0) {
-        func_8004C870(g, i, b);
     } else {
-        r = 0;
+        // A workaround (the permuter): the last test in a do/while (0)
+        do {
+            if ((g->m_378->m_00 & 0xA8) || i == 0) {
+                func_8004C870(g, i, b);
+            } else {
+                r = 0;
+            }
+        } while (0);
     }
     return r;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_29", func_8004C9D0);
-#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_29", func_8004CB5C);
 
