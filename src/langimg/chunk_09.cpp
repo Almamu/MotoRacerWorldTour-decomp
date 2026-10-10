@@ -13,6 +13,10 @@ Vector3 *func_80099D48(Vector3 *v, int shift); // v >> shift
 int ratan2(long y, long x);
 void func_8002434C(Bike *b);
 void func_80025174(Bike *b);
+Vector3 *func_80099D74(Vector3 *v, int shift); // v << shift
+void func_80030CFC(Bike *b);
+void func_80026648(Bike *b, Motion *m);
+void func_8002AF3C(Bike *b);
 void func_80027EE0(Bike *b);
 void func_80024D0C(Bike *b);
 void func_80033280(Bike *b);
@@ -30,6 +34,44 @@ static inline void VecCopy(Vector3 *d, Vector3 *s) {
     d->vx = x;
     d->vy = y;
     d->vz = z;
+}
+
+static inline void VecZero(Vector3 *v) {
+    v->vx = 0;
+    v->vy = 0;
+    v->vz = 0;
+}
+
+static inline void SetTrans(MATRIX *m, Vector3 *v) {
+    int x = v->vx;
+    int y = v->vy;
+    int z = v->vz;
+
+    m->t[0] = x;
+    m->t[1] = y;
+    m->t[2] = z;
+}
+
+static inline void MatCopy(MATRIX *d, MATRIX *s) {
+    int *q = (int *)s;
+    int *p = (int *)d;
+    int a = q[0];
+    int b = q[1];
+    int c = q[2];
+
+    p[0] = a;
+    p[1] = b;
+    p[2] = c;
+    a = q[3];
+    b = q[4];
+    p[3] = a;
+    p[4] = b;
+    a = q[5];
+    b = q[6];
+    c = q[7];
+    p[5] = a;
+    p[6] = b;
+    p[7] = c;
 }
 
 static inline void VecCopyF(Vector3 *d, Vector3 *s) {
@@ -311,15 +353,54 @@ void func_8002434C(Bike *b) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_09", func_8002434C);
 #endif
 
+#ifdef NON_MATCHING
+/* The matrix copy's source and destination swap registers (26 off) */
+/* The bike placed at its position: its motions there (in 1/32), still;
+ * its matrix, ends and contact points; its angles as 4.12 radians; its
+ * model's matrix. */
+void func_80024584(Bike *b) {
+    int x, y, z;
+
+    b->m_F8 = 0;
+    VecZero(&b->m_2A0);
+    VecCopy(&b->m_2AC, &b->m_2A0);
+    b->m_5A4 = 0;
+    b->m_2E4 = 0x333;
+    VecCopy(&b->m_78, &b->m_pos);
+    VecCopy(&b->m_5CC->m_04, &b->m_pos);
+    func_80099D74(&b->m_5CC->m_04, 5);
+    VecCopy(&b->m_5C8->m_04, &b->m_5CC->m_04);
+    func_8002434C(b);
+    func_80030CFC(b);
+    func_80026648(b, b->m_5CC);
+    VecCopy(&b->m_3C4, &b->m_234);
+    VecCopy(&b->m_3D0, &b->m_240);
+    b->m_250 = b->m_240.vy;
+    b->m_24C = b->m_234.vy;
+    VecCopy(&b->m_9C, &b->m_240);
+    VecCopy(&b->m_B4, &b->m_234);
+    func_80099D48(&b->m_9C, 5);
+    func_80099D48(&b->m_B4, 5);
+    func_8002AF3C(b);
+    x = MULSHIFT((int)b->m_rx, 0x6488, 12);
+    b->m_3B0 = x;
+    y = MULSHIFT((int)b->m_ry, 0x6488, 12) << 4;
+    b->m_394 = y;
+    z = MULSHIFT((int)b->m_rz, 0x6488, 12);
+    b->m_39C = z;
+    b->m_3A0 = z;
+    b->m_398 = y;
+    b->m_3B4 = x;
+    b->m_560.m_00 = 0;
+    b->m_580.m_00 = 0;
+    MatCopy(b->m_34, &b->m_mat);
+    SetTrans(b->m_34, &b->m_pos);
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_09", func_80024584);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_09", func_80024824);
-
-static inline void VecZero(Vector3 *v) {
-    v->vx = 0;
-    v->vy = 0;
-    v->vz = 0;
-}
 
 void func_80024C60(Bike *b, Motion *m) {
     m->m_00 = 0;
