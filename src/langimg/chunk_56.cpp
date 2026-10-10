@@ -12,6 +12,7 @@ struct List56 {
 struct Vec56 {
     int vx, vy, vz;
 };
+struct Map56;
 struct Obj56 {
     short m_00;
     u8 m_02[2];
@@ -24,7 +25,7 @@ struct Obj56 {
     void *m_1C;
     int m_20;
     void *m_24;
-    int m_28;
+    Map56 *m_28; // the map's parts
     u8 m_2C[0x14];
     short m_40;
     u8 m_42[2];
@@ -226,7 +227,9 @@ struct Span56 {
 struct Map56 {
     void *m_00;
     void *m_04;
-    u8 m_08[4];
+    u16 m_08; // how many m_04
+    u8 m_0A;
+    u8 m_0B; // how many m_10
     void *m_0C;
     void *m_10;
     u8 m_14[4];
@@ -249,6 +252,22 @@ void func_80083078(Grid56 *g, int row, Race56 *r);
 void func_800826BC(u8 *o, Race56 *r);
 int func_80081330(Map56 *m, short x, short y);
 void func_8008145C(Map56 *m, int flags);
+// Twelve bytes, no constructor
+struct Pod12 {
+    int m_00[3];
+};
+// Twelve and sixteen bytes, each with an empty constructor
+struct Ctor12 {
+    int m_00[3];
+    Ctor12() {
+    }
+};
+struct Ctor16 {
+    int m_00[4];
+    Ctor16() {
+    }
+};
+
 void func_80082DA4(Grid56 *g, int row, Tab56 *t, int flag, int col);
 }
 
@@ -461,7 +480,119 @@ void func_800816B4(Obj56 *o, int flags) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_56", func_800816F8);
+/* One of the map's parts allocated, or freed. */
+void func_800816F8(Obj56 *h, int kind, int alloc) {
+    if (alloc) {
+        Map56 *m;
+
+        if (!h->m_28) {
+            h->m_28 = (Map56 *)func_8008142C(operator new(0x30));
+        }
+        switch (kind) {
+        case 1:
+            m = h->m_28;
+            if (!m->m_24 && h->m_00) {
+                m->m_24 = new Pod12[h->m_00];
+            }
+            break;
+        case 2:
+            m = h->m_28;
+            if (!m->m_28 && h->m_00) {
+                m->m_28 = new int[h->m_00];
+            }
+            break;
+        case 3:
+            m = h->m_28;
+            if (!m->m_2C && h->m_00) {
+                m->m_2C = new Pod12[h->m_00];
+            }
+            break;
+        case 5:
+            m = h->m_28;
+            if (!m->m_04 && m->m_08) {
+                m->m_04 = new Ctor12[m->m_08];
+            }
+            break;
+        case 4:
+            m = h->m_28;
+            if (!m->m_10 && m->m_0B) {
+                m->m_10 = new Ctor16[m->m_0B];
+            }
+            break;
+        case 6:
+            m = h->m_28;
+            if (!m->m_20 && h->m_04) {
+                m->m_20 = new int[h->m_04];
+            }
+            break;
+        case 7:
+            break;
+        case 8:
+            break;
+        }
+    } else {
+        Map56 *m = h->m_28;
+
+        if (m) {
+            switch (kind) {
+            case 0:
+                if (h->m_28) {
+                    func_8008145C(h->m_28, 3);
+                    h->m_28 = 0;
+                }
+                break;
+            case 1:
+                if (m->m_24) {
+                    delete[] (u8 *)m->m_24;
+                    h->m_28->m_24 = 0;
+                }
+                break;
+            case 2:
+                if (m->m_28) {
+                    delete[] (u8 *)m->m_28;
+                    h->m_28->m_28 = 0;
+                }
+                break;
+            case 3:
+                if (m->m_2C) {
+                    delete[] (u8 *)m->m_2C;
+                    h->m_28->m_2C = 0;
+                }
+                break;
+            case 5:
+                if (m->m_04) {
+                    delete[] (u8 *)m->m_04;
+                    h->m_28->m_04 = 0;
+                }
+                break;
+            case 4:
+                if (m->m_10) {
+                    delete[] (u8 *)m->m_10;
+                    h->m_28->m_10 = 0;
+                }
+                break;
+            case 6:
+                if (m->m_20) {
+                    delete[] (u8 *)m->m_20;
+                    h->m_28->m_20 = 0;
+                }
+                break;
+            case 7:
+                if (m->m_18) {
+                    delete[] (u8 *)m->m_18;
+                    h->m_28->m_18 = 0;
+                }
+                break;
+            case 8:
+                if (m->m_1C) {
+                    delete[] (u8 *)m->m_1C;
+                    h->m_28->m_1C = 0;
+                }
+                break;
+            }
+        }
+    }
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_56", func_80081A78);
 
