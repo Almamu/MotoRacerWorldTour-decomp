@@ -83,12 +83,12 @@ struct World47 {
     Cam47 *m_1CD0;
 };
 extern SinCos47 D_800BF3A0[];
-extern int D_800C838C[];
+extern int D_800C838C;
 extern short D_800D2EC4[];
 extern s8 D_800C7F2D;
 extern s8 D_800C8388;
-extern void *D_800C83C0[];
-extern short D_800C7F18[];
+extern int D_800C83C0;
+extern short D_800C7F18;
 extern int D_800CB5E0; // the five entries (built with la)
 #define ENTS47 ((Ent47 *)&D_800CB5E0)
 extern World47 D_800D11D0;
@@ -238,13 +238,11 @@ void func_8006F858(int i, void *x) {
     ((void (*)(Ent47 *, void *))func_8006F270)(&ENTS47[i], x);
 }
 
-#ifdef NON_MATCHING
-// Registers: $v0 and $v1 swap around the table's address
 void func_8006F88C(int i, u8 *x, int d) {
     int v = 0x40;
 
     if (D_800C7F2D) {
-        v = *(int *)((i << 2) + (u8 *)D_800C838C);
+        v = *(int *)((i << 2) + (u8 *)&D_800C838C);
     }
     D_800D2EC4[0] = v;
     if (((s8 *)x)[0x185]) {
@@ -256,9 +254,6 @@ void func_8006F88C(int i, u8 *x, int d) {
         func_8006F21C(&ENTS47[i]);
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_47", func_8006F88C);
-#endif
 
 void func_8006F968(int i, int a, int b, int d, int e) {
     World47 *w = &D_800D11D0;
@@ -287,8 +282,6 @@ void func_8006F9BC(int mode) {
 
 /* Sets one of the volumes (0 to 63): 5 the master, 6 the CD's, the others
  * a channel's. */
-#ifdef NON_MATCHING
-// Registers: $v0 and $v1 swap around the tables' addresses
 void func_8006FA30(int ch, int vol) {
     int v;
 
@@ -306,17 +299,14 @@ void func_8006FA30(int ch, int vol) {
     } else if (ch == 6) {
         func_800153FC(v * 2);
     } else {
-        func_80012120(*(void **)((ch << 2) + (u8 *)D_800C83C0), v * 2);
+        func_80012120(*(void **)((ch << 2) + (u8 *)&D_800C83C0), v * 2);
     }
-    *(short *)((ch << 1) + (u8 *)D_800C7F18) = v;
+    *(short *)((ch << 1) + (u8 *)&D_800C7F18) = v;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_47", func_8006FA30);
-#endif
 
 short func_8006FADC(int i) {
     i <<= 1;
-    return *(short *)((u8 *)D_800C7F18 + i);
+    return *(short *)((u8 *)&D_800C7F18 + i);
 }
 
 short func_8006FAF8(int a, int b) {
