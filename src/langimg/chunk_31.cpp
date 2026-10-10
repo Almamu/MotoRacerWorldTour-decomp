@@ -315,30 +315,30 @@ void func_8004F828(int a, int b) {
     D_800C8868 = b + 0x40;
 }
 
-#ifdef NON_MATCHING
-// Registers: the original keeps five saved registers, the local vectors' addresses set before the dot product's call
 /* v moved by func_8004F908; when it hit (bit 1), pushed back out along the normal, flat. */
 int func_8004F83C(void *o, Vec31 *v, int c) {
     Vec31 d;
     Vec31 n;
     Vec31 a;
     Vec31 b;
+    Vec31 *pn = &n;
+    Vec31 *pa;
+    Vec31 *pb;
     int r;
 
     d = *v;
-    r = func_8004F908(o, &d, c, &n);
+    r = func_8004F908(o, &d, c, pn);
     if (r & 2) {
         func_80099834(&d, v);
-        func_800996D4(&b, func_80099B88(&d, &n), &n);
-        func_8009975C(&a, &b, 0x1000);
+        pa = &a;
+        pb = &b;
+        func_800996D4(pb, func_80099B88(&d, pn), pn);
+        func_8009975C(pa, pb, 0x1000);
         a.y = 0;
-        func_800997D0(v, &a);
+        func_800997D0(v, pa);
     }
     return r;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_31", func_8004F83C);
-#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_31", func_8004F908);
 
