@@ -48,6 +48,8 @@ int func_80098CE4(void);
 void func_80098D04(int i, int v);
 void func_80098DD4(Vec67 *a, Vec67 *b);
 void func_80098E38(Vec67 *a, Vec67 *b);
+int func_80098D1C(int i);
+Mat67 *func_80098354(Mat67 *m, Mat67 *s);
 }
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_67", func_80097128);
@@ -206,7 +208,40 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_67", func_80098178);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_67", func_80098224);
 
+#ifdef NON_MATCHING
+// Registers: the components and their absolute values each one register off (30 differ, the same instructions)
+/* A rotation about y from s's direction (x and z of its third column), its length approximated. */
+Mat67 *func_80098354(Mat67 *m, Mat67 *s) {
+    int x = s->m[0][2];
+    int z = s->m[2][2];
+    int ax = x < 0 ? -x : x;
+    int az = z < 0 ? -z : z;
+    int mx = az;
+    int k;
+
+    if (az < ax) {
+        mx = ax;
+    }
+    k = 0x1000000 / ((ax + az + mx * 2) / 3);
+    m->m[1][0] = 0;
+    m->m[0][1] = 0;
+    m->m[2][1] = 0;
+    m->m[1][2] = 0;
+    m->t.z = 0;
+    m->t.y = 0;
+    m->t.x = 0;
+    m->m[1][1] = 0x1000;
+    x = x * k >> 12;
+    m->m[2][0] = -x;
+    m->m[0][2] = x;
+    z = z * k >> 12;
+    m->m[0][0] = z;
+    m->m[2][2] = z;
+    return m;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_67", func_80098354);
+#endif
 
 /* The angles of a rotation matrix. */
 SVec67 *func_80098418(Mat67 *m, SVec67 *r) {
@@ -255,7 +290,30 @@ void func_80098D04(int i, int v) {
     *(int *)((u8 *)&D_800C8D98 + (i << 2)) = v;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_67", func_80098D1C);
+/* Slot i's next random number (Park and Miller's, by Schrage's method), 0 to 0x7FFF. */
+int func_80098D1C(int i) {
+    int *p = (int *)((u8 *)&D_800C8D98 + (i << 2));
+    int s = *p;
+    int hi;
+    int lo;
+    int r;
+
+    if (!s) {
+        s = *p = (i << 16) + i;
+    }
+    hi = (s >> 16) * 16807;
+    lo = (s & 0xFFFF) * 16807;
+    r = lo + ((hi & 0x7FFF) << 16) + (hi >> 15);
+    *p = r;
+    if (r < 0) {
+        r += 0x80000001;
+    }
+    *p = r;
+    if (r > 0x7FFF) {
+        r &= 0x7FFF;
+    }
+    return r;
+}
 
 /* a = the smaller of a and b, by component. */
 void func_80098DD4(Vec67 *a, Vec67 *b) {
