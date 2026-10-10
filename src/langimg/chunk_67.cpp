@@ -63,6 +63,28 @@ int func_80097AC8(int x);
 void func_80098E9C(Vec67 *v);
 SVec67 *func_800984A0(Mat67 *m, SVec67 *r);
 void func_80098BD8(Quat67 *q, Mat67 *m);
+void func_80099CB0(Vec67 *out, Vec67 *a, Vec67 *b);
+void func_80099DCC(Vec67 *out, Vec67 *v, int s);
+void func_800998D0(Vec67 *out, Vec67 *a, Vec67 *b);
+void func_80098F94(Vec67 *v, int s);
+Mat67 *func_80098224(Mat67 *m, Mat67 *s);
+Mat67 *func_80097D08(Mat67 *m, Vec67 *a, Vec67 *b);
+}
+
+static inline void SetVec67(Vec67 *v, int x, int y, int z) {
+    v->x = x;
+    v->y = y;
+    v->z = z;
+}
+
+static inline void VecCopyL67(Vec67 *d, Vec67 *s) {
+    int x = s->x;
+    int y = s->y;
+    int z = s->z;
+
+    d->x = x;
+    d->y = y;
+    d->z = z;
 }
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_67", func_80097128);
@@ -101,7 +123,38 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_67", func_80097AC8);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_67", func_80097B7C);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_67", func_80097D08);
+/* A matrix looking from a to b, y up. */
+Mat67 *func_80097D08(Mat67 *m, Vec67 *a, Vec67 *b) {
+    Vec67 z;
+    Vec67 x;
+    Vec67 y;
+    Vec67 d;
+    Vec67 up;
+
+    func_800998D0(&d, b, a);
+    VecCopyL67(&z, &d);
+    func_80098E9C(&z);
+    SetVec67(&up, 0, 0x1000, 0);
+    func_80099CB0(&d, &up, &z);
+    VecCopyL67(&x, &d);
+    func_80098E9C(&x);
+    func_80099CB0(&d, &z, &x);
+    VecCopyL67(&y, &d);
+    func_80098E9C(&y);
+    m->t.z = 0;
+    m->t.y = 0;
+    m->t.x = 0;
+    m->m[0][0] = x.x;
+    m->m[1][0] = x.y;
+    m->m[2][0] = x.z;
+    m->m[0][1] = y.x;
+    m->m[1][1] = y.y;
+    m->m[2][1] = y.z;
+    m->m[0][2] = z.x;
+    m->m[1][2] = z.y;
+    m->m[2][2] = z.z;
+    return m;
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_67", func_80097E4C);
 
@@ -214,7 +267,39 @@ Mat67 *func_80098178(Mat67 *d, Mat67 *s) {
     return d;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_67", func_80098224);
+/* A matrix looking along s's third column, y up. */
+Mat67 *func_80098224(Mat67 *m, Mat67 *s) {
+    Vec67 up;
+    Vec67 fwd;
+    Vec67 side;
+    Vec67 u;
+    Vec67 t;
+    Vec67 *pu;
+
+    SetVec67(&up, 0, 0x1000, 0);
+    fwd.x = s->m[2][0];
+    fwd.y = s->m[2][1];
+    fwd.z = s->m[2][2];
+    func_80099CB0(&side, &up, &fwd);
+    func_80098E9C(&side);
+    pu = &u;
+    func_80099CB0(&t, &fwd, &side);
+    func_80099DCC(pu, &t, 12);
+    VecCopyL67(&up, &u);
+    m->t.z = 0;
+    m->t.y = 0;
+    m->t.x = 0;
+    m->m[0][0] = side.x;
+    m->m[1][0] = side.y;
+    m->m[2][0] = side.z;
+    m->m[0][1] = up.x;
+    m->m[1][1] = up.y;
+    m->m[2][1] = up.z;
+    m->m[0][2] = fwd.x;
+    m->m[1][2] = fwd.y;
+    m->m[2][2] = fwd.z;
+    return m;
+}
 
 #ifdef NON_MATCHING
 // Registers: the components and their absolute values each one register off (30 differ, the same instructions)
@@ -427,4 +512,49 @@ void func_80098E9C(Vec67 *v) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_67", func_80098E9C);
 #endif
 
+#ifdef NON_MATCHING
+// Registers and order after the halving: the original reads each component before the limit's shift
+/* v scaled to a length of 1 << s. */
+void func_80098F94(Vec67 *v, int s) {
+    int len = func_8009923C(v);
+
+    if (len < 0) {
+        int x;
+        int y;
+        int z;
+
+        len = (u32)len >> 1;
+        x = v->x;
+        y = v->y;
+        z = v->z;
+        v->x = x >> 1;
+        v->y = y >> 1;
+        v->z = z >> 1;
+    }
+    if (len) {
+        int lim = 1 << (30 - s);
+        int t;
+
+        t = v->x;
+        if (ABS67(t) < lim) {
+            v->x = (t << s) / len;
+        } else {
+            v->x = func_80097A68(t, s, len);
+        }
+        t = v->y;
+        if (ABS67(t) < lim) {
+            v->y = (t << s) / len;
+        } else {
+            v->y = func_80097A68(t, s, len);
+        }
+        t = v->z;
+        if (ABS67(t) < lim) {
+            v->z = (t << s) / len;
+        } else {
+            v->z = func_80097A68(t, s, len);
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_67", func_80098F94);
+#endif
