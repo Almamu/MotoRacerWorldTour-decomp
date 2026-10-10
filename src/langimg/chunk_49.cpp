@@ -5,11 +5,16 @@
 extern "C" {
 // An entry, 0xCC bytes
 struct Ent49 {
-    u8 m_00[0x38];
+    u8 m_00[8];
+    u8 m_08[0xC];     // its position
+    short m_14[0x10]; // its matrix
+    int m_34;
     int m_38; // where it is along the track
     u8 m_3C[0x44];
     int m_80; // bit 0: in use
-    u8 m_84[0x48];
+    u8 m_84[0x18];
+    int m_9C; // its speed
+    u8 m_A0[0x2C];
 };
 struct Pool49 {
     u8 m_00[0x30];
@@ -106,6 +111,15 @@ void func_80074D78(Obj49 *o, int f);
 int func_80098D1C(int i);
 Lnk49 *func_80074924(Obj49 *o);
 void func_800746B0(Obj49 *o, int dflt, int dir, int e, int sub);
+struct Vec49 {
+    int x;
+    int y;
+    int z;
+};
+void func_8009964C(Vec49 *v, int k);
+void func_80099D48(Vec49 *v, int s);
+void func_80063C60(Pos49 *o, u8 *p, Vec49 *v, int a, int k, int b, int d);
+void func_8007356C(Pool49 *p, Pos49 *w, Trk49 *t);
 }
 void CobjetLinkDtor49(Node49 *l, int f) asm("_._10CobjetLink");
 
@@ -157,7 +171,43 @@ int func_8007351C(Pool49 *p) {
     return n;
 }
 
+#ifdef NON_MATCHING
+// The heading's loads and the call's first argument: the original sets &v first and reads through $a3
+/* Each entry in use ahead of w within the track: its heading passed to func_80063C60. */
+void func_8007356C(Pool49 *p, Pos49 *w, Trk49 *t) {
+    int i;
+
+    for (i = 0; i < p->m_30; i++) {
+        Ent49 *e = &p->m_34[i];
+
+        if (e->m_80 & 1) {
+            int d = e->m_38 + e->m_9C * 2 - w->m_208;
+
+            if (d < 0) {
+                d += t->m_2C;
+            }
+            if (d >= t->m_2C) {
+                d -= t->m_2C;
+            }
+            if (d > 0) {
+                int speed = 0x14000;
+                Vec49 v;
+                short *m = e->m_14;
+                int k = e->m_34;
+
+                v.x = m[2];
+                v.y = m[5];
+                v.z = m[8];
+                func_8009964C(&v, k);
+                func_80099D48(&v, 12);
+                func_80063C60(w, e->m_08, &v, k, speed, 0, d);
+            }
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_49", func_8007356C);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_49", func_800736BC);
 
