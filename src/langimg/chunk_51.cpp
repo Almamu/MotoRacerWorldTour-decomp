@@ -1,20 +1,41 @@
 #include "common.h"
 #include "psyq.h"
 #include "langimg/cobjet.h"
+#include "stdarg.h"
 
 /* (docs/matching/issue-52-langimg-chunk51.md) */
 
 extern "C" {
 // An object with a part at 0x30
 struct A51 {
-    u8 m_00[4];
-    int m_04;
-    u8 m_08[4];
+    int m_00, m_04, m_08;
     int m_0C, m_10, m_14, m_18;
-    u8 m_1C[0xC];
-    void *m_28;
-    u8 m_2C[4];
-    u8 m_30[0x10];
+    int m_1C, m_20;
+    int m_24;   // the buffer's size
+    void *m_28; // the buffer
+    int m_2C;   // its capacity
+    u8 m_30[0x38];
+    void *m_vt; // 0x68
+};
+
+// A subclass with more state
+struct F51 {
+    u8 m_00[8];
+    int m_08;
+    u8 m_0C[0x140];
+    int m_14C, m_150, m_154, m_158, m_15C, m_160, m_164, m_168;
+    u8 m_16C, m_16D, m_16E;
+    u8 m_16F[5];
+    int m_174;
+    u8 m_178[4];
+    int m_17C, m_180;
+};
+
+// Something with four halfwords at 0x0C
+struct G51 {
+    int m_00, m_04, m_08;
+    short m_0C, m_0E, m_10, m_12;
+    int m_14, m_18, m_1C;
 };
 
 // An object with a vtable at 0x34
@@ -24,7 +45,8 @@ struct B51 {
     int m_20;
     u8 m_24[0x10];
     void *m_vt; // 0x34
-    int m_38, m_3C, m_40;
+    int m_38, m_3C;
+    void *m_40;
     u8 m_44[4];
     int m_48;
 };
@@ -92,6 +114,30 @@ void func_80078F34(Slot51 *t, int flags);
 int func_80078F5C(Slot51 *t, int x);
 int func_80078F90(Slot51 *t, int x);
 int func_80078FC4(Ref51 *r, int b);
+extern int D_800C8870;
+extern char D_800B77E0[], D_800C8884[];
+void __builtin_vec_delete(void *p);
+void *malloc(unsigned int n);
+int func_800895A0(void *a, int b);
+int func_80088F34(void *p);
+void func_80079328(A51 *o);
+void func_80087A58(void *p, int a, int b, int c, int e, int f, int g, int h, int i, va_list ap);
+void func_800745AC(B51 *o, int flags);
+int func_80078E00(G51 *g);
+void func_80087A14(void *p, int a);
+void func_800879D4(void *p);
+
+void func_80079038(void);
+int func_80078C28(A51 *o);
+int func_80078B10(A51 *o);
+void func_800790DC(A51 *o, int flags);
+void func_80079124(F51 *o);
+void func_80078C78(A51 *o, int a, int b, int c, int e, int f, int g, int h, int i, ...);
+void func_80077544(B51 *o, int flags);
+G51 *func_80078DA8(G51 *g, int a, int b, int c, int d, int e);
+void func_80078A34(A51 *o, int flags);
+A51 *func_800789C4(A51 *o);
+int func_80078BA0(A51 *o, int n);
 Val51 *func_80078FE8(Ref51 *r, int b);
 void func_80078FFC(void);
 }
@@ -126,7 +172,14 @@ void func_80077520(B51 *o) {
     o->m_48 = 0;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_51", func_80077544);
+void func_80077544(B51 *o, int flags) {
+    o->m_vt = D_800C8824;
+    if (o->m_40) {
+        __builtin_vec_delete(o->m_40);
+        o->m_40 = 0;
+    }
+    func_800745AC(o, flags);
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_51", func_8007759C);
 
@@ -171,9 +224,33 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_51", func_8007857C);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_51", func_800788D8);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_51", func_800789C4);
+A51 *func_800789C4(A51 *o) {
+    o->m_vt = D_800C8884;
+    o->m_2C = 0x800;
+    func_800879D4(o->m_30);
+    o->m_1C = 0;
+    o->m_18 = 0;
+    o->m_08 = 0;
+    o->m_0C = 0;
+    o->m_10 = 0;
+    o->m_14 = 0;
+    o->m_00 = 0;
+    o->m_04 = 0;
+    o->m_28 = 0;
+    o->m_24 = 0;
+    o->m_20 = 0;
+    D_800C8870 = 0;
+    return o;
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_51", func_80078A34);
+void func_80078A34(A51 *o, int flags) {
+    o->m_vt = D_800C8884;
+    func_80078AD0(o);
+    func_80087A14(o->m_30, 2);
+    if (flags & 1) {
+        __builtin_delete(o);
+    }
+}
 
 int func_80078A90(A51 *o, int a, int b, int c, int d) {
     o->m_0C = b;
@@ -192,7 +269,15 @@ int func_80078AD0(A51 *o) {
     return 1;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_51", func_80078B10);
+int func_80078B10(A51 *o) {
+    int ok = func_800895A0(o->m_28, o->m_24);
+    int r = 0;
+
+    if (ok) {
+        r = func_80088F34(o->m_30) != 0;
+    }
+    return r;
+}
 
 void func_80078B58(A51 *o) {
     func_80088FD4(o->m_30);
@@ -218,16 +303,46 @@ int func_80078B98(void) {
     return 0;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_51", func_80078BA0);
+/* A buffer of n bytes, if the capacity is smaller. */
+int func_80078BA0(A51 *o, int n) {
+    int r = 0;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_51", func_80078C28);
+    if (o->m_2C < n) {
+        void *m = malloc(n);
+
+        if (m) {
+            r = 1;
+            if (o->m_28) {
+                free(o->m_28);
+                o->m_28 = 0;
+            }
+            o->m_28 = m;
+            o->m_24 = n;
+        }
+    }
+    return r;
+}
+
+int func_80078C28(A51 *o) {
+    if (o->m_28) {
+        free(o->m_28);
+        o->m_28 = 0;
+    }
+    o->m_24 = 0;
+    return 1;
+}
 
 int func_80078C6C(A51 *o) {
     o->m_04 = 0;
     return 1;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_51", func_80078C78);
+void func_80078C78(A51 *o, int a, int b, int c, int e, int f, int g, int h, int i, ...) {
+    va_list ap;
+
+    va_start(ap, i);
+    func_80087A58(o->m_30, a, b, c, e, f, g, h, i | 0x20, ap);
+}
 
 void func_80078CCC(A51 *o) {
     func_80087EB0(o->m_30);
@@ -235,7 +350,19 @@ void func_80078CCC(A51 *o) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_51", func_80078CEC);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_51", func_80078DA8);
+G51 *func_80078DA8(G51 *g, int a, int b, int c, int d, int e) {
+    g->m_18 = 0;
+    g->m_08 = 0;
+    g->m_0C = a;
+    g->m_0E = b;
+    g->m_10 = c;
+    g->m_04 = 0;
+    g->m_1C = 0;
+    g->m_12 = d;
+    g->m_00 = e;
+    g->m_08 = func_80078E00(g);
+    return g;
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_51", func_80078E00);
 
@@ -306,13 +433,42 @@ void func_80078FFC(void) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_51", func_80079038);
+void func_80079038(void) {
+    if (++D_800CBC90 == 1) {
+        func_80078F10(&D_800CBC94);
+    }
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_51", func_80079078);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_51", func_800790DC);
+void func_800790DC(A51 *o, int flags) {
+    o->m_vt = D_800B77E0;
+    func_80079328(o);
+    func_80078A34(o, flags);
+}
 
+#ifdef NON_MATCHING
+/* The constants' registers: the original loads each into $v0 just before its store (6 off) */
+void func_80079124(F51 *o) {
+    o->m_08 = 6;
+    o->m_164 = 14;
+    o->m_17C = 1;
+    o->m_15C = 0;
+    o->m_160 = 0;
+    o->m_16C = 0;
+    o->m_16D = 0;
+    o->m_16E = 0;
+    o->m_168 = 0;
+    o->m_174 = 0;
+    o->m_150 = 0;
+    o->m_154 = 0;
+    o->m_158 = 0;
+    o->m_14C = 2;
+    o->m_180 = 0;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_51", func_80079124);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_51", func_80079174);
 
