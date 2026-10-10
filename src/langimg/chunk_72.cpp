@@ -1,4 +1,5 @@
 #include "common.h"
+#include "psyq.h"
 
 /* The memory cards (docs/matching/issue-73-langimg-chunk72.md) */
 
@@ -72,6 +73,28 @@ extern char D_800BC88C[];
 extern char D_800D4958[];
 void *func_800A1EFC(int a, int b, int c, int d);
 int func_800A2148(int a, void *x, int c, int d);
+int TestEvent(int ev);
+extern int D_800D6074[], D_800D6078[], D_800D607C[], D_800D6080[], D_800D6084[], D_800D6088[];
+extern int D_800D60B0[], D_800D60B8[]; // the card's events
+int CdInit(void);
+void func_800A7660(int a);
+void func_80015684(int a);
+int func_800963E8(void);
+int func_80015650(void);
+struct Ent66 {
+    int m_00, m_04, m_08;
+};
+Ent66 *func_80096240(int id);
+extern int *D_800C9F30;
+extern char *D_800CC030[];
+extern char *D_800CBE84[]; // not one of this file's small globals
+
+void func_800A29E0(void);
+void func_800A2A40(void);
+int func_800A1C10(int a);
+void func_800A1B54(void);
+void func_800A2304(u8 *d, u32 c, int n);
+CdlFILE *func_800A1C74(CdlFILE *fp, char *name);
 
 int func_800A1110(Card72 *c);
 void func_800A13C0(Card72 *c);
@@ -260,7 +283,28 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A195C);
 void func_800A1B4C(void) {
 }
 
+#ifdef NON_MATCHING
+/* GCC hoists the data pointer's lui out of the loop, which the original reloads, and allocates the counters the other way (32 off) */
+/* The 163 sounds' data found by their ids. */
+void func_800A1B54(void) {
+    int i;
+    int *ids = D_800C9F30;
+    char **out = D_800CC030;
+
+    for (i = 0; i < 163; i++) {
+        Ent66 *e = func_80096240(*ids);
+        char *p = 0;
+
+        if (e) {
+            p = D_800CBE84[0] + e->m_00;
+        }
+        *out++ = p;
+        ids++;
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A1B54);
+#endif
 
 void func_800A1BD0(void) {
     D_800B887C[0] = 1;
@@ -283,9 +327,34 @@ int func_800A1BEC(Item72 *p) {
     return r;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A1C10);
+int func_800A1C10(int a) {
+    CdInit();
+    func_800A7660(0);
+    func_80015684(a);
+    if (!func_800963E8()) {
+        return -1;
+    }
+    if (!func_80015650()) {
+        return -1;
+    }
+    return 1;
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A1C74);
+/* A file looked for on the CD, twice. */
+CdlFILE *func_800A1C74(CdlFILE *fp, char *name) {
+    int tries;
+    CdlFILE *r;
+
+    func_800A1BD0();
+    VSync(0);
+    tries = 2;
+    do {
+        r = CdSearchFile(fp, name);
+    } while (!r && --tries);
+    func_800A1BE0();
+    VSync(0);
+    return r;
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A1CF8);
 
@@ -329,7 +398,32 @@ void func_800A22F8(int a) {
     D_800C9F34 = a;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A2304);
+/* n bytes of d set to c, by words where it can. */
+void func_800A2304(u8 *d, u32 c, int n) {
+    int k;
+
+    if (n >= 7) {
+        c |= c << 8;
+        c |= c << 16;
+        k = 4 - ((u32)d & 3);
+        n -= k;
+        while (k) {
+            *d++ = c;
+            k--;
+        }
+        k = n >> 2;
+        n &= 3;
+        while (k) {
+            *(u32 *)d = c;
+            d += 4;
+            k--;
+        }
+    }
+    while (n) {
+        *d++ = c;
+        n--;
+    }
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A2380);
 
@@ -410,9 +504,21 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A26DC);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A28B8);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A29E0);
+void func_800A29E0(void) {
+    TestEvent(D_800D6080[0]);
+    TestEvent(D_800D60B8[0]);
+    TestEvent(D_800D6078[0]);
+    TestEvent(D_800D6088[0]);
+    D_800D6094[0] = -1;
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A2A40);
+void func_800A2A40(void) {
+    TestEvent(D_800D607C[0]);
+    TestEvent(D_800D60B0[0]);
+    TestEvent(D_800D6074[0]);
+    TestEvent(D_800D6084[0]);
+    D_800D60C0[0] = -1;
+}
 
 int func_800A2AA0(void) {
     return D_800D6094[0];
