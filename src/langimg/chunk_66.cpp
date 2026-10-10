@@ -1,5 +1,6 @@
 #include "common.h"
 #include "psyq.h"
+#include "stdarg.h"
 #include "langimg/cobjet.h"
 
 /* (docs/matching/issue-67-langimg-chunk66.md) */
@@ -20,7 +21,8 @@ struct Obj66 {
     int m_38; // up to date
     int m_3C;
     u8 m_40[0x10];
-    int m_50, m_54, m_58, m_5C, m_60, m_64, m_68, m_6C, m_70;
+    struct Obj66 *m_50;
+    int m_54, m_58, m_5C, m_60, m_64, m_68, m_6C, m_70;
     int m_74, m_78, m_7C, m_80, m_84, m_88, m_8C, m_90;
     u8 m_94[4];
     struct Virt66 *m_98;
@@ -58,15 +60,28 @@ struct Dest66 {
 };
 
 // A bit stream
+// 16 bytes holding two halves of a word (at 6 and 0x0E)
+struct Blk66 {
+    u8 m_00[6];
+    u16 m_06;
+    u8 m_08[6];
+    u16 m_0E;
+};
+
+// A bit stream over words, or over halves of words in 16-byte blocks
 struct Bits66 {
-    int m_00, m_04; // the start
-    int m_08, m_0C; // the position
-    int m_10, m_14; // what's left: words and halfwords?
-    int m_18, m_1C; // the size
-    int m_20;       // the size in bits?
-    short m_24;
-    u8 m_26;
-    u8 m_27;
+    u32 *m_words; // 0x00
+    Blk66 *m_blks;
+    u32 *m_word; // 0x08, the position
+    Blk66 *m_blk;
+    int m_10;   // the words left
+    int m_14;   // the halves left (two to a block)
+    int m_18;   // the words, from the start
+    int m_1C;   // the halves, from the start
+    int m_20;   // the size
+    short m_24; // 2 when written to
+    s8 m_26;    // the words are ours to free
+    s8 m_27;    // the bit in the current word
 };
 
 // Two words cleared
@@ -79,7 +94,7 @@ int func_800957C0(Obj66 *o, int a, int b);
 int func_800957D4(Obj66 *o, int a, int b);
 int func_800957E8(Obj66 *o, int a, int b);
 int func_800957FC(Obj66 *o, int a, int b);
-int func_80095810(Obj66 *o, int a);
+int func_80095810(Obj66 *o, Obj66 *a);
 int func_80095820(Obj66 *o, int a);
 int func_80095830(Obj66 *o, int a);
 int func_80095840(Obj66 *o, int a);
@@ -100,6 +115,16 @@ extern Ent66 *D_800CBE80;
 extern int D_800CBE88;
 extern int D_800BF3A0[]; // sines and cosines by angle, two shorts each
 void func_80096EC8(Dest66 *d, int a);
+
+void func_8009682C(Bits66 *b);
+int func_800958E0(Obj66 *o);
+void func_80096918(Bits66 *b, int mode);
+void func_80096A64(Bits66 *b);
+void func_80096980(Bits66 *b, u32 v);
+u32 func_800969EC(Bits66 *b);
+void func_80096C14(Bits66 *d, Bits66 *s);
+int func_80096B74(Bits66 *b, int n);
+int func_80096D84(Bits66 *b, int n, ...);
 
 int func_800963BC(void);
 int func_80096884(Bits66 *b);
@@ -178,7 +203,7 @@ int func_800957FC(Obj66 *o, int a, int b) {
     return 1;
 }
 
-int func_80095810(Obj66 *o, int a) {
+int func_80095810(Obj66 *o, Obj66 *a) {
     o->m_50 = a;
     o->m_38 = 0;
     return 1;
@@ -246,7 +271,21 @@ int func_800958D8(void) {
     return 1;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_66", func_800958E0);
+/* Placed after the one before it (m_50), if that one is placed. */
+int func_800958E0(Obj66 *o) {
+    o->m_3C = 1;
+    if (o->m_50) {
+        if (o->m_50->m_3C) {
+            o->m_104 = o->m_50->m_108 + 0x1000;
+        } else {
+            o->m_3C = 0;
+        }
+    } else {
+        o->m_104 = 0;
+    }
+    o->m_108 = o->m_104 + o->m_100;
+    return 1;
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_66", func_8009593C);
 
@@ -312,10 +351,10 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_66", func_8009662C);
 
 /* The stream emptied. */
 void func_800966DC(Bits66 *b) {
-    b->m_00 = 0;
-    b->m_04 = 0;
-    b->m_08 = 0;
-    b->m_0C = 0;
+    b->m_words = 0;
+    b->m_blks = 0;
+    b->m_word = 0;
+    b->m_blk = 0;
     b->m_10 = 0;
     b->m_14 = 0;
     b->m_18 = 0;
@@ -329,20 +368,27 @@ void func_800966DC(Bits66 *b) {
 /* Back to the start. */
 void func_80096724(Bits66 *b) {
     b->m_27 = 0;
-    b->m_08 = b->m_00;
-    b->m_0C = b->m_04;
+    b->m_word = b->m_words;
+    b->m_blk = b->m_blks;
     b->m_10 = b->m_18;
     b->m_14 = b->m_1C;
 }
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_66", func_8009674C);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_66", func_8009682C);
+/* The destructor. */
+void func_8009682C(Bits66 *b) {
+    if (b->m_26 && b->m_words) {
+        free(b->m_words);
+        func_800966DC(b);
+    }
+    func_800966DC(b);
+}
 
 int func_80096884(Bits66 *b) {
     int r = 0;
 
-    if (b->m_00 || b->m_04) {
+    if (b->m_words || b->m_blks) {
         r = 1;
     }
     return r;
@@ -366,27 +412,111 @@ int func_80096900(Bits66 *b) {
     return b->m_10 * 4 + b->m_14 * 2;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_66", func_80096918);
+void func_80096918(Bits66 *b, int mode) {
+    if (b->m_24) {
+        func_80096978(b);
+    }
+    func_80096724(b);
+    b->m_24 = mode;
+    if (mode == 2) {
+        func_80096980(b, 0);
+    }
+}
 
 void func_80096978(Bits66 *b) {
     b->m_24 = 0;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_66", func_80096980);
+void func_80096980(Bits66 *b, u32 v) {
+    if (!func_800968B0(b)) {
+        if (b->m_14) {
+            b->m_blk->m_06 = v;
+            b->m_blk->m_0E = v >> 16;
+        } else {
+            *b->m_word = v;
+        }
+    }
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_66", func_800969EC);
+u32 func_800969EC(Bits66 *b) {
+    u32 r = 0;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_66", func_80096A64);
+    if (!func_800968B0(b)) {
+        if (b->m_14) {
+            r = b->m_blk->m_06 | (b->m_blk->m_0E << 16);
+        } else {
+            r = *b->m_word;
+        }
+    }
+    return r;
+}
+
+/* On to the next word. */
+void func_80096A64(Bits66 *b) {
+    if (!func_800968B0(b)) {
+        if (b->m_14) {
+            b->m_14 -= 2;
+            b->m_blk++;
+        } else {
+            b->m_10--;
+            b->m_word++;
+        }
+    }
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_66", func_80096ACC);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_66", func_80096B74);
+/* n bits read, sign-extended. */
+int func_80096B74(Bits66 *b, int n) {
+    int pos = b->m_27 + n;
+    u32 v = func_800969EC(b) >> b->m_27;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_66", func_80096C14);
+    if (pos >= 32) {
+        func_80096A64(b);
+        pos -= 32;
+        if (b->m_27) {
+            v |= func_800969EC(b) << (32 - b->m_27);
+        }
+    }
+    b->m_27 = pos;
+    n = 32 - n;
+    return (int)(v << n) >> n;
+}
+
+/* s copied into d. */
+void func_80096C14(Bits66 *d, Bits66 *s) {
+    if (func_80096884(s)) {
+        func_80096918(d, 2);
+        func_80096724(s);
+        while (!func_800968B0(d)) {
+            func_80096980(d, func_800969EC(s));
+            func_80096A64(d);
+            func_80096A64(s);
+        }
+        func_80096724(d);
+    }
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_66", func_80096CA8);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_66", func_80096D84);
+/* For each width of the list (to -1), a bit: when it's set, a value of that
+ * width read. */
+int func_80096D84(Bits66 *b, int n, ...) {
+    int r = 0;
+    int w = n;
+    va_list ap;
+
+    va_start(ap, n);
+    while (w != -1) {
+        if (func_80096B74(b, 1)) {
+            r = func_80096B74(b, w);
+            break;
+        }
+        w = va_arg(ap, int);
+    }
+    va_end(ap);
+    return r;
+}
 
 /* A vector from an angle's sine and cosine, with s bits of fraction. */
 void func_80096E28(short *a, Vector3 *v, int s) {
