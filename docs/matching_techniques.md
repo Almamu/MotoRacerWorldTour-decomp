@@ -92,7 +92,7 @@ settings
 | `src/langimg` chunk_23 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=D_800CABB7` |
 | `src/langimg` chunk_45 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (eleven) |
 | `src/langimg` chunk_66 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (five) |
-| `src/langimg` chunk_44, chunk_46, chunk_47, chunk_51, chunk_60, chunk_68, chunk_70, chunk_71, chunk_72, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
+| `src/langimg` chunk_25, chunk_44, chunk_46, chunk_47, chunk_51, chunk_60, chunk_68, chunk_70, chunk_71, chunk_72, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_06 to chunk_12 (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_02b (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `SCES_030.37` (`src/sces`) | GCC 2.91.66 | 0 | `-fsigned-char` | `--expand-div` |
@@ -270,6 +270,12 @@ globals), a script that tries every order is quicker than guessing:
   `next: if (n) { found = ...; n = n->next; if (!found) goto next; }`.
   `while`, `do`/`while` with a `break`, and self tail recursion all came
   out rotated.
+- **A search with its bound at the top and its result at the bottom.**
+  chunk_25's `func_80045168` tests `i < 8` at the top of each pass and
+  loops back while nothing's found: `while (!t) { if (i >= 8) break; ...
+  }` (with `t` 0 on entry GCC drops the first test of `!t`). A `goto`
+  loop gave the layout but no hoisting of the loop's constants; `for
+  (;;)` and `do`/`while` came out rotated.
 - **Empty constructors' loops.** A static object whose arrays' elements
   have empty constructors leaves count-down loops with nothing in them
   (chunk_47's `func_8006FB74`). Written `i = 63; do {} while (--i !=
