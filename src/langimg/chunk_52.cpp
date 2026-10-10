@@ -1,5 +1,7 @@
 #include "common.h"
 #include "psyq.h"
+#include "gte.h"
+#include "mulshift.h"
 
 /* The display: its environments, the vsync and drawsync callbacks (docs/matching/issue-53-langimg-chunk52.md) */
 
@@ -86,6 +88,31 @@ int func_800795A0(Gfx52 *g, int n);
 int func_800795FC(Gfx52 *g);
 int func_80079438(Gfx52 *g);
 void func_80079848(Gfx52 *g);
+struct Vec52 {
+    int x;
+    int y;
+    int z;
+};
+// A matrix and its translation
+struct Mat52 {
+    short m[3][3];
+    short pad;
+    Vec52 t;
+};
+// The rotation matrix, as GTE_SET_ROT but through $v0 and $v1 (chunk_56's)
+#define GTE_SET_ROT_V(m) \
+    __asm__ volatile("lw $2, 0(%0)\n\tlw $3, 4(%0)\n\t" \
+                     "ctc2 $2, $0\n\tctc2 $3, $1\n\t" \
+                     "lw $2, 8(%0)\n\tlw $3, 12(%0)\n\tctc2 $2, $2\n\t" \
+                     "lw $2, 16(%0)\n\tctc2 $3, $3\n\tctc2 $2, $4" \
+                     : \
+                     : "r"(m) \
+                     : "$2", "$3")
+extern Mat52 *D_800C8868; // the camera
+void func_80098768(Mat52 *m, Vec52 *v, Vec52 *out);
+void func_800997D0(Vec52 *v, Vec52 *a);
+void func_800985A8(Mat52 *m, Mat52 *out);
+void func_80079AE4(Mat52 *m, int scale);
 }
 
 /* The draw area's and the display area's origin and colour from the settings. */
@@ -258,7 +285,41 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_52", func_80079848);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_52", func_800798FC);
 
+#ifdef NON_MATCHING
+// Registers: the camera and the result's translation swap $s0 and $s1 (9 off)
+/* The GTE's matrix: the camera's, or m's through it; the translation scaled (1.0 is 0x100000). */
+void func_80079AE4(Mat52 *m, int scale) {
+    Mat52 t;
+    Mat52 *s;
+    int x;
+    int y;
+    int z;
+
+    if (m) {
+        Mat52 *c = D_800C8868;
+
+        s = &t;
+        func_80098768(c, &m->t, &s->t);
+        func_800997D0(&s->t, &c->t);
+        func_800985A8(m, s);
+    } else {
+        s = D_800C8868;
+        GTE_SET_ROT_V(s);
+    }
+    if (scale == 0x100000) {
+        x = s->t.x >> 4;
+        y = s->t.y >> 4;
+        z = s->t.z >> 4;
+    } else {
+        x = MULSHIFT(s->t.x, scale, 24);
+        y = MULSHIFT(s->t.y, scale, 24);
+        z = MULSHIFT(s->t.z, scale, 24);
+    }
+    GTE_SET_TRANS(x, y, z);
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_52", func_80079AE4);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_52", func_80079C50);
 
