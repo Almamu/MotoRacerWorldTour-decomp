@@ -258,8 +258,6 @@ void func_8005F480(Ent39 *e, int bits, int st) {
     }
 }
 
-#ifdef NON_MATCHING
-// The comparison's delay slot: the original takes the next i-- into it and undoes it when found (i++), which keeps i live; ours has no use of i there
 /* The ring's newest record with the key, going back; 0 when none. */
 Rec39 *func_8005F4A4(Ent39 *e, int key) {
     int found = 0;
@@ -268,30 +266,31 @@ Rec39 *func_8005F4A4(Ent39 *e, int key) {
     Rec39 *r = &e->m_10[i];
 
     goto test;
-next:
-    i--;
-    n--;
-    if (i < 0) {
-        i = 31;
-        r = &e->m_10[31];
-    } else {
-        r--;
-    }
-test:
-    if (n > 0) {
-        if (r->m_00 != key) {
-            goto next;
+    // A workaround (the permuter): inside a do/while (0), GCC keeps i live
+    // when found, and undoes the i-- it took into the delay slot
+    do {
+    next:
+        i--;
+        n--;
+        if (i < 0) {
+            i = 31;
+            r = &e->m_10[31];
+        } else {
+            r--;
         }
-        found = 1;
-    }
-    if (found) {
-        return r;
-    }
+    test:
+        if (n > 0) {
+            if (r->m_00 != key) {
+                goto next;
+            }
+            found = 1;
+        }
+        if (found) {
+            return r;
+        }
+    } while (0);
     return 0;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_39", func_8005F4A4);
-#endif
 
 /* A key pressed (0xFF) pushed on the ring unless still held; released (0), its record closed. */
 void func_8005F514(Ent39 *e, int key, int st) {
@@ -666,67 +665,65 @@ void func_80060658(void) {
 void func_80060660(void) {
 }
 
-#ifdef NON_MATCHING
-// Registers: the kind's store swaps $v0 and $v1 (5 off)
 /* Start pressed: a choice made when a list is up; else the pause menu, by the race's kind. */
 void func_80060668(int *st, Own39 *o, int *i) {
-    if (o && *st == 0xFF) {
-        Sub39 *m = o->m_B8;
-        int none = m->m_130;
+    // A workaround (the permuter): the body in a do/while (0) for the registers
+    do {
+        if (o && *st == 0xFF) {
+            Sub39 *m = o->m_B8;
+            int none = m->m_130;
 
-        if (none == -1) {
-            Sel39b *l;
-            int k;
-
-            if (o->m_304) {
-                m->m_150 = none;
-            }
-            l = o->m_498;
-            k = l->m_00 >> 27;
-            if ((u32)k < 7) {
-                int c = l->m_04[k];
-
-                if (*o->m_464) {
-                    func_80017A30(*o->m_464, -1);
-                }
-                func_80019B2C(c, -1);
-                o->m_498->m_00 = (o->m_498->m_00 & 0x7FFFFFF) | 0x38000000;
-                func_8005663C(o);
-            } else if (o->m_B8 && o->m_B8->m_170 <= 0) {
-                int f = 1;
+            if (none == -1) {
+                Sel39b *l;
+                int k;
 
                 if (o->m_304) {
-                    if (o->m_378->m_1E08 == 4) {
-                        D_800CB410 = f;
-                    }
-                    f = 0;
-                } else if (o->m_378->m_00 & 0xA8) {
-                    func_80042FC0(o->m_B8, D_800C718C, 3, 0);
-                    func_80040034(o->m_B8, 2);
-                } else {
-                    func_80040034(o->m_B8, 1);
-                    if (D_800D5FC8 != none || (D_800D5F40 != 8 && D_800D5F40 != 4)) {
-                        func_80042FC0(o->m_B8, D_800C719C, 3, 0);
-                    } else {
-                        func_80042FC0(o->m_B8, D_800C71B0, 3, 0);
-                    }
+                    m->m_150 = none;
                 }
-                if (f) {
-                    int j;
+                l = o->m_498;
+                k = l->m_00 >> 27;
+                if ((u32)k < 7) {
+                    int c = l->m_04[k];
 
-                    VCALL39(o, 22, 0);
-                    VCALL39(o, 24, 0);
-                    for (j = 0; j < 2; j++) {
-                        func_8005F380(&o->m_2F0[j]);
+                    if (*o->m_464) {
+                        func_80017A30(*o->m_464, -1);
+                    }
+                    func_80019B2C(c, -1);
+                    o->m_498->m_00 = (o->m_498->m_00 & 0x7FFFFFF) | 0x38000000;
+                    func_8005663C(o);
+                } else if (o->m_B8 && o->m_B8->m_170 <= 0) {
+                    int f = 1;
+
+                    if (o->m_304) {
+                        if (o->m_378->m_1E08 == 4) {
+                            D_800CB410 = f;
+                        }
+                        f = 0;
+                    } else if (o->m_378->m_00 & 0xA8) {
+                        func_80042FC0(o->m_B8, D_800C718C, 3, 0);
+                        func_80040034(o->m_B8, 2);
+                    } else {
+                        func_80040034(o->m_B8, 1);
+                        if (D_800D5FC8 != none || (D_800D5F40 != 8 && D_800D5F40 != 4)) {
+                            func_80042FC0(o->m_B8, D_800C719C, 3, 0);
+                        } else {
+                            func_80042FC0(o->m_B8, D_800C71B0, 3, 0);
+                        }
+                    }
+                    if (f) {
+                        int j;
+
+                        VCALL39(o, 22, 0);
+                        VCALL39(o, 24, 0);
+                        for (j = 0; j < 2; j++) {
+                            func_8005F380(&o->m_2F0[j]);
+                        }
                     }
                 }
             }
         }
-    }
+    } while (0);
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_39", func_80060668);
-#endif
 
 void func_800608A8(int *st, Own39 *o, int *i) {
     int buf[4];

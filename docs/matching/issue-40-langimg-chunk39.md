@@ -18,7 +18,7 @@ A player's controls, one entry (`Ent39`, 0x330 bytes) per pad:
 
 One file, `src/langimg/chunk_39.cpp`, 0x8005F464-0x80061484.
 
-32 functions: 26 match, 4 are parked, 2 are still asm.
+32 functions: 28 match, 2 are parked, 2 are still asm.
 
 ## The settings
 
@@ -47,6 +47,12 @@ small globals (`D_800C75F6`, `D_800C75F7`, `D_800CB410`).
 - **The original's own bug.** `func_8005FCE8` builds a copy of the pad
   with bit 8 masked, storing the masked fields twice. It then passes the
   pad itself on; the copy is never used.
+- **`do { } while (0)`, twice (the permuter).** The ring's search
+  (`func_8005F4A4`) has its loop inside one. GCC then keeps the counter
+  live when the key is found, so it undoes the `i--` it took into the
+  comparison's delay slot (`i++`), as the original does. The pause
+  button (`func_80060668`) has its whole body inside one, for its
+  registers. Workarounds, marked at the use.
 - **The pause menus' order.** In `func_80060668` the restart menu's block
   comes first, so its condition is the `if`'s (`D_800D5FC8 != none ||
   (D_800D5F40 != 8 && D_800D5F40 != 4)`).
@@ -56,7 +62,7 @@ small globals (`D_800C75F6`, `D_800C75F7`, `D_800CB410`).
 | Function | State | Notes |
 |---|---|---|
 | `func_8005F464`, `func_8005F480` | match | the frame's bits reset and set |
-| `func_8005F4A4` | parked | the ring searched from the newest: the original's `i--` in a delay slot, undone when found |
+| `func_8005F4A4` | matches | the ring searched from the newest (a `do { } while (0)`) |
 | `func_8005F514` | matches | a key's record pushed on the ring, or closed |
 | `func_8005F638` | asm | 288 instructions |
 | `func_8005FAB8` | matches | the ring's held records closed, or the changed buttons passed on |
@@ -66,7 +72,7 @@ small globals (`D_800C75F6`, `D_800C75F7`, `D_800CB410`).
 | `func_80060340` | matches | a bike flagged on a press |
 | `func_80060410`, `func_800604D0`, `func_800605A4` | match | the analogue values scaled and turned into directions |
 | `func_80060650`, `func_80060658`, `func_80060660` | match | empty |
-| `func_80060668` | parked | the pause button: the kind's store swaps `$v0` and `$v1` (5 off) |
+| `func_80060668` | matches | the pause button (a `do { } while (0)`) |
 | `func_800608A8` | matches | a pad's state reset and passed on |
 | `func_8006095C` | matches | a comparator |
 | `func_80060980` | asm | 564 instructions |

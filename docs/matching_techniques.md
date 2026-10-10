@@ -426,8 +426,12 @@ globals), a script that tries every order is quicker than guessing:
 - **`do { } while (0)` around statements.** Twice the permuter's whole
   fix: around `i = 0` before a loop (`func_80017FB4`, its order against
   the loads) and around a loop's body (`func_8001865C`, its registers: the
-  statements inside count as one loop deeper). A workaround; say so at the
-  use.
+  statements inside count as one loop deeper). chunk_39 has two more:
+  around a search loop written with `goto`s (`func_8005F4A4`), where it
+  keeps the counter live on the found path (GCC then undoes the `i--` it
+  took into a delay slot, as the original does), and around a whole
+  function's body (`func_80060668`, its registers). A workaround; say so
+  at the use.
 - **A second pointer against cross-jumping.** Two identical statement
   runs that end at the same label are merged into one; the original's
   separate copies came from a second pointer for the loop
