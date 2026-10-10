@@ -264,6 +264,13 @@ void func_80019578(int a, int b, int c, int d);
 
 void func_8009F5A8(void);
 void func_8009FC00(Menu71 *m);
+void func_8006F9BC(int a);
+// A word stored at any address
+struct U32P {
+    u32 m_v;
+} __attribute__((packed));
+
+void func_800A0584(u8 *src, u8 *dst);
 }
 
 #ifdef NON_MATCHING
@@ -725,7 +732,66 @@ void func_800A0558(u8 *d, u8 *s, int n) {
     }
 }
 
+#ifdef NON_MATCHING
+/* The word loop's count shifted from its copy, and its decrement scheduled before the store (4 off) */
+/* LZ data unpacked: 8 flags to a byte, a literal byte or a 12-bit distance
+ * and a 4-bit length (+3). */
+void func_800A0584(u8 *src, u8 *dst) {
+    int bits = 0;
+    int flags = 0;
+    int dist;
+
+    do {
+        flags >>= 1;
+        if (!bits) {
+            bits = 8;
+            flags = *src++;
+        }
+        bits--;
+        if (flags & 1) {
+            *dst++ = *src++;
+            dist = 1;
+        } else {
+            int w = src[0] | (src[1] << 8);
+            u8 *from;
+            int k;
+
+            dist = w & 0xFFF;
+            src += 2;
+            if (!dist) {
+                return;
+            }
+            w = (w >> 12) + 3;
+            from = dst - dist;
+            k = (u32)from & 3;
+            if (k) {
+                k = 4 - k;
+                w -= k;
+                do {
+                    *dst++ = *from++;
+                } while (--k);
+            }
+            k = w;
+            if (dist >= 5) {
+                w >>= 2;
+                k &= 3;
+                while (w) {
+                    ((U32P *)dst)->m_v = *(u32 *)from;
+                    from += 4;
+                    dst += 4;
+                    w--;
+                }
+            }
+            while (k) {
+                *dst++ = *from++;
+                k--;
+            }
+        }
+    } while (dist);
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_800A0584);
+#endif
 
 void func_800A0680(void) {
     D_800D4788[0] = func_800A207C("\\MR3.DAT;1", 0);
@@ -757,7 +823,18 @@ void func_800A0874(Small71 *p) {
     p->m_02 = 0;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_800A0884);
+/* The sound's settings applied: a mode, then six volumes in percent. */
+void func_800A0884(u8 *p) {
+    int *v = (int *)p;
+
+    func_8006F9BC(v[0]);
+    func_8006FA30(5, v[1] * 63 / 100);
+    func_8006FA30(0, v[2] * 63 / 100);
+    func_8006FA30(2, v[4] * 63 / 100);
+    func_8006FA30(3, v[5] * 63 / 100);
+    func_8006FA30(1, v[3] * 63 / 100);
+    func_8006FA30(6, v[6] * 63 / 100);
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_800A09C0);
 
