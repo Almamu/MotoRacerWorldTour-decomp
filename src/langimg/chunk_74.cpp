@@ -125,8 +125,6 @@ int func_800A54F8(u8 *base, int *offs, int n) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_74", func_800A5530);
 
-#ifdef NON_MATCHING
-// The time's word: the original stores it after the and and again after the or; ours once (16 off)
 Obj74 *func_800A57E4(Obj74 *o) {
     o->m_00 = 0;
     o->m_40 = 1;
@@ -140,8 +138,8 @@ Obj74 *func_800A57E4(Obj74 *o) {
     o->m_48 = 0;
     o->m_20 = 0;
     o->m_24 = 0;
-    o->m_38 = 0;
     o->m_3Cw &= 0xC0000000;
+    o->m_38 = 0;
     o->m_3Cw |= 0x40000000;
     memset(o->m_28, 0, sizeof(o->m_28));
     o->m_58 = 1;
@@ -151,9 +149,6 @@ Obj74 *func_800A57E4(Obj74 *o) {
     o->m_1C = 0;
     return o;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_74", func_800A57E4);
-#endif
 
 void func_800A5888(void *p, int flags) {
     if (flags & 1) {
