@@ -1,4 +1,5 @@
 #include "common.h"
+#include "psyq.h"
 
 /* Small helpers: strings, relocations, a global object (docs/matching/issue-75-langimg-chunk74.md) */
 
@@ -43,11 +44,18 @@ int func_800151F0(void);
 void func_80015200(int a);
 extern int D_800D60E0[];
 extern u8 D_800D60E8[];
-extern void *D_800BCE3C[];
+extern u32 *D_800BCE3C[];
 extern u8 D_800BCA3C[];
 
+struct VtEntry74 {
+    short m_delta;
+    short m_index;
+    void (*m_func)(void *self, int a);
+};
 struct Game74 {
-    u8 m_00[0x150];
+    u8 m_00[0x68];
+    VtEntry74 *m_68;
+    u8 m_6C[0xE4];
     int m_150;
 };
 extern u8 D_800BC93C[]; // the case-folding table
@@ -70,6 +78,21 @@ void func_800A594C(Obj74 *o);
 char *func_800A5ED0(char *d, u32 ms, int flags);
 char *func_800A6000(char *d, int v, int width, int pad);
 void func_800A658C(u8 *base, u32 *r);
+void func_800A5BB8(Obj74 *o, int n);
+char *func_800A5DBC(char *d, u32 ms, int flags);
+u32 func_800A645C(u8 *p, int n, u32 crc);
+void func_800A6650(char *name);
+void *func_800A06AC(char *name, int a, int *size);
+void func_800156DC(void);
+void func_8006C77C(void);
+void func_800AEC38(void);
+void func_80079400(Game74 *g);
+void func_800AADA4(void);
+void FlushCache(void);
+void func_800793C0(Game74 *g);
+void func_800AEBF0(int a, int b);
+void func_80015684(int a);
+void func_8006C750(void);
 int func_800A54F8(u8 *base, int *offs, int n);
 void func_800A5888(void *p, int flags);
 void func_800A5908(Obj74 *o);
@@ -180,7 +203,44 @@ void func_800A594C(Obj74 *o) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_74", func_800A59D4);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_74", func_800A5BB8);
+/* The frame's time: its length (20 to 66, or n), and the running total. */
+void func_800A5BB8(Obj74 *o, int n) {
+    if (!o->m_54) {
+        o->m_1C++;
+        if (o->m_5C) {
+            o->m_18 = 0x23;
+            o->m_44 = 0x23;
+        } else {
+            o->m_18 = o->m_40;
+            o->m_44 = o->m_3C.m_t - o->m_00;
+        }
+        if (n >= 0) {
+            o->m_18 = n;
+            o->m_44 = n;
+        }
+        if (o->m_18 > 0x42) {
+            o->m_18 = 0x42;
+        }
+        if (o->m_18 < 0x14) {
+            o->m_18 = 0x14;
+        }
+        o->m_48 = 0x3E8000 / o->m_18;
+    } else {
+        o->m_18 = 0;
+        o->m_44 = 0;
+        o->m_48 = 0;
+    }
+    if (o->m_5C) {
+        o->m_10 = 0;
+        o->m_14 = 0;
+        o->m_5C = 0;
+    } else {
+        o->m_10 = o->m_14;
+        o->m_14 += o->m_18;
+    }
+    o->m_08 = 1;
+    o->m_0C = 1;
+}
 
 void func_800A5CBC(Obj74 *o) {
     o->m_4C = !o->m_54;
@@ -223,7 +283,33 @@ void func_800A5D68(void) {
 void func_800A5DA4(int a, ...) {
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_74", func_800A5DBC);
+/* A time as "mm : ss : cc", leaving out the minutes (flag 4), the seconds
+ * (flag 2) or the hundredths (flag 1) when they're 0. */
+char *func_800A5DBC(char *d, u32 ms, int flags) {
+    int m;
+    int sec;
+    int cs;
+
+    if (!func_800A5CD0(ms, &m, &sec, &cs)) {
+        return d;
+    }
+    if (m > 0 || !(flags & 4)) {
+        d = func_800A6000(d, m, 2, '0');
+        *d++ = ' ';
+        *d++ = ':';
+        *d++ = ' ';
+    }
+    if (sec > 0 || !(flags & 2)) {
+        d = func_800A6000(d, sec, 2, '0');
+        *d++ = ' ';
+        *d++ = ':';
+        *d++ = ' ';
+    }
+    if (cs > 0 || !(flags & 1)) {
+        d = func_800A6000(d, cs, 2, '0');
+    }
+    return d;
+}
 
 /* A time as "m : ss", leaving out the minutes (flag 2) or the seconds
  * (flag 1) when they're 0. */
@@ -399,10 +485,50 @@ u16 func_800A63E4(u16 x) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_74", func_800A63FC);
 
 void func_800A6448(void) {
-    D_800BCE3C[0] = D_800BCA3C;
+    D_800BCE3C[0] = (u32 *)D_800BCA3C;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_74", func_800A645C);
+/* CRC-32 of n bytes, through the table D_800BCE3C points at. */
+u32 func_800A645C(u8 *p, int n, u32 crc) {
+    u32 *t = D_800BCE3C[0];
+    int r = (u32)p & 3;
+    int k;
+    int w;
+
+    if (r) {
+        k = 4 - r;
+        while (n) {
+            if (!k) {
+                break;
+            }
+            k--;
+            crc = t[(*p++ ^ crc) & 0xFF] ^ (crc >> 8);
+            n--;
+        }
+    }
+    k = n & 3;
+    n >>= 2;
+    while (n) {
+        w = *(int *)p;
+        p += 4;
+        n--;
+        crc = t[(crc ^ w) & 0xFF] ^ (crc >> 8);
+        w >>= 8;
+        crc = t[(crc ^ w) & 0xFF] ^ (crc >> 8);
+        w >>= 8;
+        crc = t[(crc ^ w) & 0xFF] ^ (crc >> 8);
+        w >>= 8;
+        crc = t[(crc ^ w) & 0xFF] ^ (crc >> 8);
+    }
+    if (k) {
+        w = *(int *)p;
+        do {
+            crc = t[(crc ^ w) & 0xFF] ^ (crc >> 8);
+            w >>= 8;
+        } while (--k);
+    }
+    return crc;
+}
 
 /* Relocates code: each entry an offset and its type (a word, a hi16, a
  * lo16, a jump's target), -1 at the end. */
@@ -440,7 +566,39 @@ void func_800A658C(u8 *base, u32 *r) {
     } while (t != (u32)-1);
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_74", func_800A6650);
+/* Loads an overlay, relocates it and runs it, then resets the system. */
+void func_800A6650(char *name) {
+    u32 *ov;
+    u8 *code;
+    Game74 *g;
+
+    func_800A22B0(1);
+    ov = (u32 *)func_800A06AC(name, 0, 0);
+    code = (u8 *)(ov + 2);
+    g = D_800C886C[0];
+    func_800A658C(code, (u32 *)(code + (ov[0] >> 2 << 2)));
+    func_800156DC();
+    func_8006C77C();
+    func_800AEC38();
+    func_80079400(g);
+    func_800AADA4();
+    FlushCache();
+    ((void (*)(void))ov[2])();
+    ResetCallback();
+    ResetGraph(3);
+    func_800793C0(g);
+    if (ov) {
+        free(ov);
+    }
+    func_800AEBF0(0, 2);
+    CdInit();
+    func_80015684(0);
+    SetDispMask(0);
+    ((int (*)(void *))g->m_68[8].m_func)((char *)g + g->m_68[8].m_delta);
+    ((int (*)(void *, int))g->m_68[4].m_func)((char *)g + g->m_68[4].m_delta, 0);
+    SetDispMask(1);
+    func_8006C750();
+}
 
 void func_800A6788(int a, int b) {
     func_800A22D0(2);
