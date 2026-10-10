@@ -19,3 +19,4 @@ issue it worked on, and add it below.
 | [issue-4-langimg-chunk03.md](issue-4-langimg-chunk03.md) | The game's chunk_03: object lists and trees, 2D drawing; the 2.91.66 code is `-G8` with split addresses |
 | [issue-5-langimg-chunk04.md](issue-5-langimg-chunk04.md) | The game's chunk_04: sequences, ranges, grids; bitfields read into locals, loops calling in their condition |
 | [issue-6-langimg-chunk05.md](issue-6-langimg-chunk05.md) | The game's chunk_05: race positions, the ring of entries by distance |
+| [issue-7-langimg-chunk06.md](issue-7-langimg-chunk06.md) | The game's chunk_06: racers' planes, visibility, particles; unsplit again |
