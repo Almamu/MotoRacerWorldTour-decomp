@@ -24,11 +24,17 @@ struct VtEntry31 {
 };
 // A bike's model, an object with a virtual destructor (its vtable at 0x50)
 struct Def31 {
-    u8 m_00[0x50];
+    u8 m_00[4];
+    int m_04;
+    u8 m_08[0x3C];
+    u8 m_44;
+    u8 m_45[0xB];
     VtEntry31 *m_50;
     u8 m_54[0x10];
     Vec31 m_64;
     SVec31 m_70;
+    u8 m_78[0x1A8];
+    void *m_220[5];
 };
 // A virtual destructor called with 3 (destroy and free)
 #define VDELETE31(p) \
@@ -45,7 +51,8 @@ struct Bike31 {
     u8 m_04[6];
     short m_0A;
     short m_0C;
-    u8 m_0E[0x22];
+    u8 m_0E[0x1E];
+    int m_2C;
     Def31 *m_30;
     int m_34;
     u8 m_38[8];
@@ -87,7 +94,10 @@ struct Lap31 {
     int m_00;
 };
 struct Run31 {
-    u8 m_00[0x16];
+    int m_00;
+    u8 m_04[8];
+    int m_0C;
+    u8 m_10[6];
     short m_16;
     int m_18[5]; // the bikes in order
     int m_2C[5];
@@ -105,9 +115,13 @@ struct Run31 {
     int m_1E10;
     int m_1E14[2];
     int m_1E1C[2];
-    u8 m_1E24[2];
-    s8 m_1E26[5];
-    u8 m_1E2B[0xE];
+    s8 m_1E24[2]; // the bikes of mode 1
+    s8 m_1E26[5]; // of mode 2
+    s8 m_1E2B[1]; // of mode 3
+    int m_1E2C;   // how many of each
+    int m_1E30;
+    int m_1E34;
+    u8 m_1E38;
     s8 m_1E39;
     short m_1E3A;
     Lap31 *m_1E3C;
@@ -122,6 +136,10 @@ extern Opt31 *D_800C5E14;
 int func_800A0420(Lap31 *l, int t, void *p, int a, int b);
 int func_80050D7C(Run31 *r, int k);
 void func_8004FE88(Run31 *r);
+extern char D_800C6714[]; // "Moto %d"
+extern char D_800C671C[]; // "Moto X"
+int sprintf(char *s, const char *f, ...);
+void func_80050A4C(Run31 *r);
 // The track: its segments' starts and lengths
 struct Trk31 {
     u8 m_00[0x14];
@@ -155,25 +173,15 @@ struct Mob31 {
     short m_3C;
     short m_3E;
 };
-// An object made by func_800508B4
-struct Made31 {
-    u8 m_00[4];
-    int m_04;
-    u8 m_08[0x5C];
-    Vec31 m_64;
-    SVec31 m_70;
-    u8 m_78[0x1A8];
-    void *m_220[5];
-};
 void func_8005044C(Trk31 *t, Mob31 *o, Seg31 *s, int d);
-Made31 *func_800508B4(void *a, const char *name, int kind);
-Made31 *func_80064340(void *p);
-Made31 *func_80024064(void *p);
-void func_80016144(Made31 *o, Vec31 *v, SVec31 *r, int a);
-void func_80016268(Made31 *o, SVec31 *r, Vec31 *v);
+Def31 *func_800508B4(void *a, const char *name, int kind);
+Def31 *func_80064340(void *p);
+Def31 *func_80024064(void *p);
+void func_80016144(Def31 *o, Vec31 *v, SVec31 *r, int a);
+void func_80016268(Def31 *o, SVec31 *r, Vec31 *v);
 void *func_8001A62C(void *p);
 // CName::Set(const char *)
-void CName_Set31(Made31 *o, const char *s) asm("Set__5CNamePCc");
+void CName_Set31(Def31 *o, const char *s) asm("Set__5CNamePCc");
 // What func_8004F6C8 sets a matrix from
 struct Pos31 {
     u8 m_00[0x20];
@@ -498,8 +506,8 @@ static inline void VecZero31(Vec31 *v) {
 #ifdef NON_MATCHING
 // The struct copies: the original copies through address registers ($v0, $v1) and passes $v0 on to the call; ours fold the offsets
 /* An object of a kind made, placed and named, with its five parts. */
-Made31 *func_800508B4(void *a, const char *name, int kind) {
-    Made31 *o = 0;
+Def31 *func_800508B4(void *a, const char *name, int kind) {
+    Def31 *o = 0;
     Vec31 v;
     SVec31 r;
 
@@ -538,7 +546,64 @@ Made31 *func_800508B4(void *a, const char *name, int kind) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_31", func_800508B4);
 #endif
 
+#ifdef NON_MATCHING
+// Registers: the original keeps 2 for the last mode's test in $fp and walks the bikes' second byte array by pointer
+/* The bikes' objects made and named, each listed by its mode; "Moto X" too. */
+void func_80050A4C(Run31 *r) {
+    char name[32];
+    Bike31 *b = r->m_2E8;
+    int i;
+
+    r->m_1E2C = 0;
+    r->m_1E30 = 0;
+    r->m_1E34 = 0;
+    for (i = 0; i < 2; i++) {
+        r->m_1E24[i] = -1;
+    }
+    for (i = 0; i >= 0; i--) {
+        r->m_1E2B[i] = -1;
+    }
+    for (i = 0; i < 5; i++) {
+        r->m_1E26[i] = -1;
+    }
+    for (i = 0; i < 5; i++, b++) {
+        if (((u32)b->m_00 >> 6) & 1) {
+            sprintf(name, D_800C6714, i + 1);
+            b->m_2C = r->m_0C;
+            b->m_30 = func_800508B4(r, name, (b->m_00 << 26) >> 27);
+            if (b->m_30) {
+                int mode = (b->m_00 << 26) >> 27;
+
+                if (mode == 1) {
+                    r->m_1E24[r->m_1E2C] = i;
+                    func_800510B4(b, r->m_1E2C);
+                    r->m_1E2C++;
+                } else if (mode == 3) {
+                    r->m_1E2B[r->m_1E30] = i;
+                    func_800510B4(b, r->m_1E30 + 2);
+                    r->m_1E30++;
+                } else if (mode == 2) {
+                    r->m_1E26[r->m_1E34] = i;
+                    func_800510B4(b, r->m_1E34 + 4);
+                    r->m_1E34++;
+                }
+            } else {
+                b->m_00 &= ~0x40;
+            }
+        }
+    }
+    if (r->m_1E2C && r->m_00 == 0x40) {
+        Def31 *d = func_800508B4(r, D_800C671C, 2);
+
+        r->m_1F58 = d;
+        if (d) {
+            d->m_44 = 1;
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_31", func_80050A4C);
+#endif
 
 void func_80050CA4(Run31 *r) {
     int i;
