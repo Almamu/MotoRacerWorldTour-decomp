@@ -94,8 +94,8 @@ struct RacerSlot {
 
 // A racer
 struct Racer {
-    int m_00;
-    int m_04;
+    int *m_00;
+    int *m_04;
     int m_08;
     int m_0C;
     u8 m_10[0xC];
@@ -103,8 +103,11 @@ struct Racer {
     int m_20;
     int m_24;
     u8 m_28[0x90];
-    int m_B8;
-    u8 m_BC[0x94];
+    long (*m_B8)[2]; // 0xB8: 3 planes
+    u8 m_BC[0x80];
+    int m_13C;
+    int m_140;
+    u8 m_144[0xC];
     int m_150;
     int m_154;
     u8 m_158[4];

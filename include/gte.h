@@ -40,6 +40,14 @@
 #define GTE_RTPS() __asm__ volatile("nop\n\tnop\n\t.word 0x4A180001")
 #define GTE_RTPT() __asm__ volatile("nop\n\tnop\n\t.word 0x4A280030")
 #define GTE_NCLIP() __asm__ volatile(".word 0x4B400006")
+// The light matrix times IR, nothing added (mvmva 1, 1, 3, 3, 0)
+#define GTE_MVMVA_LIR() __asm__ volatile("nop\n\tnop\n\t.word 0x4A4BE012")
+// IR1-IR3
+#define GTE_SET_IR(x, y, z) \
+    __asm__ volatile("mtc2 %0, $9\n\tmtc2 %1, $10\n\tmtc2 %2, $11" : : "r"(x), "r"(y), "r"(z))
+// MAC1-MAC3
+#define GTE_GET_MAC(x, y, z) \
+    __asm__ volatile("mfc2 %0, $25\n\tmfc2 %1, $26\n\tmfc2 %2, $27" : "=r"(x), "=r"(y), "=r"(z))
 // The light matrix times V0, plus the translation (mvmva 1, 1, 0, 1, 0)
 #define GTE_MVMVA_LV0TR() __asm__ volatile("nop\n\tnop\n\t.word 0x4A4A2012")
 
