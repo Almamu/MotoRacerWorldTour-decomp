@@ -22,7 +22,7 @@ file to file.
 As in chunk_03, the class is a struct (`Named`) and its methods plain
 functions: the constructors and destructor set the vtable pointer
 themselves, and virtual calls go through a `VtEntry` table (`VCALL`,
-`VCALL1`). Many of its methods are the vtable's defaults: 15 of them
+`VCALL1`). Many of its methods are the vtable's defaults: 17 of them
 return 0 or 1, or nothing.
 
 ## The functions
@@ -35,7 +35,7 @@ return 0 or 1, or nothing.
 | `func_8003FC94` | parked | the constructor: -1 loaded before the vtable's store here (8 off) |
 | `func_8003FCF8` to `func_8003FF68` | match | the destructor, the states, the name, flags, the default virtuals |
 | `func_8003FF70` | matches | a scene event: a name compared, two lists started |
-| `func_80040034`, `func_80040178` to `func_80040578` | match | entries by name, their text and flags, varargs wrappers, a subclass's destructor |
+| `func_80040034`, `func_80040178` to `func_8004047C`, `func_80040578` | match | entries by name, their text and flags, varargs wrappers, a subclass's destructor |
 | `func_8004009C` | parked | an entry's text from a format, cut to its room (9 off) |
 | `func_800404D0` | parked | the subclass's constructor: as `func_8003FC94` (7 off) |
 | `func_800405A0`, `func_800406A4` | match | the stage's numbers from the settings; a sound bank |
