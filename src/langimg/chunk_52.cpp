@@ -6,11 +6,18 @@
 extern "C" {
 // The display's state
 struct Gfx52 {
-    u8 m_00[0x84];
+    u8 m_00[0x24];
+    int m_24; // the buffer's size
+    u8 *m_28; // a buffer
+    int m_2C; // its largest
+    int m_30; // how many entries
+    u8 m_34[0x50];
     u8 m_84[4];
     u8 m_88[0x58];
     u8 m_E0[4];
-    u8 m_E4[0x48];
+    u8 m_E4[0x44];
+    u16 m_128; // the screen's width
+    u8 m_12A[2];
     u16 m_12C;
     u16 m_12E;
     u8 m_130[0x10];
@@ -22,8 +29,12 @@ struct Gfx52 {
     u16 m_164;
     u8 m_166[6];
     u8 m_16C[3];
-    u8 m_16F[0x11];
+    u8 m_16F;
+    int m_170;
+    u8 m_174[0xC];
     u8 m_180;
+    u8 m_181[0x0F];
+    u8 m_190[0];
 };
 // Read split: arrays of unknown size, used as x[0]
 extern int D_800B886C[]; // the last frame's length
@@ -32,7 +43,6 @@ typedef void (*Cb52)(int a);
 extern Cb52 D_800B8874[]; // a callback each vsync
 extern int D_800B8878[];  // and its argument
 void func_80078CEC(void *a, void *b, void *c);
-void func_80079848(void *o);
 void func_80088FD4(void *o);
 void func_800A22D8(void);
 void func_800792DC(Gfx52 *g);
@@ -43,8 +53,39 @@ void func_800793C0(void);
 void func_80079400(void);
 void func_80079494(void *a, void *b, void *c);
 int func_800794B4(void);
-void func_800794BC(u8 *o);
+void func_800794BC(struct Gfx52 *g);
 void func_80079648(void *o, Cb52 cb, int arg);
+// An entry: a rectangle, and whether it's used
+struct Ent52 {
+    int m_00;
+    int m_04;
+    int m_08;
+    int m_0C;
+    u8 m_10[0x38];
+    int m_48;
+};
+struct Vt52 {
+    short m_delta;
+    short m_index;
+    int (*m_func)(void *self, int i);
+};
+struct Sys52 {
+    u8 m_00[0x68];
+    Vt52 *m_68;
+};
+extern Sys52 *D_800C886C[];
+extern s8 D_800B8868[];
+void *malloc(int n);
+int func_800895A0(u8 *p);
+int func_80088F34(u8 *p);
+Ent52 *func_800891E8(void *l, int i);
+void func_800798FC(Gfx52 *g, int a, int b, int c, int d);
+int func_800AC110(RECT *r, int x, int y);
+int func_800794E8(Gfx52 *g, RECT *r);
+int func_800795A0(Gfx52 *g, int n);
+int func_800795FC(Gfx52 *g);
+int func_80079438(Gfx52 *g);
+void func_80079848(Gfx52 *g);
 }
 
 /* The draw area's and the display area's origin and colour from the settings. */
@@ -103,7 +144,19 @@ void func_80079400(void) {
     ExitCriticalSection();
 }
 
+#ifdef NON_MATCHING
+// Registers: the original keeps the result in $v1 (not live across the first call) and reads the global after the prologue
+int func_80079438(Gfx52 *g) {
+    int r = 0;
+
+    if (func_800895A0(g->m_28 + g->m_24 * D_800B8868[0])) {
+        r = func_80088F34((u8 *)g + 0x30) != 0;
+    }
+    return r;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_52", func_80079438);
+#endif
 
 void func_80079494(void *a, void *b, void *c) {
     func_80078CEC(a, b, c);
@@ -113,16 +166,61 @@ int func_800794B4(void) {
     return 1;
 }
 
-void func_800794BC(u8 *o) {
-    func_80079848(o);
-    func_80088FD4(o + 0x30);
+void func_800794BC(Gfx52 *g) {
+    func_80079848(g);
+    func_80088FD4((u8 *)g + 0x30);
 }
 
+#ifdef NON_MATCHING
+// The second rectangle's stores: the width loaded before the y's store (3 off)
+/* The screen cleared, or r; the line at 510 copied to 511. */
+int func_800794E8(Gfx52 *g, RECT *r) {
+    DrawSync(0);
+    if (!r) {
+        RECT a;
+
+        a.x = 0;
+        a.y = 0;
+        a.w = g->m_128;
+        a.h = 0x200;
+        ClearImage(&a, 0, 0, 0);
+        a.x = 0;
+        a.y = 0x1FE;
+        a.w = g->m_128;
+        a.h = 1;
+        func_800AC110(&a, 0, 0x1FF);
+    } else {
+        ClearImage(r, 0, 0, 0);
+    }
+    DrawSync(0);
+    return 1;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_52", func_800794E8);
+#endif
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_52", func_800795A0);
+int func_800795A0(Gfx52 *g, int n) {
+    if (g->m_2C < n) {
+        u8 *p = (u8 *)malloc(n * 2);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_52", func_800795FC);
+        if (p) {
+            g->m_28 = p;
+            g->m_24 = n;
+        }
+    }
+    g->m_170 = 0;
+    return 1;
+}
+
+int func_800795FC(Gfx52 *g) {
+    DrawSync(0);
+    if (g->m_28) {
+        free(g->m_28);
+        g->m_28 = 0;
+    }
+    g->m_24 = 0;
+    return 1;
+}
 
 #ifdef NON_MATCHING
 // Registers: the two globals' %hi parts swap $v0 and $v1 (4 off)
@@ -138,7 +236,25 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_52", func_80079648);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_52", func_8007968C);
 
+#ifdef NON_MATCHING
+// The system pointer's %hi: the original loads it each time round, ours keeps it in $s3
+void func_80079848(Gfx52 *g) {
+    int i;
+
+    for (i = 0; i < g->m_30; i++) {
+        Ent52 *e = func_800891E8(&g->m_30, i);
+
+        if (e->m_48) {
+            Sys52 *y = D_800C886C[0];
+
+            y->m_68[14].m_func((char *)y + y->m_68[14].m_delta, i);
+            func_800798FC(g, e->m_00, e->m_04, e->m_08, e->m_0C);
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_52", func_80079848);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_52", func_800798FC);
 
