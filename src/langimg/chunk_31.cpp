@@ -47,7 +47,11 @@ struct Bike31 {
     u8 m_0E[0x22];
     Def31 *m_30;
     int m_34;
-    u8 m_38[0x10];
+    u8 m_38[8];
+    s8 m_40; // a lap's index
+    u8 m_41[2];
+    s8 m_43;
+    u8 m_44[4];
     int m_48;
     void *m_4C;
     int m_50;
@@ -73,14 +77,50 @@ struct Bike31 {
     int m_560;
     int m_564;
 };
+struct Pair31 {
+    int m_00;
+    int m_04;
+};
+// The race's lap data
+struct Lap31 {
+    int m_00;
+};
 struct Run31 {
-    u8 m_00[0x18];
+    u8 m_00[0x16];
+    short m_16;
     int m_18[5]; // the bikes in order
-    u8 m_2C[0x2BC];
+    int m_2C[5];
+    int m_40[5];
+    int m_54[5][8]; // each bike's lap times
+    int m_F4[5][8];
+    int m_194[5];
+    Pair31 m_1A8[5][8];
     Bike31 m_2E8[5];
-    u8 m_1DF0[0x168];
+    u8 m_1DF0[4];
+    int m_1DF4;
+    u8 m_1DF8[0x10];
+    int m_1E08; // the race's kind
+    int m_1E0C;
+    int m_1E10;
+    int m_1E14[2];
+    int m_1E1C[2];
+    u8 m_1E24[2];
+    s8 m_1E26[5];
+    u8 m_1E2B[0xE];
+    s8 m_1E39;
+    short m_1E3A;
+    Lap31 *m_1E3C;
+    u8 m_1E40[0x118];
     Def31 *m_1F58;
 };
+struct Opt31 {
+    u8 m_00[0x304];
+    int m_304;
+};
+extern Opt31 *D_800C5E14;
+int func_800A0420(Lap31 *l, int t, void *p, int a, int b);
+int func_80050D7C(Run31 *r, int k);
+void func_8004FE88(Run31 *r);
 // What func_8004F6C8 sets a matrix from
 struct Pos31 {
     u8 m_00[0x20];
@@ -249,7 +289,44 @@ void func_8004FE58(void *a, short *v) {
     func_80097E4C(a, v[0], v[1], v[2]);
 }
 
+#ifdef NON_MATCHING
+// The loops: the original walks the per-bike arrays with pointers, shares one inner counter set to 0 in delay slots, and needs no saved register
+/* The race's tables reset. */
+void func_8004FE88(Run31 *r) {
+    int i;
+    int j;
+
+    for (i = 0; i < 5; i++) {
+        r->m_2C[i] = -1;
+        r->m_40[i] = -1;
+        r->m_1E26[i] = -1;
+        for (j = 0; j < 8; j++) {
+            r->m_54[i][j] = -1;
+        }
+        if (!D_800C5E14->m_304) {
+            for (j = 0; j < 8; j++) {
+                r->m_F4[i][j] = -1;
+                r->m_194[i] = -1;
+            }
+        }
+        for (j = 0; j < 8; j++) {
+            r->m_1A8[i][j].m_00 = -1;
+            r->m_1A8[i][j].m_04 = 0;
+        }
+    }
+    for (i = 0; i < 2; i++) {
+        r->m_1E14[i] = -1;
+        r->m_1E1C[i] = -1;
+    }
+    r->m_1E3A = 0;
+    r->m_1E10 = 0;
+    r->m_16 = 0;
+    r->m_1DF4 = -1;
+    r->m_1E0C = 0;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_31", func_8004FE88);
+#endif
 
 /* qsort's comparisons: the words without their low bits */
 int func_8004FFAC(int *a, int *b) {
@@ -345,7 +422,35 @@ void func_80050CA4(Run31 *r) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_31", func_80050D7C);
+/* A bike's lap passed to the race's lap data, in a race of kind 3. */
+int func_80050D7C(Run31 *r, int k) {
+    int res = 0;
+
+    if (r->m_1E3C && r->m_1E08 == 3) {
+        Bike31 *b = &r->m_2E8[k];
+
+        if (((u32)b->m_00 >> 6) & 1) {
+            u8 st = ((u8 *)b)[1];
+
+            if (st != 4 && st != 0) {
+                int t;
+                void *q;
+
+                if (r->m_1E3C->m_00) {
+                    t = r->m_54[k][b->m_40];
+                } else {
+                    t = b->m_0C;
+                }
+                q = b->m_4C;
+                res = func_800A0420(r->m_1E3C, t, q, -1, b->m_43);
+                if (res && r->m_1E39) {
+                    r->m_1E39 = 1;
+                }
+            }
+        }
+    }
+    return res;
+}
 
 void func_80050E88(int i) {
     func_80050EBC(D_800C9EF0[i]);
