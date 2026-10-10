@@ -110,7 +110,9 @@ struct Racer {
     int m_24;
     u8 m_28[0x90];
     struct RacePlane *m_B8; // 0xB8: 3 planes
-    u8 m_BC[0x80];
+    u8 m_BC[0x10];
+    Vector3 m_pts[9]; // 0xCC: an outline on the ground (x, z)
+    int m_138;
     int m_13C;
     int m_140;
     u8 m_144[0xC];

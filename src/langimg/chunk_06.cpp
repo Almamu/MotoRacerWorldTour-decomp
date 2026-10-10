@@ -53,6 +53,8 @@ extern int D_800CA7D0;  // the static racer's users
 extern u8 D_800CA7D8[]; // a Racer; its size not known here
 extern Camera *D_800C8864;
 int func_8009707C(RacePlane *plane, Vector3 *v);
+void func_8001E240(Racer *r, int a, int b, int c, int d, int e, int f);
+void func_8001E458(Racer *r, int a, int b, int c, int d, int e, int f, Vector3 *tris, int n);
 void func_8001D99C(Racer *r);
 void func_8001DA10(Racer *r);
 int func_8001DF10(Racer *r, Vector3 *v, int lo, int hi, int *depth);
@@ -175,7 +177,52 @@ void func_8001E1C8(Racer *r, Sphere *s, int n, u8 *out, int stride) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_06", func_8001E240);
+/* The racer's outline as six triangles on the ground, scaled down by
+ * m_164, handed to func_8001E458 with the other arguments. */
+void func_8001E240(Racer *r, int a, int b, int c, int d, int e, int f) {
+    Vector3 t[6][3];
+    int i = 18;
+
+    while (i--) {
+    }
+    t[0][0].vx = r->m_pts[4].vx / r->m_164;
+    t[0][0].vz = r->m_pts[4].vz / r->m_164;
+    t[0][1].vx = r->m_pts[8].vx / r->m_164;
+    t[0][1].vz = r->m_pts[8].vz / r->m_164;
+    t[0][2].vx = r->m_pts[5].vx / r->m_164;
+    t[0][2].vz = r->m_pts[5].vz / r->m_164;
+    t[1][0].vx = r->m_pts[4].vx / r->m_164;
+    t[1][0].vz = r->m_pts[4].vz / r->m_164;
+    t[1][1].vx = r->m_pts[7].vx / r->m_164;
+    t[1][1].vz = r->m_pts[7].vz / r->m_164;
+    t[1][2].vx = r->m_pts[8].vx / r->m_164;
+    t[1][2].vz = r->m_pts[8].vz / r->m_164;
+    t[2][0].vx = r->m_pts[1].vx / r->m_164;
+    t[2][0].vz = r->m_pts[1].vz / r->m_164;
+    t[2][1].vx = r->m_pts[8].vx / r->m_164;
+    t[2][1].vz = r->m_pts[8].vz / r->m_164;
+    t[2][2].vx = r->m_pts[7].vx / r->m_164;
+    t[2][2].vz = r->m_pts[7].vz / r->m_164;
+    t[3][0].vx = r->m_pts[1].vx / r->m_164;
+    t[3][0].vz = r->m_pts[1].vz / r->m_164;
+    t[3][1].vx = r->m_pts[7].vx / r->m_164;
+    t[3][1].vz = r->m_pts[7].vz / r->m_164;
+    t[3][2].vx = r->m_pts[0].vx / r->m_164;
+    t[3][2].vz = r->m_pts[0].vz / r->m_164;
+    t[4][0].vx = r->m_pts[1].vx / r->m_164;
+    t[4][0].vz = r->m_pts[1].vz / r->m_164;
+    t[4][1].vx = r->m_pts[0].vx / r->m_164;
+    t[4][1].vz = r->m_pts[0].vz / r->m_164;
+    t[4][2].vx = r->m_pts[2].vx / r->m_164;
+    t[4][2].vz = r->m_pts[2].vz / r->m_164;
+    t[5][0].vx = r->m_pts[1].vx / r->m_164;
+    t[5][0].vz = r->m_pts[1].vz / r->m_164;
+    t[5][1].vx = r->m_pts[2].vx / r->m_164;
+    t[5][1].vz = r->m_pts[2].vz / r->m_164;
+    t[5][2].vx = r->m_pts[3].vx / r->m_164;
+    t[5][2].vz = r->m_pts[3].vz / r->m_164;
+    func_8001E458(r, a, b, c, d, e, f, &t[0][0], 6);
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_06", func_8001E458);
 
