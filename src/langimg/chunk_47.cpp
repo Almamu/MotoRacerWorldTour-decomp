@@ -485,24 +485,20 @@ void func_8006FF78(Obj47 *o, Frame47 *f) {
     o->m_00++;
 }
 
-#ifdef NON_MATCHING
-// One copy: the original reads the second bit through a copy of the stream's pointer ($s0)
 /* A frame read back, its absent parts zero. */
 void func_80070140(Obj47 *o, Frame47 *f) {
-    void *s = o->m_08;
-
-    if (func_80096B74(s, 1)) {
-        f->m_00 = func_80096D84(s, 4, 7, 0x20, -1);
+    if (func_80096B74(o->m_08, 1)) {
+        f->m_00 = func_80096D84(o->m_08, 4, 7, 0x20, -1);
     } else {
         f->m_00 = 0;
     }
     if (func_80096B74(o->m_08, 1)) {
-        f->m_04.vx = func_80096D84(s, 4, 7, 10, 0x20, -1);
-        f->m_04.vy = func_80096D84(s, 4, 7, 10, 0x20, -1);
-        f->m_04.vz = func_80096D84(s, 4, 7, 10, 0x20, -1);
-        f->m_10.vx = func_80096D84(s, 3, 5, 7, 9, 0x20, -1);
-        f->m_10.vy = func_80096D84(s, 3, 5, 7, 9, 0x20, -1);
-        f->m_10.vz = func_80096D84(s, 3, 5, 7, 9, 0x20, -1);
+        f->m_04.vx = func_80096D84(o->m_08, 4, 7, 10, 0x20, -1);
+        f->m_04.vy = func_80096D84(o->m_08, 4, 7, 10, 0x20, -1);
+        f->m_04.vz = func_80096D84(o->m_08, 4, 7, 10, 0x20, -1);
+        f->m_10.vx = func_80096D84(o->m_08, 3, 5, 7, 9, 0x20, -1);
+        f->m_10.vy = func_80096D84(o->m_08, 3, 5, 7, 9, 0x20, -1);
+        f->m_10.vz = func_80096D84(o->m_08, 3, 5, 7, 9, 0x20, -1);
     } else {
         {
             Vec47 v;
@@ -519,9 +515,6 @@ void func_80070140(Obj47 *o, Frame47 *f) {
     }
     o->m_04++;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_47", func_80070140);
-#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_47", func_80070314);
 
