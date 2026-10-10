@@ -95,7 +95,9 @@ struct Bike {
     s8 m_14A;
     u8 m_pad14B[0x1];
     s8 m_14C;
-    u8 m_pad14D[0xDF];
+    u8 m_pad14D[0x2];
+    s8 m_14F;
+    u8 m_pad150[0xDC];
     Frame *m_22C;
     Frame *m_230;
     Vector3 m_234;
@@ -128,7 +130,7 @@ struct Bike {
     u8 m_2DD;
     u8 m_2DE;
     s8 m_2DF;
-    u8 m_2E0;
+    s8 m_2E0;
     u8 m_2E1;
     u8 m_pad2E2[0x2];
     int m_2E4;
