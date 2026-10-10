@@ -92,7 +92,7 @@ settings
 | `src/langimg` chunk_23 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=D_800CABB7` |
 | `src/langimg` chunk_45 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (eleven) |
 | `src/langimg` chunk_66 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (five) |
-| `src/langimg` chunk_25, chunk_44, chunk_46, chunk_47, chunk_51, chunk_56, chunk_60, chunk_68, chunk_70, chunk_71, chunk_72, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
+| `src/langimg` chunk_25, chunk_31, chunk_44, chunk_46, chunk_47, chunk_51, chunk_56, chunk_60, chunk_68, chunk_70, chunk_71, chunk_72, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_06 to chunk_12 (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_02b (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `SCES_030.37` (`src/sces`) | GCC 2.91.66 | 0 | `-fsigned-char` | `--expand-div` |
@@ -276,6 +276,16 @@ globals), a script that tries every order is quicker than guessing:
   3; if (y > 224) return 3;`); `||` put the return's block elsewhere.
 
 ### Loops
+
+- **A found case's return out of line.** chunk_31's `func_8005102C`
+  returns the index from the end of the function, the loop's pointer
+  decrement in the test's delay slot: `if (*p-- == k) goto found; ...
+  return -1; found: return i;`. `return i;` in the loop placed the return
+  inline, and `break` merged the two returns.
+- **The order of the increments.** chunk_31's `func_80050CA4` increments
+  its counter before the bike pointer and the pointers GCC derives from
+  it; `i++; b++;` at the end of a `while` matched, where `for (...; i++)`
+  put the counter last.
 
 - **A loop GCC won't rotate: `goto`.** chunk_47's list search tests the
   node at the top and loops back on "not found":
@@ -482,6 +492,17 @@ globals), a script that tries every order is quicker than guessing:
   (i << 1))`). The same scalar declarations put two vtables' and an
   array's addresses in the registers the original loads them into
   (`func_8006F7D4`, `func_8006FB74`).
+- **Tables named for their last entry.** chunk_31 walks the five bikes
+  from the last, and the tables beside them too, so splat named those
+  tables for the fifth entry (three fields of one 8-byte table:
+  `D_800D5E68`, `D_800D5E69`, `D_800D5E6C`). Declared scalars and indexed
+  from there, `(&D_800D5E69)[i - 4]`, they give the original's pointers,
+  starting at the symbol and stepped down (`func_800507B0`).
+- **Addresses of locals in pointer variables.** chunk_31's
+  `func_8004F83C` passes four local vectors' addresses to calls. The
+  original keeps them in saved registers, set before the calls that need
+  them; `Vec31 *pn = &n;` (and `pa`, `pb` set together before the dot
+  product's call) matched. The permuter found it.
 - **A table read through an inline.** `func_80070C10` reads the sine and
   cosine of one angle and computes the entry's address twice (`t + i`, `i
   + t`); the permuter found an inline (`Sin47(a)`, `Cos47(a)`) gives that.
@@ -918,6 +939,21 @@ files (issue-1-langimg-sound.md, "The flags, function by function").
   a saved register, so the frame and registers differ. Not the compiler
   (2.7.2 to 2.95.2), the front end, GCSE, CSE options or `-O1`
   ([issue-3-langimg-chunk02.md](matching/issue-3-langimg-chunk02.md)).
+- **Struct copies through address registers** (chunk_31:
+  `func_8004F6C8`, `func_8005148C`, `func_800508B4`; chunk_56's string
+  copies may be the same). The original copies 8- to 32-byte structs with
+  the block move's address registers kept: `addiu $v0, $s0, 0xF8` then
+  `lw 0x4($v0)`, the register then passed to the next call. GCC folds the
+  offsets back into the loads and stores whatever the source:
+  - pointer locals;
+  - inline helpers;
+  - `memcpy`;
+  - a C++ assignment as the call's argument (`&(o->m_64 = v)`);
+  - `-O1`, `-Os` and the other compilers.
+- **Constants through `$t2`** (chunk_31's `func_800505BC`): every
+  constant is loaded into `$t2` just before its use, loop invariants
+  included, and a bit is set from a test without a branch (`sltu`, `sll
+  6`). A macro or a register variable, possibly; not tried.
 - **A constant argument after an address** (chunk_45: `func_8006C7CC`,
   `func_8006C8EC`): the original sets a call's third argument (a table's
   address) before its second (the table's count); GCC sets them in
