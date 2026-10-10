@@ -26,3 +26,4 @@ issue it worked on, and add it below.
 | [issue-11-langimg-chunk10.md](issue-11-langimg-chunk10.md) | The game's chunk_10: the bike's gearbox; `Bike` moves to a header |
 | [issue-12-langimg-chunk11.md](issue-12-langimg-chunk11.md) | The game's chunk_11: the bike's frame flags, drag and drive |
 | [issue-13-langimg-chunk12.md](issue-13-langimg-chunk12.md) | The game's chunk_12: more of the bike |
+| [issue-24-langimg-chunk23.md](issue-24-langimg-chunk23.md) | The game's chunk_23: a named object and its stage; 2.91.66 past chunk_12, old-style varargs |

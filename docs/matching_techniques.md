@@ -89,6 +89,7 @@ settings
 | `lib/cdaudio` chunk_01b | GCC 2.91.66 | 0 | (split addresses) | `--expand-div` |
 | `src/langimg` chunk_02, chunk_03 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --small-externs=...` |
 | `src/langimg` chunk_04, chunk_05 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=` |
+| `src/langimg` chunk_23 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=D_800CABB7` |
 | `src/langimg` chunk_06 to chunk_12 (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_02b (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `SCES_030.37` (`src/sces`) | GCC 2.91.66 | 0 | `-fsigned-char` | `--expand-div` |
@@ -523,6 +524,9 @@ What's left once the instructions are right is usually register choice.
   instructions between a move from HI/LO and the next `mult`/`div`;
   ASPSX fills them with `nop`s, and so does `--div-no-checks`
   (`func_80023788`).
+- **Old-style varargs.** A list started from the last named argument's
+  address, `(char *)&c + sizeof(c)`, stores that argument to its home
+  slot a second time; `__builtin_next_arg(c)` doesn't (`func_800401FC`).
 - **Two styles of vector copy.** A copy written field by field (`d->vx =
   s->vx; ...`) interleaves loads and stores and lets GCC reuse values it
   knows; one read into locals first loads all three, then stores. Both
