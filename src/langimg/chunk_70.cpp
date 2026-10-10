@@ -1,4 +1,5 @@
 #include "common.h"
+#include "langimg/ui.h"
 
 /* A menu page's object and its callbacks (docs/matching/issue-71-langimg-chunk70.md) */
 
@@ -42,8 +43,15 @@ struct Save70 {
     int m_100;
     int m_104;
 };
+struct VtEntry70 {
+    short m_delta;
+    short m_index;
+    void (*m_func)(void *self, int a);
+};
 struct Game70 {
-    u8 m_00[0x160];
+    u8 m_00[0x68];
+    VtEntry70 *m_68;
+    u8 m_6C[0xF4];
     int m_160;
     int m_164;
 };
@@ -585,7 +593,85 @@ void func_8009E360(Obj70 *o) {
     func_8009E3C0(o, 0x29, 0xBE, o->m_0C * 430 / 1000);
 }
 
+#ifdef NON_MATCHING
+// Registers and scheduling around the packets (188 off): the original loads the ordering table before storing the packet pointer
+/* A gauge: its frame, a tick, and the fill up to w (of 0x1AE). */
+void func_8009E3C0(Obj70 *o, int x, int y, int w) {
+    Game70 *g = D_800C886C;
+    u_long *p;
+    u_long *ot;
+
+    g->m_68[14].m_func((char *)g + g->m_68[14].m_delta, 0);
+    p = (u_long *)D_800C8C70;
+    p[0] = 0x06000000;
+    p[1] = 0x4E808000;
+    p[6] = 0x55555555;
+    p[2] = XY(x, y - 7);
+    p[3] = XY(x + 0x1AE, y - 7);
+    p[4] = XY(x + 0x1AE, y + 5);
+    p[5] = XY(x, y + 5);
+    ADD_PRIM(D_800CBDC0 + 1, D_800C8C70);
+    p = (u_long *)(D_800C8C70 + 0x1C);
+    p[0] = 0x01000000;
+    p[1] = 0xE1000220;
+    ot = D_800CBDC0 + 1;
+    D_800C8C70 = (u8 *)p;
+    ADD_PRIM(ot, D_800C8C70);
+    D_800C8C70 += 8;
+    p = (u_long *)D_800C8C70;
+    p[0] = 0x03000000;
+    p[1] = 0x42008000;
+    p[2] = XY(x, y - 7);
+    p[3] = XY(x, y + 5);
+    ADD_PRIM(D_800CBDC0 + 1, D_800C8C70);
+    p = (u_long *)(D_800C8C70 + 0x10);
+    p[0] = 0x01000000;
+    p[1] = 0xE1000220;
+    ot = D_800CBDC0 + 1;
+    D_800C8C70 = (u8 *)p;
+    ADD_PRIM(ot, D_800C8C70);
+    D_800C8C70 += 8;
+    if (w < 0x1AE) {
+        p = (u_long *)D_800C8C70;
+        p[0] = 0x05000000;
+        p[1] = 0x2A000040;
+        p[2] = XY(x, y - 7);
+        p[3] = XY(x + w, y - 7);
+        p[4] = XY(x, y + 5);
+        p[5] = XY(x + w, y + 5);
+        ADD_PRIM(D_800CBDC0 + 1, D_800C8C70);
+        p = (u_long *)(D_800C8C70 + 0x18);
+        p[0] = 0x01000000;
+        p[1] = 0xE1000220;
+        ot = D_800CBDC0 + 1;
+        D_800C8C70 = (u8 *)p;
+        ADD_PRIM(ot, D_800C8C70);
+    } else {
+        p = (u_long *)D_800C8C70;
+        p[0] = 0x05000000;
+        p[1] = 0x2A002000;
+        p[2] = XY(x, y - 7);
+        p[3] = XY(x + w, y - 7);
+        p[4] = XY(x, y + 5);
+        p[5] = XY(x + w, y + 5);
+        ADD_PRIM(D_800CBDC0 + 1, D_800C8C70);
+        p = (u_long *)(D_800C8C70 + 0x18);
+        p[0] = 0x01000000;
+        p[1] = 0xE1000220;
+        ot = D_800CBDC0 + 1;
+        D_800C8C70 = (u8 *)p;
+        ADD_PRIM(ot, D_800C8C70);
+    }
+    D_800C8C70 += 8;
+    p = (u_long *)D_800C8C70;
+    p[0] = 0x01000000;
+    p[1] = 0xE1000220;
+    ADD_PRIM(D_800CBDC0 + OT_Z(1), D_800C8C70);
+    D_800C8C70 += 8;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_70", func_8009E3C0);
+#endif
 
 void func_8009E724(void) {
 }
