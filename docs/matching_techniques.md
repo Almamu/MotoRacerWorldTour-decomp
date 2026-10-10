@@ -90,6 +90,7 @@ settings
 | `src/langimg` chunk_02, chunk_03 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --small-externs=...` |
 | `src/langimg` chunk_04, chunk_05 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=` |
 | `src/langimg` chunk_23 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=D_800CABB7` |
+| `src/langimg` chunk_45 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (eleven) |
 | `src/langimg` chunk_06 to chunk_12 (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_02b (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `SCES_030.37` (`src/sces`) | GCC 2.91.66 | 0 | `-fsigned-char` | `--expand-div` |
@@ -137,6 +138,11 @@ all of chunk_03 (`func_800188CC`'s jump table needs split addresses;
 `-G0` with split addresses broke the global loads). `--small-externs=D_800C493C,D_800C4944` (a per-chunk
 maspsx flag) makes only those small. Both GCC versions emit `.extern`
 with sizes, so this isn't the compiler's doing.
+
+Under split addresses a global declared with a size of 8 bytes or less
+(`extern int D_800CB480;`) is still one `la`, which stays out of delay
+slots; declared as an array of unknown size it's split and scheduled.
+chunk_45 has both (`func_8006BA80`, `func_8006C77C`).
 
 ### Divisions
 
@@ -187,6 +193,10 @@ globals), a script that tries every order is quicker than guessing:
   had them in locals: the 2D items' `x0`, `y0`, `x1`, `y1` before the
   packet's stores (`func_80015798`).
 
+- **A chained assignment.** chunk_23's constructor stores three zeros
+  before two -1s; written apart, GCC loaded -1 first. The permuter found
+  `o->m_04 = o->m_10 = *(int *)o = 0;` (`func_8003FC94`).
+
 ### Result variables
 
 - **Assign the result last.** `r = 1` before the stores made GCC reuse
@@ -212,6 +222,10 @@ globals), a script that tries every order is quicker than guessing:
 - **Read the field again rather than keep it.** `FindEntry`'s binary
   search compares `p->hash` directly; a `h = p->hash` temporary changed
   where the comparison is scheduled.
+
+- **A switch's decision tree.** GCC's tree depends on the case values:
+  `func_8006B570`'s original tests 1 first, then below 2, which a switch
+  on 1 to 3 doesn't give; adding an empty `case 0: break;` does.
 
 ### Loops
 
@@ -349,6 +363,13 @@ globals), a script that tries every order is quicker than guessing:
   original does, where `f &= ~1` becomes `andi 0xFFFE` (found by the
   permuter; that function still doesn't match otherwise).
 
+- **How a subtraction is associated.** `x - 10 - y` folds to
+  `x - (y + 10)`; `x - (10 + y)` gives the original's `addiu -10`, `subu`
+  (`func_8006B3B0`).
+- **An offset folded into the load.** `(&a[i])[1]` loads at `a + 4*i + 4`
+  with the 4 in the offset; `a[i + 1]` computes `i + 1` first
+  (`func_8006C4A0`).
+
 ### Pointers and locals
 
 - **Take a pointer before the null check.** `OpenArchive`'s
@@ -399,6 +420,10 @@ words into locals and store them, which an inline function gives:
 `func_8001363C`). libgte's `copyVector` macro shape and field-by-field
 assignments were further off.
 
+A 2-aligned struct copied with `lw`/`sw` can also be copied through a
+cast to a struct of three `int`s, when nothing else about the struct
+says it held one (`Words3`, chunk_45's `func_8006C330`).
+
 ### Types
 
 - **Narrow parameters are extended by the callee.** A `char` or `short`
@@ -425,6 +450,11 @@ assignments were further off.
 - **A struct for data read from a file.** The movie loop reads the DPS
   header through a `DPSHEADER *` (`hdr->width`), which the original keeps
   in a register; as an array of halfwords it didn't.
+
+- **Bitfields for a global's bits.** `x &= ~2` and a bitfield store
+  `x.m_b1 = 0` give the same instructions scheduled differently
+  (`func_8006BF4C`); packing values with bitfield stores (`func_8006BD78`)
+  likewise.
 
 ## Calls and declarations
 
@@ -474,6 +504,12 @@ assignments were further off.
   `extern void CobjetDtor(Cobjet *, int) asm("_._6Cobjet");` (chunk_03's
   subclasses), and a virtual call through the vtable entry
   (`{ short delta; short index; void (*func)(); }`, `DRAW_SET`).
+- **A virtual call through a `void` function.** When the result isn't
+  used, a cast to a function returning `void` gives other registers than
+  one returning `int` (chunk_45's `VCALLV`).
+- **The callee's result returned.** A function whose own arithmetic
+  avoids `$v0` after a call returns that call's result
+  (`func_8006C110`).
 - **C linkage for placeholder names.** A function in a `.cpp` chunk whose
   real name isn't known is declared `extern "C"` (`lib/sound/include/sound.h`),
   so its symbol is the plain `func_XXXXXXXX` the asm calls.
@@ -657,7 +693,8 @@ files (issue-1-langimg-sound.md, "The flags, function by function").
   why `-fno-rerun-cse-after-loop` fixes `func_80012F7C`. Not fixed by
   `(&a[i])->`, constants in the loop, a signed `unk6`, the array defined
   in the file or of unknown size, split addresses, older compilers or C.
-  The loops starting at a variable index (`func_80011960`,
+  chunk_45's `func_8006C85C` and `func_8006C8EC` have it too, and the
+  flag doesn't fix them. The loops starting at a variable index (`func_80011960`,
   `func_80011A68`) don't have the problem. The slot loops also keep `~1`
   in a register (`ClearFlags`, above).
 - **Stack addresses kept in registers** (chunk_02b: `func_80016268`,
@@ -668,6 +705,11 @@ files (issue-1-langimg-sound.md, "The flags, function by function").
   a saved register, so the frame and registers differ. Not the compiler
   (2.7.2 to 2.95.2), the front end, GCSE, CSE options or `-O1`
   ([issue-3-langimg-chunk02.md](matching/issue-3-langimg-chunk02.md)).
+- **A constant argument after an address** (chunk_45: `func_8006C7CC`,
+  `func_8006C8EC`): the original sets a call's third argument (a table's
+  address) before its second (the table's count); GCC sets them in
+  order. Not the parameters' types, a variadic declaration, or the
+  tables' types and sizes.
 - **All constants hoisted** (`func_80015798`): the original keeps 8
   constants in saved registers through its loop; as loop-local variables
   five are hoisted, but not the switch's `1` or the two sprite codes a
