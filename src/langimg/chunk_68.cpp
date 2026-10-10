@@ -147,11 +147,33 @@ Vector3 *func_80099908(Vector3 *d, Vector3 *a, Vector3 *b);
 void func_80099F88(int *d);
 void func_800990E8(Vector3 *v, int sh);
 int func_8009931C(Vector3 *v);
+int func_8009923C(Vector3 *v);
+int func_80097AC8(u32 x);
+int func_80097B7C(u32 lo, u32 hi);
 void func_8009A524(int *v, int a, Key68b *k);
 void func_8009A61C(Menu68 *m);
 void func_8009A764(Menu68 *m, int b);
 void func_8009A888(Menu68 *m);
 }
+
+// A square's 64 bits, as the game's asm macro: two nops before the mflo
+#define SQR64(lo, hi, x) \
+    __asm__ volatile("mult %2, %2\n\t" \
+                     "nop\n\t" \
+                     "nop\n\t" \
+                     "mflo %0\n\t" \
+                     "mfhi %1" \
+                     : "=r"(lo), "=r"(hi) \
+                     : "r"(x))
+
+// The GTE's count of leading zeros (or ones)
+#define GTE_LZC(r, x) \
+    __asm__ volatile("mtc2 %1, $30\n\t" \
+                     "nop\n\t" \
+                     "nop\n\t" \
+                     "mfc2 %0, $31" \
+                     : "=r"(r) \
+                     : "r"(x))
 
 // The game's abs, as a macro: sra, xor, subu where GCC's builtin branches
 #define ABS(x) (((x) ^ ((x) >> 31)) - ((x) >> 31))
@@ -196,45 +218,106 @@ void func_800990E8(Vector3 *v, int sh) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_68", func_800990E8);
 #endif
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_68", func_8009923C);
+#ifdef NON_MATCHING
+// The 64-bit sum's halves: registers (the products are the game's asm macro)
+/* The length: a 32-bit square root, the square shifted down to fit. */
+int func_8009923C(Vector3 *v) {
+    int n = 0;
+    int z;
+    u32 l0, h0, l1, h1, l2, h2;
+    u32 sl, sh, tl, th;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_68", func_8009931C);
+    SQR64(l0, h0, v->vx);
+    SQR64(l1, h1, v->vy);
+    sl = l0 + l1;
+    sh = h0 + h1;
+    sh += sl < l0;
+    SQR64(l2, h2, v->vz);
+    tl = sl + l2;
+    th = sh + h2;
+    th += tl < sl;
+    if (th) {
+        GTE_LZC(z, th);
+        n = (33 - z) & ~1;
+        tl = (tl >> n) | (th << (32 - n));
+        n >>= 1;
+    }
+    return func_80097AC8(tl) << n;
+}
+#else
+INCLUDE_ASM("asm/langimg/nonmatchings/chunk_68", func_8009923C);
+#endif
 
 #ifdef NON_MATCHING
-/* The original's 64-bit products read mflo then mfhi with two nops after each mult: an asm macro, not GCC's long long */
+// The 64-bit sum's halves: registers (the products are the game's asm macro)
+/* The length: the square root of the 64-bit square. */
+int func_8009931C(Vector3 *v) {
+    u32 l0, h0, l1, h1, l2, h2;
+    u32 sl, sh, tl, th;
+
+    SQR64(l0, h0, v->vx);
+    SQR64(l1, h1, v->vy);
+    sl = l0 + l1;
+    sh = h0 + h1;
+    sh += sl < l0;
+    SQR64(l2, h2, v->vz);
+    tl = sl + l2;
+    th = sh + h2;
+    th += tl < sl;
+    if (th) {
+        return func_80097B7C(tl, th);
+    }
+    return func_80097AC8(tl);
+}
+#else
+INCLUDE_ASM("asm/langimg/nonmatchings/chunk_68", func_8009931C);
+#endif
+
+#ifdef NON_MATCHING
 /* The squared length, or 0xFFFFFFFF past 32 bits. */
 u32 func_800993C8(Vector3 *v) {
-    unsigned long long s = (long long)v->vx * v->vx;
+    u32 l0, h0, l1, h1, l2, h2;
+    u32 sl, sh, tl, th;
 
-    s += (long long)v->vy * v->vy;
-    s += (long long)v->vz * v->vz;
-    if (s >> 32) {
-        return -1;
+    SQR64(l0, h0, v->vx);
+    SQR64(l1, h1, v->vy);
+    sl = l0 + l1;
+    sh = h0 + h1;
+    sh += sl < l0;
+    SQR64(l2, h2, v->vz);
+    tl = sl + l2;
+    th = sh + h2;
+    th += tl < sl;
+    if (th) {
+        tl = -1;
     }
-    return s;
+    return tl;
 }
 #else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_68", func_800993C8);
 #endif
 
 #ifdef NON_MATCHING
-/* The original's 64-bit products read mflo then mfhi with two nops after each mult: an asm macro, not GCC's long long */
-/* The squared length shifted right by sh, or 0xFFFFFFFF past 32 bits. */
-u32 func_80099454(Vector3 *v, int sh) {
-    unsigned long long s = (long long)v->vx * v->vx;
-    u32 lo;
-    u32 hi;
+/* The squared length shifted right by n, or 0xFFFFFFFF past 32 bits. */
+u32 func_80099454(Vector3 *v, int n) {
+    u32 l0, h0, l1, h1, l2, h2;
+    u32 sl, sh, tl, th;
 
-    s += (long long)v->vy * v->vy;
-    s += (long long)v->vz * v->vz;
-    lo = s;
-    hi = s >> 32;
-    lo = (lo >> sh) | (hi << (32 - sh));
-    hi >>= sh;
-    if (hi) {
-        return -1;
+    SQR64(l0, h0, v->vx);
+    SQR64(l1, h1, v->vy);
+    sl = l0 + l1;
+    sh = h0 + h1;
+    sh += sl < l0;
+    SQR64(l2, h2, v->vz);
+    tl = sl + l2;
+    th = sh + h2;
+    th += tl < sl;
+    tl = (tl >> n) | (th << (32 - n));
+    th >>= n;
+    if (th) {
+        tl = -1;
     }
-    return lo;
+    return tl;
 }
 #else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_68", func_80099454);
