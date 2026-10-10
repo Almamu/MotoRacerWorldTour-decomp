@@ -1,4 +1,5 @@
 #include "common.h"
+#include "gte.h"
 
 /* Tables, a character grid, a list's lookups (docs/matching/issue-57-langimg-chunk56.md) */
 
@@ -138,10 +139,45 @@ struct Sub56 {
     Vec56 m_08;
     u8 m_14[0xC];
 };
+// A vertex: x, y, z and a pad
+struct SVec56 {
+    short x;
+    short y;
+    short z;
+    short pad;
+};
 struct Cam56 {
     Mat56 m_00;
     Sub56 m_20;
+    u8 m_40[4];
+    short m_44; // how many vertices
+    u8 m_46[0x12];
+    SVec56 *m_58;
 };
+// The rotation matrix, as GTE_SET_ROT but through $v0 and $v1
+#define GTE_SET_ROT_V(m) \
+    __asm__ volatile("lw $2, 0(%0)\n\tlw $3, 4(%0)\n\t" \
+                     "ctc2 $2, $0\n\tctc2 $3, $1\n\t" \
+                     "lw $2, 8(%0)\n\tlw $3, 12(%0)\n\tctc2 $2, $2\n\t" \
+                     "lw $2, 16(%0)\n\tctc2 $3, $3\n\tctc2 $2, $4" \
+                     : \
+                     : "r"(m) \
+                     : "$2", "$3")
+// The translation, from 20.12 fixed point words to integers
+#define GTE_SET_TRANS_V(m) \
+    __asm__ volatile("lw $2, 20(%0)\n\tnop\n\tsra $2, $2, 4\n\tctc2 $2, $5\n\t" \
+                     "lw $3, 24(%0)\n\tnop\n\tsra $3, $3, 4\n\tctc2 $3, $6\n\t" \
+                     "lw $2, 28(%0)\n\tnop\n\tsra $2, $2, 4\n\tctc2 $2, $7" \
+                     : \
+                     : "r"(m) \
+                     : "$2", "$3")
+// A vertex into V0 (lwc2)
+#define GTE_LOAD_V0(p) __asm__ volatile("lwc2 $0, 0(%0)\n\tlwc2 $1, 4(%0)" : : "r"(p))
+// The rotation times V0, plus the translation (mvmva 1, 0, 0, 0, 0)
+#define GTE_MVMVA_RV0TR() __asm__ volatile("nop\n\tnop\n\t.word 0x4A480012")
+void func_8001B350(Sub56 *s, int *v);
+int func_8001AFF4(int a, int *v, int b);
+void func_80082468(Cam56 *c);
 struct Who56 {
     int m_00; // bits 1-5: a mode
     u8 m_04[0xC];
@@ -643,7 +679,37 @@ void func_80081F28(Cam56 *c, Vec56 *p) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_56", func_80081FE0);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_56", func_80082468);
+/* The vertices moved by the camera, each set on the ground beneath it. */
+void func_80082468(Cam56 *c) {
+    Sub56 *g = &c->m_20;
+    int n = c->m_44;
+    SVec56 *p = c->m_58;
+    int x;
+    int y;
+    int z;
+    int v[3];
+
+    GTE_SET_ROT_V(&c->m_00);
+    GTE_SET_TRANS_V(&c->m_00);
+    for (; n != 0; n--) {
+        GTE_LOAD_V0(p);
+        GTE_MVMVA_RV0TR();
+        GTE_GET_MAC(x, y, z);
+        x <<= 4;
+        y <<= 4;
+        z <<= 4;
+        v[0] = x;
+        v[1] = y;
+        v[2] = z;
+        func_8001B350(g, v);
+        if (g->m_00) {
+            p->y = (func_8001AFF4(g->m_00, v, 0) - c->m_00.t[1]) >> 4;
+        } else {
+            p->y = 0;
+        }
+        p++;
+    }
+}
 
 void func_8008259C(Draw56 *d, int i) {
     if (d->m_6C[i]) {
@@ -682,9 +748,10 @@ static inline void SetRect56(short *r, int x, int y, int w, int h) {
 }
 
 #ifdef NON_MATCHING
-// Registers and delay slots: the values' loads and the rectangle's stores
+// Registers: the values' loads and the rectangle's stores (24 off)
 void func_800826BC(u8 *o, Race56 *r) {
     short *d;
+    int v;
     Box56 *e;
     Box56 *f;
 
@@ -692,12 +759,14 @@ void func_800826BC(u8 *o, Race56 *r) {
         d = D_800CBD48;
         if (!(r->m_378->m_00 & 0xA8)) {
             e = func_800891E8(o + 0x30, r->m_CC);
-            SetRect56(d, e->m_18, e->m_1C, e->m_24 - 1, e->m_24 - 1);
+            v = e->m_24 - 1;
+            SetRect56(d, e->m_18, e->m_1C, v, v);
         } else {
             e = func_800891E8(o + 0x30, r->m_C4);
             f = func_800891E8(o + 0x30, r->m_BC);
             if (D_800D49A4 == 1) {
-                SetRect56(d, f->m_00 + f->m_08, f->m_00 + f->m_08, e->m_20, f->m_24);
+                v = f->m_00 + f->m_08;
+                SetRect56(d, v, v, e->m_20, f->m_24);
             } else {
                 SetRect56(d, f->m_18, f->m_1C, f->m_04 + f->m_0C, f->m_04 + f->m_0C);
             }
