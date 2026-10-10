@@ -31,7 +31,7 @@ What git holds and what it doesn't:
 | Code                          | Compiler                           | Language |
 |-------------------------------|------------------------------------|----------|
 | `LANGIMG.DAT` (`src/langimg`) | GCC 2.95.2, PlayStation build      | C++      |
-| `LANGIMG.DAT`'s functions between the classes (`src/langimg` chunk_02 to chunk_12, chunk_23, chunk_44, chunk_45, chunk_51, chunk_60, chunk_66, chunk_68, chunk_70, chunk_71, chunk_72) | GCC 2.91.66, PlayStation build | C++ |
+| `LANGIMG.DAT`'s functions between the classes (`src/langimg` chunk_02 to chunk_12, chunk_23, chunk_44, chunk_45, chunk_51, chunk_60, chunk_66, chunk_68, chunk_70, chunk_71, chunk_72, chunk_74) | GCC 2.91.66, PlayStation build | C++ |
 | `LANGIMG.DAT`'s sound engine (`lib/sound`) | GCC 2.91.66, PlayStation build | C++ (or C) |
 | `SCES_030.37` (`src/sces`)    | GCC 2.91.66 (egcs 1.1.2), PlayStation build | C++      |
 | Sony's libraries in both (`lib/psyq`) | not identified yet ([libraries.md](libraries.md)) | C |
@@ -164,7 +164,7 @@ The README's two badges count bytes of code, over both executables:
 
 - **matching**: functions that rebuild byte for byte from C, plus the
   library functions matched by Sony's own objects (`make sdk`) and the
-  hand-written asm (`config/sces/handwritten.txt`);
+  hand-written asm (`config/sces/handwritten.txt`, `config/langimg/handwritten.txt`);
 - **non-matching**: those plus the parked functions, whose C builds with
   `NON_MATCHING=1` but doesn't match yet.
 

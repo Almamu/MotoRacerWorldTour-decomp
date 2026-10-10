@@ -92,7 +92,7 @@ settings
 | `src/langimg` chunk_23 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=D_800CABB7` |
 | `src/langimg` chunk_45 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (eleven) |
 | `src/langimg` chunk_66 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (five) |
-| `src/langimg` chunk_44, chunk_51, chunk_60, chunk_68, chunk_70, chunk_71, chunk_72 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
+| `src/langimg` chunk_44, chunk_51, chunk_60, chunk_68, chunk_70, chunk_71, chunk_72, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_06 to chunk_12 (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_02b (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `SCES_030.37` (`src/sces`) | GCC 2.91.66 | 0 | `-fsigned-char` | `--expand-div` |
@@ -249,6 +249,14 @@ globals), a script that tries every order is quicker than guessing:
   label's pointer and a value in each branch and stores once after them:
   `l = p->m_74; v = p->m_00;` in each branch and `l->m_08 = v;` after.
   The store written in each branch stayed in each branch.
+
+- **The order of a switch's cases is the order of their code.**
+  chunk_74's `func_800A658C` tests its cases as 1, 0, 2, 3 whatever the
+  source order, but lays the bodies out in source order: `case 0` first
+  there.
+- **A loop's next value through a temporary.** The same function loads
+  the next entry, tests it and copies it: `t = *r; e = t; } while (t !=
+  -1);`. Loading into `e` itself tested `e`.
 
 ### Loops
 
@@ -427,6 +435,11 @@ globals), a script that tries every order is quicker than guessing:
   `memset(&e, 0, sizeof(e)); e.m_00 = name; e.m_04 = v; table[i] = e;`
   (the copy through the stack). A constructor taking the two values
   loaded them before the `memset`.
+- **Pointers into a table, read again on return.** chunk_74's `stricmp`
+  folds both characters through a table and, when they differ, loads both
+  again for the result: `x = &T[c]; y = &T[*b++]; if (*x != *y) return *x
+  - *y;`. Its `strnicmp` matched only with the character a `short` (the
+  permuter).
 - **A pointer to a local.** `CdlFILE *fp = &file;` passed to
   `CdSearchFile` keeps `&file` in a saved register (`OpenArchive`). The
   same for an address the original computes once, early, and keeps:
@@ -482,6 +495,13 @@ mean a `short` field.
 
 ### Types
 
+- **`char` is unsigned here; a `lb` means `s8`.** chunk_74's `strupr`,
+  `strlwr` and `sprintf` test each character with `lb`: the strings are
+  `s8 *`. Declared `char *`, GCC loads with `lbu`.
+- **Masks that store twice.** chunk_74's `func_800A57E4` clears a word's
+  low 30 bits and then sets bit 30, storing after each: `w &= 0xC0000000;
+  ...; w |= 0x40000000;` (GCC 2.x keeps the dead first store). The same
+  two writes as bitfields became one constant store.
 - **Two masks applied one after the other: bitfields.** chunk_70's
   `func_8009D0E4` sets a word with `and 0xFFF0FFFF; and 0xFFCFFFFF; or
   0x100000`. Written with masks, GCC folds the two `and`s; as bitfields
@@ -589,6 +609,10 @@ mean a `short` field.
 - **A library call's result returned.** `func_8009E01C` keeps `$v0` free
   after its `memcpy` and matches returning the copy's result: `r =
   memcpy(...); ...; return r;`.
+- **A virtual call's arguments and result.** chunk_74's `func_800A6650`
+  makes two calls through the vtable: one passes only `this` (cast to a
+  one-argument function) and both are declared returning `int`; with
+  `void`, `$v0` and `$v1` swap.
 - **The callee's result returned.** A function whose own arithmetic
   avoids `$v0` after a call returns that call's result
   (`func_8006C110`).
@@ -655,6 +679,12 @@ What's left once the instructions are right is usually register choice.
   the call in `base.c`: pycparser sees a call to an undeclared function.
 - **`abs` as a macro.** `sra`, `xor`, `subu` is `((x ^ (x >> 31)) - (x
   >> 31))`; GCC's `abs()` branches (chunk_68's `ABS`).
+- **A real `div` by a constant: the divisor is a variable.** GCC divides
+  by a constant with a multiply, but with both `/` and `%` of a variable
+  it uses `div` and takes both results. chunk_74's `itoa`s divide by 10
+  with `div`: `int base = 10;` gives the instruction. The originals also
+  reload 10 into `$t0`, `$t2` or `$s0` each time round, which we haven't
+  reproduced (three parked).
 - **Two nops between `mflo` and a multiply.** The R3000 needs two
   instructions between a move from HI/LO and the next `mult`/`div`;
   ASPSX fills them with `nop`s, and so does `--div-no-checks`

@@ -1,0 +1,9 @@
+# Functions written in assembly in the original, which stay asm (they aren't
+# decompiled; tools/chunks.py counts them as done). One name per line.
+func_800A63FC  # copies 256 words into the scratchpad unless $sp is there already; an 8-byte frame it never uses
+func_800A6A4C  # a table into the scratchpad: neg and addi, which GCC doesn't emit
+func_800A7034  # calls a function on a stack in the scratchpad, $ra and $sp saved by hand
+func_800A6FA0  # (a * b) / c on 64 bits by hand: neg and add, which GCC doesn't emit
+func_800A6A98  # a bitstream decoder: addi, add and jumps into func_800A6BD8
+func_800A6BD8  # its other half: neg and add, and its own entry points
+func_800A6D54  # the decoder's other table pass: neg, add and addi
