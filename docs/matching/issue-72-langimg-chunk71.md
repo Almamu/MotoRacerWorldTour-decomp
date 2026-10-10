@@ -8,7 +8,8 @@ sound settings applied, groups of named entries, an LZ unpacker and the
 open of `\MR3.DAT`. One file, `src/langimg/chunk_71.cpp`,
 0x8009F180-0x800A1110.
 
-57 functions: 46 match, 4 are parked, 7 are still asm.
+57 functions: 47 match, 3 are parked, 7 are still asm (`func_8009F180`
+matched during chunk_70, #71, once `func_800A41BC` was declared `int`).
 
 ## The settings
 
@@ -37,7 +38,8 @@ small and they're declared as scalars. chunk_72's split loads (`lui $v1`,
 
 | Function | State | Notes |
 |---|---|---|
-| `func_8009F180`, `func_8009F1F8` | parked | a menu's sound started (2 off), stopped (24 off) |
+| `func_8009F180` | matches | a menu's sound started (with `func_800A41BC` returning `int`) |
+| `func_8009F1F8` | parked | a menu's sound stopped (24 off) |
 | `func_8009F258` to `func_8009F734` | match | the sound options' keys, the menu music, saving the options |
 | `func_8009F760` | parked | seven words saved or restored: the copies' registers (49 off) |
 | `func_8009F82C` | asm | 161 instructions |

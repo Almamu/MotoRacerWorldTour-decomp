@@ -92,7 +92,7 @@ settings
 | `src/langimg` chunk_23 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=D_800CABB7` |
 | `src/langimg` chunk_45 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (eleven) |
 | `src/langimg` chunk_66 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (five) |
-| `src/langimg` chunk_44, chunk_51, chunk_60, chunk_68, chunk_71, chunk_72 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
+| `src/langimg` chunk_44, chunk_51, chunk_60, chunk_68, chunk_70, chunk_71, chunk_72 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_06 to chunk_12 (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_02b (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `SCES_030.37` (`src/sces`) | GCC 2.91.66 | 0 | `-fsigned-char` | `--expand-div` |
@@ -238,6 +238,17 @@ globals), a script that tries every order is quicker than guessing:
 - **A switch's decision tree.** GCC's tree depends on the case values:
   `func_8006B570`'s original tests 1 first, then below 2, which a switch
   on 1 to 3 doesn't give; adding an empty `case 0: break;` does.
+
+- **An empty `case 0` in a switch.** chunk_70's `func_8009D830` tests its
+  state with `== 1`, `< 2`, `== 2`: a switch with `case 0: break;`
+  besides `case 1` and `case 2`. Without it, GCC tests `== 1`, `== 2`.
+- **One return at the end.** The same function sets its result 0 after
+  restoring the saved registers: `if (o->m_54) { ... } return 0;`. An
+  early `return 0;` set it before.
+- **A value chosen in branches, stored once.** `func_8009E954` loads the
+  label's pointer and a value in each branch and stores once after them:
+  `l = p->m_74; v = p->m_00;` in each branch and `l->m_08 = v;` after.
+  The store written in each branch stayed in each branch.
 
 ### Loops
 
@@ -406,6 +417,16 @@ globals), a script that tries every order is quicker than guessing:
 - **Take a pointer before the null check.** `OpenArchive`'s
   `e = arc->entries;` before `if (arc)`: GCC computes it in the delay
   slot of the check, as the original does.
+- **A string's address before a call.** chunk_70's `func_8009D1F8` keeps
+  a string's address in `$s0` across the call that makes the first
+  argument of the next call: `char *s = D_800C94DC; int h = f(...);` then
+  `g(h, s, ...)`. Nested (`g(f(...), D_800C94DC, ...)`), GCC computes the
+  address after the call.
+- **A local cleared, filled, and copied.** chunk_70's `func_8009D410`
+  fills a table of 15 name and value pairs, each through one local:
+  `memset(&e, 0, sizeof(e)); e.m_00 = name; e.m_04 = v; table[i] = e;`
+  (the copy through the stack). A constructor taking the two values
+  loaded them before the `memset`.
 - **A pointer to a local.** `CdlFILE *fp = &file;` passed to
   `CdSearchFile` keeps `&file` in a saved register (`OpenArchive`). The
   same for an address the original computes once, early, and keeps:
@@ -461,6 +482,12 @@ mean a `short` field.
 
 ### Types
 
+- **Two masks applied one after the other: bitfields.** chunk_70's
+  `func_8009D0E4` sets a word with `and 0xFFF0FFFF; and 0xFFCFFFFF; or
+  0x100000`. Written with masks, GCC folds the two `and`s; as bitfields
+  (`m_state : 4` at bit 16, `m_mode : 2` at bit 20), each assignment keeps
+  its own. An anonymous union with the word keeps the other functions'
+  `int` uses as they were.
 - **Narrow parameters are extended by the callee.** A `char` or `short`
   parameter gets an `sll`/`sra` (or `andi`) at the start of the function;
   if the original has none, the parameter is an `int`, even when only its
@@ -551,6 +578,17 @@ mean a `short` field.
 - **A virtual call through a `void` function.** When the result isn't
   used, a cast to a function returning `void` gives other registers than
   one returning `int` (chunk_45's `VCALLV`).
+- **`$v1` where you have `$v0`, before any call: the callee returns
+  something.** chunk_70's `func_8009DDA8`, `func_8009E0E8` and
+  `func_8009DF90` (and chunk_71's `func_8009F180`) loaded a pointer into
+  `$v1` and matched once a callee declared `void` was declared `int`:
+  `func_800A41BC` and `func_800A4284` end with a value in `$v0`,
+  `func_8009D830` returns 0, and `func_8003CC78` returns its second
+  argument. Read the callee's last instructions; the permuter finds it too
+  (it varies declarations' return types).
+- **A library call's result returned.** `func_8009E01C` keeps `$v0` free
+  after its `memcpy` and matches returning the copy's result: `r =
+  memcpy(...); ...; return r;`.
 - **The callee's result returned.** A function whose own arithmetic
   avoids `$v0` after a call returns that call's result
   (`func_8006C110`).
