@@ -65,7 +65,8 @@ struct Table45 {
     s8 m_416;
     u8 m_417, m_418, m_419, m_41A;
     s8 m_41B; // the parity of a vector's bits
-    u8 m_41C, m_41D, m_41E, m_41F;
+    s8 m_41C, m_41D, m_41E;
+    u8 m_41F;
     u8 m_420[0xC];
     u8 m_42C[0x28];
     int m_454;
@@ -73,7 +74,8 @@ struct Table45 {
 
 // What a table's settings are read from
 struct Info45 {
-    u8 m_00[4];
+    short m_00;
+    u8 m_02[2];
     u8 m_04, m_05, m_06, m_07;
     u8 m_08, m_09, m_0A, m_0B;
     u8 m_0C, m_0D;
@@ -143,9 +145,13 @@ struct Banks45 {
 
 // An object with a vtable at 0x0C
 struct Virt45 {
-    u8 m_00[0xC];
+    int m_00;
+    int m_04; // a start
+    int m_08; // a length
     VtEntry *m_vtable;
-    u8 m_10[0x18];
+    int m_10;
+    int m_14;
+    u8 m_18[0x10];
     int m_28;
     int m_2C;
 };
@@ -153,8 +159,11 @@ struct Virt45 {
 // A slot of 0x24 bytes
 struct Slot45 {
     Virt45 *m_00;
-    int m_04; // in use
-    u8 m_08[0x14];
+    int m_04; // its state: 0 free, 1 to 3
+    int m_08;
+    int m_0C;
+    short m_10;
+    u8 m_12[0xA];
     Slot45 *m_prev; // 0x1C
     Slot45 *m_next; // 0x20
 };
@@ -181,10 +190,23 @@ struct Unit4C {
 };
 
 // A sound's settings (12 bytes)
+// A sound bank's names and ids
+struct SndName {
+    char *m_name;
+    int m_id;
+};
+
 struct SndDef {
-    u8 m_00[4];
+    int m_00;
     s8 m_04, m_05, m_06;
-    u8 m_07[5];
+    u8 m_07;       // the bank's count
+    SndName *m_08; // the bank
+};
+
+// A scene's music (5 bytes)
+struct Music45 {
+    u8 m_00;
+    s8 m_01, m_02, m_03, m_04;
 };
 
 extern int D_800CB5C8;
@@ -213,9 +235,9 @@ void func_8006D230(Bank45 *b);
 int func_8006B9B0(Slots45 *s);
 int func_8006BE7C(Table45 *o, int a, int b, int c, int d, int e);
 extern char D_800C7F30[];
-extern char D_800C7DD8[];
+extern SndName D_800C7DD8[]; // 13 names
 int func_80014724(int *a, char *b);
-void func_80013DE0(int *a, u8 b, char *c);
+void func_80013DE0(int *a, int n, SndName *t);
 void func_80011DA8(int a, int b);
 void func_8006CC40(Shared45 *s, int *a);
 int func_80096884(void *p);
@@ -278,6 +300,23 @@ void func_8006B3B0(Slots45 *o, Slot45 *s, int a);
 
 int func_8006CB68(int vol, int a, int b, int c, int d, int e);
 void func_8006B570(Slots45 *o);
+extern char D_800C7F48[];
+extern SndName D_800C79F8[]; // 94 names
+extern int D_800D13D8;
+extern u8 D_800C7F2E;
+extern u8 D_800C7F2C;
+extern int D_800CB84C;
+extern int D_800CB5D0;
+extern int D_800CB5D4;
+extern Music45 D_800C7F5C[];
+int sprintf(char *s, const char *f, ...);
+void func_8006FAF8(int a, int b);
+void func_8005F380(Info45 *d);
+int func_8006C330(Table45 *t);
+void func_8006A028(Virt45 *v, int a, int b, int c, int d);
+
+int func_8006C4A0(Table45 *t, Info45 *d, u16 *out);
+void func_8006C8EC(int a, int b, int c);
 extern u8 D_800C7F2D;
 extern Banks45 *D_800C7F28;
 extern int D_800D11D0[]; // a sound channel set
@@ -306,7 +345,31 @@ int func_8006CE18(Head45 *h);
 void func_8006CEAC(Head45 *h);
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006B3B0);
+/* A slot's object past its end: the slot finished, the ones after it moved up. */
+void func_8006B3B0(Slots45 *o, Slot45 *s, int x) {
+    Virt45 *v;
+    Slot45 *p;
+
+    VCALLV1(s->m_00, 2, x);
+    v = s->m_00;
+    if (v->m_08 + v->m_04 < x) {
+        s->m_04 = 3;
+        func_8006A028(v, v->m_10, v->m_14 + 30, 0, 150);
+        for (p = s->m_next; p; p = p->m_next) {
+            if ((u32)(p->m_04 - 1) < 2) {
+                Virt45 *w = p->m_00;
+
+                p->m_08 = p->m_08 - (10 + s->m_10);
+                func_8006A028(p->m_00, p->m_08, w->m_14, 0, 90);
+            }
+        }
+        if (s == o->m_last && s == o->m_first) {
+            o->m_0C = 0;
+        } else {
+            o->m_0C = o->m_0C - (10 + s->m_10);
+        }
+    }
+}
 
 void func_8006B500(Slots45 *o, Slot45 *s, int a) {
     VCALLV1(s->m_00, 2, a);
@@ -618,7 +681,31 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006C140);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006C330);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006C4A0);
+/* The next entry's settings read back; the cursor past the entries of the
+ * same time. */
+int func_8006C4A0(Table45 *t, Info45 *d, u16 *out) {
+    if (t->m_04 >= t->m_00) {
+        return 0;
+    }
+    if (!func_8006C330(t)) {
+        return 0;
+    }
+    *out = (u8)t->m_416;
+    func_8005F380(d);
+    d->m_00 = t->m_414;
+    d->m_04 = t->m_418;
+    d->m_08 = t->m_41C != 0;
+    d->m_05 = t->m_419;
+    d->m_09 = t->m_41D != 0;
+    d->m_07 = t->m_41A;
+    d->m_0A = t->m_41E != 0;
+    d->m_0D = t->m_417;
+    while (t->m_40C < t->m_410 - 1 && (&t->m_items[t->m_40C])[1].m_a == t->m_04) {
+        t->m_40C++;
+    }
+    t->m_04++;
+    return 1;
+}
 
 /* The parity of a vector's bits. */
 int func_8006C5D8(Vector3 v) {
@@ -710,7 +797,39 @@ SndDef *func_8006C85C(int a, int b, int c) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006C85C);
 #endif
 
+#ifdef NON_MATCHING
+/* A call's arguments set in the other order (as func_8006C7CC), and the music table's fields addressed from one base (as func_8006C85C) */
+/* A scene's sounds and its music. */
+void func_8006C8EC(int a, int b, int c) {
+    char buf[256];
+    SndDef *d = func_8006C85C(a, b, c);
+    u32 i;
+
+    if (d) {
+        sprintf(buf, D_800C7F48, d->m_00);
+        if (func_80014724(D_800D11D0, buf)) {
+            func_80013DE0(D_800D11D0, d->m_07, d->m_08);
+            func_80013DE0(D_800D11D0, 0x5E, D_800C79F8);
+        }
+    }
+    func_8006FAF8(0, 0);
+    D_800D13D8 = 2;
+    D_800C7F2E = 0;
+    for (i = 0; i < 10; i++) {
+        if (D_800C7F5C[i].m_02 == c || D_800C7F5C[i].m_01 == a) {
+            D_800C7F2E = D_800C7F5C[i].m_00;
+            func_80011DA8(D_800C7F5C[i].m_03, D_800C7F5C[i].m_04);
+            break;
+        }
+    }
+    D_800CB84C = b;
+    D_800CB5D0 = a;
+    D_800CB5D4 = c;
+    D_800C7F2C = (u32)(c - 14) < 2;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006C8EC);
+#endif
 
 void func_8006CA50(void) {
     D_800C7F28 = 0;
