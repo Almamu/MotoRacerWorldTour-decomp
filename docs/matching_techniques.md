@@ -92,7 +92,7 @@ settings
 | `src/langimg` chunk_23 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=D_800CABB7` |
 | `src/langimg` chunk_45 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (eleven) |
 | `src/langimg` chunk_66 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (five) |
-| `src/langimg` chunk_71, chunk_72 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
+| `src/langimg` chunk_60, chunk_71, chunk_72 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_06 to chunk_12 (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_02b (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `SCES_030.37` (`src/sces`) | GCC 2.91.66 | 0 | `-fsigned-char` | `--expand-div` |
@@ -522,6 +522,10 @@ mean a `short` field.
   `extern void CobjetDtor(Cobjet *, int) asm("_._6Cobjet");` (chunk_03's
   subclasses), and a virtual call through the vtable entry
   (`{ short delta; short index; void (*func)(); }`, `DRAW_SET`).
+- **`new T[n]` with an empty constructor.** After `__builtin_vec_new`,
+  a loop that counts down to -1 and does nothing is GCC's construction
+  of the elements when `T` has a constructor with an empty body
+  (chunk_60's `func_80089B6C`, `T36() {}`).
 - **A virtual call through a `void` function.** When the result isn't
   used, a cast to a function returning `void` gives other registers than
   one returning `int` (chunk_45's `VCALLV`).
