@@ -9,7 +9,7 @@ its strings emptied, the riders' count, the laps, each row's number,
 times and markers. One file, `src/langimg/chunk_56.cpp`,
 0x80081270-0x800831BC.
 
-34 functions: 24 match, 8 are parked, 2 are still asm.
+34 functions: 25 match, 7 are parked, 2 are still asm.
 
 ## The settings
 
