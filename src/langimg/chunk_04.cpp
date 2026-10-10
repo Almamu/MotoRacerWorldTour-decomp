@@ -59,7 +59,8 @@ struct Grid {
     int m_x;
     int m_y; // 24.8
     int m_z;
-    u8 m_0C[0x1C];
+    short m_nb[4]; // 0x0C: the neighbours, as distances (-0x7FFF: none)
+    u8 m_14[0x14];
     int m_28;
     u8 m_2C[0xC];
 };
@@ -85,7 +86,7 @@ struct GridSet {
     short (*m_index)[2]; // 0x24: each index cell's first and last grid
 };
 int func_8001A6AC(GridSet *gs, Vector3 *v, int a, int exact);
-int func_8001A86C(Grid *g, Vector3 *v, int n, int a);
+int func_8001A86C(Grid *base, Vector3 *v, int n, Grid *g);
 int func_8001ABBC(Grid *g, SVECTOR *c, int a);
 int func_8001AD78(void *self, int a, int b);
 int func_8001AF3C(Grid *g, Vector3 *v, SVECTOR *c);
@@ -435,7 +436,7 @@ int func_8001A664(Grid *g, Vector3 *v) {
 /* The set's grid a position is in: func_8001A86C's, else (unless exact)
  * the first through the index, or -1. */
 int func_8001A6AC(GridSet *gs, Vector3 *v, int a, int exact) {
-    int r = func_8001A86C(gs->m_grids, v, gs->m_count, a);
+    int r = func_8001A86C(gs->m_grids, v, gs->m_count, (Grid *)a);
     int x;
     int z;
     int i;
@@ -487,7 +488,85 @@ int func_8001A7F4(Grid *g, Vector3 *v, int n, int a) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_8001A7F4);
 #endif
 
+#ifdef NON_MATCHING
+/* A first draft, right in effect: the original runs out of saved registers and spills g and two constants around the calls (0x98 frame, here 0x88) */
+/* The index of the grid holding v, from base: g, one of its neighbours,
+ * or one of theirs not tried yet; -1 if none. */
+int func_8001A86C(Grid *base, Vector3 *v, int n_unused, Grid *g) {
+    Grid *seen[14];
+    Vector3 p = *v;
+    int r = -1;
+    int n = 0;
+    int i, j, k;
+
+    if (!g) {
+        return r;
+    }
+    if (func_8001A664(g, &p)) {
+        return g - base;
+    }
+    for (i = 0; i < 4; i++) {
+        Grid *h;
+
+        if (r != -1) {
+            return r;
+        }
+        h = g->m_nb[i] == -0x7FFF ? 0 : g + g->m_nb[i];
+        if (h && func_8001A664(h, &p)) {
+            r = h - base;
+        }
+    }
+    if (r != -1) {
+        return r;
+    }
+    seen[n++] = g;
+    for (i = 0; i < 4; i++) {
+        if (g->m_nb[i] != -0x7FFF) {
+            seen[n++] = g + g->m_nb[i];
+        }
+    }
+    for (i = 0; i < 4; i++) {
+        Grid *h;
+
+        if (r != -1) {
+            return r;
+        }
+        h = g->m_nb[i] == -0x7FFF ? 0 : g + g->m_nb[i];
+        if (!h) {
+            continue;
+        }
+        for (j = 0; j < 4; j++) {
+            Grid *q;
+            int found;
+
+            if (r != -1) {
+                break;
+            }
+            q = h->m_nb[j] == -0x7FFF ? 0 : h + h->m_nb[j];
+            if (!q) {
+                continue;
+            }
+            found = 0;
+            for (k = 0; k < n; k++) {
+                if (seen[k] == q) {
+                    found = 1;
+                    break;
+                }
+            }
+            if (found) {
+                continue;
+            }
+            seen[n++] = q;
+            if (func_8001A664(q, &p)) {
+                r = q - base;
+            }
+        }
+    }
+    return r;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_8001A86C);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_8001ABBC);
 
