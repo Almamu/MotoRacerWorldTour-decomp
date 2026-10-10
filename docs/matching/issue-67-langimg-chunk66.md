@@ -43,10 +43,11 @@ with `lui`/`addiu`), divisions without checks, five small globals
 | `func_800963BC` | matches | the pack freed |
 | `func_800963E8` | asm | a 0x800-byte copy and a string |
 | `func_80096508` to `func_8009662C` | match | the CD's shell, sectors read, retried |
+| `func_800966DC`, `func_80096724` | match | the stream emptied, back to its start |
 | `func_8009674C` | parked | the stream over a buffer: registers (13 off) |
-| `func_800966DC` to `func_80096C14` | match | the stream's reset, words, copy |
+| `func_8009682C` to `func_80096C14` | match | the stream freed, its words and bits, its copy |
 | `func_80096CA8` | parked | a value written with the first width it fits: registers (38 off) |
-| `func_80096D84` to `func_80097058` | match | a varargs read, planes |
+| `func_80096D84` to `func_8009707C` | match | a varargs read, planes |
 
 - **A varargs list read with PsyQ's `va_arg`, the named argument
   copied.** `func_80096D84` keeps the width in a register and the named
