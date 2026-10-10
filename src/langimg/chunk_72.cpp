@@ -101,7 +101,15 @@ extern char D_800D4958[];
 struct Blk72 {
     u32 m_crc;
     int m_size;
-    u8 m_08[1];
+    CdlLOC m_loc;
+    u32 m_hash; // its name's
+};
+
+// A pack: its blocks' count, flags, the blocks' size, the blocks from 0x10
+struct Pack72 {
+    u32 m_count;
+    u16 m_flags; // 8: sorted by hash
+    u16 m_size;
 };
 
 // A file's header: its entries' count, then the entries from 0x18
@@ -111,8 +119,8 @@ struct Hdr72 {
     int m_08;
 };
 
-Blk72 *func_800A1EFC(int a, char *name, void *buf, int *out);
-void *func_800A2148(int a, Blk72 *b, void *buf, int *out);
+Blk72 *func_800A1EFC(Pack72 *h, char *name);
+void *func_800A2148(Pack72 *h, Blk72 *b, void *buf, int *out);
 int TestEvent(int ev);
 extern int D_800D6074[], D_800D6078[], D_800D607C[], D_800D6080[], D_800D6084[], D_800D6088[];
 extern int D_800D60B0[], D_800D60B8[]; // the card's events
@@ -148,7 +156,7 @@ void func_800A12C4(Card72 *c);
 
 int func_800A1110(Card72 *c);
 void func_800A13C0(Card72 *c);
-void *func_800A2234(int a, char *name, void *buf, int *out);
+void *func_800A2234(Pack72 *h, char *name, void *buf, int *out);
 int DisableEvent(int ev);
 int CloseEvent(int ev);
 int func_800A5DA4(const char *fmt, ...);
@@ -162,7 +170,10 @@ extern u16 D_800BC8C8[]; // the punctuation's glyphs
 void func_800A63FC(void);
 u32 func_800A645C(void *p, int n, int a);
 u32 func_800A6448(void);
-void *func_800A1CF8(int mode, void *src, int size, void *buf);
+void *func_800A1CF8(int mode, CdlLOC *loc, int size, void *buf);
+void *malloc(unsigned int n);
+void *func_800B5730(void *p, int size);
+extern void (**D_800D6000)(void *p); // a hook on what's read
 
 void func_800A28B8(void);
 int func_800A2380(int ch);
@@ -513,9 +524,146 @@ CdlFILE *func_800A1C74(CdlFILE *fp, char *name) {
     return r;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A1CF8);
+#ifdef NON_MATCHING
+/* A first draft of the reader: the retries' and the pack's paths laid out differently (87 off) */
+/* size bytes read from loc into buf (allocated if none is given), the sector
+ * read again twice on an error. Mode 2 reads a pack: its first sector gives
+ * its size. */
+void *func_800A1CF8(int mode, CdlLOC *loc, int size, void *buf) {
+    u_char param[8];
+    CdlLOC pos = *loc;
+    int ours = 0;
+    int sectors;
+    int tries;
+    int n;
+    int r;
+    u8 *p;
 
+    func_800A1BD0();
+    VSync(0);
+    sectors = (u32)(size + 0x7FF) >> 11;
+    if (!buf) {
+        buf = malloc(sectors << 11);
+        ours = 1;
+        if (!buf) {
+            goto out;
+        }
+    }
+    tries = 2;
+retry:
+    n = sectors;
+    p = (u8 *)buf;
+    param[0] = 0x80;
+    CdControlB(0xE, param, 0);
+    CdControl(6, (u_char *)&pos, 0);
+    for (n--; n != -1; n--) {
+        r = CdReady(0, 0);
+        if (r == 5) {
+        fail:
+            if (!tries) {
+                break;
+            }
+            CdControlB(9, 0, 0);
+            tries--;
+            goto retry;
+        }
+        if (r == 1) {
+            if (CdGetSector(p, 0x200) != r) {
+                goto fail;
+            }
+            if (mode == 2 && p == buf) {
+                int len = ((Pack72 *)buf)->m_count * func_800A1BEC((Item72 *)buf);
+
+                size = len + 0x10;
+                sectors = (u32)(len + 0x80F) >> 11;
+                if (ours) {
+                    func_800B5730(buf, sectors << 11);
+                }
+                p = (u8 *)buf;
+                n = sectors - 1;
+            }
+            p += 0x800;
+        }
+    }
+    CdControlB(9, 0, 0);
+    if (D_800D6000) {
+        (*D_800D6000)(buf);
+    }
+    if (ours) {
+        buf = func_800B5730(buf, size);
+    }
+out:
+    func_800A1BE0();
+    VSync(0);
+    return buf;
+}
+#else
+INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A1CF8);
+#endif
+
+#ifdef NON_MATCHING
+/* The layout matches up to the binary search; registers and the search's scheduling differ (74 off) */
+/* The block with this name (any case), by its hash. */
+Blk72 *func_800A1EFC(Pack72 *h, char *name) {
+    char buf[0x200];
+    Blk72 *r = 0;
+
+    if (h) {
+        u8 *e = (u8 *)h + 0x10;
+        int step = func_800A1BEC((Item72 *)h);
+        u32 n = h->m_count;
+        u32 hash;
+
+        if (*(s8 *)name == '\\') {
+            name++;
+        }
+        if (n) {
+            strcpy(buf, name);
+            func_800A6344(buf);
+            hash = func_800A645C(buf, strlen(name), 0);
+            if (h->m_flags & 8) {
+                u32 hi = n - 1;
+                u32 lo = 0;
+                u32 mid;
+                u32 x;
+
+                if (hash < ((Blk72 *)e)->m_hash) {
+                    return r;
+                }
+                if (((Blk72 *)(e + hi * step))->m_hash < hash) {
+                    return r;
+                }
+                mid = hi >> 1;
+                x = ((Blk72 *)(e + mid * step))->m_hash;
+                while (hash != x) {
+                    if (x < hash) {
+                        lo = mid + 1;
+                    } else {
+                        hi = mid - 1;
+                    }
+                    if (hi < lo) {
+                        return r;
+                    }
+                    mid = lo + ((hi - lo) >> 1);
+                    x = ((Blk72 *)(e + mid * step))->m_hash;
+                }
+                r = (Blk72 *)(e + mid * step);
+            } else {
+                while (hash != ((Blk72 *)e)->m_hash) {
+                    if (!--n) {
+                        return r;
+                    }
+                    e += step;
+                }
+                r = (Blk72 *)e;
+            }
+        }
+    }
+    return r;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A1EFC);
+#endif
 
 /* A file's header read; its entries' sectors made positions on the CD. */
 Hdr72 *func_800A207C(char *name, void *buf) {
@@ -527,7 +675,7 @@ Hdr72 *func_800A207C(char *name, void *buf) {
         int step;
         u8 *e;
 
-        h = (Hdr72 *)func_800A1CF8(2, &fp, 0x800, buf);
+        h = (Hdr72 *)func_800A1CF8(2, &fp.pos, 0x800, buf);
         step = func_800A1BEC((Item72 *)h);
         i = 0;
         if (h->m_count) {
@@ -549,13 +697,13 @@ Hdr72 *func_800A207C(char *name, void *buf) {
 /* The block's CRC loaded into $v1, not $v0 (2 off) */
 /* A block read into buf (allocated if none is given), read again once if its
  * CRC is wrong; its size to *out. */
-void *func_800A2148(int a, Blk72 *b, void *buf, int *out) {
+void *func_800A2148(Pack72 *h, Blk72 *b, void *buf, int *out) {
     int tries = 1;
     int ours = buf == 0;
     u32 crc;
 
 again:
-    buf = func_800A1CF8(0, b->m_08, b->m_size, buf);
+    buf = func_800A1CF8(0, &b->m_loc, b->m_size, buf);
     func_800A63FC();
     crc = func_800A645C(buf, b->m_size, 0);
     func_800A6448();
@@ -581,11 +729,11 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A2148);
 
 #ifdef NON_MATCHING
 /* The first and last arguments in each other's saved registers (6 off) */
-void *func_800A2234(int a, char *name, void *buf, int *out) {
-    Blk72 *b = func_800A1EFC(a, name, buf, out);
+void *func_800A2234(Pack72 *h, char *name, void *buf, int *out) {
+    Blk72 *b = func_800A1EFC(h, name);
 
     if (b) {
-        buf = func_800A2148(a, b, buf, out);
+        buf = func_800A2148(h, b, buf, out);
     }
     return buf;
 }
