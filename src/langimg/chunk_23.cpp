@@ -12,6 +12,8 @@ struct VtEntry {
     int (*m_func)(void *self);
 };
 
+struct NamedOwner;
+
 // The object (its size isn't known here)
 struct Named {
     unsigned m_on : 1; // 0x00 bit 0
@@ -35,18 +37,52 @@ struct Named {
     u8 m_6C[0x30];
     void *m_9C;
     void *m_A0;
-    u8 m_A4[0xB8];
+    u8 m_A4[4];
+    u8 m_A8[0x90];
+    NamedOwner *m_138;
+    int m_13C;
+    u8 m_140;
+    u8 m_141;
+    u8 m_142[6];
+    int m_148;
+    u8 m_14C[4];
+    int m_150;
+    u8 m_154[8];
     int m_15C;
     int m_160;
     int m_164;
     int m_168;
     int m_16C;
+    int m_170;
+};
+
+// What an entry plays
+struct EntryData {
+    int m_00;
+    int m_04;
+    short m_08;
 };
 
 // An entry found by name in an object list
 struct NamedEntry {
     int m_00;
     unsigned m_flags : 11; // 0x04
+    int m_08;
+    int m_0C;
+    EntryData *m_10;
+};
+
+// What m_138 points at
+struct NamedOwner {
+    u8 m_00[0x37C];
+    short *m_37C;
+};
+
+// What m_A0 points at: two arrays
+struct NamedArrays {
+    u8 m_00[0x15C];
+    int *m_15C;
+    int *m_160;
 };
 
 // What holds an object list at 0x38
@@ -68,7 +104,28 @@ struct Scene {
     int m_count; // 0xA70
     u8 m_A74[8];
     SceneItem *m_items; // 0xA7C
+    char **m_A80;
+    char **m_A84;
+    u8 m_A88[8];
+    int m_A90;
+    int m_A94;
+    u8 m_A98[4];
+    u8 *m_A9C;
 };
+
+// An event: its kind, its scene
+struct SceneEvent {
+    int m_00;
+    Scene *m_scene;
+};
+
+// The sounds by index (12 bytes each)
+struct SoundSlot {
+    int m_00;
+    int m_04;
+    int m_08;
+};
+extern SoundSlot *D_800C9EE4;
 
 #define VCALL(o, i) ((o)->m_vtable[i].m_func((char *)(o) + (o)->m_vtable[i].m_delta))
 #define VCALL1(o, i, a) \
@@ -106,7 +163,19 @@ int func_80040C34(Named *o);
 NamedEntry *func_80017E10(void *l, const char *name, int len); // by name
 void func_80017730(void *l);
 void func_8001865C(void *l);
-void func_80040234(Named *o, Holder *h, NamedEntry *e, int x);
+NamedEntry *func_80040234(Named *o, Holder *h, NamedEntry *e, int x);
+void func_80040D1C(Named *o);
+Named *func_800404D0(Named *o);
+void func_8003FF70(SceneEvent *ev, int a, SceneEvent *b);
+NamedEntry *func_80040344(Named *o, Holder *h, const char *name, unsigned int k);
+int func_8005C424(NamedOwner *w, int x);
+void __builtin_vec_delete(void *p);
+void func_80044CC4(Named *o);
+void func_800449A8(void *p);
+extern int D_800C54B8;
+extern char D_800C4FB8[];
+extern char D_800C4F70[];
+int func_800A60AC(const char *a, const char *b);
 void func_800AFC0C(int a, Named *o);
 void func_8009D3E4(void);
 extern int D_800C89E8;
@@ -328,7 +397,28 @@ int func_8003FF68(Named *o) {
     return 1;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_8003FF70);
+void func_8003FF70(SceneEvent *ev, int a, SceneEvent *b) {
+    Scene *s = b->m_scene;
+    int i;
+
+    if (!ev->m_00) {
+        int *q = (int *)(s->m_A9C + 8);
+        char **names;
+
+        if (s->m_A90 == 1 || s->m_A90 == 4) {
+            names = s->m_A84;
+        } else {
+            names = s->m_A80;
+        }
+        if (func_800A60AC(*names, D_800C4F70)) {
+            for (i = 0; i < 2; i++) {
+                func_8003EC90(s, 12, i, 0);
+            }
+            q[3] = 1;
+            s->m_A94 |= 4;
+        }
+    }
+}
 
 void func_80040034(Named *o, int a) {
     int i;
@@ -358,7 +448,16 @@ int func_800401FC(Named *o, int a, int b, int c, ...) {
     return b;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_80040234);
+NamedEntry *func_80040234(Named *o, Holder *h, NamedEntry *e, int x) {
+    EntryData *d = e->m_10;
+
+    if (d->m_00 & 0x40000) {
+        d->m_08 = o->m_138->m_37C[x];
+    } else {
+        e = (NamedEntry *)func_800401FC(o, (int)h, (int)e, func_8005C424(o->m_138, x));
+    }
+    return e;
+}
 
 void func_800402D0(Named *o, Holder *h, const char *name, int x) {
     NamedEntry *e = func_80017E10(h->m_38, name, strlen(name));
@@ -368,7 +467,16 @@ void func_800402D0(Named *o, Holder *h, const char *name, int x) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_80040344);
+NamedEntry *func_80040344(Named *o, Holder *h, const char *name, unsigned int k) {
+    NamedEntry *e = func_80017E10(h->m_38, name, strlen(name));
+
+    e->m_flags &= ~2;
+    if (k < 8 && D_800C9EE4[k].m_00) {
+        func_800401FC(o, (int)h, (int)e, D_800C9EE4[k].m_00);
+        e->m_flags |= 2;
+    }
+    return e;
+}
 
 void func_8004041C(Named *o, Holder *h, const char *name) {
     func_80017E10(h->m_38, name, strlen(name))->m_flags |= 2;
@@ -378,7 +486,36 @@ void func_8004047C(Named *o, Holder *h, const char *name) {
     func_80017E10(h->m_38, name, strlen(name))->m_flags &= ~2;
 }
 
+#ifdef NON_MATCHING
+/* Registers: -1 in $a1 in the original, $v0 here, as in func_8003FC94 (7 off) */
+/* The subclass's constructor (its vtable D_800C53E8). */
+Named *func_800404D0(Named *o) {
+    func_80044CC4(o);
+    o->m_vtable = D_800C53E8;
+    func_800449A8(o->m_A8);
+    o->m_0C = -1;
+    o->m_state = -1;
+    o->m_150 = -1;
+    o->m_168 = -1;
+    o->m_A0 = 0;
+    o->m_10 = 0x12;
+    o->m_60 = (int)&D_800C54B8;
+    o->m_140 = 0;
+    o->m_15C = 0;
+    o->m_148 = 0;
+    o->m_141 = 0;
+    o->m_13C = 0;
+    o->m_170 = 0;
+    o->m_160 = 0;
+    o->m_164 = 0;
+    o->m_16C = 0;
+    o->m_b7 = 1;
+    func_8003FE2C(o, D_800C4FB8);
+    return o;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_800404D0);
+#endif
 
 /* A subclass's destructor (its vtable D_800C53E8). */
 void func_80040578(Named *o, int flags) {
@@ -420,7 +557,24 @@ int func_80040CC8(Named *o) {
     return r;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_80040D1C);
+void func_80040D1C(Named *o) {
+    NamedArrays *a;
+
+    if (o->m_9C) {
+        __builtin_delete(o->m_9C);
+        o->m_9C = 0;
+    }
+    if ((a = (NamedArrays *)o->m_A0)) {
+        if (a->m_15C) {
+            __builtin_vec_delete(a->m_15C);
+            ((NamedArrays *)o->m_A0)->m_15C = 0;
+        }
+        if (((NamedArrays *)o->m_A0)->m_160) {
+            __builtin_vec_delete(((NamedArrays *)o->m_A0)->m_160);
+            ((NamedArrays *)o->m_A0)->m_160 = 0;
+        }
+    }
+}
 
 void func_80040DB8(Named *o) {
     func_800AFC0C(o->m_60, o);
