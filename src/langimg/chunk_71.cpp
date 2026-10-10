@@ -30,17 +30,29 @@ struct Ev71 {
     u16 *m_48;
 };
 
-// Something with a handle at 0x60
+// A sprite drawn in pairs of frames
+struct Spr71 {
+    int m_a[0x24]; // 0x00
+    int m_b[0x24]; // 0x90
+    u8 m_120[0xC];
+    int m_12C, m_130, m_134, m_138;
+    int m_13C; // the frame drawn
+    int m_140; // the frame to draw
+};
+
+// Something with a sprite at 0x60
 struct Snd71 {
     u8 m_00[0x60];
-    int m_60;
+    Spr71 *m_60;
 };
 
 // A menu
 struct Menu71 {
     u8 m_00[0x150];
     int m_150;
-    u8 m_154[0x92C];
+    u8 m_154[0x24];
+    int m_178;
+    u8 m_17C[0x904];
     Snd71 *m_A80;
     Snd71 *m_A84;
     u8 m_A88[8];
@@ -82,6 +94,37 @@ struct Snd886C {
 struct Three71 {
     u8 m_00[0x3C];
     int m_3C[3][5];
+    int m_78; // the current one
+};
+
+// The cards' state
+struct Card71 {
+    int m_00;
+    Three71 m_04;
+    u8 m_80[0xD8];
+    u32 m_b0 : 1;
+    u32 m_b1 : 1;
+    u32 m_b2 : 1;
+    u32 m_b3 : 1;
+    u32 m_b4 : 1;
+    u32 m_b5 : 26;
+    u32 m_b31 : 1; // 0x158
+    u8 m_15C[0x1450];
+    int m_15AC;
+    u8 m_15B0[0x28];
+    Group71 m_15D8;
+    u8 m_1624[4];
+    int m_1628;
+    u8 m_162C[0x7C];
+    int m_16A8;
+    u8 m_16AC[0x20];
+    int m_16CC;
+    u8 m_16D0[4];
+    int m_16D4;
+    u8 m_16D8[0x58];
+    int m_1730;
+    u8 m_1734[8];
+    int m_173C, m_1740;
 };
 
 extern int D_800C9CE0;
@@ -92,8 +135,8 @@ extern void *D_800D4788[];
 void func_8006CB38(int id);
 void func_800A0884(u8 *p);
 void func_8009F5A8(void);
-void func_8009EAEC(int a);
-void func_8009E360(int a);
+void func_8009EAEC(Spr71 *s);
+void func_8009E360(Spr71 *s);
 void *func_800A207C(char *name, void *buf);
 
 void func_8009F258(Menu71 *m);
@@ -122,14 +165,14 @@ extern Snd886C *D_800C886C;
 extern char D_800C9CD8[];
 extern int D_800BC884;
 void func_800792DC(Snd886C *g);
-void func_8009E0AC(int a);
+void func_8009E0AC(Spr71 *s);
 void func_800A4244(void);
-void func_800AFB98(int a);
+int func_800AFB98(int a);
 void func_800A41BC(void);
 void func_800A4608(int a);
 void func_8003B7B0(Menu71 *m);
-void func_8009E01C(int a, char *b, int c, int d, int e);
-void func_8009E0E8(int a);
+void func_8009E01C(Spr71 *a, char *b, int c, int d, int e);
+void func_8009E0E8(Spr71 *s);
 void func_800A0AE8(Three71 *t);
 
 void func_8009F180(Menu71 *m);
@@ -144,12 +187,44 @@ Group71 *func_800A0148(Group71 *g);
 void func_800A0248(Group71 *g);
 int func_800A0420(Group71 *g, u32 a, char *name, int d, int e);
 Three71 *func_800A0C58(Three71 *t);
+
+struct Pos71 {
+    int m_00, m_04;
+    int m_08[3];
+};
+int func_80087468(void *a, int b, int c, int d, int e, int f);
+int func_8003EC90(Menu71 *m, int key, int b, void (*f)(Key71 *, int, Ctx71 *));
+void func_800A164C(int *p);
+int func_800A0E58(Card71 *c);
+int func_800A1170(Card71 *c);
+void func_800A1228(Card71 *c);
+int *func_800A14B8(int a);
+Pos71 *func_800A14E8(int a);
+void *__builtin_vec_new(unsigned int n);
+extern char *D_800C9F00;
+extern char D_800C9F04[];
+struct Sig71 {
+    int m_00; // 0x12345670
+    u8 m_04;
+};
+extern Sig71 *D_800BC888;
+extern u8 D_800C9D40;
+
+int func_800A0D48(Card71 *c);
+void func_800A0CC4(Card71 *c);
+void func_8009FCD8(Menu71 *m);
+void func_8009FD60(Menu71 *m);
+void func_8009FDE8(Menu71 *m);
+void func_8009F450(Menu71 *m);
+int func_800A0DC4(Card71 *c, int a, int b);
+char *func_8009FFCC(void);
+void func_8009FAB0(Menu71 *m);
 }
 
 #ifdef NON_MATCHING
 /* The menu's sound loaded into $v0, not $v1 (2 off) */
 void func_8009F180(Menu71 *m) {
-    int s = m->m_A80->m_60;
+    Spr71 *s = m->m_A80->m_60;
 
     func_800A41BC();
     func_800A4608(1);
@@ -251,7 +326,16 @@ void func_8009F3EC(Key71 *k, int b, Ctx71 *c) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_8009F450);
+/* The sound options' keys. */
+void func_8009F450(Menu71 *m) {
+    func_8003EC90(m, 1, 0, func_8009F390);
+    func_8003EC90(m, 2, 0, func_8009F3EC);
+    func_8003EC90(m, 4, 0, func_8009F2C8);
+    func_8003EC90(m, 3, 0, func_8009F32C);
+    m->m_178 = 1;
+    func_800AFB98(1);
+    m->m_150 = 0x85;
+}
 
 void func_8009F4E4(Menu71 *m, int b) {
     Snd886C *g;
@@ -317,21 +401,75 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_8009F760);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_8009F82C);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_8009FAB0);
+/* The sprite's frame drawn, if it changed. */
+void func_8009FAB0(Menu71 *m) {
+    Snd71 *n;
+    Spr71 *s;
+
+    if (m->m_A90 == 1 || m->m_A90 == 4) {
+        n = m->m_A84;
+    } else {
+        n = m->m_A80;
+    }
+    s = n->m_60;
+    if (s) {
+        int i = s->m_140;
+
+        if (i != s->m_13C) {
+            func_80087468(s->m_120, s->m_a[i], 0, s->m_12C, s->m_130, s->m_b[i]);
+            s->m_13C = i;
+        }
+    }
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_8009FB58);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_8009FC00);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_8009FCD8);
+void func_8009FCD8(Menu71 *m) {
+    Spr71 *s = m->m_A80->m_60;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_8009FD60);
+    DrawSync(0);
+    func_80087468(s->m_120, s->m_a[35], 1, s->m_12C, s->m_130, s->m_b[35]);
+    func_80087468(s->m_120, s->m_a[34], 1, s->m_134, s->m_138, s->m_b[34]);
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_8009FDE8);
+void func_8009FD60(Menu71 *m) {
+    Spr71 *s = m->m_A80->m_60;
+
+    DrawSync(0);
+    func_80087468(s->m_120, s->m_a[30], 1, s->m_12C, s->m_130, s->m_b[30]);
+    func_80087468(s->m_120, s->m_a[29], 1, s->m_134, s->m_138, s->m_b[29]);
+}
+
+void func_8009FDE8(Menu71 *m) {
+    Spr71 *s = m->m_A80->m_60;
+
+    DrawSync(0);
+    func_80087468(s->m_120, s->m_a[33], 1, s->m_12C, s->m_130, s->m_b[33]);
+    func_80087468(s->m_120, s->m_a[32], 1, s->m_134, s->m_138, s->m_b[32]);
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_8009FE70);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_8009FFCC);
+/* The card's name, made by its first user. */
+char *func_8009FFCC(void) {
+    if (!D_800C9F00) {
+        int v;
+
+        D_800C9F00 = (char *)__builtin_vec_new(16);
+        strncpy(D_800C9F00, D_800C9F04, 16);
+        D_800C9F00[15] = 0;
+        D_800C9F00[8] = 'D';
+        if (D_800BC888 && D_800BC888->m_00 == 0x12345670) {
+            v = D_800BC888->m_04;
+        } else {
+            v = D_800C9D40;
+        }
+        D_800C9F00[10] = v + '0';
+    }
+    return D_800C9F00;
+}
 
 char *func_800A006C(char *p) {
     *p = 0;
@@ -494,10 +632,51 @@ int func_800A0CBC(void) {
     return 1;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_800A0CC4);
+void func_800A0CC4(Card71 *c) {
+    c->m_b2 = 0;
+    c->m_b1 = 1;
+    c->m_b0 = 0;
+    c->m_b3 = 0;
+    c->m_b5 = 0;
+    c->m_b4 = 0;
+    func_800A0AE8(&c->m_04);
+    func_800A021C(&c->m_15D8);
+    c->m_00 = 0x18;
+    c->m_16CC = 0;
+    c->m_16D4 = 0;
+    c->m_15AC = 0;
+    c->m_173C = 0;
+    c->m_1740 = 0;
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_800A0D48);
+int func_800A0D48(Card71 *c) {
+    int r = 0;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_800A0DC4);
+    func_800A164C(&c->m_1628);
+    if (c->m_16A8 == 8 || c->m_1730 != -1) {
+        r = func_800A0E58(c);
+    } else if (c->m_16A8 == 4) {
+        r = func_800A1170(c);
+    }
+    return r;
+}
+
+/* A directory chosen, if it has that file. */
+int func_800A0DC4(Card71 *c, int a, int b) {
+    int r = 0;
+    Three71 *t = &c->m_04;
+    Pos71 *p;
+
+    func_800A14B8(a);
+    p = func_800A14E8(a);
+    if (p->m_08[b] >= 0) {
+        t->m_78 = a;
+        p->m_00 = b;
+        p->m_04 = 0;
+        func_800A1228(c);
+        r = 1;
+    }
+    return r;
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_800A0E58);
