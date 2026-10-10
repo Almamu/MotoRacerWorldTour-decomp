@@ -49,11 +49,71 @@ void func_8004C14C(Named29 *o, int f);
 void func_8004C184(Named29 *o, int f);
 void func_8004C3FC(Tab29 *t, int i, int a, int b, int c);
 void func_8004C420(Tab29 *t, int i, int v);
+// A player's state
+struct Ply29 {
+    u8 m_00[0x154];
+    int m_154; // a choice, 0 to 5
+};
+struct Bk29 {
+    u8 m_00[0x188];
+    u16 m_188;
+    u8 m_18A[0x3DE];
+};
+struct Rc29 {
+    u8 m_00[0x10];
+    struct Bk29 *m_10;
+    u8 m_14[0x2D4];
+    struct Bk29 m_2E8[5];
+};
+// The game: the players' views
+struct Game29 {
+    u8 m_00[0x10];
+    int m_10;
+    u8 m_14[4];
+    int m_18;
+    u8 m_1C[0x2E8];
+    int m_304;
+    u8 m_308[4];
+    int m_30C;
+    u8 m_310[0x68];
+    struct Rc29 *m_378;
+    u8 m_37C[0xC0];
+    Ply29 *m_43C[2];
+    u8 m_444[0x2C];
+    s8 m_470[2];
+    u8 m_472[0x16];
+    int m_488[2];
+};
+extern int *D_800CB2F8;
+extern char D_800C6444[]; // "Data\\Final\\"
+extern char D_800C6450[]; // ".bs"
+extern char *D_800C9E94;  // a table of names
+extern char D_800D4798;
+extern int D_800CBC94;
+extern int D_800CB2C0;
+char *strcat(char *d, const char *s);
+int func_80078FC4(void *a, int b);
+void func_8004F0C4(Game29 *g, int i);
+void func_80078280(Ply29 *p);
+void func_8004C4E4(Game29 *g, int i, int c);
+void func_8004C764(Game29 *g, int i);
+void func_8004C38C(Game29 *g);
+void func_8004C7EC(Game29 *g);
+char *func_8004B96C(int k);
+void func_8004C430(Game29 *g, int i);
+int func_8004B844(int a, int b);
 }
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_29", func_8004B4B0);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_29", func_8004B844);
+int func_8004B844(int a, int b) {
+    func_80045168(&D_800CABC0, 0, -1, 1, a);
+    func_80045168(&D_800CABC0, 0, -1, 1, b);
+    func_80045168(&D_800CABC0, 1, -1, 8, 0);
+    func_80045168(&D_800CABC0, 2, -1, 2, 0x11, 2, &D_800CB2C0, 7);
+    D_800D5FCC = 0;
+    return 1;
+}
 
 int func_8004B900(int a, int b) {
     int r;
@@ -65,7 +125,16 @@ int func_8004B900(int a, int b) {
     return r;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_29", func_8004B96C);
+/* "Data\\Final\\", a name from the table, ".bs". */
+char *func_8004B96C(int k) {
+    char *b = &D_800D4798;
+    char *n = (&D_800C9E94)[k];
+
+    memcpy(&D_800D4798, D_800C6444, 12);
+    strcat(b, n);
+    strcat(b, D_800C6450);
+    return b;
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_29", func_8004BA04);
 
@@ -126,7 +195,17 @@ void func_8004C184(Named29 *o, int f) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_29", func_8004C1BC);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_29", func_8004C38C);
+void func_8004C38C(Game29 *g) {
+    int i;
+
+    for (i = 1; i >= 0; i--) {
+        func_8004C764(g, i);
+    }
+    if (g->m_30C != -1 && !g->m_304) {
+        func_8004C4E4(g, 0, g->m_30C);
+        g->m_30C = -1;
+    }
+}
 
 void func_8004C3FC(Tab29 *t, int i, int a, int b, int c) {
     t->m_400[i] = a;
@@ -138,13 +217,47 @@ void func_8004C420(Tab29 *t, int i, int v) {
     t->m_3F8[i] = v;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_29", func_8004C430);
+/* The player's choice stepped back (from 0 to 5), unless their bike is busy. */
+void func_8004C430(Game29 *g, int i) {
+    if (g->m_10 == 0x10 && !g->m_304) {
+        int k = g->m_470[i];
+        Rc29 *r = g->m_378;
+        Bk29 *b = 0;
+
+        if (k >= 0) {
+            b = &r->m_2E8[k];
+        }
+        if (!b->m_188) {
+            Ply29 *p = g->m_43C[i];
+
+            if (--p->m_154 < 0) {
+                p->m_154 = 5;
+            }
+            func_8004C4E4(g, i, p->m_154);
+        }
+    }
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_29", func_8004C4E4);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_29", func_8004C764);
+void func_8004C764(Game29 *g, int i) {
+    Ply29 *p = g->m_43C[i];
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_29", func_8004C7EC);
+    func_80078280(p);
+    func_8004C420((Tab29 *)g, i, D_800CB2F8[p->m_154]);
+    func_8004C3FC((Tab29 *)g, i, *(int *)((u8 *)g->m_378->m_10 + 0x55C), 0, 0);
+}
+
+void func_8004C7EC(Game29 *g) {
+    int i;
+
+    if (func_80078FC4(&D_800CBC94, g->m_18)) {
+        for (i = 0; i < 2; i++) {
+            g->m_488[i] &= ~1;
+            func_8004F0C4(g, i);
+        }
+    }
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_29", func_8004C870);
 
