@@ -90,7 +90,8 @@ struct Bike {
     short m_298;
     u8 m_pad29A[0x2];
     int m_29C; // its speed
-    u8 m_pad2A0[0x18];
+    Vector3 m_2A0;
+    u8 m_pad2AC[0xC];
     int m_2B8;
     short m_2BC; // the engine speed
     short m_2BE;
@@ -116,9 +117,13 @@ struct Bike {
     u8 m_pad300[0x8];
     int m_308;
     int m_30C;
-    u8 m_pad310[0x20];
+    u8 m_pad310[0x14];
+    int m_324;
+    u8 m_pad328[0x8];
     Vector3 m_330; // its heading
-    u8 m_pad33C[0x3C];
+    u8 m_pad33C[0x24];
+    Vector3 m_360;
+    u8 m_pad36C[0xC];
     AnimChan m_378;
     int m_394; // its angle
     int m_398;
@@ -149,7 +154,12 @@ struct Bike {
     int m_42C;
     u8 m_pad430[0xE];
     short m_43E;
-    u8 m_pad440[0x5C];
+    u8 m_pad440[0x1C];
+    Vector3 m_45C;
+    int m_468;
+    int m_46C;
+    int m_470;
+    u8 m_pad474[0x28];
     AnimChan m_49C;
     AnimChan m_4B8;
     u8 m_pad4D4[0x4];

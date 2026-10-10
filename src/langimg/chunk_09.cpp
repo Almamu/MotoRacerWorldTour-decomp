@@ -60,7 +60,51 @@ void func_800237E8(Motor *m, int *out) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_09", func_8002385C);
+/* The engine speeds to shift up at: stepping the engine speed up, the
+ * point where the next gear pulls harder than this one, or where this one
+ * reaches the top (0xFF0 of it at most). The top is higher in a mode. */
+void func_8002385C(Motor *m) {
+    int top, i, x, prev, g;
+    int *p;
+
+    if (m->m_gears < 2 || !m->m_ratio[0]) {
+        return;
+    }
+    top = m->m_28;
+    if (D_800D5FD4 & 4) {
+        top += 0xE000;
+    }
+    for (i = 0; i < 6; i++) {
+        m->m_upshift[i] = top;
+    }
+    prev = 0;
+    g = 0;
+    p = m->m_upshift;
+    for (x = 0; x < top; x += 0x4CC) {
+        int w = func_800236F0(m, x, g);
+        int found = 0;
+        int at = 0;
+
+        if (w >= 0x1000) {
+            found = 1;
+            at = prev;
+            if (func_800236F0(m, at, g) > 0xFF0) {
+                at = func_80023788(m, 0xFF0, g);
+            }
+        } else if (func_8002357C(m, func_800235F8(m, w), g) <
+                   func_8002357C(m, func_800235F8(m, func_800236F0(m, x, g + 1)), g + 1)) {
+            found = 1;
+            at = prev;
+        }
+        prev = x;
+        if (found) {
+            *p++ = at;
+            if (++g >= m->m_gears - 1) {
+                return;
+            }
+        }
+    }
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_09", func_80023A30);
 
