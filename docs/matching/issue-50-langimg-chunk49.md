@@ -13,7 +13,7 @@ destructor, and globals saved from the game's timers.
 
 One file, `src/langimg/chunk_49.cpp`, 0x8007345C-0x80075440.
 
-26 functions: 12 match, 5 are parked, 9 are still asm.
+26 functions: 14 match, 3 are parked, 9 are still asm.
 
 ## The settings
 
@@ -43,7 +43,14 @@ globals.
   direction's sign read from the whole word (`((u32)o->m_0C >> 3) & 1`).
 - **A constant in a local.** `func_8007356C`'s original keeps 0x14000 in
   a saved register set before its loop; a local set inside the loop
-  (moved out by GCC) gave that. It stays parked on the vector's setup.
+  (moved out by GCC) gave that.
+- **A callee returns its vector.** `func_8007356C` then matched once
+  `func_8009964C` (`v * k`) was declared returning its `Vec49 *`, as
+  chunk_05 declares it (the permuter found it).
+- **A bitfield's store placed early.** The constructor (`func_80074534`)
+  sets the direction bitfield right after `m_20`, before the other
+  fields; written last with the other bitfields, GCC merged it into one
+  store of the word. The permuter found the order.
 
 ## The functions
 
@@ -51,14 +58,14 @@ globals.
 |---|---|---|
 | `func_8007345C` | parked | a free entry at random: the original walks two pointers and resets both |
 | `func_8007351C` | matches | how many entries are free |
-| `func_8007356C` | parked | the entries ahead passed on: the vector's setup |
+| `func_8007356C` | matches | the entries ahead passed on, with their heading |
 | `func_800736BC` | asm | 249 instructions |
 | `func_80073AA0` | asm | 99 instructions |
 | `func_80073C2C`, `func_80073E54` | asm | 138 and 225 instructions |
 | `func_800741D8` | parked | the entry nearest ahead: registers |
 | `func_80074270` | asm | 168 instructions |
 | `func_80074510` | matches | a base's fields set |
-| `func_80074534` | parked | the owner's constructor: the flags word stored once, not twice |
+| `func_80074534` | matches | the owner's constructor |
 | `func_800745AC` | matches | the owner's destructor |
 | `func_80074650`, `func_80074688` | match | timers saved |
 | `func_800746A8` | matches | returns 0 |

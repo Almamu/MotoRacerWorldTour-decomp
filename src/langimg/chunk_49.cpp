@@ -116,7 +116,7 @@ struct Vec49 {
     int y;
     int z;
 };
-void func_8009964C(Vec49 *v, int k);
+Vec49 *func_8009964C(Vec49 *v, int k); // v * k, returns v
 void func_80099D48(Vec49 *v, int s);
 void func_80063C60(Pos49 *o, u8 *p, Vec49 *v, int a, int k, int b, int d);
 void func_8007356C(Pool49 *p, Pos49 *w, Trk49 *t);
@@ -171,8 +171,6 @@ int func_8007351C(Pool49 *p) {
     return n;
 }
 
-#ifdef NON_MATCHING
-// The heading's loads and the call's first argument: the original sets &v first and reads through $a3
 /* Each entry in use ahead of w within the track: its heading passed to func_80063C60. */
 void func_8007356C(Pool49 *p, Pos49 *w, Trk49 *t) {
     int i;
@@ -205,9 +203,6 @@ void func_8007356C(Pool49 *p, Pos49 *w, Trk49 *t) {
         }
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_49", func_8007356C);
-#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_49", func_800736BC);
 
@@ -259,13 +254,12 @@ Base49 *func_80074510(Base49 *b) {
     return b;
 }
 
-#ifdef NON_MATCHING
-// The flags word: the original stores it after the first field and again after the second; ours once
 Obj49 *func_80074534(Obj49 *o) {
     o->m_34 = &D_800C8744;
     o->m_04 = 1;
     o->m_08 = 1;
     o->m_20 = 0;
+    o->m_0Cf.m_a = 1;
     o->m_14 = 0;
     o->m_24 = 0;
     o->m_28 = 0;
@@ -274,15 +268,11 @@ Obj49 *func_80074534(Obj49 *o) {
     o->m_10 = 0;
     o->m_30 = 0;
     o->m_1C = 0;
-    o->m_0Cf.m_a = 1;
     o->m_0Cf.m_c = 0;
     o->m_0Cf.m_d = 0;
     o->m_0Cf.m_b = 0;
     return o;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_49", func_80074534);
-#endif
 
 void func_800745AC(Obj49 *o, int f) {
     Node49 *n;
