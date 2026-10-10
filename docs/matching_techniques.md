@@ -92,7 +92,7 @@ settings
 | `src/langimg` chunk_23 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=D_800CABB7` |
 | `src/langimg` chunk_45 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (eleven) |
 | `src/langimg` chunk_66 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (five) |
-| `src/langimg` chunk_44, chunk_51, chunk_60, chunk_71, chunk_72 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
+| `src/langimg` chunk_44, chunk_51, chunk_60, chunk_68, chunk_71, chunk_72 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_06 to chunk_12 (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_02b (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `SCES_030.37` (`src/sces`) | GCC 2.91.66 | 0 | `-fsigned-char` | `--expand-div` |
@@ -205,6 +205,10 @@ globals), a script that tries every order is quicker than guessing:
   before two -1s; written apart, GCC loaded -1 first. The permuter found
   `o->m_04 = o->m_10 = *(int *)o = 0;` (`func_8003FC94`).
 
+- **A counter set after the first call.** chunk_68's `func_80099F2C`
+  sets its loop counter in the delay slot of its second call: `i = 0;`
+  written after the first call, not at its declaration.
+
 ### Result variables
 
 - **Assign the result last.** `r = 1` before the stores made GCC reuse
@@ -307,6 +311,12 @@ globals), a script that tries every order is quicker than guessing:
 
 ### Temporaries and folding
 
+- **A vector operator: read, then operate in place.** chunk_68's
+  `v += a` and `d = a - b` load the first operand's three fields, then
+  the second's, before any arithmetic. That's `x = a->vx; y = a->vy; z =
+  a->vz; x -= b->vx; ...` and then the stores; `d->vx = a->vx - b->vx`
+  interleaves the loads, and six locals take other registers. On
+  `SVECTOR`s the locals are `int`, not `short` (`func_80099EBC`).
 - **A pointer variable stops constant folding.** `base + (a * 0x200 +
   0x820)` assigned to a pointer variable keeps `0x820` added to the
   index; inline, GCC folds it into the load's offset (`0x82C(...)`). Then
@@ -383,6 +393,16 @@ globals), a script that tries every order is quicker than guessing:
 
 ### Pointers and locals
 
+- **A pointer to a field's array walks the loop.** `int *sel =
+  m->m_A9C->m_08.m_18;` before a loop and `sel[i]` inside it gives the
+  original's pointer to `+0x20`, kept in a register and stepped by 4;
+  the struct pointer kept instead (`src->m_08.m_18[i]`) was spilled and
+  indexed each time (chunk_68's `func_8009A0B0`).
+- **Through the struct, not a pointer to its array.** `func_8009A524`
+  computes `d + 0x114` in both branches and indexes it; a local `int *p =
+  d->m_114` gave the same address with the operands of one `addu`
+  swapped, and writing `d->m_114[i]` everywhere matched (found by the
+  permuter).
 - **Take a pointer before the null check.** `OpenArchive`'s
   `e = arc->entries;` before `if (arc)`: GCC computes it in the delay
   slot of the check, as the original does.
@@ -586,6 +606,17 @@ What's left once the instructions are right is usually register choice.
   for the first two and again for the third (`func_80096EC8`); a sum built
   with `d = ...; d += ...;` keeps it in the result's register
   (`func_80096F8C`, chunk_66).
+- **A 64-bit square as an `asm` macro, its sum in C.** chunk_68's
+  squared lengths do `mult x, x; nop; nop; mflo; mfhi` (the two `nop`s
+  before `mflo`, not after: not GCC's `long long` multiply), then add the
+  halves with GCC's registers: `lo = a + b; hi = c + d; hi += lo < a;`.
+  `SQR64(lo, hi, x)` in `src/langimg/chunk_68.cpp` gives that shape with
+  the halves as `u32`s; adding `long long`s orders the carry
+  differently. Still about 18 instructions off in registers (four parked).
+  To permute such a function, prepend the macro in `compile.sh` and leave
+  the call in `base.c`: pycparser sees a call to an undeclared function.
+- **`abs` as a macro.** `sra`, `xor`, `subu` is `((x ^ (x >> 31)) - (x
+  >> 31))`; GCC's `abs()` branches (chunk_68's `ABS`).
 - **Two nops between `mflo` and a multiply.** The R3000 needs two
   instructions between a move from HI/LO and the next `mult`/`div`;
   ASPSX fills them with `nop`s, and so does `--div-no-checks`
