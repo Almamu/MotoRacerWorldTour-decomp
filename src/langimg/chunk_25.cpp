@@ -55,11 +55,21 @@ struct Keep25 {
     int m_7C;
     int m_80;
 };
+// An item: free (m_00 1), or its kind and values
 struct Item25 {
     int m_00;
-    u8 m_04[0x20];
+    int m_04;
+    int m_08; // when
+    int m_0C; // the kind
+    int m_10;
+    int m_14;
+    int m_18;
+    int m_1C;
+    int m_20;
     int m_24;
-    u8 m_28[0x28];
+    int m_28;
+    int m_2C; // how many of m_30
+    int m_30[8];
 };
 struct Items25 {
     Item25 m_000[8];
@@ -125,6 +135,7 @@ Items25 *func_80044FE8(Items25 *o);
 void func_8004506C(Items25 *o, int flags);
 void func_800450C0(Items25 *o, int a);
 Item25 *func_80045154(Item25 *t);
+Item25 *func_80045168(Item25 *t, int a, int b, int kind, ...);
 }
 
 // The five globals set from the object's copies
@@ -416,4 +427,68 @@ Item25 *func_80045154(Item25 *t) {
     return t;
 }
 
+#ifdef NON_MATCHING
+// One instruction: the list's store adds the index to the array's address the other way round
+/* The first free item of eight, set up: its values by its kind follow. */
+Item25 *func_80045168(Item25 *p, int a, int b, int kind, ...) {
+    Item25 *t = 0;
+    va_list ap;
+    int i = 0;
+    int x;
+
+    while (!t) {
+        if (i >= 8) {
+            break;
+        }
+        if (p->m_00 == 1) {
+            t = p;
+        }
+        p++;
+        i++;
+    }
+    va_start(ap, kind);
+    if (t) {
+        t->m_00 = 0;
+        t->m_0C = kind;
+        t->m_04 = b;
+        t->m_10 = a;
+        t->m_08 = D_800D6124.m_t;
+        switch (kind) {
+        case 0:
+            break;
+        case 1:
+            t->m_14 = va_arg(ap, int);
+            break;
+        case 2:
+            t->m_18 = va_arg(ap, int);
+            t->m_1C = va_arg(ap, int);
+            t->m_20 = va_arg(ap, int);
+            t->m_24 = va_arg(ap, int);
+            break;
+        case 3:
+        case 4:
+        case 5:
+            t->m_14 = va_arg(ap, int);
+            t->m_20 = va_arg(ap, int);
+            break;
+        case 8:
+            t->m_28 = va_arg(ap, int);
+            t->m_2C = 0;
+            if (t->m_28) {
+                int *q = t->m_30;
+
+            more:
+                x = va_arg(ap, int);
+                if (x) {
+                    q[t->m_2C++] = x;
+                    goto more;
+                }
+            }
+            break;
+        }
+    }
+    return t;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_25", func_80045168);
+#endif
