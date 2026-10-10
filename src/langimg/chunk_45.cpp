@@ -56,9 +56,10 @@ struct Packed45 {
 // A table's settings (12 bytes), read from a bit stream
 struct Settings45 {
     u16 m_00;
-    s8 m_02;
-    u8 m_03, m_04, m_05, m_06;
-    s8 m_07; // the parity of a vector's bits
+    u8 m_02;
+    s8 m_03;
+    s8 m_04, m_05, m_06; // three bytes compared as one: a colour?
+    s8 m_07;             // the parity of a vector's bits
     s8 m_08, m_09, m_0A;
     u8 m_0B;
 };
@@ -329,6 +330,8 @@ int func_8006C4A0(Table45 *t, Info45 *d, u16 *out);
 void func_8006C8EC(int a, int b, int c);
 int func_80096B74(void *p, int n);
 int func_800968B0(void *p);
+void func_80096ACC(void *p, int n, int v);
+int func_800968D4(void *p);
 extern u8 D_800C7F2D;
 extern Banks45 *D_800C7F28;
 extern int D_800D11D0[]; // a sound channel set
@@ -689,7 +692,50 @@ int func_8006C110(Table45 *t) {
     return r;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006C140);
+/* The settings written to the stream, each field after a bit that keeps the
+ * last one (as func_8006C330 reads them). */
+int func_8006C140(Table45 *t) {
+    int r = 0;
+
+    if (!func_800968B0(t->m_42C)) {
+        func_80096ACC(t->m_42C, 1, t->m_cur.m_07);
+        func_80096ACC(t->m_42C, 1, t->m_cur.m_08);
+        func_80096ACC(t->m_42C, 1, t->m_cur.m_09);
+        func_80096ACC(t->m_42C, 1, t->m_cur.m_0A);
+        if (t->m_cur.m_02 == t->m_prev.m_02) {
+            func_80096ACC(t->m_42C, 1, 0);
+        } else {
+            func_80096ACC(t->m_42C, 1, 1);
+            func_80096ACC(t->m_42C, 8, t->m_cur.m_02);
+        }
+        if (t->m_cur.m_00 == t->m_prev.m_00) {
+            func_80096ACC(t->m_42C, 1, 1);
+        } else {
+            func_80096ACC(t->m_42C, 1, 0);
+            func_80096ACC(t->m_42C, 16, t->m_cur.m_00);
+        }
+        if (t->m_cur.m_03 == t->m_prev.m_03) {
+            func_80096ACC(t->m_42C, 1, 1);
+        } else {
+            func_80096ACC(t->m_42C, 1, 0);
+            func_80096ACC(t->m_42C, 8, t->m_cur.m_03);
+        }
+        if ((*(u32 *)&t->m_cur.m_04 & 0xFFFFFF) == (*(u32 *)&t->m_prev.m_04 & 0xFFFFFF)) {
+            func_80096ACC(t->m_42C, 1, 1);
+        } else {
+            func_80096ACC(t->m_42C, 1, 0);
+            func_80096ACC(t->m_42C, 8, t->m_cur.m_04);
+            func_80096ACC(t->m_42C, 8, t->m_cur.m_05);
+            func_80096ACC(t->m_42C, 8, t->m_cur.m_06);
+        }
+        *(Words3 *)&t->m_prev = *(Words3 *)&t->m_cur;
+        t->m_454 = func_800968D4(t->m_42C);
+        if (!func_800968B0(t->m_42C)) {
+            r = 1;
+        }
+    }
+    return r;
+}
 
 /* The next settings read from the stream: each field after a bit that keeps the
  * last one; nonzero if the stream goes on. */
@@ -733,7 +779,7 @@ int func_8006C4A0(Table45 *t, Info45 *d, u16 *out) {
     if (!func_8006C330(t)) {
         return 0;
     }
-    *out = (u8)t->m_cur.m_02;
+    *out = t->m_cur.m_02;
     func_8005F380(d);
     d->m_00 = t->m_cur.m_00;
     d->m_04 = t->m_cur.m_04;
