@@ -161,14 +161,14 @@ struct Rec66 {
 };
 
 extern Game66 *D_800C5E14;
-int func_80096538(int a, int b, int c);
-int CdInit(void);
+int func_80096538(int pos, u32 *buf, int n);
+int func_80096F8C(Plane66 *p, Vector3 *v);
 char *func_800A6344(char *s);
 int func_800A60AC(char *a, char *b);
 void ApplyRotMatrixLV(Vector3 *a, Vector3 *b);
 
 void func_80096ACC(Bits66 *b, int n, u32 v);
-int func_8009662C(int a, int b, int c);
+int func_8009662C(int pos, u32 *buf, int n);
 int func_8009707C(Plane66 *p, Vector3 *v);
 int func_800955C4(List66 *l, char *name);
 Rec66 *func_800952E0(int i, Rec66 *recs);
@@ -528,11 +528,41 @@ int func_80096508(void) {
     return (res[0] >> 4) & 1;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_66", func_80096538);
+/* n sectors read from pos: at double speed, until a disk error. */
+int func_80096538(int pos, u32 *buf, int n) {
+    u_char param[8];
+    u_char res[8];
+    CdlLOC loc;
+    int i = 0;
+    int r;
+
+    param[0] = 0x80;
+    if (!CdControlB(0xE, param, res)) {
+        return 0;
+    }
+    CdIntToPos(pos, &loc);
+    if (!CdControlB(6, (u_char *)&loc, res)) {
+        return 0;
+    }
+    do {
+        r = CdReady(0, res);
+        if (r == 5) {
+            return 0;
+        }
+        if (r == 1) {
+            if (!CdGetSector(buf, 0x200)) {
+                return 0;
+            }
+            buf += 0x200;
+            i++;
+        }
+    } while (i < n);
+    return CdControlB(9, 0, res) != 0;
+}
 
 /* A CD read, tried 20 times: the drive started again when its shell was
  * opened, and for the last ten tries. */
-int func_8009662C(int a, int b, int c) {
+int func_8009662C(int pos, u32 *buf, int n) {
     int tries = 20;
     int opened = 0;
     int ok;
@@ -545,7 +575,7 @@ int func_8009662C(int a, int b, int c) {
             CdInit();
             opened = 0;
         }
-        ok = func_80096538(a, b, c);
+        ok = func_80096538(pos, buf, n);
         if (--tries < 0) {
             return 0;
         }
@@ -837,7 +867,19 @@ void func_80096EC8(Plane66 *p, Vector3 *v) {
     p->m_flip = 0;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_66", func_80096F8C);
+/* A point's distance from a plane, on x and z only. */
+int func_80096F8C(Plane66 *p, Vector3 *v) {
+    int d;
+
+    if (p->m_flip) {
+        d = MULSHIFT(v->vx, -p->m_n->vx, 26);
+        d += MULSHIFT(v->vz, -p->m_n->vz, 26);
+    } else {
+        d = MULSHIFT(v->vx, p->m_n->vx, 26);
+        d += MULSHIFT(v->vz, p->m_n->vz, 26);
+    }
+    return d + p->m_d;
+}
 
 /* A point's distance from a plane. */
 int func_8009707C(Plane66 *p, Vector3 *v) {
