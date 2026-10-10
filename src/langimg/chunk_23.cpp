@@ -34,7 +34,9 @@ struct Named {
     int m_60;
     int m_64;
     VtEntry *m_vtable; // 0x68
-    u8 m_6C[0x30];
+    int m_6C;
+    int m_70, m_74, m_78, m_7C, m_80;
+    u8 m_84[0x18];
     void *m_9C;
     void *m_A0;
     u8 m_A4[4];
@@ -45,7 +47,7 @@ struct Named {
     u8 m_141;
     u8 m_142[6];
     int m_148;
-    u8 m_14C[4];
+    int m_14C;
     int m_150;
     u8 m_154[8];
     int m_15C;
@@ -60,7 +62,11 @@ struct Named {
 struct EntryData {
     int m_00;
     int m_04;
-    short m_08;
+    union {
+        short m_08;
+        u8 m_len; // 0x08: a text's room
+    };
+    char *m_text; // 0x0C
 };
 
 // An entry found by name in an object list
@@ -170,6 +176,50 @@ void func_8003FF70(SceneEvent *ev, int a, SceneEvent *b);
 NamedEntry *func_80040344(Named *o, Holder *h, const char *name, unsigned int k);
 int func_8005C424(NamedOwner *w, int x);
 void __builtin_vec_delete(void *p);
+
+// A stage (what m_A0 points at)
+struct Stage {
+    u8 m_00[8];
+    int m_08;
+    u8 m_0C[0x84];
+    int m_90;
+    int m_94[9]; // 0x94
+    int m_B8, m_BC;
+    int *m_C0;
+    u8 m_C4[4];
+    int m_C8, m_CC, m_D0, m_D4;
+};
+
+// The race's settings
+struct Config {
+    u8 m_00[0x40];
+    int m_40, m_44, m_48, m_4C, m_50;
+    u8 m_54[0x94];
+    int m_E8[9]; // 0xE8
+};
+extern Config D_800CC030;
+extern int D_800D489C;
+extern int D_800C9360;
+extern int D_800C873C, D_800C4938, D_800C8C68, D_800CBE90, D_800CBE94;
+extern char D_800CAB78[]; // a text buffer of 64
+extern char D_800CABB7;   // its last byte
+extern char D_800C4F78[]; // what a text too long becomes
+extern int D_800C8D8C;
+extern char D_800C4FC8[], D_800C4FD4[];
+void func_800A6168(char *buf, const char *fmt, char *ap); // vsprintf
+int func_80040A24(Named *o, int *a);
+void func_800405A0(Named *o);
+void func_80040B04(Named *o);
+void func_8009D350(void);
+void func_8003B484(void *a, int b, int c, int *d, int e, int f);
+void func_8003B51C(void *a, int *b, int c, int d);
+void func_8003F740(void *a);
+void func_8003B47C(void *a);
+int func_800955C4(int a, const char *name);
+void func_8007F2AC(int a, int b, int c);
+int func_8008106C(void *p);
+void func_80081154(int a, int b);
+void func_800811C4(int a, int b, int c);
 void func_80044CC4(Named *o);
 void func_800449A8(void *p);
 extern int D_800C54B8;
@@ -430,7 +480,40 @@ void func_80040034(Named *o, int a) {
     }
 }
 
+#ifdef NON_MATCHING
+/* Registers: the room's copy and the buffer's index (9 off) */
+/* An entry's text from a format and its arguments, cut to its room. */
+int func_8004009C(Named *o, int h, int ent, int fmt, char *ap) {
+    NamedEntry *e = (NamedEntry *)ent;
+
+    if (e) {
+        EntryData *d = e->m_10;
+        char *buf;
+
+        if (d->m_00 & 0x40000) {
+            return ent;
+        }
+        buf = D_800CAB78;
+        D_800CABB7 = 0;
+        buf[d->m_len] = 0;
+        func_800A6168(buf, (const char *)fmt, ap);
+        if (d->m_len < strlen(buf)) {
+            int len = d->m_len;
+
+            if (!len) {
+                return ent;
+            }
+            strncpy(d->m_text, D_800C4F78, len + 1);
+        } else {
+            strncpy(d->m_text, buf, d->m_len + 1);
+        }
+        d->m_text[d->m_len] = 0;
+    }
+    return ent;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_8004009C);
+#endif
 
 NamedEntry *func_80040178(Named *o, Holder *h, const char *name, int x, ...) {
     char *ap = (char *)&x + sizeof(x);
@@ -523,7 +606,25 @@ void func_80040578(Named *o, int flags) {
     func_8003FCF8(o, flags);
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_800405A0);
+void func_800405A0(Named *o) {
+    ((Stage *)o->m_A0)->m_90 = 0;
+    ((Stage *)o->m_A0)->m_94[0] = D_800CC030.m_E8[0];
+    ((Stage *)o->m_A0)->m_94[1] = D_800CC030.m_E8[1];
+    ((Stage *)o->m_A0)->m_94[2] = D_800CC030.m_E8[2];
+    ((Stage *)o->m_A0)->m_94[3] = D_800CC030.m_E8[3];
+    ((Stage *)o->m_A0)->m_94[4] = D_800CC030.m_E8[4];
+    ((Stage *)o->m_A0)->m_94[5] = D_800CC030.m_E8[5];
+    ((Stage *)o->m_A0)->m_94[6] = D_800CC030.m_E8[6];
+    ((Stage *)o->m_A0)->m_94[7] = D_800CC030.m_E8[7];
+    ((Stage *)o->m_A0)->m_94[8] = D_800CC030.m_E8[8];
+    ((Stage *)o->m_A0)->m_C0 = &D_800D489C;
+    ((Stage *)o->m_A0)->m_BC = D_800CC030.m_40;
+    ((Stage *)o->m_A0)->m_B8 = D_800CC030.m_4C;
+    ((Stage *)o->m_A0)->m_C8 = 0x5A;
+    ((Stage *)o->m_A0)->m_CC = 0x109;
+    ((Stage *)o->m_A0)->m_D0 = 0x19A;
+    ((Stage *)o->m_A0)->m_D4 = 0xDF;
+}
 
 int func_800406A4(Named *o) {
     func_80044D70(o);
@@ -533,9 +634,39 @@ int func_800406A4(Named *o) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_800406E0);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_80040A24);
+int func_80040A24(Named *o, int *a) {
+    func_80078FC4(D_800CBC94, *a);
+    ((Stage *)o->m_A0)->m_08 = 9;
+    func_8009D350();
+    o->m_14C = D_800D489C;
+    func_8003B484(o->m_A0, o->m_60, D_800C9360, &o->m_14C, 4, 1);
+    func_8003B51C(o->m_A0, &o->m_14C, 4, 1);
+    func_8003F740(o->m_A0);
+    D_800C873C = o->m_70;
+    D_800C4938 = o->m_74;
+    D_800C8C68 = o->m_78;
+    D_800CBE90 = o->m_7C;
+    D_800CBE94 = o->m_80;
+    return 1;
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_80040B04);
+void func_80040B04(Named *o) {
+    int v;
+
+    func_8007F2AC(D_800CC030.m_44, (u16)func_800955C4(D_800C8D8C, D_800C4FC8), 0x15E);
+    v = (u16)func_800955C4(D_800C8D8C, D_800C4FD4);
+    func_8007F2AC(D_800CC030.m_48, v, 1000);
+    func_8007F2AC(D_800CC030.m_4C, v, 1000);
+    D_800C89E8 = func_8008106C(__builtin_new(0xC));
+    func_80081154(D_800C89E8, 5);
+    func_800811C4(D_800C89E8, D_800CC030.m_44, 0);
+    func_800811C4(D_800C89E8, D_800CC030.m_48, 0);
+    func_800811C4(D_800C89E8, D_800CC030.m_4C, 0);
+    func_800811C4(D_800C89E8, D_800CC030.m_40, 0);
+    func_800811C4(D_800C89E8, D_800CC030.m_50, 0);
+    func_8003B47C(o->m_A0);
+    func_800405A0(o);
+}
 
 int func_80040C34(Named *o) {
     int r = VCALL1(o, 20, 1);
