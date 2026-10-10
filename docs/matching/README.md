@@ -47,3 +47,4 @@ issue it worked on, and add it below.
 | [issue-53-langimg-chunk52.md](issue-53-langimg-chunk52.md) | The game's chunk_52: the display, the vsync and drawsync callbacks; globals read split, a result variable |
 | [issue-42-langimg-chunk41.md](issue-42-langimg-chunk41.md) | The game's chunk_41: a bike's model object; vectors copied through pointers, a constructor returning this |
 | [issue-68-langimg-chunk67.md](issue-68-langimg-chunk67.md) | The game's chunk_67: matrices and vectors; VecCopyL, MIN and MAX macros, a chained assignment |
+| [issue-50-langimg-chunk49.md](issue-50-langimg-chunk49.md) | The game's chunk_49: a pool of entries and its owner; a C++ destructor by its mangled name, a chained assignment's order |
