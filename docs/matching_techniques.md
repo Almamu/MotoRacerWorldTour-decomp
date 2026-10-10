@@ -92,7 +92,7 @@ settings
 | `src/langimg` chunk_23 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=D_800CABB7` |
 | `src/langimg` chunk_45 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (eleven) |
 | `src/langimg` chunk_66 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (five) |
-| `src/langimg` chunk_44, chunk_51, chunk_60, chunk_68, chunk_70, chunk_71, chunk_72, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
+| `src/langimg` chunk_44, chunk_47, chunk_51, chunk_60, chunk_68, chunk_70, chunk_71, chunk_72, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_06 to chunk_12 (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_02b (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `SCES_030.37` (`src/sces`) | GCC 2.91.66 | 0 | `-fsigned-char` | `--expand-div` |
@@ -258,8 +258,24 @@ globals), a script that tries every order is quicker than guessing:
   the next entry, tests it and copies it: `t = *r; e = t; } while (t !=
   -1);`. Loading into `e` itself tested `e`.
 
+- **Two cases with the same body.** chunk_47's `func_8006F9BC` tests
+  `== 1`, `< 2`, `== 0`, `== 2`: cases 1 and 2 written apart, with the same
+  code, merged by cross-jumping after the tests. `case 1: case 2:` became a
+  range test (`bltz`, `slti 3`).
+
 ### Loops
 
+- **A loop GCC won't rotate: `goto`.** chunk_47's list search tests the
+  node at the top and loops back on "not found":
+  `next: if (n) { found = ...; n = n->next; if (!found) goto next; }`.
+  `while`, `do`/`while` with a `break`, and self tail recursion all came
+  out rotated.
+- **Empty constructors' loops.** A static object whose arrays' elements
+  have empty constructors leaves count-down loops with nothing in them
+  (chunk_47's `func_8006FB74`). Written `i = 63; do {} while (--i !=
+  -1);`, GCC folds the first decrement into the constant; with the
+  array's (dead) pointer stepped inside, `do { q += 4; } while (--i !=
+  -1);`, it doesn't.
 - **Load before the loop what the original loads before it.** A value
   read inside the loop's condition (`*(int *)key == names->name`) was
   loaded after the loop's first test; `k = *(int *)key;` before the loop
@@ -440,6 +456,25 @@ globals), a script that tries every order is quicker than guessing:
   again for the result: `x = &T[c]; y = &T[*b++]; if (*x != *y) return *x
   - *y;`. Its `strnicmp` matched only with the character a `short` (the
   permuter).
+- **A table's address after its index.** chunk_47's tables are read with
+  the index's shift before the address's `lui`. That's GCC with the
+  address as one `la` (`-mno-split-addresses` code), which this chunk
+  isn't; here it came from declaring the table a scalar (`extern short
+  D_800C7F18;`) and indexing by bytes (`*(short *)((u8 *)&D_800C7F18 +
+  (i << 1))`). The same scalar declarations put two vtables' and an
+  array's addresses in the registers the original loads them into
+  (`func_8006F7D4`, `func_8006FB74`).
+- **A table read through an inline.** `func_80070C10` reads the sine and
+  cosine of one angle and computes the entry's address twice (`t + i`, `i
+  + t`); the permuter found an inline (`Sin47(a)`, `Cos47(a)`) gives that.
+  Read straight into two locals, `int s = T[i].m_02; int c = T[i].m_00;`,
+  matched `func_80070CCC`, where both use one address.
+- **Block-local structs share a stack slot.** `func_80070140` zeroes a
+  vector and an `SVECTOR` in the same 8 bytes of stack: two blocks, each
+  with its own local.
+- **An object's member each time, not a local.** The same function passes
+  `o->m_08` (the bit stream) to every call; a local copy put one call's
+  argument in another register (found by the permuter).
 - **A pointer to a local.** `CdlFILE *fp = &file;` passed to
   `CdSearchFile` keeps `&file` in a saved register (`OpenArchive`). The
   same for an address the original computes once, early, and keeps:
@@ -609,6 +644,9 @@ mean a `short` field.
 - **A library call's result returned.** `func_8009E01C` keeps `$v0` free
   after its `memcpy` and matches returning the copy's result: `r =
   memcpy(...); ...; return r;`.
+- **And the other way: `void` where the callee returns something.**
+  chunk_68's vector functions return their destination, but chunk_47's
+  callers matched with them declared `void`.
 - **A virtual call's arguments and result.** chunk_74's `func_800A6650`
   makes two calls through the vtable: one passes only `this` (cast to a
   one-argument function) and both are declared returning `int`; with
