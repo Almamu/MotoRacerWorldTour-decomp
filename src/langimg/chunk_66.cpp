@@ -2,31 +2,29 @@
 #include "psyq.h"
 #include "stdarg.h"
 #include "langimg/cobjet.h"
+#include "gte.h"
+#include "mulshift.h"
 
 /* (docs/matching/issue-67-langimg-chunk66.md) */
 
 extern "C" {
 // An object whose settings mark it to be redone (m_38 cleared)
 struct Obj66 {
-    short m_00;
-    u8 m_02[2];
-    short m_04;
-    u8 m_06[2];
-    short m_08;
-    u8 m_0A[2];
-    short m_0C;
-    u8 m_0E[2];
+    int m_00, m_04, m_08, m_0C;
     int m_10, m_14; // its size
     u8 m_18[0x20];
     int m_38; // up to date
     int m_3C;
-    u8 m_40[0x10];
+    int m_40, m_44, m_48, m_4C;
     struct Obj66 *m_50;
     int m_54, m_58, m_5C, m_60, m_64, m_68, m_6C, m_70;
     int m_74, m_78, m_7C, m_80, m_84, m_88, m_8C, m_90;
-    u8 m_94[4];
+    int m_94;
     struct Virt66 *m_98;
-    u8 m_9C[0x64];
+    int m_9C;
+    u8 m_A0[0x50];
+    int m_F0, m_F4;
+    short m_F8, m_FA, m_FC, m_FE;
     int m_100, m_104, m_108, m_10C;
 };
 
@@ -116,6 +114,62 @@ extern int D_800CBE88;
 extern int D_800BF3A0[]; // sines and cosines by angle, two shorts each
 void func_80096EC8(Dest66 *d, int a);
 
+// A plane: its normal, and its distance with the normal's side in the top bit
+struct Plane66 {
+    Vector3 *m_n;
+    int m_d : 31;
+    int m_flip : 1;
+};
+
+// A named item of a list
+struct Item66 {
+    int m_00;
+    char m_name[1];
+};
+
+// A list of named items
+struct List66 {
+    Item66 **m_items;
+    int m_count;
+};
+
+// A track's point (12 bytes)
+struct Pt66 {
+    short m_x, m_z;
+    short m_04;
+    short m_idx; // 0x06
+    int m_08;
+};
+
+struct Course66 {
+    u8 m_00[0x54];
+    Pt66 *m_pts;
+};
+
+struct Game66 {
+    u8 m_00[0xC70];
+    Course66 *m_C70;
+};
+
+// 8 bytes of something a point indexes
+struct Rec66 {
+    int m_00, m_04;
+};
+
+extern Game66 *D_800C5E14;
+int func_80096538(int a, int b, int c);
+int CdInit(void);
+char *func_800A6344(char *s);
+int func_800A60AC(char *a, char *b);
+void ApplyRotMatrixLV(Vector3 *a, Vector3 *b);
+
+void func_80096ACC(Bits66 *b, int n, u32 v);
+int func_8009662C(int a, int b, int c);
+int func_8009707C(Plane66 *p, Vector3 *v);
+int func_800955C4(List66 *l, char *name);
+Rec66 *func_800952E0(int i, Rec66 *recs);
+void func_80095684(Obj66 *o);
+
 void func_8009682C(Bits66 *b);
 int func_800958E0(Obj66 *o);
 void func_80096918(Bits66 *b, int mode);
@@ -142,13 +196,99 @@ void func_80096E28(short *a, Vector3 *v, int s);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_66", func_800950B0);
 
+#ifdef NON_MATCHING
+/* The camera loaded after the course here, and the translation's three words loaded in another order (43 off) */
+/* A track point moved into the camera's frame (the GTE's translation), and what
+ * it indexes. */
+Rec66 *func_800952E0(int i, Rec66 *recs) {
+    Camera *c = D_800C8864;
+    Pt66 *p = &D_800C5E14->m_C70->m_pts[i];
+    Vector3 v;
+    int x;
+    int y;
+    int z;
+
+    y = -c->m_pos.vy >> 5;
+    x = ((p->m_x << 12) - c->m_pos.vx) >> 5;
+    z = ((p->m_z << 12) - c->m_pos.vz) >> 5;
+    v.vx = x;
+    v.vy = y;
+    v.vz = z;
+    ApplyRotMatrixLV(&v, &v);
+    GTE_SET_TRANS(v.vx, v.vy, v.vz);
+    return &recs[p->m_idx];
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_66", func_800952E0);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_66", func_800953A4);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_66", func_800955C4);
+/* The index of the item with this name (any case), or -1. */
+int func_800955C4(List66 *l, char *name) {
+    char buf[257];
+    int r = -1;
+    int i;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_66", func_80095684);
+    strncpy(buf, name, 256);
+    buf[256] = 0;
+    func_800A6344(buf);
+    if (l->m_items) {
+        for (i = 0; r == -1 && i < l->m_count; i++) {
+            if (l->m_items[i] && l->m_items[i]->m_name &&
+                !func_800A60AC(buf, l->m_items[i]->m_name)) {
+                r = i;
+            }
+        }
+    }
+    return r;
+}
+
+/* The constructor. */
+void func_80095684(Obj66 *o) {
+    o->m_44 = 1;
+    o->m_00 = 0x7FFFFFFF;
+    o->m_04 = 0x7FFFFFFF;
+    o->m_08 = 0x7FFFFFFF;
+    o->m_0C = 0x7FFFFFFF;
+    o->m_10 = 0;
+    o->m_14 = 0;
+    o->m_F8 = 0;
+    o->m_FA = 0;
+    o->m_FC = 0;
+    o->m_FE = 0;
+    o->m_3C = 0;
+    o->m_40 = 0;
+    o->m_38 = 0;
+    o->m_48 = 0;
+    o->m_98 = 0;
+    o->m_94 = 0;
+    o->m_50 = 0;
+    o->m_54 = 0;
+    o->m_58 = 0;
+    o->m_5C = 0;
+    o->m_60 = 0;
+    o->m_6C = 0x7FFFFFFF;
+    o->m_70 = 0x7FFFFFFF;
+    o->m_64 = 0x7FFFFFFF;
+    o->m_68 = 0x7FFFFFFF;
+    o->m_74 = 0;
+    o->m_78 = 0;
+    o->m_7C = 0;
+    o->m_80 = 0;
+    o->m_84 = 0;
+    o->m_88 = 0;
+    o->m_8C = 0;
+    o->m_90 = 0;
+    o->m_4C = 0x110;
+    o->m_9C = 0;
+    o->m_F0 = 0x276000;
+    o->m_F4 = 0x276000;
+    o->m_100 = 0;
+    o->m_10C = 0;
+    o->m_104 = 0x1000;
+    o->m_108 = 0x1000;
+}
 
 int func_8009574C(Obj66 *o, RECT *r) {
     int ok = 0;
@@ -347,7 +487,30 @@ int func_80096508(void) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_66", func_80096538);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_66", func_8009662C);
+/* A CD read, tried 20 times: the drive started again when its shell was
+ * opened, and for the last ten tries. */
+int func_8009662C(int a, int b, int c) {
+    int tries = 20;
+    int opened = 0;
+    int ok;
+
+    for (;;) {
+        while (func_80096508()) {
+            opened = 1;
+        }
+        if (opened || tries < 10) {
+            CdInit();
+            opened = 0;
+        }
+        ok = func_80096538(a, b, c);
+        if (--tries < 0) {
+            return 0;
+        }
+        if (ok) {
+            return 1;
+        }
+    }
+}
 
 /* The stream emptied. */
 void func_800966DC(Bits66 *b) {
@@ -464,7 +627,21 @@ void func_80096A64(Bits66 *b) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_66", func_80096ACC);
+/* n bits of v written. */
+void func_80096ACC(Bits66 *b, int n, u32 v) {
+    int pos = b->m_27 + n;
+    u32 x;
+
+    n = 32 - n;
+    x = (v << n) >> n;
+    func_80096980(b, func_800969EC(b) | (x << b->m_27));
+    if (pos >= 32) {
+        func_80096A64(b);
+        pos -= 32;
+        func_80096980(b, b->m_27 ? x >> (32 - b->m_27) : 0);
+    }
+    b->m_27 = pos;
+}
 
 /* n bits read, sign-extended. */
 int func_80096B74(Bits66 *b, int n) {
@@ -552,4 +729,19 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_66", func_80096EC8);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_66", func_80096F8C);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_66", func_8009707C);
+/* A point's distance from a plane. */
+int func_8009707C(Plane66 *p, Vector3 *v) {
+    int vx = v->vx;
+    int vy = v->vy;
+    int vz = v->vz;
+    int x = p->m_n->vx;
+    int y = p->m_n->vy;
+    int z = p->m_n->vz;
+
+    if (p->m_flip) {
+        x = -x;
+        y = -y;
+        z = -z;
+    }
+    return MULSHIFT(vx, x, 26) + MULSHIFT(vy, y, 26) + MULSHIFT(vz, z, 26) + p->m_d;
+}
