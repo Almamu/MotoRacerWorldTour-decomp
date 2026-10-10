@@ -319,24 +319,18 @@ void func_8003FC28(Named *o, int i, int j) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_8003FC28);
 #endif
 
-#ifdef NON_MATCHING
-/* Scheduling: the original loads -1 after storing the vtable, in the same register (8 off) */
+/* The constructor (its vtable D_800C4EA8). */
 Named *func_8003FC94(Named *o) {
     o->m_vtable = D_800C4EA8;
+    o->m_04 = o->m_10 = *(int *)o = 0;
     o->m_0C = -1;
     o->m_state = -1;
-    *(int *)o = 0;
-    o->m_10 = 0;
-    o->m_04 = 0;
     o->m_60 = 0;
     o->m_64 = 0;
     o->m_b7 = 1;
     func_8003FE2C(o, D_800C4EA0);
     return o;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_8003FC94);
-#endif
 
 void func_8003FCF8(Named *o, int flags) {
     o->m_vtable = D_800C4EA8;
