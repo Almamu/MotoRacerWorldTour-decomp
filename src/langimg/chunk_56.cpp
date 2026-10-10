@@ -179,6 +179,8 @@ struct Item56 {
     u8 m_01; // its kind
 };
 extern short D_800C8AC0[2]; // a 3-byte string
+extern short D_800C8AB0;    // a 6-byte string
+extern short D_800C8AB8;    // a 5-byte string
 extern Ot56 *D_800CBDC4;
 extern int D_800CBDC0;
 extern int D_800C88FC;
@@ -189,6 +191,7 @@ void func_80082A8C(Grid56 *g, Race56 *r);
 void func_80082E74(Grid56 *g, int k, Item56 *it, Race56 *r, int f);
 void func_8008259C(Draw56 *d, int i);
 void func_80082FA8(Grid56 *g, Run56 *run);
+void func_80082904(Grid56 *g, Race56 *r);
 // The row's rider
 struct Row56 {
     int m_00;
@@ -213,7 +216,18 @@ struct Span56 {
     s8 m_01;
 };
 struct Map56 {
-    u8 m_00[0x30];
+    void *m_00;
+    void *m_04;
+    u8 m_08[4];
+    void *m_0C;
+    void *m_10;
+    u8 m_14[4];
+    void *m_18;
+    void *m_1C;
+    void *m_20;
+    void *m_24;
+    void *m_28;
+    void *m_2C;
     u8 *m_30;      // each column's count
     Span56 **m_34; // each column's spans
 };
@@ -226,6 +240,7 @@ void func_80082BEC(Grid56 *g, int row, Run56 *run, int k, int f);
 void func_80083078(Grid56 *g, int row, Race56 *r);
 void func_800826BC(u8 *o, Race56 *r);
 int func_80081330(Map56 *m, short x, short y);
+void func_8008145C(Map56 *m, int flags);
 void func_80082DA4(Grid56 *g, int row, Tab56 *t, int flag, int col);
 }
 
@@ -348,7 +363,51 @@ void *func_8008142C(void *p) {
     return p;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_56", func_8008145C);
+void func_8008145C(Map56 *m, int flags) {
+    if (m->m_0C) {
+        delete[] (u8 *)m->m_0C;
+        m->m_0C = 0;
+    }
+    if (m->m_28) {
+        delete[] (u8 *)m->m_28;
+        m->m_28 = 0;
+    }
+    if (m->m_24) {
+        delete[] (u8 *)m->m_24;
+        m->m_24 = 0;
+    }
+    if (m->m_2C) {
+        delete[] (u8 *)m->m_2C;
+        m->m_2C = 0;
+    }
+    if (m->m_10) {
+        delete[] (u8 *)m->m_10;
+        m->m_10 = 0;
+    }
+    if (m->m_00) {
+        delete[] (u8 *)m->m_00;
+        m->m_00 = 0;
+    }
+    if (m->m_04) {
+        delete[] (u8 *)m->m_04;
+        m->m_04 = 0;
+    }
+    if (m->m_20) {
+        delete[] (u8 *)m->m_20;
+        m->m_20 = 0;
+    }
+    if (m->m_18) {
+        delete[] (u8 *)m->m_18;
+        m->m_18 = 0;
+    }
+    if (m->m_1C) {
+        delete[] (u8 *)m->m_1C;
+        m->m_1C = 0;
+    }
+    if (flags & 1) {
+        delete m;
+    }
+}
 
 Obj56 *func_800815B0(Obj56 *o) {
     func_800815D8(o);
@@ -545,10 +604,46 @@ void func_80082840(Grid56 *g) {
     memset(b + 0x108, 0, 8);
 }
 
+#ifdef NON_MATCHING
+// The strings' copies: " Laps" and " Lap" are likely strcpy'd literals (the block move's address split through $v0); ours, a memcpy from the symbols, loads it whole (12 off)
+/* The panel set up: its cells, the riders' count and the laps. */
+void func_80082904(Grid56 *g, Race56 *r) {
+    int i;
+    int j;
+
+    func_80082840(g);
+    if (D_800D5F40 == 2) {
+        for (i = 0; i < 2; i++) {
+            g->m_80[i][0] = 2;
+            g->m_80[i][1] = 0x1C;
+            g->m_80[i][2] = 0x20;
+            g->m_80[i][3] = '0';
+            g->m_80[i][4] = 0;
+        }
+    } else if (D_800D5F40 == 0) {
+        for (j = 0; j < 2; j++) {
+            g->m_80[j][0] = 0;
+        }
+    }
+    ((char *)g)[0xE8] = '/';
+    ((char *)g)[0xE9] = r->m_378->m_04 + '0';
+    if ((u32)r->m_378->m_04 >= 2) {
+        memcpy((char *)g + 0xEA, &D_800C8AB0, 6);
+    } else {
+        memcpy((char *)g + 0xEA, &D_800C8AB8, 5);
+    }
+    func_80082A8C(g, r);
+    if (r->m_378->m_1E3C) {
+        func_80082B14((char *)g, r);
+    }
+    func_8008267C(D_800D49A8);
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_56", func_80082904);
+#endif
 
 #ifdef NON_MATCHING
-// The 3-byte string's copy: the original's is the block-move pattern (its address in $t3), ours lh and lb straight from the symbol (9 off)
+// The 3-byte string's copy: likely a strcpy'd literal (" \x82"), a block move with its address in $t3; ours, lh and lb straight from the symbol (9 off)
 /* How many bikes are in (a flag's bit 6), and the mode's marker. */
 void func_80082A8C(Grid56 *g, Race56 *r) {
     char *b = (char *)g;
