@@ -578,6 +578,16 @@ block move keeps both addresses in registers when they're symbols. The
 buffer had to be a scalar (`extern char D_800D4798;`) with its address
 taken into a local before the copy, the `memcpy` naming the symbol.
 
+A vector copied with its first load folded and the next two through an
+address register (`lw 0x64($v1)`, then `addiu $v0, $v1, 0x64; lw
+0x4($v0)`) is an inline that reads all three fields before storing them,
+called with the fields' addresses: `VecCopyL(&d->v, &s->v)` (chunk_41's
+`func_80063848`, chunk_31's `func_8005148C` and `func_800508B4`). Struct
+assignment, `memcpy` and pointer locals fold every offset. When the
+stores go through a matrix's address with the translation's offset
+(`sw 0x14($a1)`), the inline takes the matrix (`SetTrans(&m, &p->v)`,
+chunk_31's `func_8004F6C8`).
+
 Short string copies whose source is a string in the data (`" Laps"`,
 `" Lap"`, chunk_56's `func_80082904`) are likely `strcpy`s of literals,
 turned into block moves: the address goes through `$v0` into a saved
@@ -977,17 +987,6 @@ files (issue-1-langimg-sound.md, "The flags, function by function").
   a saved register, so the frame and registers differ. Not the compiler
   (2.7.2 to 2.95.2), the front end, GCSE, CSE options or `-O1`
   ([issue-3-langimg-chunk02.md](matching/issue-3-langimg-chunk02.md)).
-- **Struct copies through address registers** (chunk_31:
-  `func_8004F6C8`, `func_8005148C`, `func_800508B4`; chunk_56's string
-  copies may be the same). The original copies 8- to 32-byte structs with
-  the block move's address registers kept: `addiu $v0, $s0, 0xF8` then
-  `lw 0x4($v0)`, the register then passed to the next call. GCC folds the
-  offsets back into the loads and stores whatever the source:
-  - pointer locals;
-  - inline helpers;
-  - `memcpy`;
-  - a C++ assignment as the call's argument (`&(o->m_64 = v)`);
-  - `-O1`, `-Os` and the other compilers.
 - **Constants through `$t2`** (chunk_31's `func_800505BC`): every
   constant is loaded into `$t2` just before its use, loop invariants
   included, and a bit is set from a test without a branch (`sltu`, `sll

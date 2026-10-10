@@ -13,7 +13,7 @@ from 0x2E8). It covers:
 
 One file, `src/langimg/chunk_31.cpp`, 0x8004F6C8-0x800514F4.
 
-32 functions: 20 match, 8 are parked, 4 are still asm.
+32 functions: 23 match, 5 are parked, 4 are still asm.
 
 ## The settings
 
@@ -52,13 +52,20 @@ globals.
   `$a1` before its call: `func_80033E4C(b->m_31C, b)`.
 - **Comparators.** The `qsort` comparators load `*a` before `*b`, which
   locals in that order give.
-- **Struct copies through address registers (open).** Five functions
-  copy vectors and matrices with GCC's block move and keep the source's
-  and destination's addresses in registers (`$v0`, `$v1`, `$a1`); one of
-  them is then passed on to a call. Ours fold the offsets into the loads
-  and stores whatever the source's shape: pointer locals, inline
-  helpers, `memcpy`, an assignment as the argument. The parked
-  `func_8004F6C8`, `func_8005148C` and `func_800508B4` differ only there.
+- **Vectors copied with all three loads first, through pointers.** Three
+  functions copy a 12-byte vector with its first access folded
+  (`lw 0x64($v1)`) and the others through an address register
+  (`addiu $v0, $v1, 0x64; lw 0x4($v0)`). Struct assignment, `memcpy` and
+  pointer locals all folded every offset. What matched, found in
+  chunk_41:
+  - an inline that reads the three fields into locals and stores them,
+    called with the fields' addresses (`VecCopyL31(&b->m_548,
+    &b->m_30->m_64)`, chunk_47's `VecCopyL`);
+  - for a matrix's translation, the inline taking the matrix
+    (`SetTrans31(&t, &p->m_F8)`), so the stores go through `&t` with the
+    field's offset.
+
+  The matrices and the 8-byte short vectors are struct assignments.
 - **Constants through `$t2` (open).** `func_800505BC` loads every
   constant into `$t2` just before its use, even loop invariants, and sets
   a bit from a test without a branch. That suggests macros or a register
@@ -68,7 +75,7 @@ globals.
 
 | Function | State | Notes |
 |---|---|---|
-| `func_8004F6C8` | parked | a matrix from an object's rotation and position: the struct copies' registers |
+| `func_8004F6C8` | matches | a matrix from an object's rotation and position |
 | `func_8004F76C` | parked | the matrices of two entries: the counter and a pointer swap registers (9 off) |
 | `func_8004F828` | matches | a value set, plus 0x40 |
 | `func_8004F83C` | matches | a position moved, and pushed back along the normal when it hit |
@@ -81,7 +88,7 @@ globals.
 | `func_800505BC` | asm | the bikes' modes and slots (125 instructions; the constants through `$t2`) |
 | `func_800507B0` | parked | the bikes' slots: where the constant 1 is set (4 off) |
 | `func_80050850` | matches | the bikes' values saved to or loaded from a table |
-| `func_800508B4` | parked | an object made by kind, placed and named: the struct copies' registers |
+| `func_800508B4` | matches | an object made by kind, placed and named |
 | `func_80050A4C` | parked | the bikes' objects made and listed by mode: registers |
 | `func_80050CA4` | matches | the bikes' objects freed |
 | `func_80050D7C` | matches | a bike's lap passed on, in a race of kind 3 |
@@ -92,4 +99,4 @@ globals.
 | `func_80051060`, `func_8005108C`, `func_80051094` | match | a bike's values set or reset |
 | `func_800510B4`, `func_80051114` | match | a bike's entry from a table, a call when a flag is set |
 | `func_8005114C` | asm | 208 instructions |
-| `func_8005148C` | parked | a bike's position from its model: the struct copies' registers |
+| `func_8005148C` | matches | a bike's position from its model |

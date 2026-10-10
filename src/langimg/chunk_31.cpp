@@ -269,8 +269,27 @@ int func_8004F83C(void *o, Vec31 *v, int c);
 void func_800507B0(Run31 *r);
 }
 
-#ifdef NON_MATCHING
-// The struct copies' registers: the original has the translation's address and the call's first argument in registers before the copies, and copies the matrix through $t0-$t3
+// A matrix's translation set, all three loads first
+static inline void SetTrans31(Mat31 *m, Vec31 *v) {
+    int x = v->x;
+    int y = v->y;
+    int z = v->z;
+
+    m->t.x = x;
+    m->t.y = y;
+    m->t.z = z;
+}
+
+static inline void VecCopyL31(Vec31 *d, Vec31 *s) {
+    int x = s->x;
+    int y = s->y;
+    int z = s->z;
+
+    d->x = x;
+    d->y = y;
+    d->z = z;
+}
+
 /* A matrix from p's rotation and position, passed to func_8001DA44. */
 void func_8004F6C8(Two31 *o, Pos31 *p, void *m) {
     Mat31 t;
@@ -278,12 +297,9 @@ void func_8004F6C8(Two31 *o, Pos31 *p, void *m) {
     func_800788D8(p);
     func_8007857C(p);
     t = p->m_20;
-    t.t = p->m_F8;
+    SetTrans31(&t, &p->m_F8);
     func_8001DA44(m, &t);
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_31", func_8004F6C8);
-#endif
 
 #ifdef NON_MATCHING
 // Registers: the counter and the flags' pointer swap $s0 and $s3 (9 off)
@@ -503,8 +519,6 @@ static inline void VecZero31(Vec31 *v) {
     v->z = 0;
 }
 
-#ifdef NON_MATCHING
-// The struct copies: the original copies through address registers ($v0, $v1) and passes $v0 on to the call; ours fold the offsets
 /* An object of a kind made, placed and named, with its five parts. */
 Def31 *func_800508B4(void *a, const char *name, int kind) {
     Def31 *o = 0;
@@ -529,7 +543,7 @@ Def31 *func_800508B4(void *a, const char *name, int kind) {
     }
     if (o) {
         func_80016144(o, &v, &r, 0);
-        o->m_64 = v;
+        VecCopyL31(&o->m_64, &v);
         o->m_70 = r;
         func_80016268(o, &o->m_70, &o->m_64);
         CName_Set31(o, name);
@@ -542,9 +556,6 @@ Def31 *func_800508B4(void *a, const char *name, int kind) {
     }
     return o;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_31", func_800508B4);
-#endif
 
 #ifdef NON_MATCHING
 // Registers: the original keeps 2 for the last mode's test in $fp and walks the bikes' second byte array by pointer
@@ -774,17 +785,12 @@ void func_80051114(Bike31 *b) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_31", func_8005114C);
 
-#ifdef NON_MATCHING
-// The struct copies: the original's block moves keep the addresses in registers ($v0, $v1) and copy through $t registers; ours fold the offsets
 void func_8005148C(Bike31 *b, int v) {
     b->m_544 = 0;
     b->m_540 = 0;
-    b->m_548 = b->m_30->m_64;
+    VecCopyL31(&b->m_548, &b->m_30->m_64);
     b->m_554 = b->m_30->m_70;
     b->m_55C = v;
     b->m_560 = 0;
     b->m_564 = 1;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_31", func_8005148C);
-#endif
