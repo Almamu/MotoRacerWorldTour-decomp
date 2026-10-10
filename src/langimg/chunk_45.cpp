@@ -53,6 +53,21 @@ struct Packed45 {
     u32 m_c : 14;
 };
 
+// A table's settings (12 bytes), read from a bit stream
+struct Settings45 {
+    u16 m_00;
+    s8 m_02;
+    u8 m_03, m_04, m_05, m_06;
+    s8 m_07; // the parity of a vector's bits
+    s8 m_08, m_09, m_0A;
+    u8 m_0B;
+};
+
+// The same 12 bytes as words
+struct Words3 {
+    int m_00, m_04, m_08;
+};
+
 // A table of packed entries with a cursor, and a sound object at 0x42C
 struct Table45 {
     u32 m_00;
@@ -61,13 +76,8 @@ struct Table45 {
     Packed45 m_items[0x100]; // 0x0C
     u32 m_40C;               // the cursor
     u32 m_410;               // the count
-    short m_414;
-    s8 m_416;
-    u8 m_417, m_418, m_419, m_41A;
-    s8 m_41B; // the parity of a vector's bits
-    s8 m_41C, m_41D, m_41E;
-    u8 m_41F;
-    u8 m_420[0xC];
+    Settings45 m_cur;        // 0x414
+    Settings45 m_prev;       // 0x420, what the next settings are read against
     u8 m_42C[0x28];
     int m_454;
 };
@@ -317,6 +327,8 @@ void func_8006A028(Virt45 *v, int a, int b, int c, int d);
 
 int func_8006C4A0(Table45 *t, Info45 *d, u16 *out);
 void func_8006C8EC(int a, int b, int c);
+int func_80096B74(void *p, int n);
+int func_800968B0(void *p);
 extern u8 D_800C7F2D;
 extern Banks45 *D_800C7F28;
 extern int D_800D11D0[]; // a sound channel set
@@ -602,8 +614,8 @@ void func_8006BECC(Table45 *t) {
     t->m_04 = 0;
     t->m_40C = 0;
     t->m_454 = 0;
-    memset(&t->m_414, 0, 12);
-    memset(t->m_420, 0, 12);
+    memset(&t->m_cur, 0, 12);
+    memset(&t->m_prev, 0, 12);
     t->m_08 = 0;
     func_80096918(t->m_42C, 2);
 }
@@ -615,8 +627,8 @@ void func_8006BF4C(Table45 *t) {
     t->m_04 = 0;
     t->m_40C = 0;
     t->m_08 = 0;
-    memset(&t->m_414, 0, 12);
-    memset(t->m_420, 0, 12);
+    memset(&t->m_cur, 0, 12);
+    memset(&t->m_prev, 0, 12);
     func_80096918(t->m_42C, 1);
 }
 
@@ -644,7 +656,7 @@ int func_8006C064(Table45 *t, short s) {
     if (t->m_00 >= 8000) {
         return 0;
     }
-    t->m_416 = s;
+    t->m_cur.m_02 = s;
     t->m_08 = 0;
     return 1;
 }
@@ -655,15 +667,15 @@ int func_8006C094(Table45 *t, int a, Info45 *d) {
     if (t->m_00 >= 8000) {
         return 0;
     }
-    t->m_41C = d->m_08;
-    t->m_414 = a;
-    t->m_41D = d->m_09;
-    t->m_418 = d->m_04;
-    t->m_419 = d->m_05;
-    t->m_417 = d->m_0D;
-    t->m_41A = d->m_07;
+    t->m_cur.m_08 = d->m_08;
+    t->m_cur.m_00 = a;
+    t->m_cur.m_09 = d->m_09;
+    t->m_cur.m_04 = d->m_04;
+    t->m_cur.m_05 = d->m_05;
+    t->m_cur.m_03 = d->m_0D;
+    t->m_cur.m_06 = d->m_07;
     t->m_08 = 1;
-    t->m_41E = d->m_0A;
+    t->m_cur.m_0A = d->m_0A;
     return 1;
 }
 #else
@@ -679,7 +691,38 @@ int func_8006C110(Table45 *t) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006C140);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006C330);
+/* The next settings read from the stream: each field after a bit that keeps the
+ * last one; nonzero if the stream goes on. */
+int func_8006C330(Table45 *t) {
+    t->m_cur.m_07 = func_80096B74(t->m_42C, 1);
+    t->m_cur.m_08 = func_80096B74(t->m_42C, 1);
+    t->m_cur.m_09 = func_80096B74(t->m_42C, 1);
+    t->m_cur.m_0A = func_80096B74(t->m_42C, 1);
+    if (func_80096B74(t->m_42C, 1)) {
+        t->m_cur.m_02 = func_80096B74(t->m_42C, 8);
+    }
+    if (func_80096B74(t->m_42C, 1)) {
+        t->m_cur.m_00 = t->m_prev.m_00;
+    } else {
+        t->m_cur.m_00 = func_80096B74(t->m_42C, 16);
+    }
+    if (func_80096B74(t->m_42C, 1)) {
+        t->m_cur.m_03 = t->m_prev.m_03;
+    } else {
+        t->m_cur.m_03 = func_80096B74(t->m_42C, 8);
+    }
+    if (func_80096B74(t->m_42C, 1)) {
+        t->m_cur.m_04 = t->m_prev.m_04;
+        t->m_cur.m_05 = t->m_prev.m_05;
+        t->m_cur.m_06 = t->m_prev.m_06;
+    } else {
+        t->m_cur.m_04 = func_80096B74(t->m_42C, 8);
+        t->m_cur.m_05 = func_80096B74(t->m_42C, 8);
+        t->m_cur.m_06 = func_80096B74(t->m_42C, 8);
+    }
+    *(Words3 *)&t->m_prev = *(Words3 *)&t->m_cur;
+    return !func_800968B0(t->m_42C);
+}
 
 /* The next entry's settings read back; the cursor past the entries of the
  * same time. */
@@ -690,16 +733,16 @@ int func_8006C4A0(Table45 *t, Info45 *d, u16 *out) {
     if (!func_8006C330(t)) {
         return 0;
     }
-    *out = (u8)t->m_416;
+    *out = (u8)t->m_cur.m_02;
     func_8005F380(d);
-    d->m_00 = t->m_414;
-    d->m_04 = t->m_418;
-    d->m_08 = t->m_41C != 0;
-    d->m_05 = t->m_419;
-    d->m_09 = t->m_41D != 0;
-    d->m_07 = t->m_41A;
-    d->m_0A = t->m_41E != 0;
-    d->m_0D = t->m_417;
+    d->m_00 = t->m_cur.m_00;
+    d->m_04 = t->m_cur.m_04;
+    d->m_08 = t->m_cur.m_08 != 0;
+    d->m_05 = t->m_cur.m_05;
+    d->m_09 = t->m_cur.m_09 != 0;
+    d->m_07 = t->m_cur.m_06;
+    d->m_0A = t->m_cur.m_0A != 0;
+    d->m_0D = t->m_cur.m_03;
     while (t->m_40C < t->m_410 - 1 && (&t->m_items[t->m_40C])[1].m_a == t->m_04) {
         t->m_40C++;
     }
@@ -727,7 +770,7 @@ int func_8006C5D8(Vector3 v) {
 }
 
 void func_8006C644(Table45 *t, Src45 *s) {
-    t->m_41B = func_8006C5D8(s->m_64);
+    t->m_cur.m_07 = func_8006C5D8(s->m_64);
 }
 
 int func_8006C694(Table45 *t, Src45 *s) {
@@ -738,7 +781,7 @@ int func_8006C694(Table45 *t, Src45 *s) {
         return 0;
     }
     p = func_8006C5D8(s->m_64);
-    if ((t->m_41B && !p) || (!t->m_41B && p)) {
+    if ((t->m_cur.m_07 && !p) || (!t->m_cur.m_07 && p)) {
         r = 1;
     }
     if (r) {
