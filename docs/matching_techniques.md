@@ -89,7 +89,7 @@ settings
 | `lib/cdaudio` chunk_01b | GCC 2.91.66 | 0 | (split addresses) | `--expand-div` |
 | `src/langimg` chunk_02, chunk_03 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --small-externs=...` |
 | `src/langimg` chunk_04, chunk_05 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=` |
-| `src/langimg` chunk_06, chunk_07 (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
+| `src/langimg` chunk_06 to chunk_08 (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_02b (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `SCES_030.37` (`src/sces`) | GCC 2.91.66 | 0 | `-fsigned-char` | `--expand-div` |
 
@@ -510,6 +510,15 @@ What's left once the instructions are right is usually register choice.
   constant into `$t1` (`lui`/`ori`, `addu $t1, $zero, $zero` for 0, and
   reuses a 0 still there). That's a `register int r asm("$9")` set from C
   before each `GTE_MTC2(r, n)`; GCC picks the instructions.
+- **Handwritten functions with an `asm` macro.** splat marks functions
+  "handwritten" when they hold instructions GCC doesn't emit (here `sub`
+  in a fixed-point multiply). They can still be C: the game used an `asm`
+  macro, `MULSHIFT` (`include/mulshift.h`), and GCC built the rest around
+  it (chunk_08).
+- **Field-by-field inlines for vectors.** `v->vx = 0; v->vy = 0; v->vz =
+  0;` stores in that order, where a chained assignment stores the last
+  field first; and a field-by-field copy lets GCC reuse values it knows,
+  where a struct copy loads every field (`func_80022BA8`).
 - **An address computed through an inline.** A struct member's address
   inside an array element can come out as `p + (i * size + offset)` or as
   `(p + i * size) + offset`; the second came from an inline taking the

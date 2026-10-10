@@ -21,3 +21,4 @@ issue it worked on, and add it below.
 | [issue-6-langimg-chunk05.md](issue-6-langimg-chunk05.md) | The game's chunk_05: race positions, the ring of entries by distance |
 | [issue-7-langimg-chunk06.md](issue-7-langimg-chunk06.md) | The game's chunk_06: racers' planes, visibility, particles; unsplit again |
 | [issue-8-langimg-chunk07.md](issue-8-langimg-chunk07.md) | The game's chunk_07: a pool of linked nodes; a copy through an inline |
+| [issue-9-langimg-chunk08.md](issue-9-langimg-chunk08.md) | The game's chunk_08: rider poses, fixed-point vectors; the game's `MULSHIFT` asm macro |
