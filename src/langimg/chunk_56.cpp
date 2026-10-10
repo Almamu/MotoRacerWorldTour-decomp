@@ -50,10 +50,18 @@ struct Bike56 {
     u32 m_00; // flags
     u8 m_04[0x564];
 };
+struct Mode56 {
+    u8 m_00[0x4D8];
+    int m_4D8;
+};
 struct Run56 {
     int m_00;
     int m_04; // how many
-    u8 m_08[0x2E0];
+    u8 m_08[8];
+    Mode56 *m_10;
+    u8 m_14[0x40];
+    int m_54[5][8]; // each rider's times
+    u8 m_F4[0x1F4];
     Bike56 m_2E8[5];
     int m_1DF0; // the lap's time
     u8 m_1DF4[0x14];
@@ -694,7 +702,69 @@ int func_80082B64(Grid56 *g, Who56 *w) {
     return r;
 }
 
+static inline int Time56(Run56 *run, int f, int i) {
+    if (i < 0) {
+        return -1;
+    }
+    return run->m_54[f][i];
+}
+
+#ifdef NON_MATCHING
+// Registers: the original hoists the times' base, f * 32 and -1 into saved registers and walks t[] by pointer
+/* A row's three times around the k-th, the k-th highlighted. */
+void func_80082BEC(Grid56 *g, int row, Run56 *run, int k, int f) {
+    int t[3];
+    int *tp;
+    int sel;
+    int i;
+    int v;
+
+    sel = 2;
+    if (D_800D5F40 == sel) {
+        if (run->m_54[f][0] != -1) {
+            func_800A5DBC((char *)g + row * 16, run->m_54[f][0], 0);
+        }
+    } else {
+        if (run->m_10->m_4D8 && k == -1) {
+            k = 0;
+        }
+        if (k >= 0) {
+            t[0] = k - 2;
+            t[1] = k - 1;
+            t[2] = k;
+            while (t[0] < 0) {
+                t[0] = t[1];
+                t[1] = t[2];
+                t[2] = -1;
+                sel--;
+            }
+        } else {
+            t[0] = t[1] = t[2] = -1;
+        }
+        for (i = 2; i >= 0; i--) {
+            char *c = (char *)g + row * 16 + i * 32;
+
+            v = Time56(run, f, t[i]);
+            if (v != -1) {
+                if (v != 0) {
+                    func_800A5DBC(c + 4, v, 0);
+                    if (sel == i) {
+                        ((Packed56 *)c)->v = 0xFFFF01;
+                    } else {
+                        ((Packed56 *)c)->v = 0xFFFFFF01;
+                    }
+                } else {
+                    c[0] = 0;
+                }
+            } else {
+                c[0] = 0;
+            }
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_56", func_80082BEC);
+#endif
 
 /* A grid cell: col's value as a digit (from '1'), or '-'. */
 void func_80082DA4(Grid56 *g, int row, Tab56 *t, int flag, int col) {
