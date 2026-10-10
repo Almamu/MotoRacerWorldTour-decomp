@@ -2,6 +2,20 @@
 #include "langimg/race.h"
 #include "mulshift.h"
 
+#define IABS(x) ((x) < 0 ? -(x) : (x))
+
+static inline void VecZero(Vector3 *v) {
+    v->vx = 0;
+    v->vy = 0;
+    v->vz = 0;
+}
+
+static inline void VecCopy(Vector3 *d, Vector3 *s) {
+    d->vx = s->vx;
+    d->vy = s->vy;
+    d->vz = s->vz;
+}
+
 /* The game's code built with GCC 2.91.66
  * (docs/matching/issue-9-langimg-chunk08.md). */
 
@@ -23,6 +37,70 @@ struct Motor {
     int m_6C[1];
 };
 
+// An animation channel (0x1C bytes)
+struct AnimChan {
+    u8 m_00[0x1C];
+};
+
+// A rider's pose state
+struct Pose {
+    u8 m_00[0xC];
+    int m_0C; // 0x0C: holding
+    int m_10;
+    u32 m_14; // 0x14: until
+    Vector3 m_18;
+    Vector3 m_24;
+    int m_30;
+    Vector3 m_34;
+    Vector3 m_40;
+    int m_4C, m_50, m_54, m_58, m_5C, m_60;
+    int m_64;
+    AnimChan m_68, m_84, m_A0, m_BC, m_D8;
+    int m_F4, m_F8, m_FC, m_100, m_104, m_108;
+    u8 m_10C, m_10D;
+    short m_10E;
+    int m_110;
+    u8 m_114[4];
+    u16 m_118;
+    u8 m_11A[0x22];
+    u16 m_13C, m_13E; // 0x13C: the limits to hold at
+    u16 m_140;        // 0x140: how long
+    u8 m_142;
+};
+
+// What the pose follows
+struct PoseInput {
+    u8 m_00[0x70];
+    short m_70;
+    u8 m_72[2];
+    short m_74;
+    u8 m_76[0x9A];
+    int m_110;
+};
+
+// The animated object
+struct PoseObj {
+    u8 m_00[0x30];
+    PoseInput *m_30;
+    u8 m_34[0x374];
+    AnimChan m_3A8;
+    AnimChan *m_3C4;
+};
+
+// The animations (0x38 bytes apart)
+struct PoseAnims {
+    u8 m_00[0x1C];
+    u8 m_1C[0x38];
+    u8 m_54[0x38];
+    u8 m_8C[0x38];
+    u8 m_C4[0x38];
+};
+
+void func_80022A68(Pose *p, PoseObj *o, PoseAnims *a);
+int func_80022BA8(Pose *p);
+void func_8006BB9C(AnimChan *c, int a);
+void func_80091544(AnimChan *c, void *anim);
+void func_80091FB4(AnimChan *c, int t, void *a, void *b);
 void func_80022CCC(void);
 void func_80022CD4(MATRIX *a, SVECTOR *v);
 void func_80022D04(SVECTOR *out, Vector3 *in);
@@ -43,9 +121,80 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_08", func_80021154);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_08", func_80022454);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_08", func_80022A68);
+#ifdef NON_MATCHING
+/* The layout matches; registers and the absolute values' scheduling don't (52 off) */
+/* Holds a pose while the input stays small, for m_140; or blends
+ * towards the side the input leans to. */
+void func_80022A68(Pose *p, PoseObj *o, PoseAnims *a) {
+    PoseInput *in = o->m_30;
+    int x = in->m_110;
+    int y = in->m_70;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_08", func_80022BA8);
+    if (p->m_0C || (IABS(x) < p->m_13C && IABS(y) < p->m_13E)) {
+        if (!p->m_0C) {
+            p->m_0C = 1;
+            p->m_14 = D_800D60FC + p->m_140;
+        } else if (p->m_14 < D_800D60FC) {
+            p->m_0C = 0;
+        }
+        func_80091544(&o->m_3A8, a->m_C4);
+    } else {
+        int lean = in->m_74;
+        int t = (IABS(lean) << 12) / p->m_118;
+
+        if (t > 0x1000) {
+            t = 0x1000;
+        }
+        if (lean < 0) {
+            func_80091FB4(&o->m_3A8, t, a->m_1C, a->m_8C);
+        } else {
+            func_80091FB4(&o->m_3A8, t, a->m_1C, a->m_54);
+        }
+    }
+    o->m_3C4 = &o->m_3A8;
+}
+#else
+INCLUDE_ASM("asm/langimg/nonmatchings/chunk_08", func_80022A68);
+#endif
+
+int func_80022BA8(Pose *p) {
+    Vector3 z;
+
+    VecZero(&z);
+    p->m_0C = 0;
+    p->m_10 = 0;
+    p->m_14 = 0;
+    VecCopy(&p->m_18, &z);
+    VecZero(&z);
+    VecCopy(&p->m_24, &z);
+    VecZero(&p->m_34);
+    VecZero(&p->m_40);
+    p->m_4C = 0;
+    p->m_50 = 0;
+    p->m_54 = 0;
+    p->m_58 = 0;
+    p->m_5C = 0;
+    p->m_60 = 0;
+    p->m_64 = 2;
+    func_8006BB9C(&p->m_A0, 0);
+    func_8006BB9C(&p->m_BC, 0);
+    func_8006BB9C(&p->m_D8, 0);
+    func_8006BB9C(&p->m_84, 0);
+    func_8006BB9C(&p->m_68, 0);
+    p->m_F4 = 0;
+    p->m_F8 = 0;
+    p->m_FC = 0;
+    p->m_100 = 0;
+    p->m_104 = 0;
+    p->m_108 = 0;
+    p->m_30 = 0xFB;
+    p->m_10E = 0;
+    p->m_142 = 0;
+    p->m_10C = 0;
+    p->m_10D = 0;
+    p->m_110 = 0;
+    return 1;
+}
 
 void func_80022CCC(void) {
 }
