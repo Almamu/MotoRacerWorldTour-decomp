@@ -149,7 +149,7 @@ struct Tab41 {
 };
 extern int D_800CB44C;
 void func_80097E4C(void *a, int x, int y, int z);
-void func_80062E40(Obj41 *o);
+Obj41 *func_80062E40(Obj41 *o); // the base's constructor, returning this
 void func_800643E4(Obj41 *o);
 void func_8006348C(Obj41 *o, int *a, int *b);
 void func_80064310(void *o, short *v);
@@ -321,8 +321,6 @@ void func_80064310(void *o, short *v) {
     func_80097E4C(o, v[0], v[1], v[2]);
 }
 
-#ifdef NON_MATCHING
-// Registers: the vtable's address in $v1, the loop's count in $v0 first (4 off)
 /* The constructor: the base's, the vtable, eight elements with empty constructors, its fields. */
 Obj41 *func_80064340(Obj41 *o) {
     int *v;
@@ -351,9 +349,6 @@ Obj41 *func_80064340(Obj41 *o) {
     D_800CB44C = 0;
     return o;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_41", func_80064340);
-#endif
 
 void func_800643BC(Obj41 *o, int f) {
     o->m_50 = &D_800C7684;
