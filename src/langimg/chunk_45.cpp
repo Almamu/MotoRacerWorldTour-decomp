@@ -37,11 +37,13 @@ struct VtEntry {
 
 // A list's node
 struct Node45 {
-    int m_00;
+    u8 *m_data; // 8 bytes of an entry's data
     u8 m_04[4];
     Node45 *m_next; // 0x08
-    u8 m_0C[0x1C];
+    short m_0C;
+    u8 m_0E[0x1A];
     u8 m_28;
+    u8 m_29[0x17];
 };
 
 // Three values packed into a word
@@ -81,8 +83,11 @@ struct Info45 {
 struct Ctx45 {
     int m_00;
     int m_04; // flags
-    u8 m_08[4];
+    u8 m_08[0x37];
+    s8 m_3F; // its entry's index
 };
+
+struct Entry45;
 
 // Something with a vector at 0x64
 struct Src45 {
@@ -93,22 +98,22 @@ struct Src45 {
 // A list's head (0xC bytes)
 struct Head45 {
     Ctx45 *m_ctx;
-    int m_04;
+    Entry45 *m_entry;
     Node45 *m_next;
 };
 
 // A bank (0x4C0 bytes): 16 lists
 struct Bank45 {
-    u8 m_00[0x400];
+    Node45 m_nodes[16];
     Head45 m_lists[16];
 };
 
 // An entry of 12 bytes
 struct Entry45 {
     int m_00;
-    short m_04;
-    u16 m_06; // flags
-    int m_08;
+    short m_04; // its nodes' count
+    u16 m_06;   // flags
+    u8 *m_data; // 8 bytes for each node
 };
 
 // What the two banks share
@@ -134,12 +139,6 @@ struct Banks45 {
     Shared45 *m_980;
     int m_984;
     short *m_988;
-};
-
-// A sound with an entry's index at 0x3F
-struct Sound45 {
-    u8 m_00[0x3F];
-    s8 m_3F;
 };
 
 // An object with a vtable at 0x0C
@@ -222,7 +221,7 @@ void func_8006CC40(Shared45 *s, int *a);
 int func_80096884(void *p);
 void func_8009682C(void *p);
 void __builtin_delete(void *p);
-int func_8006CFD0(Bank45 *b, Sound45 *s, Entry45 *e);
+int func_8006CFD0(Bank45 *b, Ctx45 *s, Entry45 *e);
 void func_8006B854(Slots45 *o, Slot45 *s);
 
 void func_8006C644(Table45 *t, Src45 *s);
@@ -233,7 +232,7 @@ int func_8006BD78(Packed45 *out, u32 a, u32 b, u32 c);
 void func_8006CDA0(Head45 *h);
 void func_8006BE10(Table45 *o, int flags);
 int func_8006C5D8(Vector3 v);
-int func_8006D274(Banks45 *o, Sound45 *s, int i);
+int func_8006D274(Banks45 *o, Ctx45 *s, int i);
 void func_8006B500(Slots45 *o, Slot45 *s, int a);
 extern int D_800C7764;
 // A word of flags
@@ -249,7 +248,7 @@ void func_8006D844(Node45 *n, int f, void *d, int a);
 void func_8006CED8(Head45 *h, int a);
 void func_8006D0BC(Bank45 *b, Ctx45 *c);
 void func_8006BF4C(Table45 *t);
-int func_8006D314(Banks45 *o, Sound45 *s);
+int func_8006D314(Banks45 *o, Ctx45 *s);
 int func_8006BFEC(Table45 *t, u32 b, u32 c);
 int func_8006C094(Table45 *t, int a, Info45 *d);
 extern int D_800CB490;
@@ -272,6 +271,13 @@ short func_80013E64(int *a, int id);
 
 int func_8006CA84(int id, int a);
 int func_8006C694(Table45 *t, Src45 *s);
+extern int D_800D60EC;
+int func_800B6318(void);
+void func_8006B330(Slots45 *o, Slot45 *s, int a);
+void func_8006B3B0(Slots45 *o, Slot45 *s, int a);
+
+int func_8006CB68(int vol, int a, int b, int c, int d, int e);
+void func_8006B570(Slots45 *o);
 extern u8 D_800C7F2D;
 extern Banks45 *D_800C7F28;
 extern int D_800D11D0[]; // a sound channel set
@@ -295,7 +301,7 @@ void func_8006C7A0(void);
 void func_8006CA50(void);
 void func_8006CA78(u8 c);
 void func_8006CD90(Head45 *h);
-void func_8006CE08(Head45 *h, Ctx45 *c, int a, Node45 *n);
+void func_8006CE08(Head45 *h, Ctx45 *c, Entry45 *e, Node45 *n);
 int func_8006CE18(Head45 *h);
 void func_8006CEAC(Head45 *h);
 }
@@ -309,7 +315,33 @@ void func_8006B500(Slots45 *o, Slot45 *s, int a) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006B570);
+/* Each slot updated by its state. */
+void func_8006B570(Slots45 *o) {
+    int n = o->m_count;
+    Slot45 *p;
+    int x;
+
+    if (n > 0) {
+        p = o->m_slots;
+        x = D_800D60EC;
+        do {
+            switch (p->m_04) {
+            case 0: // free
+                break;
+            case 1:
+                func_8006B330(o, p, x);
+                break;
+            case 2:
+                func_8006B3B0(o, p, x);
+                break;
+            case 3:
+                func_8006B500(o, p, x);
+                break;
+            }
+            p++;
+        } while (--n);
+    }
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006B658);
 
@@ -711,7 +743,26 @@ void func_8006CB38(int id) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006CB68);
+/* One of up to five sounds (the list ends at -1), picked at random. */
+int func_8006CB68(int vol, int a, int b, int c, int d, int e) {
+    short ids[5];
+    int n = 0;
+    int h;
+
+    ids[0] = a;
+    ids[1] = b;
+    ids[2] = c;
+    ids[3] = d;
+    ids[4] = e;
+    while (ids[n] != -1) {
+        n++;
+    }
+    vol = (vol * 127) >> 8;
+    h = func_80014A98(D_800D11D0, ids[func_800B6318() % n], 0);
+    func_80014368(D_800D11D0, h, vol);
+    func_80014B18(D_800D11D0, h);
+    return h;
+}
 
 /* Each group's ids to handles. */
 void func_8006CC40(Shared45 *s, int *a) {
@@ -742,7 +793,7 @@ void func_8006CD00(Shared45 *s, Bank45 *b) {
 
 void func_8006CD90(Head45 *h) {
     h->m_ctx = 0;
-    h->m_04 = 0;
+    h->m_entry = 0;
     h->m_next = 0;
 }
 
@@ -753,16 +804,16 @@ void func_8006CDA0(Head45 *h) {
     while (p) {
         n = p->m_next;
         func_8006D7E4(p);
-        p->m_00 = 0;
+        p->m_data = 0;
         p->m_next = 0;
         p = n;
     }
     func_8006CD90(h);
 }
 
-void func_8006CE08(Head45 *h, Ctx45 *c, int a, Node45 *n) {
+void func_8006CE08(Head45 *h, Ctx45 *c, Entry45 *e, Node45 *n) {
     h->m_ctx = c;
-    h->m_04 = a;
+    h->m_entry = e;
     h->m_next = n;
 }
 
@@ -826,7 +877,45 @@ void func_8006CF8C(Bank45 *b) {
     }
 }
 
+#ifdef NON_MATCHING
+/* GCC makes a second pointer for the node's halfword at 0x0C, which the original doesn't (44 off) */
+/* An entry's nodes taken from the free ones into the first empty list; the
+ * list's index, or -1. */
+int func_8006CFD0(Bank45 *b, Ctx45 *c, Entry45 *e) {
+    int r = -1;
+    u32 i;
+    u32 j;
+
+    for (i = 0; i < 16; i++) {
+        if (!func_8006CE18(&b->m_lists[i])) {
+            Node45 *prev = 0;
+            Node45 *nd = b->m_nodes;
+            u8 *d = e->m_data;
+            int k = e->m_04;
+
+            for (j = 0; j < 16; j++, nd++) {
+                if (!nd->m_data) {
+                    nd->m_data = d;
+                    d += 8;
+                    nd->m_next = prev;
+                    prev = nd;
+                    nd->m_0C = 0;
+                    if (--k == 0) {
+                        break;
+                    }
+                }
+            }
+            func_8006CE08(&b->m_lists[i], c, e, prev);
+            func_8006CE24(&b->m_lists[i]);
+            r = i;
+            break;
+        }
+    }
+    return r;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006CFD0);
+#endif
 
 /* The lists of a context emptied. */
 void func_8006D0BC(Bank45 *b, Ctx45 *c) {
@@ -874,7 +963,7 @@ void func_8006D230(Bank45 *b) {
     }
 }
 
-int func_8006D274(Banks45 *o, Sound45 *s, int i) {
+int func_8006D274(Banks45 *o, Ctx45 *s, int i) {
     int r = 0;
     int k = s->m_3F;
 
@@ -890,7 +979,7 @@ void func_8006D2E0(Bank45 *b, int a, int i) {
 }
 
 /* A sound in both banks. */
-int func_8006D314(Banks45 *o, Sound45 *s) {
+int func_8006D314(Banks45 *o, Ctx45 *s) {
     int r = 1;
     u32 i;
 
