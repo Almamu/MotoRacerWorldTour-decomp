@@ -60,6 +60,8 @@ void func_800237E8(Motor *m, int *out) {
     }
 }
 
+#ifdef NON_MATCHING
+/* Registers: the top and the previous speed swap their saved registers (11 off) */
 /* The engine speeds to shift up at: stepping the engine speed up, the
  * point where the next gear pulls harder than this one, or where this one
  * reaches the top (0xFF0 of it at most). The top is higher in a mode. */
@@ -105,6 +107,9 @@ void func_8002385C(Motor *m) {
         }
     }
 }
+#else
+INCLUDE_ASM("asm/langimg/nonmatchings/chunk_09", func_8002385C);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_09", func_80023A30);
 
