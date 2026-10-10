@@ -14,7 +14,7 @@ extern int D_800D5F40;
 extern int D_800D5F30;
 void func_80029248(Bike *b, int x, int y);
 int func_8002E684(Bike *b, int a);
-void func_80099D48(Vector3 *v, int shift);
+Vector3 *func_80099D48(Vector3 *v, int shift); // v >> shift
 void func_80023004(Vector3 *v, Vector3 n);
 void func_80023140(Vector3 *v, int len, int shift);
 }

@@ -9,7 +9,7 @@
 
 extern "C" {
 void func_800990E8(Vector3 *v, int shift);
-void func_80099D48(Vector3 *v, int shift);
+Vector3 *func_80099D48(Vector3 *v, int shift); // v >> shift
 int ratan2(long y, long x);
 }
 

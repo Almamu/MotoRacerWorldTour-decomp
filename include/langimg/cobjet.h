@@ -244,7 +244,7 @@ extern int D_800C4944;      // the matrix stack's depth
 extern MATRIX D_800CA350[]; // the matrix stack
 extern int D_800C88FC;
 void func_80098768(MATRIX *m, long *in, long *out);
-void func_80099898(Vector3 *out, Vector3 *a, Vector3 *b);
+void func_80099898(Vector3 *out, Vector3 *a, Vector3 *b); /* a + b (void: func_80026648) */
 void func_80079DC0(int *model, MATRIX *m);
 void func_8007A198(int *model, MATRIX *m);
 void func_80018AEC(int *prim, int page, int x, int y);
@@ -252,7 +252,7 @@ void func_80019114(int *prim, int page, int x, int y);
 void func_8001889C(MATRIX *m, SVECTOR *rot);              // a rotation matrix
 MATRIX *func_80098674(MATRIX *a, MATRIX *b, MATRIX *out); // a product
 void func_8009887C(long *in, long *out);
-void func_800997D0(long *in, long *out);
+long *func_800997D0(long *v, long *w); /* v += w; returns v */
 }
 
 #endif

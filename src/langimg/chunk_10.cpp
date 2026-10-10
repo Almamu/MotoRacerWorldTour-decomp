@@ -32,8 +32,8 @@ void func_800271E0(Bike *b);
 int func_8002E684(Bike *b, int a);
 void func_8002E548(Bike *b);
 void func_800630D8(Bike *b);
-void func_80099D48(Vector3 *v, int shift);
-void func_800995C4(Vector3 *v, int a);
+Vector3 *func_80099D48(Vector3 *v, int shift); // v >> shift
+Vector3 *func_800995C4(Vector3 *v, int a);     // v * a, 4.12
 }
 
 static inline void SVecZero(SVECTOR *v) {
@@ -182,8 +182,6 @@ void func_8002659C(Bike *b) {
     b->m_54->m_564 = 1;
 }
 
-#ifdef NON_MATCHING
-/* The motor's pointer in $v1 in the original, $v0 here (2 off) */
 /* The bike's two ends: its position less and plus its heading, scaled to
  * the motor's length. */
 void func_80026648(Bike *b, Placed *p) {
@@ -191,19 +189,12 @@ void func_80026648(Bike *b, Placed *p) {
 
     v = b->m_330;
     func_80099D48(&v, 9);
-    {
-        Motor *m = b->m_motor;
-
-        func_800995C4(&v, m->m_14E);
-    }
+    func_800995C4(&v, b->m_motor->m_14E);
     func_800998D0(&w, &p->m_pos, &v);
     VecCopy(&b->m_240, &w);
     func_80099898(&w, &p->m_pos, &v);
     VecCopy(&b->m_234, &w);
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_10", func_80026648);
-#endif
 
 int func_80026720(Bike *b) {
     return func_8002357C(b->m_motor, func_8002675C(b, b->m_2BC), b->m_gear);
@@ -285,17 +276,15 @@ int func_80027098(Bike *b) {
     return 0;
 }
 
-#ifdef NON_MATCHING
-/* The delay slots: the original sets a1 before the branch and decrements g after it (2 off) */
 /* Down a gear, unless that would over-rev the engine; into neutral from
  * first. */
 int func_800270FC(Bike *b) {
-    int g;
+    int cur = b->m_gear + b->m_shift;
 
-    g = b->m_gear + b->m_shift;
-    if (g > 0) {
+    if (cur > 0) {
         if (!b->m_3F6) {
-            g--;
+            int g = cur - 1;
+
             if (func_800236F0(b->m_motor, func_8002E684(b, 0), g) >= 0x1000) {
                 return 0;
             }
@@ -314,9 +303,6 @@ int func_800270FC(Bike *b) {
     }
     return 0;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_10", func_800270FC);
-#endif
 
 int func_800271BC(Bike *b) {
     return b->m_clutch == 2;
