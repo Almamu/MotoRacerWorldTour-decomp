@@ -52,7 +52,8 @@ struct Bike56 {
 };
 struct Run56 {
     int m_00;
-    u8 m_04[0x2E4];
+    int m_04; // how many
+    u8 m_08[0x2E0];
     Bike56 m_2E8[5];
     int m_1DF0; // the lap's time
     u8 m_1DF4[0x14];
@@ -63,7 +64,13 @@ struct Run56 {
 struct Race56 {
     u8 m_00[4];
     int m_04;
-    u8 m_08[0x370];
+    u8 m_08[0xB4];
+    int m_BC;
+    u8 m_C0[4];
+    int m_C4;
+    u8 m_C8[4];
+    int m_CC;
+    u8 m_D0[0x2A8];
     Run56 *m_378;
 };
 
@@ -127,10 +134,15 @@ struct Cam56 {
     Sub56 m_20;
 };
 struct Who56 {
-    u8 m_00[0x30];
+    int m_00; // bits 1-5: a mode
+    u8 m_04[0xC];
+    int m_10;
+    u8 m_14[0x1C];
     void *m_30;
     int m_34;
-    u8 m_38[0xB];
+    u8 m_38[8];
+    s8 m_40;
+    u8 m_41[2];
     s8 m_43;
 };
 extern int D_800D5F38;
@@ -177,6 +189,43 @@ void func_80082A8C(Grid56 *g, Race56 *r);
 void func_80082E74(Grid56 *g, int k, Item56 *it, Race56 *r, int f);
 void func_8008259C(Draw56 *d, int i);
 void func_80082FA8(Grid56 *g, Run56 *run);
+// The row's rider
+struct Row56 {
+    int m_00;
+    Who56 *m_04;
+    int m_08;
+};
+// A box, as func_800891E8 finds it
+struct Box56 {
+    int m_00;
+    int m_04;
+    int m_08;
+    int m_0C;
+    u8 m_10[8];
+    int m_18;
+    int m_1C;
+    int m_20;
+    int m_24;
+};
+// A span of a column: where it starts, and its value
+struct Span56 {
+    u8 m_00;
+    s8 m_01;
+};
+struct Map56 {
+    u8 m_00[0x30];
+    u8 *m_30;      // each column's count
+    Span56 **m_34; // each column's spans
+};
+extern Row56 D_800CBD30;
+extern u32 D_800D49F0;
+extern int D_800D49A4;
+extern short D_800CBD48[4];
+Box56 *func_800891E8(void *a, int b);
+void func_80082BEC(Grid56 *g, int row, Run56 *run, int k, int f);
+void func_80083078(Grid56 *g, int row, Race56 *r);
+void func_800826BC(u8 *o, Race56 *r);
+int func_80081330(Map56 *m, short x, short y);
 void func_80082DA4(Grid56 *g, int row, Tab56 *t, int flag, int col);
 }
 
@@ -255,7 +304,44 @@ int func_80081318(List56 *l, int i) {
     return l->m_00[i];
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_56", func_80081330);
+/* The value at (x, y): a binary search of x's spans for y. */
+int func_80081330(Map56 *m, short x, short y) {
+    Span56 *s;
+    int r = 0;
+    int lo;
+    int hi;
+    int mid;
+    int v;
+
+    if (x >= 32 && y >= 32) {
+        s = m->m_34[x - 32];
+        if (s) {
+            if (x > 224) {
+                return 3;
+            }
+            if (y > 224) {
+                return 3;
+            }
+            lo = 0;
+            hi = m->m_30[x - 32] - 1;
+            if (y >= s[0].m_00 && s[hi].m_00 >= y) {
+                do {
+                    mid = (lo + hi) >> 1;
+                    v = s[mid].m_00;
+                    if (y < v) {
+                        hi = mid - 1;
+                    } else if (v < y) {
+                        lo = mid + 1;
+                    } else {
+                        r = s[mid].m_01 * 125 >> 5;
+                        break;
+                    }
+                } while (lo <= hi);
+            }
+        }
+    }
+    return r;
+}
 
 void *func_8008142C(void *p) {
     memset(p, 0, 0x30);
@@ -389,7 +475,40 @@ void func_8008267C(int i) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_56", func_8008267C);
 #endif
 
+// A rectangle's four values set, as setRECT does
+static inline void SetRect56(short *r, int x, int y, int w, int h) {
+    r[0] = x;
+    r[1] = y;
+    r[2] = w;
+    r[3] = h;
+}
+
+#ifdef NON_MATCHING
+// Registers and delay slots: the values' loads and the rectangle's stores
+void func_800826BC(u8 *o, Race56 *r) {
+    short *d;
+    Box56 *e;
+    Box56 *f;
+
+    if ((D_800D49F0 >> 4) & 1) {
+        d = D_800CBD48;
+        if (!(r->m_378->m_00 & 0xA8)) {
+            e = func_800891E8(o + 0x30, r->m_CC);
+            SetRect56(d, e->m_18, e->m_1C, e->m_24 - 1, e->m_24 - 1);
+        } else {
+            e = func_800891E8(o + 0x30, r->m_C4);
+            f = func_800891E8(o + 0x30, r->m_BC);
+            if (D_800D49A4 == 1) {
+                SetRect56(d, f->m_00 + f->m_08, f->m_00 + f->m_08, e->m_20, f->m_24);
+            } else {
+                SetRect56(d, f->m_18, f->m_1C, f->m_04 + f->m_0C, f->m_04 + f->m_0C);
+            }
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_56", func_800826BC);
+#endif
 
 /* A table's index from x's size in bits (by the GTE's leading zeros). */
 int func_800827DC(void *o, int x, int b, int c) {
@@ -602,4 +721,37 @@ void func_80082FA8(Grid56 *g, Run56 *run) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_56", func_80082FA8);
 #endif
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_56", func_80083078);
+/* A row of the panel, for the rider shown. */
+void func_80083078(Grid56 *g, int row, Race56 *r) {
+    Who56 *w;
+    int f;
+    int k;
+    int mode;
+    int col;
+    int n;
+    int max;
+
+    if (row == -1) {
+        return;
+    }
+    w = D_800CBD30.m_04;
+    f = D_800CBD30.m_08;
+    k = w->m_40;
+    mode = (w->m_00 << 26) >> 27;
+    n = r->m_378->m_04;
+    max = n - 1;
+    if (k >= n) {
+        k = max;
+    }
+    col = w->m_10;
+    if (D_800D5F40 != 2) {
+        func_80082F1C(g, row, k, max);
+    }
+    func_80082BEC(g, row, r->m_378, k, f);
+    if (D_800D5F40 != 2) {
+        func_80082DA4(g, row, (Tab56 *)r->m_378, col, f);
+    }
+    func_80082DE4(g, row, w, mode);
+    func_80082E74(g, row, (Item56 *)w, r, k);
+    func_80082FA8(g, r->m_378);
+}
