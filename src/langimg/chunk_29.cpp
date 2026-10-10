@@ -54,10 +54,23 @@ struct Ply29 {
     u8 m_00[0x154];
     int m_154; // a choice, 0 to 5
 };
+struct Lp29 {
+    u8 m_00[0xC];
+    s8 m_0C;
+};
 struct Bk29 {
-    u8 m_00[0x188];
+    int m_00; // bits 1-5: a mode
+    u8 m_04[0x24];
+    Lp29 *m_28;
+    u8 m_2C[4];
+    int m_30;
+    u8 m_34[0x154];
     u16 m_188;
-    u8 m_18A[0x3DE];
+    u8 m_18A[0x196];
+    s8 m_320;
+    u8 m_321;
+    s8 m_322;
+    u8 m_323[0x245];
 };
 struct Rc29 {
     u8 m_00[0x10];
@@ -77,11 +90,15 @@ struct Game29 {
     int m_30C;
     u8 m_310[0x68];
     struct Rc29 *m_378;
-    u8 m_37C[0xC0];
+    u8 m_37C[0xB4];
+    int m_430[2];
+    u8 m_438[4];
     Ply29 *m_43C[2];
     u8 m_444[0x2C];
     s8 m_470[2];
-    u8 m_472[0x16];
+    u8 m_472[2];
+    int m_474[2];
+    u8 m_47C[0xC];
     int m_488[2];
 };
 extern int *D_800CB2F8;
@@ -102,6 +119,19 @@ void func_8004C7EC(Game29 *g);
 char *func_8004B96C(int k);
 void func_8004C430(Game29 *g, int i);
 int func_8004B844(int a, int b);
+// A scale's four weights for each of its kinds, and its sizes
+struct Sc29 {
+    u8 m_00[8];
+    short m_08[4];
+    short m_10[4];
+    short m_18[4];
+    short m_20[4];
+    int m_28[4];
+    int m_38; // the kind
+};
+int func_8004C02C(Sc29 *o);
+int func_8004BF30(Sc29 *o, int x, int y, int z);
+void func_8004C870(Game29 *g, int i, Bk29 *b);
 }
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_29", func_8004B4B0);
@@ -152,9 +182,51 @@ void func_8004BEE0(void) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_29", func_8004BF30);
+// The scale's start: its size times 281/256, doubled
+static inline int Base29(Sc29 *o) {
+    return o->m_28[o->m_38] * 281 / 256 * 2;
+}
 
+// Its length: the kind's weighted sum (doubled past the first kind), plus the start
+static inline int Len29(Sc29 *o) {
+    int k = o->m_38;
+    int b = Base29(o);
+    int t = (o->m_08[k] * 15 + o->m_18[k] * 31) * 4 + o->m_10[k] * 72 + o->m_20[k] * 146;
+
+    if (k) {
+        t *= 2;
+    }
+    return t + b;
+}
+
+#ifdef NON_MATCHING
+// The same sums as func_8004C02C, the same differences
+/* x placed on the scale, in steps of y. */
+int func_8004BF30(Sc29 *o, int x, int y, int z) {
+    int b = Base29(o);
+
+    return (x - b) / z * y / ((Len29(o) - b) / z + 1);
+}
+#else
+INCLUDE_ASM("asm/langimg/nonmatchings/chunk_29", func_8004BF30);
+#endif
+
+#ifdef NON_MATCHING
+// Registers: the original copies the column's pointer through several registers (inlines passing it on, likely) and computes its offset first
+int func_8004C02C(Sc29 *o) {
+    int k = o->m_38;
+    int w = o->m_28[k] * 281;
+    int t = (o->m_18[k] * 31 + o->m_08[k] * 15) * 4 + o->m_10[k] * 72 + o->m_20[k] * 146;
+    int b = w / 256 * 2;
+
+    if (k) {
+        return t * 2 + b;
+    }
+    return t + b;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_29", func_8004C02C);
+#endif
 
 int func_8004C0E4(void) {
     return 1;
@@ -259,7 +331,33 @@ void func_8004C7EC(Game29 *g) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_29", func_8004C870);
+/* The player's state from their bike: 9 when it can go on, else 7, 8 or 1; 0 when it isn't racing. */
+void func_8004C870(Game29 *g, int i, Bk29 *b) {
+    if (b->m_320) {
+        if (((b->m_00 << 26) >> 27) == 1 && b->m_28 && b->m_28->m_0C && !b->m_188) {
+            g->m_430[i] = 9;
+        } else {
+            g->m_430[i] = 7;
+        }
+    } else if (b->m_322) {
+        if (((b->m_00 << 26) >> 27) == 1 && b->m_28 && b->m_28->m_0C && !b->m_188) {
+            g->m_430[i] = 9;
+        } else {
+            g->m_430[i] = 8;
+        }
+    } else if (((b->m_00 << 26) >> 27) == 1) {
+        if (b->m_28) {
+            if (b->m_28->m_0C && !b->m_188) {
+                g->m_430[i] = 9;
+            } else {
+                g->m_430[i] = 1;
+            }
+        }
+    } else {
+        g->m_474[i] = b->m_30;
+        g->m_430[i] = 0;
+    }
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_29", func_8004C9D0);
 
