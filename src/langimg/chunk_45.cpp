@@ -19,9 +19,20 @@ struct Flagged {
     int m_4C;
 };
 
+// A GCC 2 vtable entry
+struct VtEntry {
+    short m_delta;
+    short m_index;
+    int (*m_func)(void *self);
+};
+
+#define VCALL1(o, i, a) \
+    (((int (*)(void *, int))(o)->m_vtable[i].m_func)((char *)(o) + (o)->m_vtable[i].m_delta, a))
+
 // A list's node
 struct Node45 {
-    u8 m_00[8];
+    int m_00;
+    u8 m_04[4];
     Node45 *m_next; // 0x08
     u8 m_0C[0x1C];
     u8 m_28;
@@ -37,11 +48,27 @@ struct Table45 {
     u32 m_410;          // the count
     u8 m_414[2];
     s8 m_416;
+    u8 m_417[4];
+    u8 m_41B; // the parity of a vector's bits
+};
+
+// Something with a vector at 0x64
+struct Src45 {
+    u8 m_00[0x64];
+    Vector3 m_64;
+};
+
+// Three values packed into a word
+struct Packed45 {
+    u32 m_a : 13;
+    u32 m_b : 5;
+    u32 m_c : 14;
 };
 
 // A list's head (0xC bytes)
 struct Head45 {
-    u8 m_00[8];
+    int m_00;
+    int m_04;
     Node45 *m_next;
 };
 
@@ -49,6 +76,38 @@ struct Head45 {
 struct Bank45 {
     u8 m_00[0x400];
     Head45 m_lists[16];
+};
+
+// An entry of 12 bytes
+struct Entry45 {
+    int m_00, m_04, m_08;
+};
+
+// What the two banks share
+struct Shared45 {
+    int m_00;
+    Entry45 *m_04;
+};
+
+// Two banks and what they share
+struct Banks45 {
+    Bank45 m_banks[2];
+    Shared45 *m_980;
+};
+
+// A sound with an entry's index at 0x3F
+struct Sound45 {
+    u8 m_00[0x3F];
+    s8 m_3F;
+};
+
+// An object with a vtable at 0x0C
+struct Virt45 {
+    u8 m_00[0xC];
+    VtEntry *m_vtable;
+    u8 m_10[0x18];
+    int m_28;
+    int m_2C;
 };
 
 // A slot of 0x24 bytes
@@ -98,6 +157,30 @@ void func_8006D1EC(Bank45 *b);
 void func_8006D230(Bank45 *b);
 int func_8006B9B0(Slots45 *s);
 int func_8006BE7C(Owner45 *o, int a, int b, int c, int d, int e);
+extern char D_800C7F30[];
+extern char D_800C7DD8[];
+int func_80014724(int *a, char *b);
+void func_80013DE0(int *a, u8 b, char *c);
+void func_80011DA8(int a, int b);
+void func_8006CED8(Head45 *h, int a);
+void func_8006CC40(Shared45 *s);
+void func_8006CD00(Shared45 *s, Bank45 *b);
+int func_80096884(void *p);
+void func_8009682C(void *p);
+void __builtin_delete(void *p);
+int func_8006CFD0(Bank45 *b, Sound45 *s, Entry45 *e);
+void func_8006B854(void *o, Virt45 **v);
+
+void func_8006C644(Table45 *t, Src45 *s);
+void func_8006C7CC(void);
+void func_8006D12C(Bank45 *b, int a);
+void func_8006D18C(Banks45 *o);
+int func_8006BD78(Packed45 *out, u32 a, u32 b, u32 c);
+void func_8006CDA0(Head45 *h);
+void func_8006BE10(Owner45 *o, int flags);
+int func_8006C5D8(Vector3 v);
+int func_8006D274(Banks45 *o, Sound45 *s, int i);
+void func_8006B500(void *o, Virt45 **v, int a);
 extern u8 D_800C7F2D;
 extern int D_800C7F28;
 extern int D_800D11D0[]; // a sound channel set
@@ -120,15 +203,25 @@ void func_8006C77C(void);
 void func_8006C7A0(void);
 void func_8006CA50(void);
 void func_8006CA78(u8 c);
-void func_8006CD90(Vector3 *v);
-void func_8006CE08(Vector3 *v, int a, int b, int c);
-int func_8006CE18(Node45 *l);
-void func_8006CEAC(Node45 *l);
+void func_8006CD90(Head45 *h);
+void func_8006CE08(Head45 *h, int a, int b, int c);
+int func_8006CE18(Head45 *h);
+void func_8006CEAC(Head45 *h);
 }
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006B3B0);
 
+#ifdef NON_MATCHING
+/* The vtable and its function in other registers (4 off) */
+void func_8006B500(void *o, Virt45 **v, int a) {
+    VCALL1(*v, 2, a);
+    if ((*v)->m_2C == (*v)->m_28) {
+        func_8006B854(o, v);
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006B500);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006B570);
 
@@ -199,7 +292,23 @@ void func_8006BB9C(AnimChan *c, int a) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006BBC4);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006BD78);
+/* Three values packed into a word: 13 bits, 5 and 14 (-1 is 0x3FFF). */
+int func_8006BD78(Packed45 *out, u32 a, u32 b, u32 c) {
+    int r = 0;
+
+    if (a < 8000) {
+        if (c == (u32)-1) {
+            c = 0x3FFF;
+        }
+        if (a < 0x2000 && b < 0x20 && c < 0x4000) {
+            out->m_a = a;
+            out->m_b = b;
+            out->m_c = c;
+            r = 1;
+        }
+    }
+    return r;
+}
 
 Owner45 *func_8006BDDC(Owner45 *o) {
     func_800966DC(o->m_42C);
@@ -207,7 +316,16 @@ Owner45 *func_8006BDDC(Owner45 *o) {
     return o;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006BE10);
+/* The destructor. */
+void func_8006BE10(Owner45 *o, int flags) {
+    if (func_80096884(o->m_42C)) {
+        func_8009682C(o->m_42C);
+    }
+    func_8009682C(o->m_42C);
+    if (flags & 1) {
+        __builtin_delete(o);
+    }
+}
 
 int func_8006BE7C(Owner45 *o, int a, int b, int c, int d, int e) {
     int r = func_8009674C(o->m_42C, a, b, c, d, e);
@@ -256,9 +374,28 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006C330);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006C4A0);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006C5D8);
+/* The parity of a vector's bits. */
+int func_8006C5D8(Vector3 v) {
+    int n = 0;
+    int i;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006C644);
+    for (i = 0; i < 32; i++) {
+        if ((v.vx >> i) & 1) {
+            n++;
+        }
+        if ((v.vy >> i) & 1) {
+            n++;
+        }
+        if ((v.vz >> i) & 1) {
+            n++;
+        }
+    }
+    return n & 1;
+}
+
+void func_8006C644(Table45 *t, Src45 *s) {
+    t->m_41B = func_8006C5D8(s->m_64);
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006C694);
 
@@ -275,7 +412,18 @@ void func_8006C7A0(void) {
     func_80013F38(D_800D11D0, D_800D6130);
 }
 
+#ifdef NON_MATCHING
+/* The call's second and third arguments are set in the other order (3 off) */
+void func_8006C7CC(void) {
+    if (func_80014724(D_800D11D0, D_800C7F30)) {
+        func_80013DE0(D_800D11D0, 13, D_800C7DD8);
+        func_80011DA8(4, 40);
+        ((u8 *)D_800D11D0)[3] = 1;
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006C7CC);
+#endif
 
 void func_8006C82C(void) {
     func_80014774(D_800D11D0);
@@ -309,22 +457,34 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006CC40);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006CD00);
 
-void func_8006CD90(Vector3 *v) {
-    v->vx = 0;
-    v->vy = 0;
-    v->vz = 0;
+void func_8006CD90(Head45 *h) {
+    h->m_00 = 0;
+    h->m_04 = 0;
+    h->m_next = 0;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006CDA0);
+void func_8006CDA0(Head45 *h) {
+    Node45 *p = h->m_next;
+    Node45 *n;
 
-void func_8006CE08(Vector3 *v, int a, int b, int c) {
-    v->vx = a;
-    v->vy = b;
-    v->vz = c;
+    while (p) {
+        n = p->m_next;
+        func_8006D7E4(p);
+        p->m_00 = 0;
+        p->m_next = 0;
+        p = n;
+    }
+    func_8006CD90(h);
 }
 
-int func_8006CE18(Node45 *l) {
-    return l->m_next != 0;
+void func_8006CE08(Head45 *h, int a, int b, int c) {
+    h->m_00 = a;
+    h->m_04 = b;
+    h->m_next = (Node45 *)c;
+}
+
+int func_8006CE18(Head45 *h) {
+    return h->m_next != 0;
 }
 
 void func_8006CE24(Head45 *h) {
@@ -343,10 +503,10 @@ void func_8006CE68(Head45 *h) {
     }
 }
 
-void func_8006CEAC(Node45 *l) {
+void func_8006CEAC(Head45 *h) {
     Node45 *p;
 
-    for (p = l->m_next; p; p = p->m_next) {
+    for (p = h->m_next; p; p = p->m_next) {
         p->m_28 = 2;
     }
 }
@@ -373,9 +533,24 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006CFD0);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006D0BC);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006D12C);
+void func_8006D12C(Bank45 *b, int a) {
+    u32 i;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006D18C);
+    for (i = 0; i < 16; i++) {
+        if (func_8006CE18(&b->m_lists[i])) {
+            func_8006CED8(&b->m_lists[i], a);
+        }
+    }
+}
+
+void func_8006D18C(Banks45 *o) {
+    u32 i;
+
+    func_8006CC40(o->m_980);
+    for (i = 0; i < 2; i++) {
+        func_8006CD00(o->m_980, &o->m_banks[i]);
+    }
+}
 
 void func_8006D1EC(Bank45 *b) {
     u32 i;
@@ -393,7 +568,16 @@ void func_8006D230(Bank45 *b) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006D274);
+int func_8006D274(Banks45 *o, Sound45 *s, int i) {
+    int r = 0;
+    int k = s->m_3F;
+
+    if (k != -1) {
+        Entry45 *e = &o->m_980->m_04[k];
+        r = func_8006CFD0(&o->m_banks[i], s, e) != -1;
+    }
+    return r;
+}
 
 void func_8006D2E0(Bank45 *b, int a, int i) {
     func_8006D0BC(&b[i], a);
