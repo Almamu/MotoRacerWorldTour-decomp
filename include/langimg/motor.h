@@ -26,8 +26,9 @@ struct Motor {
     u8 m_54[0xE];
     short m_62;
     u8 m_64[8];
-    int m_ratio[6]; // 0x6C: the gears' ratios
-    u8 m_84[0x1C];
+    int m_ratio[6];   // 0x6C: the gears' ratios
+    int m_upshift[6]; // 0x84: the engine speed to shift up at, per gear
+    u8 m_9C[4];
     int m_A0;
     int m_A4, m_A8;
     u8 m_AC[0x9C];
@@ -37,11 +38,14 @@ struct Motor {
     int m_150;
     int m_154;
     short m_158;
-    u8 m_15A[6];
+    short m_15A; // 0x15A: rolling resistance
+    u8 m_15C[4];
     int m_160;
 };
 
 int func_800236F0(Motor *m, int x, int gear);
+void func_8002385C(Motor *m);
+int func_80023E48(Motor *m, int *out, int dt, int n);
 int func_80023788(Motor *m, int x, int gear);
 void func_800237E8(Motor *m, int *out);
 int func_8002357C(Motor *m, int x, int gear);

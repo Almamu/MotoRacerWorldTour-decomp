@@ -53,7 +53,14 @@ extern int D_800CA7D0;  // the static racer's users
 extern u8 D_800CA7D8[]; // a Racer; its size not known here
 extern Camera *D_800C8864;
 int func_8009707C(RacePlane *plane, Vector3 *v);
+void func_8001E240(Racer *r, int a, int b, int c, int d, int e, int f);
+void func_8001E458(Racer *r, int a, int b, int c, int d, int e, int f, Vector3 *tris, int n);
 void func_8001D99C(Racer *r);
+void func_8001D760(Racer *r, int n0, int n1, int a, int b, int c, int d, int e, int f, int g,
+                   int h);
+void func_8001D23C(Racer *r, int a, int b, int c, int d);
+void func_80096E7C(RacePlane *p); // its constructor
+extern short D_800BF3A0[][2];     // sines and cosines by angle (4.12)
 void func_8001DA10(Racer *r);
 int func_8001DF10(Racer *r, Vector3 *v, int lo, int hi, int *depth);
 void func_8001E110(Racer *r);
@@ -64,7 +71,65 @@ void func_8001F0CC(void);
 void func_8001F10C(Particles *p);
 }
 
+static inline void VecSet(Vector3 *v, int x, int y, int z) {
+    v->vx = x;
+    v->vy = y;
+    v->vz = z;
+}
+
+#ifdef NON_MATCHING
+/* The sine table's two bases: the original keeps the table and its second column in registers, GCC here one plus a direct load (47 off, from one instruction more) */
+/* A racer set up: its ranges and arrays, three planes on its own normals,
+ * its frame from the angle m_150. */
+void func_8001D760(Racer *r, int n0, int n1, int a, int b, int c, int d, int e, int f, int g,
+                   int h) {
+    RacePlane *p, *q;
+    int i, j;
+
+    r->m_168 = a << 12;
+    r->m_164 = e;
+    r->m_158 = c;
+    r->m_17C = c;
+    r->m_154 = b - e;
+    r->m_178 = b;
+    r->m_174 = (d << 12) / 360;
+    func_8001D23C(r, a << 12, r->m_174, 0x800, 0);
+    r->m_16C = r->m_144;
+    func_8001D99C(r);
+    r->m_08 = n0;
+    r->m_0C = n1;
+    if (n0) {
+        r->m_00 = new int[n0];
+    }
+    if (r->m_0C) {
+        r->m_04 = new int[r->m_0C];
+    }
+    r->m_1C = f;
+    r->m_20 = g;
+    r->m_24 = h;
+    func_8001DA10(r);
+    q = p = new RacePlane[3];
+    i = 2;
+    do {
+        func_80096E7C(q);
+        q++;
+    } while (--i != -1);
+    r->m_B8 = p;
+    for (j = 0; j < 3; j++) {
+        r->m_B8[j].m_n = &r->m_94[j];
+    }
+    VecSet(&r->m_34, -D_800BF3A0[r->m_150 & 0xFFF][1] << 14, 0,
+           -D_800BF3A0[r->m_150 & 0xFFF][0] << 14);
+    VecSet(&r->m_40, 0, 0, -0x4000000);
+    VecSet(&r->m_4C, D_800BF3A0[r->m_150 & 0xFFF][1] << 14, 0,
+           -D_800BF3A0[r->m_150 & 0xFFF][0] << 14);
+    VecSet(&r->m_70, 0, 0, 0);
+    VecSet(&r->m_7C, 0, 0, 0);
+    VecSet(&r->m_88, 0, 0, 0);
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_06", func_8001D760);
+#endif
 
 /* The racer's arrays freed. */
 void func_8001D99C(Racer *r) {
@@ -175,7 +240,52 @@ void func_8001E1C8(Racer *r, Sphere *s, int n, u8 *out, int stride) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_06", func_8001E240);
+/* The racer's outline as six triangles on the ground, scaled down by
+ * m_164, handed to func_8001E458 with the other arguments. */
+void func_8001E240(Racer *r, int a, int b, int c, int d, int e, int f) {
+    Vector3 t[6][3];
+    int i = 18;
+
+    while (i--) {
+    }
+    t[0][0].vx = r->m_pts[4].vx / r->m_164;
+    t[0][0].vz = r->m_pts[4].vz / r->m_164;
+    t[0][1].vx = r->m_pts[8].vx / r->m_164;
+    t[0][1].vz = r->m_pts[8].vz / r->m_164;
+    t[0][2].vx = r->m_pts[5].vx / r->m_164;
+    t[0][2].vz = r->m_pts[5].vz / r->m_164;
+    t[1][0].vx = r->m_pts[4].vx / r->m_164;
+    t[1][0].vz = r->m_pts[4].vz / r->m_164;
+    t[1][1].vx = r->m_pts[7].vx / r->m_164;
+    t[1][1].vz = r->m_pts[7].vz / r->m_164;
+    t[1][2].vx = r->m_pts[8].vx / r->m_164;
+    t[1][2].vz = r->m_pts[8].vz / r->m_164;
+    t[2][0].vx = r->m_pts[1].vx / r->m_164;
+    t[2][0].vz = r->m_pts[1].vz / r->m_164;
+    t[2][1].vx = r->m_pts[8].vx / r->m_164;
+    t[2][1].vz = r->m_pts[8].vz / r->m_164;
+    t[2][2].vx = r->m_pts[7].vx / r->m_164;
+    t[2][2].vz = r->m_pts[7].vz / r->m_164;
+    t[3][0].vx = r->m_pts[1].vx / r->m_164;
+    t[3][0].vz = r->m_pts[1].vz / r->m_164;
+    t[3][1].vx = r->m_pts[7].vx / r->m_164;
+    t[3][1].vz = r->m_pts[7].vz / r->m_164;
+    t[3][2].vx = r->m_pts[0].vx / r->m_164;
+    t[3][2].vz = r->m_pts[0].vz / r->m_164;
+    t[4][0].vx = r->m_pts[1].vx / r->m_164;
+    t[4][0].vz = r->m_pts[1].vz / r->m_164;
+    t[4][1].vx = r->m_pts[0].vx / r->m_164;
+    t[4][1].vz = r->m_pts[0].vz / r->m_164;
+    t[4][2].vx = r->m_pts[2].vx / r->m_164;
+    t[4][2].vz = r->m_pts[2].vz / r->m_164;
+    t[5][0].vx = r->m_pts[1].vx / r->m_164;
+    t[5][0].vz = r->m_pts[1].vz / r->m_164;
+    t[5][1].vx = r->m_pts[2].vx / r->m_164;
+    t[5][1].vz = r->m_pts[2].vz / r->m_164;
+    t[5][2].vx = r->m_pts[3].vx / r->m_164;
+    t[5][2].vz = r->m_pts[3].vz / r->m_164;
+    func_8001E458(r, a, b, c, d, e, f, &t[0][0], 6);
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_06", func_8001E458);
 

@@ -108,21 +108,35 @@ struct Racer {
     int m_1C;
     int m_20;
     int m_24;
-    u8 m_28[0x90];
+    u8 m_28[0xC];
+    Vector3 m_34; // 0x34: its frame's three axes and three points
+    Vector3 m_40;
+    Vector3 m_4C;
+    u8 m_58[0x18];
+    Vector3 m_70;
+    Vector3 m_7C;
+    Vector3 m_88;
+    Vector3 m_94[3];        // 0x94: the planes' normals
     struct RacePlane *m_B8; // 0xB8: 3 planes
-    u8 m_BC[0x80];
+    u8 m_BC[0x10];
+    Vector3 m_pts[9]; // 0xCC: an outline on the ground (x, z)
+    int m_138;
     int m_13C;
     int m_140;
-    u8 m_144[0xC];
+    int m_144;
+    u8 m_148[8];
     int m_150;
     int m_154;
-    u8 m_158[4];
+    int m_158;
     int m_15C;
     u8 m_160[4];
     int m_164;
-    u8 m_168[0xC];
+    int m_168;
+    int m_16C;
+    u8 m_170[4];
     int m_174;
-    u8 m_178[8];
+    int m_178;
+    int m_17C;
     RacerSlot *m_180;
 };
 

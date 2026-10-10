@@ -11,6 +11,19 @@ extern "C" {
 void func_800990E8(Vector3 *v, int shift);
 Vector3 *func_80099D48(Vector3 *v, int shift); // v >> shift
 int ratan2(long y, long x);
+void func_8002434C(Bike *b);
+void func_80025174(Bike *b);
+Vector3 *func_80099D74(Vector3 *v, int shift); // v << shift
+void func_80030CFC(Bike *b);
+void func_80026648(Bike *b, Motion *m);
+void func_8002AF3C(Bike *b);
+void func_80027EE0(Bike *b);
+void func_80024D0C(Bike *b);
+void func_80033280(Bike *b);
+void func_80033D1C(MATRIX *m, SVECTOR *rot); // a rotation matrix
+Vector3 *func_800997A4(Vector3 *a, Vector3 *b);
+Vector3 *func_80099B60(Vector3 *out, Vector3 *a, Vector3 *b, int shift); // a cross product
+Vector3 *func_80022D20(Vector3 *out, Vector3 *in);
 }
 
 static inline void VecCopy(Vector3 *d, Vector3 *s) {
@@ -21,6 +34,50 @@ static inline void VecCopy(Vector3 *d, Vector3 *s) {
     d->vx = x;
     d->vy = y;
     d->vz = z;
+}
+
+static inline void VecZero(Vector3 *v) {
+    v->vx = 0;
+    v->vy = 0;
+    v->vz = 0;
+}
+
+static inline void SetTrans(MATRIX *m, Vector3 *v) {
+    int x = v->vx;
+    int y = v->vy;
+    int z = v->vz;
+
+    m->t[0] = x;
+    m->t[1] = y;
+    m->t[2] = z;
+}
+
+static inline void MatCopy(MATRIX *d, MATRIX *s) {
+    int *q = (int *)s;
+    int *p = (int *)d;
+    int a = q[0];
+    int b = q[1];
+    int c = q[2];
+
+    p[0] = a;
+    p[1] = b;
+    p[2] = c;
+    a = q[3];
+    b = q[4];
+    p[3] = a;
+    p[4] = b;
+    a = q[5];
+    b = q[6];
+    c = q[7];
+    p[5] = a;
+    p[6] = b;
+    p[7] = c;
+}
+
+static inline void VecCopyF(Vector3 *d, Vector3 *s) {
+    d->vx = s->vx;
+    d->vy = s->vy;
+    d->vz = s->vz;
 }
 
 static inline void FrameCopy(Frame *d, Frame *s) {
@@ -60,11 +117,104 @@ void func_800237E8(Motor *m, int *out) {
     }
 }
 
+#ifdef NON_MATCHING
+/* Registers: the top and the previous speed swap their saved registers (11 off) */
+/* The engine speeds to shift up at: stepping the engine speed up, the
+ * point where the next gear pulls harder than this one, or where this one
+ * reaches the top (0xFF0 of it at most). The top is higher in a mode. */
+void func_8002385C(Motor *m) {
+    int top, i, x, prev, g;
+    int *p;
+
+    if (m->m_gears < 2 || !m->m_ratio[0]) {
+        return;
+    }
+    top = m->m_28;
+    if (D_800D5FD4 & 4) {
+        top += 0xE000;
+    }
+    for (i = 0; i < 6; i++) {
+        m->m_upshift[i] = top;
+    }
+    prev = 0;
+    g = 0;
+    p = m->m_upshift;
+    for (x = 0; x < top; x += 0x4CC) {
+        int w = func_800236F0(m, x, g);
+        int found = 0;
+        int at = 0;
+
+        if (w >= 0x1000) {
+            found = 1;
+            at = prev;
+            if (func_800236F0(m, at, g) > 0xFF0) {
+                at = func_80023788(m, 0xFF0, g);
+            }
+        } else if (func_8002357C(m, func_800235F8(m, w), g) <
+                   func_8002357C(m, func_800235F8(m, func_800236F0(m, x, g + 1)), g + 1)) {
+            found = 1;
+            at = prev;
+        }
+        prev = x;
+        if (found) {
+            *p++ = at;
+            if (++g >= m->m_gears - 1) {
+                return;
+            }
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_09", func_8002385C);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_09", func_80023A30);
 
+#ifdef NON_MATCHING
+/* The original hoists /1000's multiplier into $fp and spills dt and n to the stack; GCC here keeps n in $fp and recomputes the multiplier */
+/* The speed after each of n steps of dt from a standstill, full throttle
+ * and shifting up at the upshift points: the motor's force less the drag
+ * (the speed squared) and rolling resistance, over the mass. Returns the
+ * last. */
+int func_80023E48(Motor *m, int *out, int dt, int n) {
+    int top = m->m_28;
+    int i, g, rpm, v;
+    int *up;
+
+    if (D_800D5FD4 & 4) {
+        top += 0xE000;
+    }
+    i = 0;
+    g = 0;
+    rpm = 0;
+    v = 0;
+    up = m->m_upshift;
+    for (; i < n; i++) {
+        int f = func_8002357C(m, func_800235F8(m, rpm), g);
+        int d = MULSHIFT(MULSHIFT(v, v, 12), m->m_160, 12) / 4096 + m->m_15A;
+
+        v += ((((f - d) * dt) << 12) / 1000) / m->m_148;
+        if (v > top) {
+            v = top;
+        }
+        rpm = func_800236F0(m, v, g);
+        if (rpm > 0x1000 || v >= *up) {
+            if (g < m->m_gears - 1) {
+                up++;
+                g++;
+                rpm = func_800236F0(m, v, g);
+            } else if (rpm > 0x1000) {
+                rpm = 0x1000;
+                v = func_80023788(m, 0x1000, g);
+            }
+        }
+        *out++ = v;
+    }
+    return v;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_09", func_80023E48);
+#endif
 
 Bike *func_80024064(Bike *b) {
     func_80062E40(b);
@@ -144,17 +294,113 @@ void func_800242A4(Bike *b, int flags) {
     func_80062EEC(b, flags);
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_09", func_8002434C);
+#ifdef NON_MATCHING
+/* The stack layout matches; GCC here keeps the locals' addresses in saved registers where the original recomputes them (the open problem of func_80016E34) */
+/* The bike's matrix from its three angles (y, then x, then z) and its
+ * position: its heading the matrix's z (4.26), its side and up from it. */
+void func_8002434C(Bike *b) {
+    {
+        MATRIX a, m, my;
+        SVECTOR ry;
+        MATRIX mx;
+        SVECTOR rx;
+        MATRIX mz;
+        SVECTOR rz;
 
+        ry.vx = 0;
+        ry.vy = b->m_ry;
+        ry.vz = 0;
+        func_80033D1C(&my, &ry);
+        my.t[0] = my.t[1] = my.t[2] = 0;
+        rx.vy = 0;
+        rx.vz = 0;
+        rx.vx = b->m_rx;
+        func_80033D1C(&mx, &rx);
+        mx.t[0] = mx.t[1] = mx.t[2] = 0;
+        func_80098674(&my, &mx, &m);
+        func_8009887C(mx.t, m.t);
+        func_800997D0(m.t, my.t);
+        rz.vx = 0;
+        rz.vy = 0;
+        rz.vz = -b->m_rz;
+        func_80033D1C(&mz, &rz);
+        mz.t[0] = mz.t[1] = mz.t[2] = 0;
+        func_80098674(&m, &mz, &a);
+        func_8009887C(mz.t, a.t);
+        func_800997D0(a.t, m.t);
+        b->m_mat = a;
+    }
+    {
+        Vector3 w, u;
+
+        u.vx = 0;
+        u.vy = 0;
+        u.vz = 0x4000000;
+        func_80098768(&b->m_mat, &u.vx, &w.vx);
+        func_800997D0(&w.vx, b->m_mat.t);
+        VecCopyF(&b->m_330, &w);
+        VecCopyF(&b->m_33C, &b->m_330);
+        VecCopyF(&b->m_360, &b->m_33C);
+        func_80022D20(&u, &b->m_33C);
+        func_800997A4(&w, &u);
+        func_80099B60(&u, &w, &b->m_33C, 26);
+        VecCopy(&b->m_348, &u);
+        func_800990E8(&b->m_348, 26);
+        VecCopy(&b->m_354, &b->m_330);
+    }
+}
+#else
+INCLUDE_ASM("asm/langimg/nonmatchings/chunk_09", func_8002434C);
+#endif
+
+#ifdef NON_MATCHING
+/* The matrix copy's source and destination swap registers (26 off) */
+/* The bike placed at its position: its motions there (in 1/32), still;
+ * its matrix, ends and contact points; its angles as 4.12 radians; its
+ * model's matrix. */
+void func_80024584(Bike *b) {
+    int x, y, z;
+
+    b->m_F8 = 0;
+    VecZero(&b->m_2A0);
+    VecCopy(&b->m_2AC, &b->m_2A0);
+    b->m_5A4 = 0;
+    b->m_2E4 = 0x333;
+    VecCopy(&b->m_78, &b->m_pos);
+    VecCopy(&b->m_5CC->m_04, &b->m_pos);
+    func_80099D74(&b->m_5CC->m_04, 5);
+    VecCopy(&b->m_5C8->m_04, &b->m_5CC->m_04);
+    func_8002434C(b);
+    func_80030CFC(b);
+    func_80026648(b, b->m_5CC);
+    VecCopy(&b->m_3C4, &b->m_234);
+    VecCopy(&b->m_3D0, &b->m_240);
+    b->m_250 = b->m_240.vy;
+    b->m_24C = b->m_234.vy;
+    VecCopy(&b->m_9C, &b->m_240);
+    VecCopy(&b->m_B4, &b->m_234);
+    func_80099D48(&b->m_9C, 5);
+    func_80099D48(&b->m_B4, 5);
+    func_8002AF3C(b);
+    x = MULSHIFT((int)b->m_rx, 0x6488, 12);
+    b->m_3B0 = x;
+    y = MULSHIFT((int)b->m_ry, 0x6488, 12) << 4;
+    b->m_394 = y;
+    z = MULSHIFT((int)b->m_rz, 0x6488, 12);
+    b->m_39C = z;
+    b->m_3A0 = z;
+    b->m_398 = y;
+    b->m_3B4 = x;
+    b->m_560.m_00 = 0;
+    b->m_580.m_00 = 0;
+    MatCopy(b->m_34, &b->m_mat);
+    SetTrans(b->m_34, &b->m_pos);
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_09", func_80024584);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_09", func_80024824);
-
-static inline void VecZero(Vector3 *v) {
-    v->vx = 0;
-    v->vy = 0;
-    v->vz = 0;
-}
 
 void func_80024C60(Bike *b, Motion *m) {
     m->m_00 = 0;
@@ -204,7 +450,112 @@ void func_80025074(Bike *b) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_09", func_80025074);
 #endif
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_09", func_80025174);
+/* The bike's frame: in a mode, the lean (m_418) stepped by the motion's
+ * flags 4 and 8 once per press, at low speed; for kind 3 bikes, m_41C set
+ * to +-0x2AA by flags 0x20 and 0x10 once per press; the forces cleared,
+ * the frame's steps run, m_14C set from flags 4 and 8. */
+void func_80025174(Bike *b) {
+    int f;
+
+    if (!(D_800D5FD4 & 8)) {
+        b->m_418 = 0;
+    }
+    if (b->m_29C < 0x1000 && ((f = b->m_5CC->m_00) & 0xA3) == 0xA2) {
+        if (D_800D5FD4 & 8) {
+            if (f & 4) {
+                if (!b->m_412) {
+                    b->m_417 = 1;
+                    if (b->m_418 < 0x249) {
+                        b->m_418 += 0x80;
+                    }
+                    b->m_412 = 1;
+                }
+            } else if (f & 8) {
+                if (!b->m_412) {
+                    b->m_417 = 1;
+                    if (b->m_418 >= -0x248) {
+                        b->m_418 -= 0x80;
+                    }
+                    b->m_412 = 1;
+                }
+            } else {
+                b->m_412 = 0;
+            }
+            {
+                int r;
+                int v = b->m_418;
+
+                if (v < -0x2C9) {
+                    r = -0x2C9;
+                } else if (v <= 0x2C9) {
+                    r = v;
+                } else {
+                    r = 0x2C9;
+                }
+                b->m_418 = r;
+            }
+        }
+    } else {
+        b->m_412 = 0;
+        if (b->m_58 == 3) {
+            int g = b->m_5CC->m_00;
+
+            if (g & 0x20) {
+                if (!b->m_414) {
+                    if (b->m_41C < 0) {
+                        b->m_41C = 0;
+                    } else if (b->m_41C == 0) {
+                        b->m_41C = 0x2AA;
+                    }
+                }
+                b->m_414 = 1;
+            } else if (g & 0x10) {
+                if (!b->m_414) {
+                    if (b->m_41C > 0) {
+                        b->m_41C = 0;
+                    } else if (b->m_41C == 0) {
+                        b->m_41C = -0x2AA;
+                    }
+                }
+                b->m_414 = 1;
+            } else {
+                b->m_414 = 0;
+            }
+        }
+    }
+    VecZero(&b->m_2F4);
+    VecZero(&b->m_300);
+    VecZero(&b->m_30C);
+    VecZero(&b->m_318);
+    func_80027EE0(b);
+    func_80024D0C(b);
+    func_80033280(b);
+    {
+        u8 v = b->m_5F;
+
+        b->m_5B = 0;
+        b->m_5C = 0;
+        b->m_5D = 0;
+        b->m_5E = 0;
+        b->m_5F = 0;
+        b->m_60 = v;
+    }
+    {
+        int h = b->m_5CC->m_00;
+
+        b->m_14C = 0;
+        b->m_3F7 = 0;
+        if (h & 0xC) {
+            b->m_3F7 = 1;
+            if (h & 4) {
+                b->m_14C = -1;
+            } else if (h & 8) {
+                b->m_14C = 1;
+            }
+        }
+    }
+    func_80024C90(b);
+}
 
 /* The frame's end: the motions shifted along, the oldest cleared for the
  * next frame and started from the last. */

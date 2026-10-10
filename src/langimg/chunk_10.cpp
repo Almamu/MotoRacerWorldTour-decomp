@@ -31,6 +31,11 @@ int func_800271BC(Bike *b);
 void func_800271D0(Bike *b);
 void func_800271E0(Bike *b);
 int func_8002E684(Bike *b, int a);
+void func_80026164(Bike *b, Vector3 *dir, int turn);
+void func_80098F94(Vector3 *v, int shift);
+void func_800990E8(Vector3 *v, int shift);
+int func_80099C20(Vector3 *a, Vector3 *b, int shift);
+int func_80022FA4(Vector3 *a, Vector3 *b, int s);
 void func_8002E548(Bike *b);
 void func_800630D8(Bike *b);
 Vector3 *func_80099D48(Vector3 *v, int shift); // v >> shift
@@ -43,6 +48,19 @@ static inline void SVecZero(SVECTOR *v) {
     v->vz = 0;
 }
 
+#define IABS(x) ((x) < 0 ? -(x) : (x))
+
+/* Copies a vector, read first */
+static inline void VecCopyL(Vector3 *d, Vector3 *s) {
+    int x = s->vx;
+    int y = s->vy;
+    int z = s->vz;
+
+    d->vx = x;
+    d->vy = y;
+    d->vz = z;
+}
+
 static inline void VecCopy(Vector3 *d, Vector3 *s) {
     d->vx = s->vx;
     d->vy = s->vy;
@@ -51,7 +69,58 @@ static inline void VecCopy(Vector3 *d, Vector3 *s) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_10", func_80025614);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_10", func_80026164);
+/* A turn starts: the heading kept, and with a turn, its side (towards dir,
+ * or across the bike's m_2A0) and size (at least 400) in m_F2, for 1000. */
+void func_80026164(Bike *b, Vector3 *dir, int turn) {
+    Vector3 v;
+
+    if (b->m_58 == 1) {
+        v = b->m_2A0;
+        func_80098F94(&v, 26);
+        VecCopy(&b->m_360, &v);
+    }
+    if (b->m_58 || !dir) {
+        VecCopyL(&b->m_45C, &b->m_330);
+        b->m_45C.vy = 0;
+        func_800990E8(&b->m_45C, 26);
+        b->m_468 = 0;
+        b->m_470 = 0x1000;
+    }
+    b->m_46C = 0;
+    if (turn) {
+        int s;
+
+        if (dir) {
+            VecCopy(&v, dir);
+        } else {
+            v.vy = 0;
+            v.vx = -b->m_2A0.vz;
+            v.vz = b->m_2A0.vx;
+            func_800990E8(&v, 12);
+        }
+        s = func_80099C20(&b->m_330, &v, 26);
+        if (IABS(s) < 400) {
+            if (s > 0) {
+                s = 400;
+            } else {
+                s = -400;
+            }
+        }
+        if (dir && func_80022FA4(&b->m_330, &b->m_2A0, 26) > 0) {
+            s = -s;
+        }
+        if (IABS(b->m_F2) < IABS(s)) {
+            b->m_F2 = s;
+        }
+        b->m_F0 = 1000;
+    }
+    b->m_324 = 0;
+    b->m_E4 = func_8002E684(b, 0);
+    b->m_28C = 0x1000;
+    if (b->m_28E == 0x1000) {
+        func_800271E0(b);
+    }
+}
 
 #ifdef NON_MATCHING
 /* A first draft: the original moves b to $a2 and keeps m_F0 and m_F2 in

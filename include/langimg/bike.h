@@ -45,22 +45,40 @@ struct BikeOwner {
 
 // A bike (0x5D4 bytes); its base class is func_80062E40's
 struct Bike {
-    u8 m_pad0[0x50];
+    u8 m_pad0[0x34];
+    MATRIX *m_34; // its model's matrix
+    u8 m_pad38[0x18];
     void *m_vtable;
     BikeOwner *m_54;
     s8 m_58; // the motor's kind
     s8 m_59;
     u8 m_5A;
-    u8 m_pad5B[0x9];
+    u8 m_5B;
+    u8 m_5C;
+    u8 m_5D;
+    u8 m_5E;
+    u8 m_5F;
+    u8 m_60;
+    u8 m_pad61[0x3];
     Vector3 m_pos;
-    u8 m_pad70[0x74];
+    short m_rx;
+    short m_ry;
+    short m_rz; // its angles
+    u8 m_pad76[0x2];
+    Vector3 m_78;
+    u8 m_pad84[0x18];
+    Vector3 m_9C;
+    u8 m_padA8[0xC];
+    Vector3 m_B4;
+    u8 m_padC0[0x24];
     int m_E4; // the engine speed asked for
     int m_E8;
     int m_EC;
     short m_F0;
     short m_F2;
     int m_F4;
-    u8 m_padF8[0x18];
+    int m_F8;
+    u8 m_padFC[0x14];
     int m_110;
     u8 m_pad114[0x4];
     int m_118;     // the top engine speed
@@ -74,15 +92,18 @@ struct Bike {
     u8 m_148;
     s8 m_149; // on the ground
     s8 m_14A;
-    u8 m_pad14B[0xE1];
+    u8 m_pad14B[0x1];
+    s8 m_14C;
+    u8 m_pad14D[0xDF];
     Frame *m_22C;
     Frame *m_230;
     Vector3 m_234;
     Vector3 m_240;
-    u8 m_pad24C[0x8];
+    int m_24C;
+    int m_250;
     Vector3 m_254;
     Vector3 m_260;
-    u8 m_pad26C[0x20];
+    MATRIX m_mat; // its rotation and position
     short m_28C;
     short m_28E;
     int m_290;
@@ -90,7 +111,8 @@ struct Bike {
     short m_298;
     u8 m_pad29A[0x2];
     int m_29C; // its speed
-    u8 m_pad2A0[0x18];
+    Vector3 m_2A0;
+    Vector3 m_2AC;
     int m_2B8;
     short m_2BC; // the engine speed
     short m_2BE;
@@ -113,33 +135,45 @@ struct Bike {
     u8 m_pad2EC[0x4];
     int m_2F0;
     Vector3 m_2F4; // the force on it
-    u8 m_pad300[0x8];
-    int m_308;
-    int m_30C;
-    u8 m_pad310[0x20];
+    Vector3 m_300;
+    Vector3 m_30C;
+    Vector3 m_318;
+    int m_324;
+    u8 m_pad328[0x8];
     Vector3 m_330; // its heading
-    u8 m_pad33C[0x3C];
+    Vector3 m_33C;
+    Vector3 m_348;
+    Vector3 m_354;
+    Vector3 m_360;
+    u8 m_pad36C[0xC];
     AnimChan m_378;
     int m_394; // its angle
     int m_398;
-    u8 m_pad39C[0x10];
+    int m_39C;
+    int m_3A0;
+    u8 m_pad3A4[0x8];
     int m_3AC;
-    u8 m_pad3B0[0x2C];
+    int m_3B0;
+    int m_3B4;
+    u8 m_pad3B8[0xC];
+    Vector3 m_3C4;
+    Vector3 m_3D0;
     Vector3 m_3DC;
     Vector3 m_3E8;
     u8 m_3F4;
     u8 m_3F5;
     s8 m_3F6;
-    u8 m_pad3F7[0x3];
+    u8 m_3F7;
+    u8 m_pad3F8[0x2];
     short m_gear; // the gear
     u8 m_pad3FC[0x10];
     s8 m_40C;
     u8 m_pad40D[0x3];
     s8 m_410;
     u8 m_pad411[0x1];
-    u8 m_412;
+    s8 m_412;
     u8 m_pad413[0x1];
-    u8 m_414;
+    s8 m_414;
     u8 m_415;
     u8 m_pad416[0x1];
     u8 m_417;
@@ -149,7 +183,12 @@ struct Bike {
     int m_42C;
     u8 m_pad430[0xE];
     short m_43E;
-    u8 m_pad440[0x5C];
+    u8 m_pad440[0x1C];
+    Vector3 m_45C;
+    int m_468;
+    int m_46C;
+    int m_470;
+    u8 m_pad474[0x28];
     AnimChan m_49C;
     AnimChan m_4B8;
     u8 m_pad4D4[0x4];
@@ -167,7 +206,7 @@ struct Bike {
     Frame m_560;
     Frame m_580;
     Motor *m_motor;
-    u8 m_pad5A4[0x4];
+    int m_5A4;
     int m_5A8;
     u8 m_pad5AC[0xC];
     int m_5B8;

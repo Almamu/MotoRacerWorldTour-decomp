@@ -204,7 +204,7 @@ void func_80029248(Bike *b, int x, int y) {
 
             v = MULSHIFT(v - lo, (b->m_29C << 12) / b->m_118, 12) + lo;
         }
-        b->m_308 += v;
+        b->m_300.vz += v;
         return;
     }
     if (b->m_2DF) {
@@ -220,7 +220,7 @@ void func_80029248(Bike *b, int x, int y) {
         }
         f = 600;
         if (b->m_5CC->m_00 & 2) {
-            b->m_30C += 3000;
+            b->m_30C.vx += 3000;
         }
     }
     dir = b->m_330;
@@ -262,7 +262,7 @@ void func_800295D4(Bike *b) {
                 d = MULSHIFT(MULSHIFT(b->m_29C, b->m_29C, 12), 0x5000, 12) / 4096;
             }
         }
-        b->m_308 += d;
+        b->m_300.vz += d;
     }
     if (b->m_43E) {
         b->m_43E -= b->m_298;
