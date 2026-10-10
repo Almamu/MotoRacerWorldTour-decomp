@@ -73,10 +73,17 @@ struct Bk29 {
     u8 m_323[0x245];
 };
 struct Rc29 {
-    u8 m_00[0x10];
+    int m_00; // the race's kind of game
+    u8 m_04[0xC];
     struct Bk29 *m_10;
     u8 m_14[0x2D4];
     struct Bk29 m_2E8[5];
+    u8 m_1DF0[0x18];
+    int m_1E08;
+};
+struct Cur29 {
+    u8 m_00[4];
+    int m_04;
 };
 // The game: the players' views
 struct Game29 {
@@ -94,12 +101,16 @@ struct Game29 {
     int m_430[2];
     u8 m_438[4];
     Ply29 *m_43C[2];
-    u8 m_444[0x2C];
+    u8 m_444[0x20];
+    Cur29 **m_464;
+    u8 m_468[8];
     s8 m_470[2];
     u8 m_472[2];
     int m_474[2];
     u8 m_47C[0xC];
     int m_488[2];
+    u8 m_490[4];
+    int m_494;
 };
 extern int *D_800CB2F8;
 extern char D_800C6444[]; // "Data\\Final\\"
@@ -132,6 +143,9 @@ struct Sc29 {
 int func_8004C02C(Sc29 *o);
 int func_8004BF30(Sc29 *o, int x, int y, int z);
 void func_8004C870(Game29 *g, int i, Bk29 *b);
+extern int D_800CB3BC;
+int func_80052120(int a);
+int func_8004C9D0(Game29 *g, int i);
 }
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_29", func_8004B4B0);
@@ -359,7 +373,35 @@ void func_8004C870(Game29 *g, int i, Bk29 *b) {
     }
 }
 
+#ifdef NON_MATCHING
+// Registers: the result and the bike swap $s2 and $s3 (10 off)
+int func_8004C9D0(Game29 *g, int i) {
+    int r = 1;
+    int k = g->m_470[i];
+    Rc29 *rc = g->m_378;
+    Bk29 *b = 0;
+    int x;
+    Cur29 *c;
+
+    if (k >= 0) {
+        b = &rc->m_2E8[k];
+    }
+    x = func_80052120(g->m_494);
+    if (i == 0 && (c = *g->m_464) && (g->m_378->m_1E08 == 1 || (c->m_04 & 0x200))) {
+        g->m_430[0] = 3;
+    } else if (i == 0 && (g->m_304 ||
+                          ((D_800CB3BC || x) && !(g->m_378->m_00 & 0xA8) && g->m_378->m_00 != 2))) {
+        g->m_430[i] = 5;
+    } else if ((g->m_378->m_00 & 0xA8) || i == 0) {
+        func_8004C870(g, i, b);
+    } else {
+        r = 0;
+    }
+    return r;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_29", func_8004C9D0);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_29", func_8004CB5C);
 
