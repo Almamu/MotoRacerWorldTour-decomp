@@ -184,6 +184,15 @@ int func_80070DF4(Obj47 *o, int key, Node47 *n);
 int func_80070E20(Obj47 *o, int key);
 }
 
+// The sine and cosine tables' lookups (a 12-bit angle)
+static inline short Sin47(int a) {
+    return D_800BF3A0[a & 0xFFF].m_02;
+}
+
+static inline short Cos47(int a) {
+    return D_800BF3A0[a & 0xFFF].m_00;
+}
+
 static inline void VecZero(Vec47 *v) {
     v->vx = 0;
     v->vy = 0;
@@ -534,31 +543,26 @@ void func_80070B2C(Hist47 *h, Vec47 *v) {
     VecCopyL(&h->m_00, &t);
 }
 
-#ifdef NON_MATCHING
-// Registers and the order of the stores (the entry's two loads as in func_80070CCC)
 /* The points ahead of and behind a, at its length along its angle. */
 void func_80070C10(Ang47 *a, Pos47 *f, Pos47 *b) {
     Vec47 v;
-    int s = D_800BF3A0[(a->m_08 + 0x400) & 0xFFF].m_02;
-    int c = D_800BF3A0[(a->m_08 + 0x400) & 0xFFF].m_00;
+    int s = Sin47(a->m_08 + 0x400);
+    int c = Cos47(a->m_08 + 0x400);
 
     v.vx = (s * a->m_0A) >> 6;
     v.vy = 0;
     v.vz = (c * a->m_0A) >> 6;
     if (f) {
-        f->m_04 = 0;
         f->m_00 = a->m_00 + v.vx;
+        f->m_04 = 0;
         f->m_08 = a->m_04 + v.vz;
     }
     if (b) {
-        b->m_04 = 0;
         b->m_00 = a->m_00 - v.vx;
+        b->m_04 = 0;
         b->m_08 = a->m_04 - v.vz;
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_47", func_80070C10);
-#endif
 
 /* How far p is ahead of a, along a's angle (4.12). */
 int func_80070CCC(Ang47 *a, Pos47 *p) {
