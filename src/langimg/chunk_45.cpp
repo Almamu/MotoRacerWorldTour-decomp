@@ -26,6 +26,12 @@ struct VtEntry {
     int (*m_func)(void *self);
 };
 
+#define VCALL(o, i) ((o)->m_vtable[i].m_func((char *)(o) + (o)->m_vtable[i].m_delta))
+// The same calls with the result ignored, through a function returning void
+#define VCALLV(o, i) \
+    (((void (*)(void *))(o)->m_vtable[i].m_func)((char *)(o) + (o)->m_vtable[i].m_delta))
+#define VCALLV1(o, i, a) \
+    (((void (*)(void *, int))(o)->m_vtable[i].m_func)((char *)(o) + (o)->m_vtable[i].m_delta, a))
 #define VCALL1(o, i, a) \
     (((int (*)(void *, int))(o)->m_vtable[i].m_func)((char *)(o) + (o)->m_vtable[i].m_delta, a))
 
@@ -59,7 +65,8 @@ struct Table45 {
     u8 m_41B; // the parity of a vector's bits
     u8 m_41C, m_41D, m_41E, m_41F;
     u8 m_420[0xC];
-    u8 m_42C[0x10];
+    u8 m_42C[0x28];
+    int m_454;
 };
 
 // What a table's settings are read from
@@ -98,13 +105,18 @@ struct Bank45 {
 
 // An entry of 12 bytes
 struct Entry45 {
-    int m_00, m_04, m_08;
+    int m_00;
+    short m_04;
+    u16 m_06; // flags
+    int m_08;
 };
 
 // What the two banks share
 struct Shared45 {
     int m_00;
     Entry45 *m_04;
+    short m_08;
+    short m_0A; // the entries' count
 };
 
 // Two banks and what they share
@@ -130,7 +142,7 @@ struct Virt45 {
 
 // A slot of 0x24 bytes
 struct Slot45 {
-    int m_00;
+    Virt45 *m_00;
     int m_04; // in use
     u8 m_08[0x1C];
 };
@@ -138,8 +150,28 @@ struct Slot45 {
 // A set of slots
 struct Slots45 {
     int m_count;
-    u8 m_04[0x10];
+    int m_04, m_08, m_0C, m_10;
     Slot45 *m_slots; // 0x14
+    int m_18, m_1C;
+};
+
+// An object of 0x50 bytes with a vtable at 0x0C
+struct Obj50 {
+    u8 m_00[0xC];
+    VtEntry *m_vtable;
+    u8 m_10[0x40];
+};
+
+// A unit of 0x4C bytes
+struct Unit4C {
+    u8 m_00[0x4C];
+};
+
+// A sound's settings (12 bytes)
+struct SndDef {
+    u8 m_00[4];
+    s8 m_04, m_05, m_06;
+    u8 m_07[5];
 };
 
 extern int D_800CB5C8;
@@ -147,7 +179,6 @@ extern int D_800CB480;
 int func_8006C140(Table45 *t);
 void func_80014B74(int *a, int id);
 void func_800966DC(void *p);
-void func_8006BECC(Table45 *o);
 void func_8006A494(int *a, int b);
 void func_8006D4B0(Node45 *n);
 void func_8006D7E4(Node45 *n);
@@ -174,7 +205,6 @@ int func_80014724(int *a, char *b);
 void func_80013DE0(int *a, u8 b, char *c);
 void func_80011DA8(int a, int b);
 void func_8006CC40(Shared45 *s);
-void func_8006CD00(Shared45 *s, Bank45 *b);
 int func_80096884(void *p);
 void func_8009682C(void *p);
 void __builtin_delete(void *p);
@@ -208,6 +238,18 @@ void func_8006BF4C(Table45 *t);
 int func_8006D314(Banks45 *o, Sound45 *s);
 int func_8006BFEC(Table45 *t, u32 b, u32 c);
 int func_8006C094(Table45 *t, int a, Info45 *d);
+extern int D_800CB490;
+extern Unit4C D_800CB498[];
+extern SndDef D_800C7E94[];
+void func_8006A460(int *a);
+void func_8006A7D8(Unit4C *u);
+
+void func_8006BECC(Table45 *t);
+int func_8006B9F8(Obj50 *o, int n);
+void func_8006BABC(void);
+SndDef *func_8006C85C(int a, int b, int c);
+void func_8006CD00(Shared45 *s, Bank45 *b);
+void func_8006B914(Slots45 *s);
 extern u8 D_800C7F2D;
 extern int D_800C7F28;
 extern int D_800D11D0[]; // a sound channel set
@@ -238,17 +280,12 @@ void func_8006CEAC(Head45 *h);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006B3B0);
 
-#ifdef NON_MATCHING
-/* The vtable and its function in other registers (4 off) */
 void func_8006B500(void *o, Virt45 **v, int a) {
-    VCALL1(*v, 2, a);
+    VCALLV1(*v, 2, a);
     if ((*v)->m_2C == (*v)->m_28) {
         func_8006B854(o, v);
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006B500);
-#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006B570);
 
@@ -256,7 +293,28 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006B658);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006B854);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006B914);
+/* Every slot released. */
+void func_8006B914(Slots45 *s) {
+    int i;
+    int n = s->m_count;
+    Slot45 *p;
+
+    if (n > 0) {
+        p = s->m_slots;
+        i = 0;
+        do {
+            if (p->m_00) {
+                VCALLV(p->m_00, 5);
+            }
+            p->m_04 = 0;
+            i++;
+            p++;
+        } while (i < n);
+    }
+    s->m_18 = 0;
+    s->m_1C = 0;
+    s->m_0C = 0;
+}
 
 /* The first free slot, or -1. */
 int func_8006B9B0(Slots45 *s) {
@@ -361,7 +419,20 @@ int func_8006BE7C(Table45 *o, int a, int b, int c, int d, int e) {
     return r;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006BECC);
+/* The table emptied. */
+void func_8006BECC(Table45 *t) {
+    D_800C7764 = 0;
+    D_800D5FD8.m_b1 = 0;
+    t->m_00 = 0;
+    t->m_410 = 0;
+    t->m_04 = 0;
+    t->m_40C = 0;
+    t->m_454 = 0;
+    memset(&t->m_414, 0, 12);
+    memset(t->m_420, 0, 12);
+    t->m_08 = 0;
+    func_80096918(t->m_42C, 2);
+}
 
 /* The table reset. */
 void func_8006BF4C(Table45 *t) {
@@ -519,7 +590,18 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006CB68);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006CC40);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006CD00);
+void func_8006CD00(Shared45 *s, Bank45 *b) {
+    int i;
+    int n = s->m_0A;
+
+    for (i = 0; i < n; i++) {
+        Entry45 *e = &s->m_04[i];
+
+        if (e->m_06 & 1) {
+            func_8006CFD0(b, 0, e);
+        }
+    }
+}
 
 void func_8006CD90(Head45 *h) {
     h->m_ctx = 0;
