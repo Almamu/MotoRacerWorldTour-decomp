@@ -1,5 +1,6 @@
 #include "common.h"
 #include "psyq.h"
+#include "mulshift.h"
 
 /* The vectors' operators (docs/matching/issue-69-langimg-chunk68.md) */
 
@@ -11,9 +12,21 @@ struct Vector3 {
 };
 
 // Something with a table of states at 0xF4
+struct Sub68 {
+    u8 m_00[0x18F];
+    u8 m_18F;
+};
+struct Tab68 {
+    u8 m_00[0x48];
+    u8 *m_48;
+};
 struct Snd68 {
-    u8 m_00[0xF4];
+    u8 m_00[4];
+    Sub68 *m_04;
+    u8 m_08[0xEC];
     int m_F4[9];
+    u8 m_118[0x2048];
+    Tab68 *m_2160;
 };
 struct Hold68 {
     u8 m_00[0x60];
@@ -22,6 +35,9 @@ struct Hold68 {
 struct Menu68 {
     u8 m_00[0xA80];
     Hold68 *m_A80;
+    Hold68 *m_A84;
+    u8 m_A88[8];
+    int m_A90;
 };
 struct Key68 {
     u8 m_00[8];
@@ -55,6 +71,27 @@ SVECTOR *func_80099EBC(SVECTOR *d, SVECTOR *a, SVECTOR *b);
 SVECTOR *func_80099EF4(SVECTOR *d, SVECTOR *a, SVECTOR *b);
 void func_8009A740(Menu68 *m, int a, Key68 *k);
 void func_8009A84C(Menu68 *m);
+void func_800A712C(void);
+void func_800A195C(void);
+void func_8009FE70(void);
+void func_800A1B4C(void);
+int func_80078FC4(int *t, int b);
+void func_80045A7C(int *a, int i);
+extern int D_800CBC94[];
+extern int D_800CABC0;
+extern int D_800C886C;
+
+Vector3 *func_80099574(Vector3 *v, int k);
+Vector3 *func_800994F0(Vector3 *v, int k, int sh);
+Vector3 *func_800995C4(Vector3 *v, int k);
+int func_80099C20(Vector3 *a, Vector3 *b, int sh);
+int func_80099B88(Vector3 *a, Vector3 *b);
+Vector3 *func_80099CB0(Vector3 *d, Vector3 *a, Vector3 *b);
+u32 func_800993C8(Vector3 *v);
+u32 func_80099454(Vector3 *v, int sh);
+void func_8009A93C(Menu68 *m, int b);
+int func_8009A9A4(int a, int b, int c, int d, int e);
+void func_80099F2C(void);
 }
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_68", func_800990E8);
@@ -63,15 +100,66 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_68", func_8009923C);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_68", func_8009931C);
 
+#ifdef NON_MATCHING
+/* The original's 64-bit products read mflo then mfhi with two nops after each mult: an asm macro, not GCC's long long */
+/* The squared length, or 0xFFFFFFFF past 32 bits. */
+u32 func_800993C8(Vector3 *v) {
+    unsigned long long s = (long long)v->vx * v->vx;
+
+    s += (long long)v->vy * v->vy;
+    s += (long long)v->vz * v->vz;
+    if (s >> 32) {
+        return -1;
+    }
+    return s;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_68", func_800993C8);
+#endif
 
+#ifdef NON_MATCHING
+/* The original's 64-bit products read mflo then mfhi with two nops after each mult: an asm macro, not GCC's long long */
+/* The squared length shifted right by sh, or 0xFFFFFFFF past 32 bits. */
+u32 func_80099454(Vector3 *v, int sh) {
+    unsigned long long s = (long long)v->vx * v->vx;
+    u32 lo;
+    u32 hi;
+
+    s += (long long)v->vy * v->vy;
+    s += (long long)v->vz * v->vz;
+    lo = s;
+    hi = s >> 32;
+    lo = (lo >> sh) | (hi << (32 - sh));
+    hi >>= sh;
+    if (hi) {
+        return -1;
+    }
+    return lo;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_68", func_80099454);
+#endif
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_68", func_800994F0);
+Vector3 *func_800994F0(Vector3 *v, int k, int sh) {
+    v->vx = MULSHIFT(v->vx, k, sh);
+    v->vy = MULSHIFT(v->vy, k, sh);
+    v->vz = MULSHIFT(v->vz, k, sh);
+    return v;
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_68", func_80099574);
+Vector3 *func_80099574(Vector3 *v, int k) {
+    v->vx = (v->vx * k) >> 12;
+    v->vy = (v->vy * k) >> 12;
+    v->vz = (v->vz * k) >> 12;
+    return v;
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_68", func_800995C4);
+Vector3 *func_800995C4(Vector3 *v, int k) {
+    v->vx = MULSHIFT(v->vx, k, 12);
+    v->vy = MULSHIFT(v->vy, k, 12);
+    v->vz = MULSHIFT(v->vz, k, 12);
+    return v;
+}
 
 Vector3 *func_8009964C(Vector3 *v, int k) {
     v->vx *= k;
@@ -213,11 +301,26 @@ Vector3 *func_80099B60(Vector3 *v) {
     return v;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_68", func_80099B88);
+/* The dot product (4.12). */
+int func_80099B88(Vector3 *a, Vector3 *b) {
+    int r = MULSHIFT(a->vx, b->vx, 12) + MULSHIFT(a->vy, b->vy, 12);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_68", func_80099C20);
+    r += MULSHIFT(a->vz, b->vz, 12);
+    return r;
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_68", func_80099CB0);
+/* The dot product, with sh bits of fraction. */
+int func_80099C20(Vector3 *a, Vector3 *b, int sh) {
+    return MULSHIFT(a->vx, b->vx, sh) + MULSHIFT(a->vy, b->vy, sh) + MULSHIFT(a->vz, b->vz, sh);
+}
+
+/* The cross product. */
+Vector3 *func_80099CB0(Vector3 *d, Vector3 *a, Vector3 *b) {
+    d->vx = a->vy * b->vz - a->vz * b->vy;
+    d->vy = a->vz * b->vx - a->vx * b->vz;
+    d->vz = a->vx * b->vy - a->vy * b->vx;
+    return d;
+}
 
 Vector3 *func_80099D48(Vector3 *v, int k) {
     int x = v->vx >> k;
@@ -319,7 +422,20 @@ SVECTOR *func_80099EF4(SVECTOR *d, SVECTOR *a, SVECTOR *b) {
     return d;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_68", func_80099F2C);
+/* The game's start: the libraries, the cards, then the main loop. */
+void func_80099F2C(void) {
+    int i;
+
+    func_800A712C();
+    i = 0;
+    func_800A195C();
+    func_8009FE70();
+    func_800A1B4C();
+    D_800C886C = func_80078FC4(D_800CBC94, 0);
+    for (;;) {
+        func_80045A7C(&D_800CABC0, i++);
+    }
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_68", func_80099F88);
 
@@ -343,8 +459,32 @@ void func_8009A84C(Menu68 *m) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_68", func_8009A888);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_68", func_8009A93C);
+void func_8009A93C(Menu68 *m, int b) {
+    Hold68 *h;
+    Snd68 *s;
+    Sub68 *p;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_68", func_8009A9A4);
+    if (m->m_A90 == 1 || m->m_A90 == 4) {
+        h = m->m_A84;
+    } else {
+        h = m->m_A80;
+    }
+    s = h->m_60;
+    p = s->m_04;
+    if (b) {
+        p->m_18F = *s->m_2160->m_48 - 1;
+    }
+}
+
+/* A cubic ease: from d at a = b to e at a = c. */
+int func_8009A9A4(int a, int b, int c, int d, int e) {
+    int t = ((a - b) << 12) / (c - b);
+    int k = e - d;
+    int v;
+
+    v = (-k * t + 0x800) / 4096 + k;
+    v = (v * t + 0x800) / 4096 + k;
+    return (v * t + 0x800) / 4096 + d;
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_68", func_8009AA2C);
