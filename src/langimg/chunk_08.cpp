@@ -1,5 +1,6 @@
 #include "common.h"
 #include "langimg/race.h"
+#include "langimg/motor.h"
 #include "mulshift.h"
 
 #define IABS(x) ((x) < 0 ? -(x) : (x))
@@ -20,23 +21,6 @@ static inline void VecCopy(Vector3 *d, Vector3 *s) {
  * (docs/matching/issue-9-langimg-chunk08.md). */
 
 extern "C" {
-// A motor's curves (fields named by use)
-struct Motor {
-    u8 m_00[0x10];
-    int m_10, m_14; // 0x10: below m_3C, a line: m_10 + x * m_14
-    int m_18, m_1C; // 0x18: above
-    u8 m_20[6];
-    short m_26; // 0x26: the lowest x
-    u8 m_28[0xC];
-    int m_34;
-    u8 m_38[4];
-    int m_3C;
-    u8 m_40[0x22];
-    short m_62;
-    u8 m_64[8];
-    int m_6C[1];
-};
-
 // An animation channel (0x1C bytes)
 struct AnimChan {
     u8 m_00[0x1C];
@@ -112,8 +96,6 @@ void func_80099B60(Vector3 *out, Vector3 *a, Vector3 *b, int shift); // a cross 
 void func_80023004(Vector3 *v, Vector3 n);
 void func_8002309C(Vector3 *v, Vector3 n);
 void func_80023140(Vector3 *v, int len, int shift);
-int func_8002357C(Motor *m, int x, int i);
-u32 func_800235F8(Motor *m, int x);
 int func_80097A68(int a, int shift, int b); // (a << shift) / b
 int func_8009931C(Vector3 *v);              // its length
 void func_800994F0(Vector3 *v, int a, int shift);
@@ -313,8 +295,6 @@ void func_80023004(Vector3 *v, Vector3 n) {
     v->vy = y;
 }
 
-#ifdef NON_MATCHING
-/* Registers: n.vz goes to the asm directly, the original copies it first (21 off) */
 /* As func_80023004, with 26 fraction bits. */
 void func_8002309C(Vector3 *v, Vector3 n) {
     int y = 0;
@@ -327,9 +307,6 @@ void func_8002309C(Vector3 *v, Vector3 n) {
     }
     v->vy = y;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_08", func_8002309C);
-#endif
 
 /* v scaled to the length len. */
 void func_80023140(Vector3 *v, int len, int shift) {
@@ -346,38 +323,30 @@ void func_80023140(Vector3 *v, int len, int shift) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_08", func_8002320C);
 
-#ifdef NON_MATCHING
-/* Scheduling: the original sets up the constants first and has two nops before the mult */
 int func_8002357C(Motor *m, int x, int i) {
-    int t = 0xE66000 / m->m_62;
-
-    t = MULSHIFT(m->m_6C[i], t, 12);
-    return MULSHIFT(x, t, 24);
+    return MULSHIFT(x, MULSHIFT(m->m_ratio[i], 0xE66000 / m->m_62, 12), 24);
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_08", func_8002357C);
-#endif
 
 #ifdef NON_MATCHING
-/* Registers and scheduling (58 off) */
+/* Registers: the original holds the shift 12 in one register for the last
+ * three multiplies (48 off) */
 u32 func_800235F8(Motor *m, int x) {
-    int a, b, y;
+    int a, b, k, y;
 
     if (x < m->m_26) {
         x = m->m_26;
     }
-    x = MULSHIFT(x, m->m_34, 12);
-    a = x;
-    if (a < m->m_3C) {
+    a = MULSHIFT(x, m->m_34, 12);
+    b = a;
+    if (b < m->m_3C) {
+        k = m->m_14;
         y = m->m_10;
-        b = m->m_14;
     } else {
+        k = m->m_1C;
         y = m->m_18;
-        b = m->m_1C;
     }
-    y += MULSHIFT(a, b, 12);
-    x = MULSHIFT(x << 12, 0x1AC, 12);
-    return (u32)MULSHIFT(y << 12, 0x80000000u / x, 12) >> 7;
+    y += MULSHIFT(b, k, 12);
+    return (u32)MULSHIFT(y << 12, 0x80000000u / MULSHIFT(a << 12, 0x1AC, 12), 12) >> 7;
 }
 #else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_08", func_800235F8);
