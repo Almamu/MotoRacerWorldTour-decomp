@@ -5,8 +5,8 @@ gearbox's states, the engine speed from the speed asked for, its
 position's two ends, a reset. One file, `src/langimg/chunk_10.cpp`,
 0x80025614-0x80027614.
 
-20 functions: 11 match, 4 are parked, 5 are still asm (after the
-near-misses pass).
+20 functions: 12 match, 4 are parked, 4 are still asm (after the
+near-misses pass and the pass over the large functions).
 
 ## The settings
 
@@ -27,7 +27,8 @@ engaging, 2 neutral, 3 and 4 shifting up and down).
 
 | Function | State | Notes |
 |---|---|---|
-| `func_80025614`, `func_80026164` | asm | the bike's physics (725 and 128 instructions) |
+| `func_80025614` | asm | the bike's physics (725 instructions) |
+| `func_80026164` | matches | a turn's start: its side and size, at least 400 |
 | `func_80026364` | parked | a first draft: registers and layout (59 off) |
 | `func_80026450` | matches | an `SVECTOR` copied unaligned (`lwl`/`lwr`) into the owner |
 | `func_800264B0` | matches | values decaying towards their floors |

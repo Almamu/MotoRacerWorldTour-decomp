@@ -4,8 +4,8 @@ The motor's gearing (wheel speed from engine speed, per gear) and the
 bike's object: its constructor and destructor, its frame helpers, its
 heading. One file, `src/langimg/chunk_09.cpp`, 0x800236F0-0x80025614.
 
-19 functions: 9 match, 2 are parked, 8 are still asm (the constructor
-matched later, in the near-misses pass). Two of chunk_08's
+19 functions: 10 match, 6 are parked, 3 are still asm (after the
+near-misses pass and the pass over the large functions). Two of chunk_08's
 parked functions match now too (#9).
 
 ## The settings
@@ -49,15 +49,19 @@ chunk_08.
 | Function | State | Notes |
 |---|---|---|
 | `func_800236F0`, `func_80023788`, `func_800237E8` | match | wheel speed in a gear; a gear's ratio; all six |
-| `func_8002385C`, `func_80023A30`, `func_80023E48` | asm | 117, 262 and 136 instructions |
+| `func_8002385C` | parked | the upshift points: two saved registers swapped (11 off) |
+| `func_80023A30` | asm | 262 instructions |
+| `func_80023E48` | parked | the speed over time through the gears: the original hoists `/1000`'s multiplier and spills two arguments |
 | `func_80024064` | matches | the constructor; it matched once `func_8006BB70`, the animation channel's constructor, was declared to return its object (the permuter's finding) |
 | `func_80024168` | matches | the top engine speed and the gearing from the motor |
 | `func_800242A4` | matches | the destructor |
-| `func_8002434C`, `func_80024584`, `func_80024824` | asm | 142, 169 and 271 instructions |
+| `func_8002434C` | parked | the bike's matrix from its angles: the stack layout matches, but the locals' addresses go to saved registers |
+| `func_80024584` | parked | placing the bike: the matrix copy's two pointers swap registers (26 off) |
+| `func_80024824` | asm | 271 instructions |
 | `func_80024C60`, `func_80024C90` | match | a motion cleared; the frames copied from their sources |
 | `func_80024D0C` | asm | 218 instructions |
 | `func_80025074` | parked | the heading: registers, and a compare with the constant in a register (47 off) |
-| `func_80025174` | asm | 162 instructions |
+| `func_80025174` | matches | the frame's flags (lean, tricks), forces cleared, the frame's steps |
 | `func_800253FC` | matches | the frame's end: the motions rotated |
 | `func_800254F0` | parked | the original multiplies by -196 with `mult`, GCC here with shifts |
 

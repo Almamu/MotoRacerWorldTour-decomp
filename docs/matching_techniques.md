@@ -523,6 +523,15 @@ What's left once the instructions are right is usually register choice.
   instructions between a move from HI/LO and the next `mult`/`div`;
   ASPSX fills them with `nop`s, and so does `--div-no-checks`
   (`func_80023788`).
+- **Two styles of vector copy.** A copy written field by field (`d->vx =
+  s->vx; ...`) interleaves loads and stores and lets GCC reuse values it
+  knows; one read into locals first loads all three, then stores. Both
+  occur, sometimes in one function; with many copies, try each site both
+  ways (a small script, flipping one at a time and keeping what helps,
+  took `func_80024584` from 161 to 71 off).
+- **Several flags variables.** Reusing one local for three reads of the
+  same flags word ties them to one register; the original read each into
+  its own (`func_80025174`).
 - **A callee's return type.** A call to a function declared `void` and
   one declared to return something compile differently around the call,
   even when the result is unused: `$v0` is live afterwards in the second.
