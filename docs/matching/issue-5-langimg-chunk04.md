@@ -5,7 +5,7 @@ More of the code GCC 2.91.66 built between the classes: the sequence set
 and grids of 32-unit cells with a coarse index and GTE plane tests.
 One file, `src/langimg/chunk_04.cpp`, 0x8001983C-0x8001B778.
 
-34 functions: 23 match, 7 are parked, 4 are still asm (after the pass
+34 functions: 24 match, 6 are parked, 4 are still asm (after the pass
 over the large functions).
 
 ## The settings
@@ -26,7 +26,7 @@ found through `CName::Get`; `SeqSet` holds them along `Seq::m_next`).
 | `func_80019C78`, `func_80019D0C`, `func_80019D60`, `func_80019DC0` | match | find by name, start, reset |
 | `func_80019E30` | matches | the set's frame; the state read into a local |
 | `func_80019F0C`, `func_80019FA4`, `func_80019FB0`, `func_80019FBC` | match | a range set up from its definition, moved |
-| `func_80019FF8` | parked | the range's draw (`sprintf`): 3 off, `&h` taken before `r->m_3C` is read |
+| `func_80019FF8` | matches | the range's draw (`sprintf`); the font read through a pointer (the permuter's finding) |
 | `func_8001A2A0` | parked | the needle: multiplications scheduled otherwise |
 | `func_8001A4F0` | parked | the range's sprite: registers |
 | `func_8001A62C`, `func_8001A63C` | match | a pair's constructor and destructor |

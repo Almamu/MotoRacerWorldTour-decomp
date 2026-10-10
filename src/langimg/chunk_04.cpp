@@ -347,8 +347,6 @@ void func_80019FBC(Range *r, int pos) {
     r->m_3A = r->m_def.m_06 - (r->m_def.m_06 - r->m_def.m_08) * pos / 4096;
 }
 
-#ifdef NON_MATCHING
-/* 3 off: the address of h is taken before r->m_3C is read here, after it in the original */
 /* A range's draw: its frame (wide, or narrow), its value as text, and in
  * the wide one its needle; in the narrow one, two more pieces. */
 void func_80019FF8(Range *r, int wide) {
@@ -384,7 +382,12 @@ void func_80019FF8(Range *r, int wide) {
         D_800C89D8 = 0xFFFF;
         func_80080F8C();
     }
-    func_80080040(D_800CBD58, buf, r->m_3C + x - 2, r->m_3E + y - 11, h);
+    {
+        /* the font through a pointer: the original reads it there */
+        int *font = &D_800CBD58;
+
+        func_80080040(*font, buf, r->m_3C + x - 2, r->m_3E + y - 11, h);
+    }
     if (wide) {
         func_8001A4F0(r, 0x9B, 0x1B, 0x12, -1, 0x1000, 0x808080);
         func_8001A2A0(r);
@@ -395,9 +398,6 @@ void func_80019FF8(Range *r, int wide) {
         func_8001A4F0(r, 0x9C, 0xC, 0x24, -1, 0x1000, 0x404040);
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_80019FF8);
-#endif
 
 #ifdef NON_MATCHING
 /* Equivalent; the multiplications scheduled otherwise (141 off) */
