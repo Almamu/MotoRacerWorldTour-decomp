@@ -246,8 +246,8 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_44", func_8006ABD4);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_44", func_8006AC5C);
 
-/* Every item but the first, from the last (the first only when there are
- * two or more: i > 0 is tested before the loop down to 0). */
+/* Every item, from the last; none when there's only one (i > 0 is tested
+ * before a loop that runs down to 0). */
 void func_8006ACB0(Cnt44 *c) {
     int i = c->m_n - 1;
 
