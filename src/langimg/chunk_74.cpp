@@ -24,8 +24,8 @@ struct Obj74 {
 
 void __builtin_delete(void *p);
 void func_800A57E4(void *p);
-void func_800A22D0(int a);
-void func_800A22B0(int a);
+int func_800A22D0(int a);
+int func_800A22B0(int a);
 int func_800151F0(void);
 void func_80015200(int a);
 extern int D_800D60E0[];
@@ -33,7 +33,25 @@ extern u8 D_800D60E8[];
 extern void *D_800BCE3C[];
 extern u8 D_800BCA3C[];
 
+struct Game74 {
+    u8 m_00[0x150];
+    int m_150;
+};
+extern u8 D_800BC93C[]; // the case-folding table
+extern Game74 *D_800C886C[];
+extern int D_800BC938[];
+extern int D_800D6148[];
+extern int D_800D49A8[];
+void func_800A2290(int *p, int a, int b);
+
 void func_800A54F0(void);
+int func_800A60AC(const char *a, const char *b);
+int func_800A6100(const char *a, const char *b, int n);
+int func_800A58B0(void);
+void func_800A6788(int a, int b);
+int func_800A6850(int x);
+char *func_800A5F90(char *d, int v);
+int func_800A5CD0(u32 ms, u32 *m, u32 *sec, u32 *cs);
 int func_800A54F8(u8 *base, int *offs, int n);
 void func_800A5888(void *p, int flags);
 void func_800A5908(Obj74 *o);
@@ -74,7 +92,14 @@ void func_800A5888(void *p, int flags) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_74", func_800A58B0);
+int func_800A58B0(void) {
+    int t = D_800C886C[0]->m_150;
+
+    if (t) {
+        D_800BC938[0] += t * 64 / 1000;
+    }
+    return D_800BC938[0];
+}
 
 void func_800A5908(Obj74 *o) {
     int i;
@@ -101,7 +126,27 @@ void func_800A5CBC(Obj74 *o) {
     o->m_4C = !o->m_54;
 }
 
+#ifdef NON_MATCHING
+// Registers: the original divides and moves through $t0 (a reload), ours through others (24 off)
+/* Milliseconds as minutes, seconds and hundredths; 0 for -1. */
+int func_800A5CD0(u32 ms, u32 *m, u32 *sec, u32 *cs) {
+    u32 k;
+
+    if (ms == (u32)-1) {
+        return 0;
+    }
+    k = 60000;
+    *m = ms / k;
+    ms %= k;
+    k = 1000;
+    *sec = ms / k;
+    ms %= k;
+    *cs = ms / 10;
+    return 1;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_74", func_800A5CD0);
+#endif
 
 void func_800A5D2C(void) {
     if (--D_800D60E0[0] == 0) {
@@ -122,13 +167,78 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_74", func_800A5DBC);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_74", func_800A5ED0);
 
+#ifdef NON_MATCHING
+// Registers: the original divides by 10 through $t0 each time round (a reload), ours keeps it in a register (16 off)
+/* The number's digits, then a 0; returns the 0's address. */
+char *func_800A5F90(char *d, int v) {
+    char buf[16];
+    char *p = &buf[15];
+    int i = 15;
+    int base = 10;
+    int q;
+
+    do {
+        q = v / base;
+        *p-- = v % base + '0';
+        v = q;
+    } while (--i && q);
+    i = 15 - i;
+    do {
+        *d++ = *++p;
+    } while (--i);
+    *d = 0;
+    return d;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_74", func_800A5F90);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_74", func_800A6000);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_74", func_800A60AC);
+/* stricmp */
+/* stricmp */
+int func_800A60AC(const char *a, const char *b) {
+    const u8 *p = (const u8 *)a;
+    const u8 *x;
+    const u8 *y;
+    u32 c;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_74", func_800A6100);
+    do {
+        c = *p++;
+        x = &D_800BC93C[c];
+        y = &D_800BC93C[*(const u8 *)b++];
+        if (*x != *y) {
+            return *x - *y;
+        }
+    } while (c);
+    return 0;
+}
+
+/* strnicmp */
+/* strnicmp */
+/* strnicmp */
+/* strnicmp */
+/* strnicmp */
+int func_800A6100(const char *a, const char *b, int n) {
+    const u8 *p = (const u8 *)a;
+    const u8 *x;
+    const u8 *y;
+    short c;
+
+    if (n)
+        do {
+            c = *p++;
+            x = &D_800BC93C[c];
+            y = &D_800BC93C[*(const u8 *)b++];
+            if (*x != *y) {
+                return *x - *y;
+            }
+            if (!c) {
+                return 0;
+            }
+        } while (--n);
+    return 0;
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_74", func_800A6168);
 
@@ -182,7 +292,12 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_74", func_800A658C);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_74", func_800A6650);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_74", func_800A6788);
+void func_800A6788(int a, int b) {
+    func_800A22D0(2);
+    func_800A22B0(0);
+    D_800D6148[0] = a + 1;
+    func_800A2290(D_800D6148, 1, b ? 0x101 : 0);
+}
 
 void func_800A67E8(int a) {
     func_800A22D0(2);
@@ -198,7 +313,12 @@ int func_800A6818(void) {
     return r;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_74", func_800A6850);
+int func_800A6850(int x) {
+    if (D_800D49A8[0]) {
+        return x * 36 / 0xA000;
+    }
+    return x * 85 / 0x26000;
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_74", func_800A68BC);
 
