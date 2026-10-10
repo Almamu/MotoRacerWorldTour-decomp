@@ -92,7 +92,7 @@ settings
 | `src/langimg` chunk_23 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=D_800CABB7` |
 | `src/langimg` chunk_45 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (eleven) |
 | `src/langimg` chunk_66 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (five) |
-| `src/langimg` chunk_25, chunk_44, chunk_46, chunk_47, chunk_51, chunk_60, chunk_68, chunk_70, chunk_71, chunk_72, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
+| `src/langimg` chunk_25, chunk_44, chunk_46, chunk_47, chunk_51, chunk_56, chunk_60, chunk_68, chunk_70, chunk_71, chunk_72, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_06 to chunk_12 (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_02b (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `SCES_030.37` (`src/sces`) | GCC 2.91.66 | 0 | `-fsigned-char` | `--expand-div` |
@@ -262,6 +262,18 @@ globals), a script that tries every order is quicker than guessing:
   `== 1`, `< 2`, `== 0`, `== 2`: cases 1 and 2 written apart, with the same
   code, merged by cross-jumping after the tests. `case 1: case 2:` became a
   range test (`bltz`, `slti 3`).
+- **Two tests GCC would fold, nested.** `v != -1 && v != 0` becomes one
+  unsigned test (`addiu`, `sltiu 2`). chunk_56's `func_80082BEC` tests
+  them apart: `if (v != -1) { if (v != 0) { ... } else { c[0] = 0; } }
+  else { c[0] = 0; }`, the two `else`s merged by cross-jumping.
+- **Empty cases at the end of a switch.** chunk_56's `func_800816F8`
+  has a jump table for 1 to 8 whose last two entries go to the end, and
+  each case loads the same pointer itself. Without `case 7: break; case 8:
+  break;` the table stopped at 6 and GCC hoisted the shared load above
+  the jump.
+- **Sometimes two returns.** Unlike `FindEntry`, chunk_56's
+  `func_80081330` returns 3 from two `if`s in a row (`if (x > 224) return
+  3; if (y > 224) return 3;`); `||` put the return's block elsewhere.
 
 ### Loops
 
@@ -530,6 +542,14 @@ A 2-aligned struct copied with `lw`/`sw` can also be copied through a
 cast to a struct of three `int`s, when nothing else about the struct
 says it held one (`Words3`, chunk_45's `func_8006C330`).
 
+Short string copies whose source is a string in the data (`" Laps"`,
+`" Lap"`, chunk_56's `func_80082904`) are likely `strcpy`s of literals,
+turned into block moves: the address goes through `$v0` into a saved
+register. A `memcpy` from the data's symbol (declared `short`, for the
+alignment) gets the right loads and stores, but its address loaded
+whole; the literals themselves would be the chunk's own data, which the
+build doesn't place yet. Two functions stay parked on it.
+
 An `int` field stored into a `short` can be loaded with `lhu`: GCC
 narrows the load (chunk_66's `func_8009574C`). An `lhu` doesn't by itself
 mean a `short` field.
@@ -636,6 +656,11 @@ mean a `short` field.
   (chunk_60's `func_80089B6C`, `T36() {}`). With a constructor that does
   something, the loop calls it on each element: `i = n - 1; if (i >= 0)
   do { ctor(p++); } while (--i != -1);` (chunk_44's `func_8006A534`).
+- **`operator new` for a `new` without a constructor call.** chunk_56's
+  `func_800816F8` calls `__builtin_new` and passes the result to the
+  constructor (`func_8008142C`, a `memset`): `func_8008142C(operator
+  new(0x30))`. `new u8[0x30]` calls `__builtin_vec_new` instead, which
+  `tools/try_func.py` doesn't see (below).
 - **A virtual call through a `void` function.** When the result isn't
   used, a cast to a function returning `void` gives other registers than
   one returning `int` (chunk_45's `VCALLV`).
@@ -670,6 +695,11 @@ What's left once the instructions are right is usually register choice.
 
 - Declaration order of locals made no difference to registers in the
   cases tried (`FindEntry`); it does decide their stack slots (above).
+- **One variable per path.** chunk_56's `func_800816F8` allocates in one
+  branch (the pointer kept across calls) and frees in the other (the
+  pointer only read before them). One variable for both put it in a saved
+  register on both paths; one declared in each branch left the freeing
+  path's in `$a1`.
 - The permuter (`tools/permuter_setup.py`) is the tool for this. Most of
   its suggestions are noise (dummy variables, `x++; x--;`); keep the idea
   behind a good one, written plainly (the `ClearFlags` case above).
@@ -693,6 +723,12 @@ What's left once the instructions are right is usually register choice.
 - **Fixed sequences** where the original's registers never change:
   `GTE_SET_ROT` loads the matrix through `$a1` and `$a2` in pairs;
   `GTE_SET_TRANS` and `GTE_SET_ZSF` move several values in one statement.
+  chunk_56's `func_80082468` loads the matrix the same way through `$v0`
+  and `$v1` (`GTE_SET_ROT_V`), then the translation shifted right by 4,
+  alternating `$v0`, `$v1`, `$v0` with `$a0` free, which GCC doesn't do:
+  `GTE_SET_TRANS_V` is that sequence as one `asm` (an assumption: a
+  macro of the game's, like libgte's `gte_SetTransMatrix` with the
+  shifts).
 - **Constants through one register**: the original loads every vertex
   constant into `$t1` (`lui`/`ori`, `addu $t1, $zero, $zero` for 0, and
   reuses a 0 still there). That's a `register int r asm("$9")` set from C
@@ -828,6 +864,10 @@ what still differs, and its `INCLUDE_ASM` under `#else`. Its `.s` stays.
   link to the original size, `tools/diff_func.py` shows differences in
   every later function (their relocated addresses moved). Compare with
   `tools/try_func.py` until the chunk is back to size.
+- **Call targets aren't compared.** `tools/try_func.py` compares
+  instructions, not relocations: a `jal` to `__builtin_vec_new` where the
+  original calls `__builtin_new` reports 0 differences, and `make` fails
+  on one byte. `cmp -l` of the two images gives the offset.
 - **`make` stays the judge.** An object compiled by hand, or by a
   permuter script, can differ from the build's in flags; `make` with both
   `OK` lines is the only proof.
