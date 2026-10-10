@@ -92,7 +92,7 @@ settings
 | `src/langimg` chunk_23 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=D_800CABB7` |
 | `src/langimg` chunk_45 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (eleven) |
 | `src/langimg` chunk_66 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (five) |
-| `src/langimg` chunk_25, chunk_31, chunk_39, chunk_44, chunk_46, chunk_47, chunk_51, chunk_56, chunk_60, chunk_68, chunk_70, chunk_71, chunk_72, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
+| `src/langimg` chunk_25, chunk_29, chunk_31, chunk_39, chunk_44, chunk_46, chunk_47, chunk_51, chunk_56, chunk_60, chunk_68, chunk_70, chunk_71, chunk_72, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_06 to chunk_12 (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_02b (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `SCES_030.37` (`src/sces`) | GCC 2.91.66 | 0 | `-fsigned-char` | `--expand-div` |
@@ -570,6 +570,12 @@ assignments were further off.
 A 2-aligned struct copied with `lw`/`sw` can also be copied through a
 cast to a struct of three `int`s, when nothing else about the struct
 says it held one (`Words3`, chunk_45's `func_8006C330`).
+
+A 12-byte string copied from the data matched as a `memcpy` from the
+string's symbol (chunk_29's `func_8004B96C`, `"Data\Final\"`): GCC's
+block move keeps both addresses in registers when they're symbols. The
+buffer had to be a scalar (`extern char D_800D4798;`) with its address
+taken into a local before the copy, the `memcpy` naming the symbol.
 
 Short string copies whose source is a string in the data (`" Laps"`,
 `" Lap"`, chunk_56's `func_80082904`) are likely `strcpy`s of literals,
