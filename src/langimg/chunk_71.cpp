@@ -174,7 +174,7 @@ void func_800792DC(Snd886C *g);
 void func_8009E0AC(Spr71 *s);
 void func_800A4244(void);
 int func_800AFB98(int a);
-void func_800A41BC(void);
+int func_800A41BC(void);
 void func_800A4608(int a);
 void func_8003B7B0(Menu71 *m);
 void func_8009E01C(Spr71 *a, char *b, int c, int d, int e);
@@ -273,8 +273,6 @@ struct U32P {
 void func_800A0584(u8 *src, u8 *dst);
 }
 
-#ifdef NON_MATCHING
-/* The menu's sound loaded into $v0, not $v1 (2 off) */
 void func_8009F180(Menu71 *m) {
     Spr71 *s = m->m_A80->m_60;
 
@@ -284,9 +282,6 @@ void func_8009F180(Menu71 *m) {
     func_8009E01C(s, D_800C9CD8, 0, D_800BC884, 0x15AC);
     func_8009E0E8(s);
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_8009F180);
-#endif
 
 #ifdef NON_MATCHING
 /* The original keeps the menu in $a1 and the sound in $a0; scheduled around that (24 off) */
