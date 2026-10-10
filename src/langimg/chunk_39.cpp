@@ -11,7 +11,12 @@ struct Rec39 {
 // An entry, 0x330 bytes
 struct Ent39 {
     u16 m_00; // flags
-    u8 m_02[0xA];
+    u8 m_02[5];
+    s8 m_07;
+    u8 m_08;
+    u8 m_09;
+    u8 m_0A;
+    u8 m_0B;
     u8 m_0C;
     u8 m_0D[3];
     Rec39 m_10[32]; // a ring
@@ -46,6 +51,10 @@ void func_800600B8(int *st, Own39 *o, int *i);
 void func_80060134(int *st, Own39 *o, int *i);
 void func_800601B0(int *st, Own39 *o, int *i);
 void func_8006022C(int *st, Own39 *o, int *i);
+void func_8005FEB0(int *st, Own39 *o, int *i);
+void func_8005FF34(int *st, Own39 *o, int *i);
+void func_8005FFB8(int *st, Own39 *o, int *i);
+void func_80060038(int *st, Own39 *o, int *i);
 void func_80060650(void);
 void func_80060658(void);
 void func_80060660(void);
@@ -116,13 +125,73 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_39", func_8005FC40);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_39", func_8005FCE8);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_39", func_8005FEB0);
+void func_8005FEB0(int *st, Own39 *o, int *i) {
+    if (o) {
+        Ent39 *e = &o->m_2F0[*i];
+        int v = *st;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_39", func_8005FF34);
+        if (v == 0xFF) {
+            e->m_07 = -0x7F;
+            e->m_00 |= 0x100;
+        }
+        if (v == 0) {
+            e->m_07 = 0;
+            e->m_00 &= ~0x100;
+        }
+        e->m_0A = 0;
+        func_8005F480(e, 0x10, v);
+    }
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_39", func_8005FFB8);
+void func_8005FF34(int *st, Own39 *o, int *i) {
+    if (o) {
+        Ent39 *e = &o->m_2F0[*i];
+        int v = *st;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_39", func_80060038);
+        if (v == 0xFF) {
+            e->m_07 = 0x7F;
+            e->m_00 |= 0x200;
+        }
+        if (v == 0) {
+            e->m_07 = 0;
+            e->m_00 &= ~0x200;
+        }
+        e->m_0A = 0;
+        func_8005F480(e, 0x40, v);
+    }
+}
+
+void func_8005FFB8(int *st, Own39 *o, int *i) {
+    if (o) {
+        Ent39 *e = &o->m_2F0[*i];
+        int v = *st;
+
+        e->m_09 = 0;
+        if (v == 0xFF) {
+            e->m_00 |= 0x1;
+        }
+        if (v == 0) {
+            e->m_00 &= ~0x1;
+        }
+        func_8005F480(e, 0x4000, v);
+    }
+}
+
+void func_80060038(int *st, Own39 *o, int *i) {
+    if (o) {
+        Ent39 *e = &o->m_2F0[*i];
+        int v = *st;
+
+        e->m_09 = 0;
+        if (v == 0xFF) {
+            e->m_00 |= 0x2;
+        }
+        if (v == 0) {
+            e->m_00 &= ~0x2;
+        }
+        func_8005F480(e, 0x8000, v);
+    }
+}
 
 void func_800600B8(int *st, Own39 *o, int *i) {
     if (o) {
