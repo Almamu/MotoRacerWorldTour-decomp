@@ -15,7 +15,8 @@ struct VtEntry {
 // The object (its size isn't known here)
 struct Named {
     unsigned m_on : 1; // 0x00 bit 0
-    unsigned m_b1 : 3;
+    unsigned m_b1 : 1;
+    unsigned m_b2 : 2;
     unsigned m_used : 1; // bit 4
     unsigned m_b5 : 1;   // bit 5
     unsigned m_b6 : 1;
@@ -31,7 +32,10 @@ struct Named {
     int m_60;
     int m_64;
     VtEntry *m_vtable; // 0x68
-    u8 m_6C[0xF0];
+    u8 m_6C[0x30];
+    void *m_9C;
+    void *m_A0;
+    u8 m_A4[0xB8];
     int *m_15C;
     int *m_160;
 };
@@ -58,6 +62,37 @@ int func_8003FE1C(Named *o);
 void func_8003FE2C(Named *o, const char *name);
 void func_8003FE5C(Named *o, int on);
 void func_8003FE78(Named *o, int on);
+int func_8003FEE4(Named *o);
+int func_8003FEEC(Named *o);
+int func_8003FEF4(Named *o);
+int func_8003FF24(Named *o);
+int func_8003FF2C(Named *o);
+int func_8003FF34(Named *o);
+int func_8003FF3C(Named *o);
+int func_8003FF44(Named *o);
+int func_8003FF68(Named *o);
+void func_8003FEFC(Named *o);
+void func_8003FF04(Named *o);
+void func_8003FF0C(Named *o);
+void func_8003FF4C(Named *o);
+int func_8003FF14(Named *o);
+int func_8003FF1C(Named *o);
+void func_8003FEC4(Named *o, int on);
+int func_8003FF54(Named *o);
+void func_80040578(Named *o, int flags);
+int func_800401FC(Named *o, int a, int b, int c, ...);
+int func_8004009C(Named *o, int a, int b, int c, char *ap);
+void func_80040E18(Named *o);
+extern int D_800D49EC;
+void func_8003B734(void *a, int b, int c);
+int func_800406A4(Named *o);
+void func_80044D70(Named *o);
+void *func_80078244(void *p);
+void *__builtin_new(unsigned int n);
+int func_80040E50(Named *o);
+int func_80044DB8(Named *o);
+void func_8003B850(void *a, int s);
+extern VtEntry D_800C53E8[];
 }
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_8003F6B8);
@@ -169,39 +204,70 @@ void func_8003FE78(Named *o, int on) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_8003FEC4);
+void func_8003FEC4(Named *o, int on) {
+    o->m_b1 = on;
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_8003FEE4);
+int func_8003FEE4(Named *o) {
+    return 1;
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_8003FEEC);
+int func_8003FEEC(Named *o) {
+    return 1;
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_8003FEF4);
+int func_8003FEF4(Named *o) {
+    return 1;
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_8003FEFC);
+void func_8003FEFC(Named *o) {
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_8003FF04);
+void func_8003FF04(Named *o) {
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_8003FF0C);
+void func_8003FF0C(Named *o) {
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_8003FF14);
+int func_8003FF14(Named *o) {
+    return 0;
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_8003FF1C);
+int func_8003FF1C(Named *o) {
+    return 0;
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_8003FF24);
+int func_8003FF24(Named *o) {
+    return 1;
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_8003FF2C);
+int func_8003FF2C(Named *o) {
+    return 1;
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_8003FF34);
+int func_8003FF34(Named *o) {
+    return 1;
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_8003FF3C);
+int func_8003FF3C(Named *o) {
+    return 1;
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_8003FF44);
+int func_8003FF44(Named *o) {
+    return 1;
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_8003FF4C);
+void func_8003FF4C(Named *o) {
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_8003FF54);
+int func_8003FF54(Named *o) {
+    o->m_04++;
+    return 1;
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_8003FF68);
+int func_8003FF68(Named *o) {
+    return 1;
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_8003FF70);
 
@@ -211,7 +277,13 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_8004009C);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_80040178);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_800401FC);
+/* func_8004009C with the rest of the arguments as a list; returns b. */
+int func_800401FC(Named *o, int a, int b, int c, ...) {
+    char *ap = (char *)&c + sizeof(c);
+
+    func_8004009C(o, a, b, c, ap);
+    return b;
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_80040234);
 
@@ -225,11 +297,19 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_8004047C);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_800404D0);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_80040578);
+/* A subclass's destructor (its vtable D_800C53E8). */
+void func_80040578(Named *o, int flags) {
+    o->m_vtable = D_800C53E8;
+    func_8003FCF8(o, flags);
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_800405A0);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_800406A4);
+int func_800406A4(Named *o) {
+    func_80044D70(o);
+    o->m_9C = func_80078244(__builtin_new(0x194));
+    return 1;
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_800406E0);
 
@@ -245,8 +325,18 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_80040D1C);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_80040DB8);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_80040E18);
+void func_80040E18(Named *o) {
+    if (D_800D49EC == 10) {
+        func_8003B734(o->m_A0, 1, 0);
+    }
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_80040E50);
+int func_80040E50(Named *o) {
+    func_80044DB8(o);
+    if (o->m_15C) {
+        func_8003B850(o->m_A0, o->m_state);
+    }
+    return 1;
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_80040E98);
