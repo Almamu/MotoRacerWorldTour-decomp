@@ -4,6 +4,8 @@
 /* A menu page's object and its callbacks (docs/matching/issue-71-langimg-chunk70.md) */
 
 extern "C" {
+void *memset(void *d, int c, int n);
+
 struct Lbl70 {
     u8 m_00[8];
     short m_08;
@@ -135,6 +137,11 @@ struct Tab70 {
     void *m_00;
     int m_04;
 };
+// A name and its value
+struct Entry70 {
+    char *m_00;
+    int m_04;
+};
 struct Obj70 {
     int m_00;
     int m_04;
@@ -215,11 +222,17 @@ extern char D_800C94DC[];
 extern char D_800C9BFC[];
 extern void *D_800BC884;
 extern int D_800C9C04;
-extern char D_800C9750[], D_800C98F4[], D_800C9A6C[], D_800CBEA0[];
+extern char D_800C9750[], D_800C98F4[], D_800C9A6C[];
+extern Entry70 D_800CBEA0[15];
+extern int D_800CBE98;
+extern int D_800C9C08, D_800C9C0C, D_800C9CEC, D_800C9BF8, D_800C9C18, D_800C8DCC, D_800C92C4;
+extern char D_800C9B6C[], D_800C9B74[], D_800C9B7C[], D_800C9B84[], D_800C9B8C[];
+extern char D_800C9B94[], D_800C9BA4[], D_800C9BB0[], D_800C9BB8[], D_800C9BC0[];
+extern char D_800C9BC8[], D_800C9BD0[], D_800C9BDC[], D_800C9BE8[], D_800C9BF0[];
+void func_8009D410(void);
 extern char D_800C9B30[], D_800C9B38[], D_800C9B58[], D_800C9B64[];
 void *__builtin_new(int n);
 void *__builtin_vec_new(int n);
-void *memset(void *d, int c, int n);
 int func_80081318(int a, int b);
 void func_80080F30(int a, char *b, int c, int d);
 int func_800A4284(int a);
@@ -381,7 +394,40 @@ void func_8009D3E4(void) {
     }
 }
 
+/* The settings' names and values, made by their first user. */
+// One entry: cleared, set, copied in
+#define ENTRY70(i, name, v) \
+    memset(&e, 0, sizeof(e)); \
+    e.m_00 = name; \
+    e.m_04 = v; \
+    D_800CBEA0[i] = e
+
+#ifdef NON_MATCHING
+// Scheduling: the original puts each memset's size in the call's delay slot (19 off)
+void func_8009D410(void) {
+    Entry70 e;
+
+    if (++D_800CBE98 == 1) {
+        ENTRY70(0, D_800C9B6C, D_800C9C08);
+        ENTRY70(1, D_800C9B74, D_800C9C0C);
+        ENTRY70(2, D_800C9B7C, D_800C9CEC);
+        ENTRY70(3, D_800C9B84, D_800C9BF8);
+        ENTRY70(4, D_800C9B8C, D_800C9C18);
+        ENTRY70(5, D_800C9B94, D_800C8DCC);
+        ENTRY70(6, D_800C9BA4, D_800C92C4);
+        ENTRY70(7, D_800C9BB0, D_800C92C4);
+        ENTRY70(8, D_800C9BB8, D_800C92C4);
+        ENTRY70(9, D_800C9BC0, D_800C9BF8);
+        ENTRY70(10, D_800C9BC8, D_800C9CEC);
+        ENTRY70(11, D_800C9BD0, D_800C9CEC);
+        ENTRY70(12, D_800C9BDC, D_800C9CEC);
+        ENTRY70(13, D_800C9BE8, D_800C9CEC);
+        ENTRY70(14, D_800C9BF0, D_800C9CEC);
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_70", func_8009D410);
+#endif
 
 void func_8009D7A0(Obj70 *o, int i) {
     o->m_5C->m_08 = o->m_50[i].m_00;
