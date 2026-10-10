@@ -36,11 +36,43 @@ struct Named {
     void *m_9C;
     void *m_A0;
     u8 m_A4[0xB8];
-    int *m_15C;
-    int *m_160;
+    int m_15C;
+    int m_160;
+    int m_164;
+    int m_168;
+    int m_16C;
+};
+
+// An entry found by name in an object list
+struct NamedEntry {
+    int m_00;
+    unsigned m_flags : 11; // 0x04
+};
+
+// What holds an object list at 0x38
+struct Holder {
+    u8 m_00[0x38];
+    void *m_38;
+};
+
+// An array element of 0x74 bytes with an object list at 0x38
+struct SceneItem {
+    u8 m_00[0x38];
+    void *m_38;
+    u8 m_3C[0x38];
+};
+
+// A scene: its items
+struct Scene {
+    u8 m_00[0xA70];
+    int m_count; // 0xA70
+    u8 m_A74[8];
+    SceneItem *m_items; // 0xA7C
 };
 
 #define VCALL(o, i) ((o)->m_vtable[i].m_func((char *)(o) + (o)->m_vtable[i].m_delta))
+#define VCALL1(o, i, a) \
+    (((int (*)(void *, int))(o)->m_vtable[i].m_func)((char *)(o) + (o)->m_vtable[i].m_delta, a))
 
 extern VtEntry D_800C4EA8[]; // the vtable
 extern char D_800C4EA0[];    // the default name
@@ -62,6 +94,26 @@ int func_8003FE1C(Named *o);
 void func_8003FE2C(Named *o, const char *name);
 void func_8003FE5C(Named *o, int on);
 void func_8003FE78(Named *o, int on);
+void func_8003F6B8(Scene *s);
+int func_80040CC8(Named *o);
+void func_8004047C(Named *o, Holder *h, const char *name);
+void func_8004041C(Named *o, Holder *h, const char *name);
+void func_80040DB8(Named *o);
+void func_80040034(Named *o, int a);
+void func_800402D0(Named *o, Holder *h, const char *name, int x);
+NamedEntry *func_80040178(Named *o, Holder *h, const char *name, int x, ...);
+int func_80040C34(Named *o);
+NamedEntry *func_80017E10(void *l, const char *name, int len); // by name
+void func_80017730(void *l);
+void func_8001865C(void *l);
+void func_80040234(Named *o, Holder *h, NamedEntry *e, int x);
+void func_800AFC0C(int a, Named *o);
+void func_8009D3E4(void);
+extern int D_800C89E8;
+void func_8008107C(int a, int b);
+void func_8003EC90(void *a, int b, int c, int d);
+Named *func_80078FC4(int *list, int s);
+unsigned int strlen(const char *s);
 int func_8003FEE4(Named *o);
 int func_8003FEEC(Named *o);
 int func_8003FEF4(Named *o);
@@ -95,18 +147,25 @@ void func_8003B850(void *a, int s);
 extern VtEntry D_800C53E8[];
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_8003F6B8);
+void func_8003F6B8(Scene *s) {
+    int i;
+
+    for (i = 0; i < s->m_count; i++) {
+        func_80017730(s->m_items[i].m_38);
+        func_8001865C(s->m_items[i].m_38);
+    }
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_8003F740);
 
 #ifdef NON_MATCHING
 /* Registers: the original keeps -1 in $v1 for both tests (7 off) */
 void func_8003FC28(Named *o, int i, int j) {
-    int *a = o->m_15C;
+    int *a = (int *)o->m_15C;
     int *b;
     int s;
 
-    if (!a || !(b = o->m_160)) {
+    if (!a || !(b = (int *)o->m_160)) {
         return;
     }
     if (j == -1) {
@@ -271,11 +330,25 @@ int func_8003FF68(Named *o) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_8003FF70);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_80040034);
+void func_80040034(Named *o, int a) {
+    int i;
+
+    o->m_160 = 1;
+    o->m_164 = a;
+    for (i = 0; i < o->m_16C; i++) {
+        func_8003EC90(o->m_A0, 12, i, 0);
+    }
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_8004009C);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_80040178);
+NamedEntry *func_80040178(Named *o, Holder *h, const char *name, int x, ...) {
+    char *ap = (char *)&x + sizeof(x);
+    NamedEntry *e = func_80017E10(h->m_38, name, strlen(name));
+
+    func_8004009C(o, (int)h, (int)e, x, ap);
+    return e;
+}
 
 /* func_8004009C with the rest of the arguments as a list; returns b. */
 int func_800401FC(Named *o, int a, int b, int c, ...) {
@@ -287,13 +360,23 @@ int func_800401FC(Named *o, int a, int b, int c, ...) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_80040234);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_800402D0);
+void func_800402D0(Named *o, Holder *h, const char *name, int x) {
+    NamedEntry *e = func_80017E10(h->m_38, name, strlen(name));
+
+    if (e) {
+        func_80040234(o, h, e, x);
+    }
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_80040344);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_8004041C);
+void func_8004041C(Named *o, Holder *h, const char *name) {
+    func_80017E10(h->m_38, name, strlen(name))->m_flags |= 2;
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_8004047C);
+void func_8004047C(Named *o, Holder *h, const char *name) {
+    func_80017E10(h->m_38, name, strlen(name))->m_flags &= ~2;
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_800404D0);
 
@@ -317,13 +400,37 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_80040A24);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_80040B04);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_80040C34);
+int func_80040C34(Named *o) {
+    int r = VCALL1(o, 20, 1);
+    Named *p = func_80078FC4(D_800CBC94, o->m_state);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_80040CC8);
+    if (p) {
+        ((Named *)VCALL1(p, 14, ((int *)o->m_A0)[2]))->m_9C = o->m_9C;
+    }
+    return r;
+}
+
+int func_80040CC8(Named *o) {
+    int v = VCALL(o, 21);
+    int r = 0;
+
+    if (v) {
+        r = func_8003FE1C(o) != 0;
+    }
+    return r;
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_80040D1C);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_80040DB8);
+void func_80040DB8(Named *o) {
+    func_800AFC0C(o->m_60, o);
+    func_8009D3E4();
+    func_80040E18(o);
+    if (D_800C89E8) {
+        func_8008107C(D_800C89E8, 3);
+        D_800C89E8 = 0;
+    }
+}
 
 void func_80040E18(Named *o) {
     if (D_800D49EC == 10) {
