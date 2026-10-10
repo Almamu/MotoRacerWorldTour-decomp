@@ -29,6 +29,7 @@ struct Time67 {
     u32 m_f : 2;
 };
 extern Time67 D_800D6124;
+#define ABS67(a) (((a) ^ ((a) >> 31)) - ((a) >> 31))
 #define MIN67(a, b) ((a) < (b) ? (a) : (b))
 #define MAX67(a, b) ((a) > (b) ? (a) : (b))
 extern int D_800C8D98; // a table
@@ -50,6 +51,18 @@ void func_80098DD4(Vec67 *a, Vec67 *b);
 void func_80098E38(Vec67 *a, Vec67 *b);
 int func_80098D1C(int i);
 Mat67 *func_80098354(Mat67 *m, Mat67 *s);
+// A quaternion: x, y, z, w
+struct Quat67 {
+    short x;
+    short y;
+    short z;
+    short w;
+};
+int func_8009923C(Vec67 *v);
+int func_80097AC8(int x);
+void func_80098E9C(Vec67 *v);
+SVec67 *func_800984A0(Mat67 *m, SVec67 *r);
+void func_80098BD8(Quat67 *q, Mat67 *m);
 }
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_67", func_80097128);
@@ -251,7 +264,30 @@ SVec67 *func_80098418(Mat67 *m, SVec67 *r) {
     return r;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_67", func_800984A0);
+/* The angles of a rotation matrix, the other way (through the cosine of y). */
+SVec67 *func_800984A0(Mat67 *m, SVec67 *r) {
+    int a = m->m[0][2];
+    int c = func_80097AC8(0x1000000 - a * a);
+    int y;
+    int x;
+
+    if (c > 0) {
+        int w;
+
+        r->y = ratan2(a, c);
+        w = (m->m[2][2] << 12) / c;
+        r->x = ratan2(-(m->m[1][2] << 12) / c, w);
+        x = (m->m[0][0] << 12) / c;
+        y = -(m->m[0][1] << 12) / c;
+    } else {
+        r->y = a >= 0 ? 0x400 : -0x400;
+        r->x = 0;
+        x = m->m[1][1];
+        y = m->m[1][0];
+    }
+    r->z = ratan2(y, x);
+    return r;
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_67", func_800985A8);
 
@@ -280,7 +316,42 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_67", func_80098968);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_67", func_800989DC);
 
+#ifdef NON_MATCHING
+// Registers and the stores' order (the same products and sums)
+/* A rotation matrix from a quaternion. */
+void func_80098BD8(Quat67 *q, Mat67 *m) {
+    int y = q->y;
+    int z = q->z;
+    int x = q->x;
+    int w = q->w;
+    int yy = y * y;
+    int zz = z * z;
+    int xy = x * y;
+    int wz = w * z;
+    int xz = x * z;
+    int wy = w * y;
+    int xx = x * x;
+    int yz;
+    int wx;
+
+    m->t.x = 0;
+    m->t.y = 0;
+    m->t.z = 0;
+    yz = y * z;
+    wx = w * x;
+    m->m[0][1] = (xy - wz) >> 11;
+    m->m[1][0] = (xy + wz) >> 11;
+    m->m[0][0] = 0x1000 - ((yy + zz) >> 11);
+    m->m[0][2] = (xz + wy) >> 11;
+    m->m[1][1] = 0x1000 - ((xx + zz) >> 11);
+    m->m[2][0] = (xz - wy) >> 11;
+    m->m[2][2] = 0x1000 - ((xx + yy) >> 11);
+    m->m[1][2] = (yz - wx) >> 11;
+    m->m[2][1] = (yz + wx) >> 11;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_67", func_80098BD8);
+#endif
 
 int func_80098CE4(void) {
     return D_800D6124.m_t + 0x12345678;
@@ -329,6 +400,42 @@ void func_80098E38(Vec67 *a, Vec67 *b) {
     a->z = MAX67(a->z, b->z);
 }
 
+#ifdef NON_MATCHING
+// The constant 0x3FFFF: the original sets it before each component's load, ours after (in the load's delay)
+/* v scaled to a length of 4096. */
+void func_80098E9C(Vec67 *v) {
+    int len = func_8009923C(v);
+
+    if (len) {
+        int l = (u32)len >> 12;
+        int t;
+        int r;
+
+        t = v->x;
+        if (0x3FFFF >= ABS67(t)) {
+            r = (t << 12) / len;
+        } else {
+            r = t / l;
+        }
+        v->x = r;
+        t = v->y;
+        if (0x3FFFF >= ABS67(t)) {
+            r = (t << 12) / len;
+        } else {
+            r = t / l;
+        }
+        v->y = r;
+        t = v->z;
+        if (0x3FFFF >= ABS67(t)) {
+            r = (t << 12) / len;
+        } else {
+            r = t / l;
+        }
+        v->z = r;
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_67", func_80098E9C);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_67", func_80098F94);
