@@ -198,10 +198,10 @@ void func_800794BC(Gfx52 *g) {
     func_80088FD4((u8 *)g + 0x30);
 }
 
-#ifdef NON_MATCHING
-// The second rectangle's stores: the width loaded before the y's store (3 off)
 /* The screen cleared, or r; the line at 510 copied to 511. */
 int func_800794E8(Gfx52 *g, RECT *r) {
+    int ok = 1;
+
     DrawSync(0);
     if (!r) {
         RECT a;
@@ -220,11 +220,8 @@ int func_800794E8(Gfx52 *g, RECT *r) {
         ClearImage(r, 0, 0, 0);
     }
     DrawSync(0);
-    return 1;
+    return ok;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_52", func_800794E8);
-#endif
 
 int func_800795A0(Gfx52 *g, int n) {
     if (g->m_2C < n) {
