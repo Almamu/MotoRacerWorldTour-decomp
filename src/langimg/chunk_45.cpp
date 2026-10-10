@@ -54,7 +54,7 @@ struct Packed45 {
 // A table of packed entries with a cursor, and a sound object at 0x42C
 struct Table45 {
     u32 m_00;
-    int m_04;
+    u32 m_04;
     int m_08;
     Packed45 m_items[0x100]; // 0x0C
     u32 m_40C;               // the cursor
@@ -62,7 +62,7 @@ struct Table45 {
     short m_414;
     s8 m_416;
     u8 m_417, m_418, m_419, m_41A;
-    u8 m_41B; // the parity of a vector's bits
+    s8 m_41B; // the parity of a vector's bits
     u8 m_41C, m_41D, m_41E, m_41F;
     u8 m_420[0xC];
     u8 m_42C[0x28];
@@ -112,10 +112,19 @@ struct Entry45 {
 };
 
 // What the two banks share
-struct Shared45 {
+// A group of ids and their handles (0x40 bytes)
+struct Group45 {
     int m_00;
+    int *m_04;   // the ids
+    short *m_08; // their handles
+    s8 m_0C;     // the count
+    u8 m_0D[0x33];
+};
+
+struct Shared45 {
+    Group45 *m_groups;
     Entry45 *m_04;
-    short m_08;
+    short m_08; // the groups' count
     short m_0A; // the entries' count
 };
 
@@ -123,6 +132,8 @@ struct Shared45 {
 struct Banks45 {
     Bank45 m_banks[2];
     Shared45 *m_980;
+    int m_984;
+    short *m_988;
 };
 
 // A sound with an entry's index at 0x3F
@@ -144,7 +155,9 @@ struct Virt45 {
 struct Slot45 {
     Virt45 *m_00;
     int m_04; // in use
-    u8 m_08[0x1C];
+    u8 m_08[0x14];
+    Slot45 *m_prev; // 0x1C
+    Slot45 *m_next; // 0x20
 };
 
 // A set of slots
@@ -152,7 +165,8 @@ struct Slots45 {
     int m_count;
     int m_04, m_08, m_0C, m_10;
     Slot45 *m_slots; // 0x14
-    int m_18, m_1C;
+    Slot45 *m_first; // 0x18
+    Slot45 *m_last;  // 0x1C
 };
 
 // An object of 0x50 bytes with a vtable at 0x0C
@@ -204,23 +218,23 @@ extern char D_800C7DD8[];
 int func_80014724(int *a, char *b);
 void func_80013DE0(int *a, u8 b, char *c);
 void func_80011DA8(int a, int b);
-void func_8006CC40(Shared45 *s);
+void func_8006CC40(Shared45 *s, int *a);
 int func_80096884(void *p);
 void func_8009682C(void *p);
 void __builtin_delete(void *p);
 int func_8006CFD0(Bank45 *b, Sound45 *s, Entry45 *e);
-void func_8006B854(void *o, Virt45 **v);
+void func_8006B854(Slots45 *o, Slot45 *s);
 
 void func_8006C644(Table45 *t, Src45 *s);
 void func_8006C7CC(void);
 void func_8006D12C(Bank45 *b, int a);
-void func_8006D18C(Banks45 *o);
+void func_8006D18C(Banks45 *o, int *a);
 int func_8006BD78(Packed45 *out, u32 a, u32 b, u32 c);
 void func_8006CDA0(Head45 *h);
 void func_8006BE10(Table45 *o, int flags);
 int func_8006C5D8(Vector3 v);
 int func_8006D274(Banks45 *o, Sound45 *s, int i);
-void func_8006B500(void *o, Virt45 **v, int a);
+void func_8006B500(Slots45 *o, Slot45 *s, int a);
 extern int D_800C7764;
 // A word of flags
 struct Flags45 {
@@ -250,8 +264,16 @@ void func_8006BABC(void);
 SndDef *func_8006C85C(int a, int b, int c);
 void func_8006CD00(Shared45 *s, Bank45 *b);
 void func_8006B914(Slots45 *s);
+void func_8006D420(Banks45 *b, int id);
+int func_80014A98(int *a, int id, int b);
+void func_80014368(int *a, int h, int b);
+void func_80014B18(int *a, int h);
+short func_80013E64(int *a, int id);
+
+int func_8006CA84(int id, int a);
+int func_8006C694(Table45 *t, Src45 *s);
 extern u8 D_800C7F2D;
-extern int D_800C7F28;
+extern Banks45 *D_800C7F28;
 extern int D_800D11D0[]; // a sound channel set
 extern int D_800D6130;
 void func_8001480C(int *a);
@@ -280,10 +302,10 @@ void func_8006CEAC(Head45 *h);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006B3B0);
 
-void func_8006B500(void *o, Virt45 **v, int a) {
-    VCALLV1(*v, 2, a);
-    if ((*v)->m_2C == (*v)->m_28) {
-        func_8006B854(o, v);
+void func_8006B500(Slots45 *o, Slot45 *s, int a) {
+    VCALLV1(s->m_00, 2, a);
+    if (s->m_00->m_2C == s->m_00->m_28) {
+        func_8006B854(o, s);
     }
 }
 
@@ -291,7 +313,25 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006B570);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006B658);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006B854);
+/* A slot released and taken out of the list. */
+void func_8006B854(Slots45 *o, Slot45 *s) {
+    if (s->m_04) {
+        s->m_04 = 0;
+        VCALLV(s->m_00, 5);
+        if (s->m_prev) {
+            s->m_prev->m_next = s->m_next;
+        }
+        if (s->m_next) {
+            s->m_next->m_prev = s->m_prev;
+        }
+        if (!s->m_prev) {
+            o->m_first = s->m_next;
+        }
+        if (!s->m_next) {
+            o->m_last = s->m_prev;
+        }
+    }
+}
 
 /* Every slot released. */
 void func_8006B914(Slots45 *s) {
@@ -311,8 +351,8 @@ void func_8006B914(Slots45 *s) {
             p++;
         } while (i < n);
     }
-    s->m_18 = 0;
-    s->m_1C = 0;
+    s->m_first = 0;
+    s->m_last = 0;
     s->m_0C = 0;
 }
 
@@ -571,7 +611,22 @@ void func_8006C644(Table45 *t, Src45 *s) {
     t->m_41B = func_8006C5D8(s->m_64);
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006C694);
+int func_8006C694(Table45 *t, Src45 *s) {
+    int r = 0;
+    int p;
+
+    if (t->m_04 >= t->m_00) {
+        return 0;
+    }
+    p = func_8006C5D8(s->m_64);
+    if ((t->m_41B && !p) || (!t->m_41B && p)) {
+        r = 1;
+    }
+    if (r) {
+        D_800C7764++;
+    }
+    return r;
+}
 
 void func_8006C750(void) {
     func_800146EC(D_800D11D0);
@@ -634,7 +689,21 @@ void func_8006CA78(u8 c) {
     D_800C7F2D = c;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006CA84);
+/* A sound started: on the banks if they have it, else on the channels. */
+int func_8006CA84(int id, int a) {
+    int r = -1;
+
+    if (id != -1) {
+        if (D_800C7F28 && D_800C7F28->m_988[id] != -1) {
+            func_8006D420(D_800C7F28, id);
+        } else {
+            r = func_80014A98(D_800D11D0, id, 0);
+            func_80014368(D_800D11D0, r, a);
+            func_80014B18(D_800D11D0, r);
+        }
+    }
+    return r;
+}
 
 void func_8006CB38(int id) {
     if (id != -1) {
@@ -644,7 +713,19 @@ void func_8006CB38(int id) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006CB68);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006CC40);
+/* Each group's ids to handles. */
+void func_8006CC40(Shared45 *s, int *a) {
+    int i;
+    int j;
+
+    for (i = 0; i < s->m_08; i++) {
+        Group45 *g = &s->m_groups[i];
+
+        for (j = 0; j < g->m_0C; j++) {
+            g->m_08[j] = func_80013E64(a, g->m_04[j]);
+        }
+    }
+}
 
 void func_8006CD00(Shared45 *s, Bank45 *b) {
     int i;
@@ -768,10 +849,10 @@ void func_8006D12C(Bank45 *b, int a) {
     }
 }
 
-void func_8006D18C(Banks45 *o) {
+void func_8006D18C(Banks45 *o, int *a) {
     u32 i;
 
-    func_8006CC40(o->m_980);
+    func_8006CC40(o->m_980, a);
     for (i = 0; i < 2; i++) {
         func_8006CD00(o->m_980, &o->m_banks[i]);
     }
