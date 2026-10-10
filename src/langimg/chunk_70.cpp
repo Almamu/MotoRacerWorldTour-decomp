@@ -10,6 +10,8 @@ struct Lbl70 {
 struct Flag70 {
     u8 m_00[4];
     int m_04;
+    u8 m_08[0x4C];
+    int m_54; // a colour
 };
 // A choice's two halfwords
 struct Pair70 {
@@ -17,10 +19,42 @@ struct Pair70 {
     u16 m_02;
 };
 // A button: a nibble of state at bit 16, its flags' object at 0x28
+struct Bits70 {
+    u32 m_lo : 16;
+    u32 m_state : 4;
+    u32 m_mode : 2;
+    u32 m_hi : 10;
+};
 struct Btn70 {
-    int m_00;
+    union {
+        int m_00;
+        Bits70 m_bits;
+    };
     u8 m_04[0x24];
     Flag70 *m_28;
+    u8 m_2C[0xC];
+    int m_38;
+};
+// What func_8009E0A0 returns: a save's data
+struct Save70 {
+    int m_00;
+    u8 m_04[0xFC];
+    int m_100;
+    int m_104;
+};
+struct Game70 {
+    u8 m_00[0x160];
+    int m_160;
+    int m_164;
+};
+struct Item70 {
+    u8 m_00[0xA];
+    short m_0A;
+};
+struct Dst70 {
+    u8 m_00[0xE0];
+    u8 m_E0[0x54];
+    int m_134;
 };
 // The table made by func_8009D2E0 and func_8009D350
 struct Tab70 {
@@ -56,7 +90,8 @@ struct Obj70 {
     int m_150;
 };
 struct Hold70 {
-    u8 m_00[0x60];
+    char *m_00; // a name
+    u8 m_04[0x5C];
     Obj70 *m_60;
 };
 struct Sub70 {
@@ -68,9 +103,17 @@ struct Box70 {
     Sub70 m_08;
 };
 struct Menu70 {
-    u8 m_00[0xA80];
+    u8 m_00[0x150];
+    int m_150;
+    u8 m_154[0x92C];
     Hold70 *m_A80;
-    u8 m_A84[0x20];
+    Hold70 *m_A84;
+    u8 m_A88[8];
+    int m_A90;
+    int m_A94;
+    Dst70 *m_A98;
+    void *m_A9C;
+    u8 m_AA0[4];
     Box70 *m_AA4;
 };
 
@@ -129,18 +172,57 @@ void func_8009D7BC(Obj70 *o);
 void func_8009D804(Obj70 *o);
 void func_8009DF20(Menu70 *m);
 void func_8009DF58(Menu70 *m);
-u8 *func_8009E0A0(Obj70 *o);
+Save70 *func_8009E0A0(Obj70 *o);
 void func_8009E0AC(Obj70 *o);
 void func_8009E164(Obj70 *o);
 void func_8009E2E0(Obj70 *o);
 void func_8009E2FC(Obj70 *o);
 void func_8009E318(Obj70 *o, int i);
 void func_8009E724(void);
+int func_800A60AC(const char *a, const char *b);
+Btn70 *func_8003A86C(Hold70 *h, char *name);
+Item70 *func_8003B038(Hold70 *h, int a, int b);
+int func_800AE9CC(void);
+void func_800394D8(Item70 *x, Menu70 *m);
+void func_8003B600(Menu70 *m, void *p, int n, int a, int b, int c);
+void func_800792DC(Game70 *g);
+void func_800A0884(void *p);
+extern Game70 *D_800C886C;
+extern char D_800C94D0[];
+extern char D_800C94D8[];
+void func_8009D0E4(Menu70 *m);
+void func_8009DE0C(Menu70 *m);
 void func_8009E930(Menu70 *m);
 void func_8009EAD0(Menu70 *m, int a);
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_70", func_8009D0E4);
+void func_8009D0E4(Menu70 *m) {
+    Hold70 *h = m->m_A80;
+    Btn70 *b;
+    Item70 *x;
+    int r;
+
+    if (func_800A60AC(h->m_00, D_800C94D0)) {
+        return;
+    }
+    b = func_8003A86C(h, D_800C94D8);
+    x = func_8003B038(h, 1, 0);
+    r = func_800AE9CC();
+    if (r != 2) {
+        b->m_bits.m_state = 0;
+        b->m_bits.m_mode = 1;
+        if (x->m_0A == 2) {
+            func_800394D8(x, m);
+        }
+        b->m_28->m_54 = b->m_38;
+    } else {
+        b->m_bits.m_state = 1;
+        b->m_bits.m_mode = 0;
+        if (x->m_0A != 2) {
+            b->m_28->m_54 = 0x7F7F7F;
+        }
+    }
+}
 
 void func_8009D1F8(void) {
     if (D_800D5FD4 & 2) {
@@ -249,7 +331,34 @@ void func_8009DDA8(Menu70 *m) {
     func_8009E0E8(o);
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_70", func_8009DE0C);
+void func_8009DE0C(Menu70 *m) {
+    Hold70 *h;
+    Obj70 *o;
+    Dst70 *d;
+    Game70 *g;
+
+    if (m->m_A90 == 1 || m->m_A90 == 4) {
+        h = m->m_A84;
+    } else {
+        h = m->m_A80;
+    }
+    o = h->m_60;
+    m->m_A94 &= ~0x200;
+    d = m->m_A98;
+    if (o->m_14) {
+        memcpy(D_800BC884, func_8009E0A0(o), 0x15AC);
+        func_8003B600(m, &func_8009E0A0(o)->m_04, 0x154, -1, 1, 1);
+        m->m_150 = 0x84;
+        g = D_800C886C;
+        g->m_160 = func_8009E0A0(o)->m_100;
+        g->m_164 = func_8009E0A0(o)->m_104;
+        func_800792DC(g);
+        func_800A0884(d->m_E0);
+    }
+    d->m_134 = 3;
+    func_8009E0AC(o);
+    func_800A4244();
+}
 
 void func_8009DF20(Menu70 *m) {
     if (m->m_A80->m_60) {
@@ -287,8 +396,8 @@ void *func_8009E01C(Obj70 *o, void *a, int b, void *c, int n) {
     return r;
 }
 
-u8 *func_8009E0A0(Obj70 *o) {
-    return o->m_34 + 0x400;
+Save70 *func_8009E0A0(Obj70 *o) {
+    return (Save70 *)(o->m_34 + 0x400);
 }
 
 void func_8009E0AC(Obj70 *o) {
