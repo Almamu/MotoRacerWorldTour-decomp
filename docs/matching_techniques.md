@@ -92,7 +92,7 @@ settings
 | `src/langimg` chunk_23 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=D_800CABB7` |
 | `src/langimg` chunk_45 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (eleven) |
 | `src/langimg` chunk_66 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (five) |
-| `src/langimg` chunk_25, chunk_29, chunk_31, chunk_39, chunk_44, chunk_52, chunk_46, chunk_47, chunk_51, chunk_56, chunk_60, chunk_68, chunk_70, chunk_71, chunk_72, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
+| `src/langimg` chunk_25, chunk_29, chunk_31, chunk_39, chunk_41, chunk_44, chunk_52, chunk_46, chunk_47, chunk_51, chunk_56, chunk_60, chunk_68, chunk_70, chunk_71, chunk_72, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_06 to chunk_12 (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_02b (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `SCES_030.37` (`src/sces`) | GCC 2.91.66 | 0 | `-fsigned-char` | `--expand-div` |
@@ -731,6 +731,13 @@ What's left once the instructions are right is usually register choice.
 
 - Declaration order of locals made no difference to registers in the
   cases tried (`FindEntry`); it does decide their stack slots (above).
+- **A constructor returns `this`.** chunk_41's constructor calls its base
+  class's; it matched once the base's was declared returning the object
+  (`Obj41 *func_80062E40(Obj41 *o);`), as C++ constructors do (the
+  permuter).
+- **A narrowed load and an inline.** A short set from an int field
+  (`b.x = -o->m_298`) loads it with `lhu`; passed through an inline
+  taking `int`s, it's the original's `lw` (chunk_41's `func_800643E4`).
 - **A result variable set at the top.** chunk_52's `func_800794E8` ends
   with `return 1`; it matched as `int ok = 1;` at the top and `return
   ok;` (the permuter). The constant is then set before the calls and kept
@@ -961,7 +968,8 @@ files (issue-1-langimg-sound.md, "The flags, function by function").
   flag doesn't fix them. The loops starting at a variable index (`func_80011960`,
   `func_80011A68`) don't have the problem. The slot loops also keep `~1`
   in a register (`ClearFlags`, above).
-- **Stack addresses kept in registers** (chunk_02b: `func_80016268`,
+- **Stack addresses kept in registers** (chunk_41's `func_800643E4` too;
+  chunk_02b: `func_80016268`,
   `func_80016434`, `func_80016600`, `func_80016E34`; chunk_03:
   `func_80018954`, though `func_80016C3C`'s original keeps `&rot`): the original
   computes a local's address anew (`addiu $a0, $sp, 0x20`) for each call
