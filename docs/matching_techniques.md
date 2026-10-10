@@ -523,6 +523,13 @@ What's left once the instructions are right is usually register choice.
   instructions between a move from HI/LO and the next `mult`/`div`;
   ASPSX fills them with `nop`s, and so does `--div-no-checks`
   (`func_80023788`).
+- **A callee's return type.** A call to a function declared `void` and
+  one declared to return something compile differently around the call,
+  even when the result is unused: `$v0` is live afterwards in the second.
+  `func_80099D48` (a vector shifted right) and `func_8006BB70` (a
+  constructor) return their first argument, and `func_80026648` and
+  `func_80024064` match only with that; `func_80099898` must stay `void`
+  for `func_80026648`. The permuter finds these by changing declarations.
 - **Divisors from the magic number.** A division by a constant is a
   multiply by `2^(32+s) / d`; compute `d` from the multiplier and the
   shift rather than guessing a round value nearby (`func_80027EE0`: 820,
