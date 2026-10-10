@@ -54,7 +54,7 @@ struct Four44 {
     short m_00, m_02;
     void *m_04;
     void *m_08;
-    int m_0C;
+    void *m_0C;
 };
 struct Arr44 {
     int m_00, m_04, m_08, m_0C, m_10;
@@ -146,6 +146,15 @@ void func_8006A914(Cnt44 *c, int n);
 void func_8006B330(void *x, Ref44 *r, int a);
 void func_8006ABD4(Cnt44 *c, int id);
 void func_8006B098(Arr44 *p, int n);
+extern int D_800D60EC; // the frame
+extern u8 D_800C885C, D_800C885D;
+extern int D_800C8860;
+extern int D_800CC030[];
+int func_80077BE4(int a, int b, int c, int d);
+
+void func_8006A534(Four44 *t, int n, short m);
+int func_8006A994(Cnt44 *c, int a, Snd44 *s, short b);
+int func_8006A848(SndB44 *o);
 }
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_44", func_800692EC);
@@ -314,7 +323,26 @@ void func_8006A4D8(Four44 *t) {
     t->m_0C = 0;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_44", func_8006A534);
+void func_8006A534(Four44 *t, int n, short m) {
+    SndA44 *a;
+    SndA44 *q;
+    int i;
+    short k = n;
+
+    t->m_00 = n;
+    t->m_02 = m;
+    a = (SndA44 *)__builtin_vec_new(k * sizeof(SndA44));
+    q = a;
+    i = k - 1;
+    if (i >= 0) {
+        do {
+            func_8006A258(q);
+            q++;
+        } while (--i != -1);
+    }
+    t->m_04 = a;
+    t->m_0C = t->m_08 = __builtin_vec_new(t->m_02);
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_44", func_8006A5D0);
 
@@ -333,7 +361,25 @@ void func_8006A814(SndB44 *o) {
     o->m_48 = -1;
 }
 
+#ifdef NON_MATCHING
+/* Two loads (m_38 and m_48) in each other's registers (4 off) */
+int func_8006A848(SndB44 *o) {
+    int r = 0;
+
+    if (func_8006A1B4(&o->m_base)) {
+        D_800C885C = o->m_base.m_40;
+        D_800C885D = o->m_base.m_42;
+        D_800C8860 = o->m_base.m_38;
+        r = func_80077BE4(D_800CC030[o->m_48], o->m_base.m_3C, o->m_base.m_34, o->m_base.m_36);
+        if (!r) {
+            VCALLV(&o->m_base, 5);
+        }
+    }
+    return r;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_44", func_8006A848);
+#endif
 
 Three44 *func_8006A8FC(Three44 *p) {
     p->m_00 = 0;
@@ -355,11 +401,36 @@ void func_8006A914(Cnt44 *c, int n) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_44", func_8006A994);
+/* s put in the first free place, with its kind and id; its index, or -1. */
+int func_8006A994(Cnt44 *c, int a, Snd44 *s, short b) {
+    int r = -1;
+
+    if (c->m_08 != -1 && s) {
+        r = c->m_08;
+        c->m_items[r] = s;
+        s->m_08 = D_800D60EC;
+        s->m_02 = a;
+        s->m_03 = b;
+        VCALLV(s, 4);
+        c->m_08 = func_8006AD00(c);
+    }
+    return r;
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_44", func_8006AA30);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_44", func_8006AB3C);
+/* The sound at i stopped and its place freed. */
+void func_8006AB3C(Cnt44 *c, int i) {
+    if (i >= 0 && i < c->m_n) {
+        Snd44 *s = c->m_items[i];
+
+        if (s) {
+            VCALLV(s, 5);
+        }
+        c->m_items[i] = 0;
+        c->m_08 = i;
+    }
+}
 
 /* The sounds with this id. */
 void func_8006ABD4(Cnt44 *c, int id) {
@@ -467,8 +538,6 @@ void func_8006B05C(Arr44 *p) {
     }
 }
 
-#ifdef NON_MATCHING
-/* The constructors' loop: the original's counter starts at n - 1 and is tested for >= 0 (17 off) */
 void func_8006B098(Arr44 *p, int n) {
     Nine44 *a;
     Nine44 *q;
@@ -480,15 +549,15 @@ void func_8006B098(Arr44 *p, int n) {
     p->m_00 = n;
     a = (Nine44 *)__builtin_vec_new(n * sizeof(Nine44));
     q = a;
-    for (i = n - 1; i != -1; i--) {
-        func_8006AF80(q);
-        q++;
+    i = n - 1;
+    if (i >= 0) {
+        do {
+            func_8006AF80(q);
+            q++;
+        } while (--i != -1);
     }
     p->m_14 = a;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_44", func_8006B098);
-#endif
 
 void func_8006B128(Two44 *p, int a) {
     p->m_04 = a;
