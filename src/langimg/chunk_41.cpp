@@ -12,6 +12,17 @@ struct Vec41 {
     int y;
     int z;
 };
+struct SVec41 {
+    short x;
+    short y;
+    short z;
+    short pad;
+};
+struct Mat41 {
+    short m[3][3];
+    short pad;
+    Vec41 t;
+};
 // A state: its kind, a value, two vectors
 struct St41 {
     Kind41 *m_00;
@@ -27,8 +38,10 @@ struct Obj41 {
     u8 m_5A;
     u8 m_5B[9];
     int m_64[3];
-    short m_70[3];
-    u8 m_76[0x56];
+    short m_70[3]; // the angles
+    u8 m_76[2];
+    Vec41 m_78;
+    u8 m_84[0x48];
     int m_CC;
     int m_D0; // an angle, in 2pi * 4096ths
     u8 m_D4[0x60];
@@ -47,7 +60,18 @@ struct Obj41 {
     St41 *m_228;
     St41 *m_22C;
     St41 *m_230;
-    u8 m_234[0x1BC];
+    u8 m_234[0x38];
+    Vec41 m_26C;
+    u8 m_278[0x20];
+    int m_298; // the angles, as ints
+    int m_29C;
+    int m_2A0;
+    struct Mat41 m_2A4;
+    u8 m_2C4[0x20];
+    Vec41 m_2E4;
+    u8 m_2F0[0xC];
+    Vec41 m_2FC;
+    u8 m_308[0xE8];
     int m_3F0;
     u8 m_3F4[0x74];
     int m_468;
@@ -66,6 +90,12 @@ int func_80063A30(Obj41 *o);
 int func_80063A5C(Obj41 *o);
 void func_800643BC(Obj41 *o, int f);
 void func_80063848(Obj41 *d, Obj41 *s);
+void func_8006973C(Mat41 *m, SVec41 *a);
+void func_80098674(Mat41 *a, Mat41 *b, Mat41 *out);
+void func_8009887C(Vec41 *v, Vec41 *out);
+void func_800997D0(Vec41 *v, Vec41 *a);
+void func_80098768(Mat41 *m, Vec41 *v, Vec41 *out);
+void func_800643E4(Obj41 *o);
 struct Cell41 {
     u8 m_00[0xE];
     u8 m_0E;
@@ -229,7 +259,75 @@ void func_800643BC(Obj41 *o, int f) {
     func_80062EEC(o, f);
 }
 
+static inline void SetSVec41(SVec41 *v, int x, int y, int z) {
+    v->x = x;
+    v->y = y;
+    v->z = z;
+}
+
+#ifdef NON_MATCHING
+// The local matrices' stack addresses: the original computes them for each call, ours keeps them in saved registers (the open problem of chunk_02b)
+/* The matrix from the angles (y, then x, then z), the forward vector through it, the positions kept. */
+void func_800643E4(Obj41 *o) {
+    {
+        Mat41 m1;
+        Mat41 m2;
+        Mat41 m3;
+        SVec41 a;
+        Mat41 m4;
+        SVec41 b;
+        Mat41 m5;
+        SVec41 c;
+        short *p = o->m_70;
+
+        o->m_298 = p[0];
+        o->m_29C = p[1];
+        o->m_2A0 = p[2];
+        SetSVec41(&a, 0, o->m_29C, 0);
+        func_8006973C(&m3, &a);
+        m3.t.z = 0;
+        m3.t.y = 0;
+        m3.t.x = 0;
+        SetSVec41(&b, -o->m_298, 0, 0);
+        func_8006973C(&m4, &b);
+        m4.t.z = 0;
+        m4.t.y = 0;
+        m4.t.x = 0;
+        func_80098674(&m3, &m4, &m2);
+        func_8009887C(&m4.t, &m2.t);
+        func_800997D0(&m2.t, &m3.t);
+        SetSVec41(&c, 0, 0, -o->m_2A0);
+        func_8006973C(&m5, &c);
+        m5.t.z = 0;
+        m5.t.y = 0;
+        m5.t.x = 0;
+        func_80098674(&m2, &m5, &m1);
+        func_8009887C(&m5.t, &m1.t);
+        func_800997D0(&m1.t, &m2.t);
+        o->m_2A4 = m1;
+    }
+    {
+        Vec41 out;
+        Vec41 v;
+
+        v.x = 0;
+        v.y = 0;
+        v.z = 0x1000;
+        func_80098768(&o->m_2A4, &v, &out);
+        func_800997D0(&out, &o->m_2A4.t);
+        VecCopyL41(&o->m_2FC, &out);
+        VecCopyL41(&o->m_2E4, &o->m_2FC);
+        o->m_2A4.t.z = 0;
+        o->m_2A4.t.y = 0;
+        o->m_2A4.t.x = 0;
+        VecCopyL41(&o->m_2A4.t, (Vec41 *)o->m_64);
+        VecCopyL41(&o->m_26C, &o->m_78);
+        VecCopyL41(&o->m_78, (Vec41 *)o->m_64);
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_41", func_800643E4);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_41", func_80064608);
 
