@@ -108,7 +108,10 @@ langimg.chunk_60_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=D_
 langimg.chunk_51_GCC  := 2.91.66-psx
 langimg.chunk_51_CFLAGS :=
 langimg.chunk_51_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=D_800C885C,D_800C885D,D_800C8860,D_800C8861,D_800C8862,D_800C8868,D_800C8870,D_800CBC90
-CHUNK_SETTINGS := langimg.chunk_01 langimg.chunk_02 langimg.chunk_02b langimg.chunk_03 langimg.chunk_04 langimg.chunk_05 langimg.chunk_06 langimg.chunk_07 langimg.chunk_08 langimg.chunk_09 langimg.chunk_10 langimg.chunk_11 langimg.chunk_12 langimg.chunk_23 langimg.chunk_45 langimg.chunk_66 langimg.chunk_72 langimg.chunk_71 langimg.chunk_60 langimg.chunk_51
+langimg.chunk_44_GCC  := 2.91.66-psx
+langimg.chunk_44_CFLAGS :=
+langimg.chunk_44_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=D_800CB484
+CHUNK_SETTINGS := langimg.chunk_01 langimg.chunk_02 langimg.chunk_02b langimg.chunk_03 langimg.chunk_04 langimg.chunk_05 langimg.chunk_06 langimg.chunk_07 langimg.chunk_08 langimg.chunk_09 langimg.chunk_10 langimg.chunk_11 langimg.chunk_12 langimg.chunk_23 langimg.chunk_45 langimg.chunk_66 langimg.chunk_72 langimg.chunk_71 langimg.chunk_60 langimg.chunk_51 langimg.chunk_44
 
 # -O2; the C++ has no exceptions and no RTTI.
 CC1FLAGS    := -O2 -quiet
