@@ -12,6 +12,11 @@ void func_800295D4(Bike *b);
 void func_80027EE0(Bike *b);
 extern int D_800D5F40;
 extern int D_800D5F30;
+void func_80029248(Bike *b, int x, int y);
+int func_8002E684(Bike *b, int a);
+void func_80099D48(Vector3 *v, int shift);
+void func_80023004(Vector3 *v, Vector3 n);
+void func_80023140(Vector3 *v, int len, int shift);
 }
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_11", func_80027614);
@@ -141,7 +146,102 @@ void func_80027EE0(Bike *b) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_11", func_800283D0);
 
+static inline void VecCopy(Vector3 *d, Vector3 *s) {
+    d->vx = s->vx;
+    d->vy = s->vy;
+    d->vz = s->vz;
+}
+
+#ifdef NON_MATCHING
+/* The first test's layout, and the original keeps a branch where GCC here sets the flag with sltu */
+/* The engine's force: on the ground, along the heading on the ground's
+ * plane, less as the speed nears the top; otherwise the motor's lift. */
+void func_80029248(Bike *b, int x, int y) {
+    int f = 0;
+    Vector3 dir, n;
+    Motion *m;
+
+    if (b->m_14A || !b->m_149) {
+        f = 1;
+        m = b->m_5CC;
+    } else {
+        m = b->m_5CC;
+        if (m->m_18) {
+            f = 1;
+        }
+    }
+    if (m->m_10) {
+        int v = func_8002E684(b, 0);
+        int max = b->m_118;
+        int r;
+
+        b->m_E4 = v;
+        if (v < -max) {
+            r = -max;
+        } else if (v <= max) {
+            r = v;
+        } else {
+            r = max;
+        }
+        b->m_E4 = r;
+    }
+    b->m_2C0 = 0;
+    if (!b->m_5CC->m_10 || !f) {
+        return;
+    }
+    if ((b->m_40C || (b->m_5CC->m_00 & 2)) && !(*(int *)b->m_52C & 0xFFFF0000)) {
+        Motor *m = b->m_motor;
+        int v = m->m_154;
+
+        if (b->m_40C) {
+            int lo = m->m_158;
+
+            if (v < lo) {
+                v = lo;
+            }
+        } else {
+            int lo = m->m_158;
+
+            v = MULSHIFT(v - lo, (b->m_29C << 12) / b->m_118, 12) + lo;
+        }
+        b->m_308 += v;
+        return;
+    }
+    if (b->m_2DF) {
+        f = b->m_motor->m_50;
+    } else if (b->m_5CC->m_00 & 1) {
+        f = b->m_motor->m_4C;
+        if (y) {
+            f = f * x / 127;
+        }
+    } else {
+        if (!b->m_52C[2]) {
+            return;
+        }
+        f = 600;
+        if (b->m_5CC->m_00 & 2) {
+            b->m_30C += 3000;
+        }
+    }
+    dir = b->m_330;
+    if (b->m_5CC->m_18) {
+        VecCopy(&n, &b->m_260);
+    } else if (b->m_5CC->m_14) {
+        VecCopy(&n, &b->m_254);
+    }
+    func_80099D48(&dir, 14);
+    func_80023004(&dir, n);
+    {
+        int r = MULSHIFT(b->m_29C / (b->m_118 / 4096), 0xCCC, 12);
+
+        b->m_2C0 = f = MULSHIFT(f, 0x1000 - r, 12);
+        func_80023140(&dir, f, 12);
+    }
+    func_800997D0(&b->m_2F4.vx, &dir.vx);
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_11", func_80029248);
+#endif
 
 /* Drag: the speed squared times the motor's drag (5/3 of it in a mode),
  * less while m_43E counts down; a fixed one in one case. */

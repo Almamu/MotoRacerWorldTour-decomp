@@ -75,7 +75,10 @@ struct Bike {
     Frame *m_230;
     Vector3 m_234;
     Vector3 m_240;
-    u8 m_pad24C[0x40];
+    u8 m_pad24C[0x8];
+    Vector3 m_254;
+    Vector3 m_260;
+    u8 m_pad26C[0x20];
     short m_28C;
     short m_28E;
     int m_290;
@@ -105,11 +108,11 @@ struct Bike {
     int m_2E8;
     u8 m_pad2EC[0x4];
     int m_2F0;
-    u8 m_pad2F4[0x4];
-    int m_2F8;
-    u8 m_pad2FC[0xC];
+    Vector3 m_2F4; // the force on it
+    u8 m_pad300[0x8];
     int m_308;
-    u8 m_pad30C[0x24];
+    int m_30C;
+    u8 m_pad310[0x20];
     Vector3 m_330; // its heading
     u8 m_pad33C[0x3C];
     AnimChan m_378;
@@ -126,7 +129,7 @@ struct Bike {
     u8 m_pad3F7[0x3];
     short m_gear; // the gear
     u8 m_pad3FC[0x10];
-    u8 m_40C;
+    s8 m_40C;
     u8 m_pad40D[0x3];
     s8 m_410;
     u8 m_pad411[0x1];
@@ -152,10 +155,7 @@ struct Bike {
     u8 m_pad4DB[0x5];
     AnimChan m_4E0;
     u8 m_pad4FC[0x30];
-    u8 m_52C;
-    u8 m_52D;
-    u8 m_52E;
-    u8 m_52F;
+    u8 m_52C[4];
     u8 m_pad530[0x4];
     AnimChan m_534;
     u8 m_pad550[0x10];
