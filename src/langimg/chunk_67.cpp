@@ -37,7 +37,7 @@ extern SinCos67 D_800BF3A0[];
 extern u16 D_800B8884[]; // an arc cosine table
 int ratan2(long y, long x);
 int func_80097944(u32 lo, u32 hi, int d);
-void func_80098768(Mat67 *m, Vec67 *v, Vec67 *out);
+Vec67 *func_80098768(Mat67 *m, Vec67 *v, Vec67 *out); // returns out
 void func_8009793C(void);
 int func_80097A68(int a, int s, int b);
 void func_80098090(Mat67 *d, Mat67 *s);
@@ -184,8 +184,6 @@ void func_800980F4(Mat67 *m) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_67", func_800980F4);
 #endif
 
-#ifdef NON_MATCHING
-// The return value's move: the original sets it before the negations' loads (9 off)
 /* d = s inverted. */
 Mat67 *func_80098178(Mat67 *d, Mat67 *s) {
     Vec67 *t = &d->t;
@@ -215,9 +213,6 @@ Mat67 *func_80098178(Mat67 *d, Mat67 *s) {
     VecNegL67(t, t);
     return d;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_67", func_80098178);
-#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_67", func_80098224);
 
@@ -297,22 +292,16 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_67", func_80098768);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_67", func_8009887C);
 
-#ifdef NON_MATCHING
-// Registers: the table's address and the sine swap $t0 and $t1, the table loaded first (10 off)
 /* v scaled by the sine of a, the cosine in the fourth short. */
 SVec67 *func_80098968(SVec67 *d, Vec67 *v, int a) {
-    int i = (a >> 1) & 0xFFF;
-    int sn = D_800BF3A0[i].s;
+    int sn = D_800BF3A0[(a >> 1) & 0xFFF].s;
 
     d->x = v->x * sn >> 12;
     d->y = v->y * sn >> 12;
     d->z = v->z * sn >> 12;
-    d->pad = D_800BF3A0[i].c;
+    d->pad = D_800BF3A0[(a >> 1) & 0xFFF].c;
     return d;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_67", func_80098968);
-#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_67", func_800989DC);
 
