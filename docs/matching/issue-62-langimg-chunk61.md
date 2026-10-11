@@ -12,7 +12,7 @@ What's here:
 
 One file, `src/langimg/chunk_61.cpp`, 0x8008B208-0x8008D168.
 
-23 functions: 11 match, 3 are parked, 9 are still asm.
+23 functions: 13 match, 1 is parked, 9 are still asm.
 
 ## The settings
 
@@ -36,8 +36,13 @@ globals.
   and that read follows the store order. The permuter found it.
 - **A mask in a local.** `func_8008C678` tests a bit `1 << b` in each
   zone. Written in the test, GCC turned it into `(m >> b) & 1`; with
-  the mask in a local before the loop, it's an `and`, as in the
-  original. The function stays parked on its registers.
+  the mask in a local, it's an `and`, as in the original. It matched
+  with that local declared inside the loop's body (GCC still computes it
+  once, before the loop); declared before the loop, the registers
+  differed. The permuter found where.
+- **Two sums the other way round.** `func_8008CE34`'s scroll step adds to
+  `m_10` before `m_14`, though it stores `m_14` first; written in the
+  store order, the registers differed (the permuter).
 - **A clean build that wasn't.** One `make clean && make` here linked the
   sound library's `chunk_00` four bytes off (`func_80011924` at
   0x80011928); the next clean build didn't. The same thing happened once
@@ -52,11 +57,11 @@ globals.
 | `func_8008BA50` | asm | 152 instructions |
 | `func_8008BCB0` | asm | 532 instructions |
 | `func_8008C500` | asm | 94 instructions |
-| `func_8008C678` | parked | the nearest zone: registers |
+| `func_8008C678` | matches | the nearest zone |
 | `func_8008C78C` | matches | seven counters stepped |
 | `func_8008C7E8`, `func_8008C808`, `func_8008C83C` | match | a layer's settings and colours |
 | `func_8008C884` | asm | 364 instructions |
-| `func_8008CE34` | parked | a layer's frame: the scroll step's registers |
+| `func_8008CE34` | matches | a layer's frame |
 | `func_8008CF58` | matches | the colours faded |
 | `func_8008D05C`, `func_8008D0A4` | match | a rectangle constructed and set |
 | `func_8008D0CC`, `func_8008D0FC` | match | pairs copied and cleared |

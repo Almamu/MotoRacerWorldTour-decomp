@@ -143,8 +143,6 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_61", func_8008BCB0);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_61", func_8008C500);
 
-#ifdef NON_MATCHING
-// The tests' order and registers: the original computes 1 << b into a saved register and tests the zone's mask first
 /* The nearest zone around v that applies to b, else the nearest. */
 Plane61 *func_8008C678(List61 *l, int a, Vec61 *v, int b) {
     u32 best = 0x7FFFFFFF;
@@ -154,9 +152,10 @@ Plane61 *func_8008C678(List61 *l, int a, Vec61 *v, int b) {
     Plane61 *p;
     Vec61 t;
     u32 d;
-    int m = 1 << b;
 
     for (p = l->m_04; p; p = p->m_54) {
+        int m = 1 << b;
+
         func_800998D0(&t, v, &p->m_0C);
         d = func_8009923C(&t);
         if (!(p->m_5C & m) && func_8008B998(p, v) == 1 && d < best) {
@@ -173,9 +172,6 @@ Plane61 *func_8008C678(List61 *l, int a, Vec61 *v, int b) {
     }
     return r;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_61", func_8008C678);
-#endif
 
 void func_8008C78C(void) {
     D_800CBDD4++;
@@ -216,8 +212,6 @@ void func_8008C83C(Zone61 *z, int *a, int *b, int *c, int *d) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_61", func_8008C884);
 
-#ifdef NON_MATCHING
-// The scroll step's registers (the shift in $a0, the sums in $a1)
 /* A frame: the colours faded, the scroll moved and wrapped. */
 void func_8008CE34(Zone61 *z) {
     int w;
@@ -239,14 +233,11 @@ void func_8008CE34(Zone61 *z) {
         h = z->m_1C * 20 / 16;
     }
     s = 16 / (D_800D6108 / 60);
-    z->m_14 += z->m_0C << s;
     z->m_10 += z->m_08 << s;
+    z->m_14 += z->m_0C << s;
     z->m_10 &= w - 1;
     z->m_14 %= h;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_61", func_8008CE34);
-#endif
 
 /* The colours faded from one set to the other. */
 void func_8008CF58(Zone61 *z) {
