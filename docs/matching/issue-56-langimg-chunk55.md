@@ -24,9 +24,8 @@ globals from `D_800C89D0` on.
 - **`char` is unsigned** (the techniques doc has it). Written with
   `char`, the mappings cut the argument with `andi 0xFF`; the original
   sign-extends it, so they take an `s8`.
-- **An `if` chain, not a switch.** The mappings test each character in
-  turn. A switch over the digits would have been a jump table; an
-  `if`/`else if` chain matched.
+- **An `if` chain.** The mappings test each character in turn, as an
+  `if`/`else if` chain.
 - **The table in a local.** `func_8007F2C8` looks for a pair in a table
   of 4-byte entries. With the table read through `t->m_18[i]`, GCC's
   three walking pointers came out in other registers. With the table in
