@@ -28,6 +28,37 @@ struct Spr55 {
     u16 m_0A;
 };
 
+// A font: its glyphs' first and count, spacing, a space's width
+struct Glyph55 {
+    u8 m_00;
+    u8 m_01;
+    u8 m_02; // its width
+    u8 m_03;
+};
+struct Font55 {
+    u8 m_00;
+    u8 m_01; // how many
+    u8 m_02; // the first
+    u8 m_03;
+    s8 m_04; // the spacing
+    u8 m_05;
+    u8 m_06; // a space's width
+    u8 m_07[0x11];
+    Glyph55 m_18[1];
+};
+// An icon: its left and right
+struct Icon55 {
+    u8 m_00;
+    u8 m_01[3];
+    u8 m_04;
+};
+
+extern Icon55 *D_800CC030[];
+extern int D_800C89E0; // the spacing, or -1 for the font's
+extern u8 D_800C89D4;
+extern u8 D_800C89D5;
+extern int D_800C89D8;
+extern int D_800C89DC;
 extern int D_800C89D0;
 extern int D_800C89EC;
 extern int D_800C89F0;
@@ -46,6 +77,10 @@ void func_8007F2AC(Spr55 *p, u16 a, u16 b);
 int func_8007F2C8(Tab55 *t, u8 a, u8 b);
 void func_80080678(void);
 int func_80080F30(void);
+int func_800803C4(Font55 *f, u8 *s);
+int func_800804B8(s8 c);
+int func_80080598(s8 c);
+void func_80080F8C(void);
 Map55 *func_8008106C(Map55 *m);
 void func_8008107C(Map55 *m, int f);
 void func_800810C0(Map55 *m);
@@ -90,11 +125,118 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_55", func_8007F948);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_55", func_80080040);
 
+#ifdef NON_MATCHING
+// The loop isn't one to GCC in the original (no constant hoisted, the test at the bottom): a goto gives that shape, but the start and the registers differ
+/* A string's width: glyphs, spaces, a skipped code, icons. */
+int func_800803C4(Font55 *f, u8 *s) {
+    int w;
+    int c;
+    int first;
+    int last;
+    int sp;
+    int space;
+
+    if (!s || !*s) {
+        return 0;
+    }
+    w = 0;
+    space = f->m_06;
+    first = f->m_02;
+    last = first + f->m_01 - 1;
+    sp = f->m_04;
+    if (D_800C89E0 != -1) {
+        sp = D_800C89E0;
+    }
+    space += sp;
+    /* a loop GCC doesn't see as one: a goto */
+    goto next;
+loop:
+    if (c >= first && c <= last) {
+        w += sp;
+        w += f->m_18[c - first].m_02;
+    } else if (c == ' ') {
+        w += space;
+    } else if (c == 1) {
+        s += 3;
+    } else if (c == 2) {
+        Icon55 *i = D_800CC030[*s++];
+
+        w++;
+        w += i->m_04 - i->m_00;
+    }
+next:
+    if ((c = *s++) != 0) {
+        goto loop;
+    }
+    return w;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_55", func_800803C4);
+#endif
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_55", func_800804B8);
+/* A character's place in the font's symbols. */
+int func_800804B8(s8 c) {
+    if (c == '-') {
+        c = 0x5B;
+    } else if (c == '+') {
+        c = 0x5C;
+    } else if (c == ' ') {
+        c = 0x5D;
+    } else if (c == '0') {
+        c = 0x5E;
+    } else if (c == '1') {
+        c = 0x5F;
+    } else if (c == '2') {
+        c = 0x60;
+    } else if (c == '3') {
+        c = 0x61;
+    } else if (c == '4') {
+        c = 0x62;
+    } else if (c == '5') {
+        c = 0x63;
+    } else if (c == '6') {
+        c = 0x64;
+    } else if (c == '7') {
+        c = 0x65;
+    } else if (c == '8') {
+        c = 0x66;
+    } else if (c == '9') {
+        c = 0x67;
+    }
+    return c;
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_55", func_80080598);
+/* Back from the font's symbols. */
+int func_80080598(s8 c) {
+    if (c == 0x5B) {
+        c = '-';
+    } else if (c == 0x5C) {
+        c = '+';
+    } else if (c == 0x5D) {
+        c = ' ';
+    } else if (c == 0x5E) {
+        c = '0';
+    } else if (c == 0x5F) {
+        c = '1';
+    } else if (c == 0x60) {
+        c = '2';
+    } else if (c == 0x61) {
+        c = '3';
+    } else if (c == 0x62) {
+        c = '4';
+    } else if (c == 0x63) {
+        c = '5';
+    } else if (c == 0x64) {
+        c = '6';
+    } else if (c == 0x65) {
+        c = '7';
+    } else if (c == 0x66) {
+        c = '8';
+    } else if (c == 0x67) {
+        c = '9';
+    }
+    return c;
+}
 
 /* Up by 32 to past 128, then down by 32 to below 0. */
 void func_80080678(void) {
@@ -136,7 +278,39 @@ int func_80080F30(void) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_55", func_80080F30);
 #endif
 
+#ifdef NON_MATCHING
+// Registers: the original keeps the flags and the switch's value in $a1
+/* The colour from the mode's flags. */
+void func_80080F8C(void) {
+    u8 f = D_800C89D4;
+    int c = D_800C89D8;
+
+    if (f & 8) {
+        c &= (f & 4) ? 0x2FFFFFF : 0xFFFFFF;
+    } else if (f & 4) {
+        f = D_800C89D5;
+        c = (f << 16) | ((f << 8) | 0x66000000) | f;
+    } else {
+        switch (f & 3) {
+        case 0:
+            c = (D_800C89D5 << 16) | (D_800C89D5 << 8) | D_800C89D5;
+            break;
+        case 1:
+            c = D_800C89D5;
+            break;
+        case 2:
+            c = D_800C89D5 << 8;
+            break;
+        case 3:
+            c = D_800C89D5 << 16;
+            break;
+        }
+    }
+    D_800C89DC = c;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_55", func_80080F8C);
+#endif
 
 Map55 *func_8008106C(Map55 *m) {
     m->m_00 = 0;
