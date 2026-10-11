@@ -20,15 +20,23 @@ struct Hud57 {
     int m_84[2];
 };
 
-// Two texts
+// Two texts, and a value each slid from one to another
 struct Txt57 {
-    u8 m_00[0x18];
-    struct {
-        u8 m_00;
-        u8 m_01[0x1F];
-    } m_18[2];
-    short m_58[2];
+    u8 m_00[2];
+    u8 m_02[2];
+    short m_04[2]; // from
+    short m_08[2]; // to
+    u8 m_0C[4];
+    short m_10[2]; // now
+    u8 m_14[4];
+    char m_18[2][0x20];
+    short m_58[2]; // the countdown
 };
+
+// A word stored anywhere
+struct UInt57 {
+    int v;
+} __attribute__((packed));
 
 // A node: its parent, its values, which it has, how many
 struct Node57 {
@@ -81,6 +89,7 @@ struct Disp57 {
 
 extern Time57 D_800D6124; // the clock
 extern u32 D_800D60FC;
+extern int D_800D6100; // the frame's length
 extern int D_800CBD30;
 extern int D_800CBD30_w[] asm("D_800CBD30"); // the same words, by index
 extern Msg57 D_800C73F8[];
@@ -108,18 +117,91 @@ void func_8008422C(Node57 *n);
 int func_800846AC(int a, int b, int c, int d, int e, int f);
 void func_800846FC(void);
 void func_80084D58(void);
+int func_800A5CD0(u32 ms, int *m, int *sec, int *cs);
+char *func_800A6000(char *p, int v, int n, int pad);
+void func_80083380(Txt57 *t, int i, int v, int c);
+void func_8008350C(Txt57 *t, int i);
 }
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_57", func_800831BC);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_57", func_80083380);
+/* A time written into text i: a colour code, minutes, seconds and
+ * hundredths (and a symbol when under a minute). */
+#ifdef NON_MATCHING
+// Registers: the original keeps the time in $a0 and the minutes in $a1, and stores the colour code through $t0
+void func_80083380(Txt57 *t, int i, int v, int c) {
+    char *p = t->m_18[i];
+    int col;
+    int m;
+    int sec;
+    int cs;
 
+    t->m_00[i] = 0;
+    if (v < 0) {
+        v = -v;
+        col = 0xFF;
+    } else {
+        col = 0xFF00;
+    }
+    if (func_800A5CD0(v, &m, &sec, &cs)) {
+        if (m >= 60) {
+            m = 59;
+        }
+        if (m == 0) {
+            ((UInt57 *)p)->v = -0xFF;
+            p += 4;
+            *p++ = c;
+            *p++ = ' ';
+            *p++ = ' ';
+        }
+        ((UInt57 *)p)->v = (col << 8) | 1;
+        p += 4;
+        if (m > 0) {
+            p = func_800A6000(p, m, 1, '0');
+            *p++ = ' ';
+            *p++ = ':';
+            *p++ = ' ';
+        }
+        p = func_800A6000(p, sec, 2, '0');
+        *p++ = ' ';
+        *p++ = ':';
+        *p++ = ' ';
+        p = func_800A6000(p, cs, 2, '0');
+        t->m_58[i] = 0xC1C;
+    }
+    *p = 0;
+}
+#else
+INCLUDE_ASM("asm/langimg/nonmatchings/chunk_57", func_80083380);
+#endif
+
+#ifdef NON_MATCHING
+// The original has a 16-byte frame it doesn't use, and reads the countdown both signed and unsigned
+/* Value i slid back, then forward, as its countdown runs. */
+void func_8008350C(Txt57 *t, int i) {
+    int n = t->m_58[i];
+    int pad[4];
+
+    if (n < 0) {
+        return;
+    }
+    t->m_58[i] -= D_800D6100;
+    if (n >= 2800) {
+        t->m_10[i] = t->m_08[i] + ((t->m_04[i] - t->m_08[i]) * (((n - 2800) << 12) / 300) >> 12);
+    } else if (t->m_58[i] < 301) {
+        t->m_10[i] = t->m_04[i] + ((t->m_08[i] - t->m_04[i]) * ((n << 12) / 300) >> 12);
+    } else {
+        t->m_10[i] = t->m_08[i];
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_57", func_8008350C);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_57", func_80083618);
 
 void func_8008386C(Txt57 *t, int i) {
-    t->m_18[i].m_00 = 0;
+    t->m_18[i][0] = 0;
     t->m_58[i] = -1;
 }
 
