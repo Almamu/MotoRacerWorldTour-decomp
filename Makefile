@@ -177,7 +177,10 @@ langimg.chunk_22_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=
 langimg.chunk_57_GCC  := 2.91.66-psx
 langimg.chunk_57_CFLAGS :=
 langimg.chunk_57_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=D_800CBD24,D_800CBD26,D_800CBD28,D_800CBD29,D_800CBD30,D_800CBD3C,D_800CBD40,D_800CBD48,D_800CBD4A,D_800CBD4C,D_800CBD4E,D_800CBD58,D_800CBD5C
-CHUNK_SETTINGS := langimg.chunk_01 langimg.chunk_02 langimg.chunk_02b langimg.chunk_03 langimg.chunk_04 langimg.chunk_05 langimg.chunk_06 langimg.chunk_07 langimg.chunk_08 langimg.chunk_09 langimg.chunk_10 langimg.chunk_11 langimg.chunk_12 langimg.chunk_23 langimg.chunk_45 langimg.chunk_66 langimg.chunk_72 langimg.chunk_71 langimg.chunk_60 langimg.chunk_51 langimg.chunk_44 langimg.chunk_68 langimg.chunk_70 langimg.chunk_74 langimg.chunk_47 langimg.chunk_46 langimg.chunk_25 langimg.chunk_56 langimg.chunk_31 langimg.chunk_39 langimg.chunk_29 langimg.chunk_52 langimg.chunk_41 langimg.chunk_67 langimg.chunk_49 langimg.chunk_40 langimg.chunk_73 langimg.chunk_58 langimg.chunk_69 langimg.chunk_61 langimg.chunk_55 langimg.chunk_22 langimg.chunk_57
+langimg.chunk_50_GCC  := 2.91.66-psx
+langimg.chunk_50_CFLAGS :=
+langimg.chunk_50_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=
+CHUNK_SETTINGS := langimg.chunk_01 langimg.chunk_02 langimg.chunk_02b langimg.chunk_03 langimg.chunk_04 langimg.chunk_05 langimg.chunk_06 langimg.chunk_07 langimg.chunk_08 langimg.chunk_09 langimg.chunk_10 langimg.chunk_11 langimg.chunk_12 langimg.chunk_23 langimg.chunk_45 langimg.chunk_66 langimg.chunk_72 langimg.chunk_71 langimg.chunk_60 langimg.chunk_51 langimg.chunk_44 langimg.chunk_68 langimg.chunk_70 langimg.chunk_74 langimg.chunk_47 langimg.chunk_46 langimg.chunk_25 langimg.chunk_56 langimg.chunk_31 langimg.chunk_39 langimg.chunk_29 langimg.chunk_52 langimg.chunk_41 langimg.chunk_67 langimg.chunk_49 langimg.chunk_40 langimg.chunk_73 langimg.chunk_58 langimg.chunk_69 langimg.chunk_61 langimg.chunk_55 langimg.chunk_22 langimg.chunk_57 langimg.chunk_50
 
 # -O2; the C++ has no exceptions and no RTTI.
 CC1FLAGS    := -O2 -quiet
