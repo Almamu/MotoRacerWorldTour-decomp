@@ -52,3 +52,4 @@ issue it worked on, and add it below.
 | [issue-74-langimg-chunk73.md](issue-74-langimg-chunk73.md) | The game's chunk_73: the memory card slots; a pointer reloaded for every store, which way an idle test goes |
 | [issue-59-langimg-chunk58.md](issue-59-langimg-chunk58.md) | The game's chunk_58: a camera's moves and a buffer; four shorts copied with `lwl`/`lwr`, a gp global's neighbours through its address |
 | [issue-70-langimg-chunk69.md](issue-70-langimg-chunk69.md) | The game's chunk_69: a game object's screens; 11-byte names copied as blocks, `memcpy` called rather than inlined |
+| [issue-62-langimg-chunk61.md](issue-62-langimg-chunk61.md) | The game's chunk_61: layers, zones and copies; relocations that `try_func` can't see, a mask in a local |

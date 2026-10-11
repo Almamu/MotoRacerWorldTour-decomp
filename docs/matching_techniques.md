@@ -92,7 +92,7 @@ settings
 | `src/langimg` chunk_23 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=D_800CABB7` |
 | `src/langimg` chunk_45 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (eleven) |
 | `src/langimg` chunk_66 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (five) |
-| `src/langimg` chunk_25, chunk_29, chunk_31, chunk_39, chunk_40, chunk_41, chunk_44, chunk_46, chunk_47, chunk_49, chunk_51, chunk_52, chunk_56, chunk_58, chunk_60, chunk_67, chunk_68, chunk_69, chunk_70, chunk_71, chunk_72, chunk_73, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
+| `src/langimg` chunk_25, chunk_29, chunk_31, chunk_39, chunk_40, chunk_41, chunk_44, chunk_46, chunk_47, chunk_49, chunk_51, chunk_52, chunk_56, chunk_58, chunk_60, chunk_61, chunk_67, chunk_68, chunk_69, chunk_70, chunk_71, chunk_72, chunk_73, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_06 to chunk_12 (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_02b (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `SCES_030.37` (`src/sces`) | GCC 2.91.66 | 0 | `-fsigned-char` | `--expand-div` |
@@ -766,6 +766,14 @@ What's left once the instructions are right is usually register choice.
   `memcpy` inline when it knows the destination's type (a `u8 *` here);
   the original's call came with the destination declared `void *`
   (chunk_69, as chunk_70).
+- **A bit mask in a local.** `x & (1 << b)` in a test can come out as
+  `(x >> b) & 1`; with the mask computed into a local first (before a
+  loop), it's an `and` with the mask (chunk_61).
+- **The order of statements shows in relocations.** Two increments of gp
+  globals the other way round give the same instructions with swapped
+  `%gp_rel` relocations: `try_func` passes, `make` fails. Map the
+  differing bytes to an address (`0x80011800 + offset - 0x10` for
+  `LANGIMG.DAT`) to find the function (chunk_61, chunk_69).
 - **A chained assignment stores the inner one first.** `a = b = x;`
   stores `b`, then `a`. chunk_49's two globals were the other way round
   and the image differed in two bytes `try_func` doesn't compare (they're
