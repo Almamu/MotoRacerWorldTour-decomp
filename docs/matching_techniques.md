@@ -775,8 +775,8 @@ What's left once the instructions are right is usually register choice.
   `%gp_rel` relocations: `try_func` passes, `make` fails. Map the
   differing bytes to an address (`0x80011800 + offset - 0x10` for
   `LANGIMG.DAT`) to find the function (chunk_61, chunk_69).
-- **A redundant test as its own statement.** GCC folds `x == 8 || x !=
-  0` into `x != 0` before generating code. When the original tests both,
+- **A redundant test as its own statement.** GCC simplified `x == 8 ||
+  x != 0` to `x != 0`. When the original tests both,
   write them as two `if` statements (chunk_22).
 - **A chained assignment stores the inner one first.** `a = b = x;`
   stores `b`, then `a`. chunk_49's two globals were the other way round
