@@ -17,7 +17,7 @@ entries.
 
 One file, `src/langimg/chunk_22.cpp`, 0x8003D60C-0x8003F6B8.
 
-23 functions: 12 match, 2 are parked, 9 are still asm.
+23 functions: 13 match, 1 is parked, 9 are still asm.
 
 ## The settings
 
@@ -38,6 +38,10 @@ globals.
 - **Both branches call.** `func_8003D970` calls `func_8003FC28` with one
   of two arguments; written with the call in both branches of an `if`,
   as the original's duplicated setup shows, it matched.
+- **A `do { } while (0)` (the permuter).** `func_8003D9CC` loads its
+  index before the table's address; with the index in a local and an
+  empty `do { } while (0)` before the store, it matched. A workaround,
+  marked at the use.
 - **Packed words as bitfields.** A view's pair count (bits 28-29, signed)
   and an entry's number (10 bits) and mask (16 bits, signed, from bit
   12) are bitfields.
@@ -52,7 +56,7 @@ globals.
 | `func_8003D73C`, `func_8003D7F0` | match | a list's entry started, once |
 | `func_8003D8B4`, `func_8003D8FC` | match | the `0x100` flag set |
 | `func_8003D924`, `func_8003D970` | match | values through the table |
-| `func_8003D9CC` | parked | a slot cleared: the table's address comes first |
+| `func_8003D9CC` | matches | a slot cleared (a `do { } while (0)`) |
 | `func_8003D9EC`, `func_8003DB9C` | asm | 108 and 124 instructions |
 | `func_8003DD8C`, `func_8003DE84` | match | a key's handlers |
 | `func_8003DF7C`, `func_8003E194`, `func_8003E3AC` | asm | 129 to 134 instructions |
