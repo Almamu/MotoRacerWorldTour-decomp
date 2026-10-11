@@ -13,7 +13,7 @@ globals set or cleared together.
 
 One file, `src/langimg/chunk_57.cpp`, 0x800831BC-0x80085258.
 
-22 functions: 9 match, 4 are parked, 9 are still asm.
+22 functions: 10 match, 3 are parked, 9 are still asm.
 
 ## The settings
 
@@ -32,6 +32,8 @@ globals from `D_800CBD24` on.
   address. A second declaration without a size (chunk_58's technique)
   matched there; `func_800846AC`, which also sets them, is parked on the
   gp store's place.
+- **A call's arguments read first.** `func_80084D58` matched with the
+  window's two fields read into locals before the call (the permuter).
 - **A recursive lookup.** `func_800841BC` returns a node's value or, if
   it has none, its parent's; `func_8008422C` fills a node's missing
   values from its parents.
@@ -61,5 +63,5 @@ globals from `D_800CBD24` on.
 | `func_800846FC` | matches | the globals cleared |
 | `func_80084720` | asm | 256 instructions |
 | `func_80084B1C` | asm | 143 instructions |
-| `func_80084D58` | parked | a text drawn while bit 8 of the clock is set: the last call's loads |
+| `func_80084D58` | matches | a text drawn while bit 8 of the clock is set |
 | `func_80084E1C` | asm | 271 instructions |

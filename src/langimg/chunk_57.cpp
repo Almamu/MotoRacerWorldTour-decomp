@@ -327,8 +327,6 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_57", func_80084720);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_57", func_80084B1C);
 
-#ifdef NON_MATCHING
-// The last call's arguments: the original loads the window's two fields the other way round
 void func_80084D58(void) {
     if (D_800D6124.m_t & 0x100) {
         int font;
@@ -342,12 +340,12 @@ void func_80084D58(void) {
         }
         sprintf(&D_800D4798, D_800C8B50);
         if (func_80089354(D_800C886C->m_30, h)) {
-            func_80080040(font, &D_800D4798, D_800C8D90->m_28, D_800C8D90->m_34 / 2, 0);
+            int x = D_800C8D90->m_28;
+            int y = D_800C8D90->m_34;
+
+            func_80080040(font, &D_800D4798, x, y / 2, 0);
         }
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_57", func_80084D58);
-#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_57", func_80084E1C);
