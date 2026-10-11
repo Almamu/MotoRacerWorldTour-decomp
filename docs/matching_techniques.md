@@ -767,8 +767,9 @@ What's left once the instructions are right is usually register choice.
   the original's call came with the destination declared `void *`
   (chunk_69, as chunk_70).
 - **A bit mask in a local.** `x & (1 << b)` in a test can come out as
-  `(x >> b) & 1`; with the mask computed into a local first (before a
-  loop), it's an `and` with the mask (chunk_61).
+  `(x >> b) & 1`; with the mask computed into a local first, it's an
+  `and` with the mask. In chunk_61's loop the local had to be declared
+  inside the loop's body (GCC still computes it once, before the loop).
 - **The order of statements shows in relocations.** Two increments of gp
   globals the other way round give the same instructions with swapped
   `%gp_rel` relocations: `try_func` passes, `make` fails. Map the
