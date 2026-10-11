@@ -244,14 +244,14 @@ int func_8003D970(Game22 *g, int *sp) {
     return r;
 }
 
-#ifdef NON_MATCHING
-// The table's address: the original loads the index first
 void func_8003D9CC(Game22 *g, int *sp, int *p) {
-    D_800C4D98[*p - 1] = 0;
+    int i = *p;
+
+    // A permuter workaround: the load before the table's address
+    do {
+    } while (0);
+    D_800C4D98[i - 1] = 0;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_22", func_8003D9CC);
-#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_22", func_8003D9EC);
 
