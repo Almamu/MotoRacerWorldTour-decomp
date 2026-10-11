@@ -58,3 +58,4 @@ issue it worked on, and add it below.
 | [issue-58-langimg-chunk57.md](issue-58-langimg-chunk57.md) | The game's chunk_57: the HUD's messages; a table's entry through a pointer, a word stored anywhere |
 | [issue-51-langimg-chunk50.md](issue-51-langimg-chunk50.md) | The game's chunk_50: chunk_49's object's subclasses; two vtable stores kept, a virtual call by hand |
 | [issue-29-langimg-chunk28.md](issue-29-langimg-chunk28.md) | The game's chunk_28: static objects and a save; an object's size decides how its address is loaded |
+| [issue-20-langimg-chunk19.md](issue-20-langimg-chunk19.md) | The game's chunk_19: menus; a result variable with `break`, a choice clamped in a local |
