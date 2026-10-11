@@ -194,7 +194,7 @@ void func_8009E01C(Scr69 *s, int *a, int b, void *c, int d);
 void func_8003B600(Game69 *o, u8 *p, int n, int a, int b, int c);
 void func_8004ADB0(void);
 void func_8004AFBC(void);
-void func_8006CA84(int a, int b);
+int func_8006CA84(int id, int a); // returns a handle (chunk_71)
 void func_800792DC(Gfx69 *g);
 void func_8009C3BC(View69 *v, int a);
 void func_8009D804(Scr69 *s);
@@ -466,8 +466,6 @@ void func_8009CD24(Game69 *o) {
     func_8009E01C(sc, &D_800C94C8, 0, D_800BC884, 0x15AC);
 }
 
-#ifdef NON_MATCHING
-// The flags' register at the end: $v0 and $v1 swap
 void func_8009CD78(Game69 *o) {
     View69 *v;
     Scr69 *sc;
@@ -499,9 +497,6 @@ void func_8009CD78(Game69 *o) {
     o->m_A94 |= 0x40;
     func_8006CA84(12, 0x7F);
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_69", func_8009CD78);
-#endif
 
 void func_8009CEAC(Game69 *o, int s) {
     Pad69 *p = o->m_A98;

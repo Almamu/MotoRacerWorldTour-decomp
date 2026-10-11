@@ -16,7 +16,7 @@ one). Through its two views (`m_A80`, `m_A84`, chosen by the mode at
 
 One file, `src/langimg/chunk_69.cpp`, 0x8009B17C-0x8009D0E4.
 
-23 functions: 13 match, 3 are parked, 7 are still asm.
+23 functions: 14 match, 2 are parked, 7 are still asm.
 
 ## The settings
 
@@ -35,6 +35,10 @@ global.
 - **`memcpy` called, not inlined.** With `D_800BC884` declared as a
   `u8 *`, GCC expanded the 0x15AC-byte `memcpy` inline. Declared as a
   `void *` (as chunk_70 does), it's a call, as in the original.
+- **A callee's result, unused.** `func_8009CD78` ends with a call to
+  `func_8006CA84`, which returns a handle (chunk_71 keeps it). Declared
+  `void`, two registers swapped before the call; declared returning
+  `int`, it matched (the permuter found it).
 - **A record's address kept.** `func_8009CB04` and `func_8009C9A4` keep
   `&o->m_A9C->m_08` in one saved register and store its first field
   through it. GCC folds that first store into `m_A9C + 8` and keeps both
@@ -66,6 +70,6 @@ global.
 | `func_8009CC38` | matches | a buffer passed to `func_80087468` |
 | `func_8009CCEC` | matches | a timer reset |
 | `func_8009CD24` | matches | the 0x15AC-byte block passed on |
-| `func_8009CD78` | parked | the block copied back: two registers swap at the end |
+| `func_8009CD78` | matches | the block copied back |
 | `func_8009CEAC` | matches | three slots reset |
 | `func_8009CF14` | asm | 122 instructions |
