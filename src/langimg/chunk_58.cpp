@@ -80,7 +80,6 @@ extern int D_800CBD30;
 extern int D_800CBD34;
 extern int D_800CBD3C;
 extern int D_800CBD44;
-extern int D_800CBD30_w[] asm("D_800CBD30"); // the same words, by index
 extern int D_800CBCE0;
 extern int D_800C8A7C;
 extern Ent58 D_800CBD68; // five
@@ -200,20 +199,17 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_58", func_80086424);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_58", func_800865B4);
 
-#ifdef NON_MATCHING
-// Two -1 stores through the address of a gp global: $v0 and $v1 swap
 void func_800869E4(void) {
+    int *w = &D_800CBD30;
+
     D_800CBD30 = 0;
     D_800CBD34 = 0;
-    D_800CBD30_w[2] = -1;
+    w[2] = -1;
     D_800CBD3C = 0;
-    D_800CBD30_w[4] = -1;
+    w[4] = -1;
     D_800CBD44 = 0;
     func_80019F0C(&D_800CBCE0, &D_800C8A7C);
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_58", func_800869E4);
-#endif
 
 int func_80086A38(Buf58 *b, int i) {
     return ((int *)b->m_08)[i];
