@@ -52,6 +52,34 @@ struct Obj50 {
     int m_9C;
 };
 
+// A node of the track: its next, and its position
+struct Node50 {
+    struct Node50 *m_00;
+    struct Node50 *m_04;
+    u8 m_08[0xC];
+    Vec50 *m_14;
+};
+
+struct Mat50 {
+    short m[3][3];
+    short pad;
+    Vec50 t;
+};
+
+// A subclass that follows the track
+struct Trk50 {
+    u8 m_00[0x28];
+    Node50 *m_28;
+    Node50 *m_2C;
+    u8 m_30[8];
+    Vec50 m_38; // its direction
+    u8 m_44[0x18];
+    Vec50 m_5C;
+    Vec50 m_68;
+    u8 m_74[0x20];
+    int m_94;
+};
+
 struct Pad50 {
     u8 m_00[4];
     int m_04;
@@ -72,6 +100,12 @@ Obj50 *func_80074D30(Obj50 *o);
 void func_80074D78(Obj50 *o, int f);
 void func_80075058(Obj50 *o);
 Obj50 *func_80075440(void);
+Vec50 *func_800998D0(Vec50 *d, Vec50 *a, Vec50 *b);
+int func_80099DF8(Vec50 *a, Vec50 *b);
+Mat50 *func_80097D08(Mat50 *m, Vec50 *a, Vec50 *b);
+void func_80099D48(Vec50 *v, int s);
+void func_80075468(Trk50 *o, Mat50 *out, Vec50 *a, Vec50 *b);
+void func_800758F4(Trk50 *o);
 void func_80076390(Obj50 *o);
 void func_80076420(Obj50 *o);
 Obj50 *func_80076468(Obj50 *o);
@@ -97,11 +131,54 @@ Obj50 *func_80075440(void) {
     return func_80074D30((Obj50 *)operator new(0x20));
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_50", func_80075468);
+/* A matrix looking from a to b (or along the last direction). */
+void func_80075468(Trk50 *o, Mat50 *out, Vec50 *a, Vec50 *b) {
+    Vec50 z;
+    Vec50 d;
+    Vec50 *pz = &z;
+    Vec50 *pd = &d;
+
+    pz->x = 0;
+    pz->y = 0;
+    pz->z = 0;
+    func_800998D0(pd, b, a);
+    if (func_80099DF8(pd, pz)) {
+        VecCopyL50(&d, &o->m_38);
+    }
+    if (!func_80099DF8(pd, pz)) {
+        Mat50 m;
+
+        func_80097D08(&m, pz, pd);
+        *out = m;
+        o->m_94 = (o->m_94 & ~0xF00) | 0x100;
+    }
+    VecCopyL50(&o->m_38, &d);
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_50", func_80075588);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_50", func_800758F4);
+/* Its two directions along the track, normalized. */
+void func_800758F4(Trk50 *o) {
+    Node50 *a = o->m_28;
+    Node50 *b = o->m_2C;
+    Node50 *c = b->m_00;
+    Vec50 p0;
+    Vec50 p1;
+    Vec50 p2;
+    Vec50 p3;
+    Vec50 t;
+
+    VecCopyL50(&p0, a->m_04->m_14);
+    VecCopyL50(&p1, a->m_14);
+    VecCopyL50(&p2, b->m_14);
+    VecCopyL50(&p3, c->m_14);
+    func_800998D0(&t, &p2, &p0);
+    VecCopyL50(&o->m_5C, &t);
+    func_800998D0(&t, &p3, &p1);
+    VecCopyL50(&o->m_68, &t);
+    func_80099D48(&o->m_5C, 1);
+    func_80099D48(&o->m_68, 1);
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_50", func_80075A1C);
 
