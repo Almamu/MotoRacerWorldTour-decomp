@@ -1,30 +1,301 @@
 #include "common.h"
 
+// An entry of a list: its kind, its owner, the next, a name and values
+struct Item19 {
+    int m_00; // its kind: 3
+    int m_04; // whose
+    struct Item19 *m_08;
+    char m_0C[0x20];
+    s8 m_2C;
+    s8 m_2D;
+    s8 m_2E;
+    s8 m_2F;
+    u8 m_30;
+    s8 m_31; // the second value is used
+    s8 m_32;
+    u8 m_33;
+    void *m_34;
+};
+
+struct Char19 {
+    int m_00;
+    u8 m_04[8];
+    char *m_0C; // the letters
+    u8 m_10;    // which
+    u8 m_11;
+    u8 m_12; // a letter
+    u8 m_13;
+};
+
+struct Slot19 {
+    u8 m_00[4];
+    int m_04;
+    u8 m_08[8];
+    Char19 *m_10;
+    u8 m_14[0x44];
+    Char19 *m_58;
+};
+
+// A menu: its kind, its flags, its slot, its list, a choice
+struct Menu19 {
+    short m_00;
+    u16 m_02;
+    u8 m_04[0x24];
+    Slot19 *m_28;
+    Item19 *m_2C;
+    u8 m_30[0xE];
+    s8 m_3E;
+    s8 m_3F;
+    u8 m_40[0xC];
+    int m_4C; // how many
+    int m_50; // which
+    u8 m_54[4];
+    u8 m_58;
+};
+
+struct View19 {
+    u8 m_00[0x2E];
+    s8 m_2E;
+};
+
+struct Game19 {
+    u8 m_00[0xA80];
+    View19 *m_A80;
+    u8 m_A84[0xC];
+    int m_A90;
+};
+
+struct Own19 {
+    u8 m_00[0x28];
+    Slot19 *m_28;
+};
+
+struct Tab19 {
+    u8 m_00[8];
+    short m_08;
+    u8 m_0A[2];
+    Menu19 **m_0C;
+};
+
+struct Res19 {
+    u8 m_00[0x28];
+    u8 *m_28;
+};
+
+extern "C" {
+void func_8003FC28(void *o, int i, int j);
+Res19 *func_8003AA90(void *v, char *name);
+int func_80097128(void *p);
+void func_800383D8(Menu19 *m, int i, Game19 *g, Item19 *it);
+int func_800804B8(s8 c);
+void func_80038BBC(Tab19 *t, Game19 *g);
+void func_80038CE4(Tab19 *t, Game19 *g);
+void func_80038504(Menu19 *e, void *a);
+int func_80037C80(Menu19 *m);
+int func_80037CF8(Menu19 *m);
+int func_80037D58(Menu19 *m, int v);
+u8 *func_80037DC8(Menu19 *m, void *v);
+void func_80038168(Menu19 *m, int k);
+void func_80038218(Own19 *o);
+void func_8003828C(Own19 *o);
+void func_80038300(Menu19 *m, Game19 *a);
+void func_80038370(Menu19 *m, Game19 *a);
+void func_80038B24(Tab19 *t, void *a);
+}
+
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_19", func_8003762C);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_19", func_8003781C);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_19", func_80037C80);
+int func_80037C80(Menu19 *m) {
+    int r = 0;
+    Item19 *p;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_19", func_80037CF8);
+    for (p = m->m_2C; p; p = p->m_08) {
+        if (p->m_04 == 0 && p->m_00 == 3) {
+            if (p->m_31) {
+                r = p->m_2E;
+            } else {
+                r = p->m_2C;
+            }
+            break;
+        }
+    }
+    return r;
+}
 
+int func_80037CF8(Menu19 *m) {
+    int r = 0;
+    Item19 *p;
+
+    for (p = m->m_2C; p; p = p->m_08) {
+        if (p->m_04 == 1 && p->m_00 == 3) {
+            r = p->m_2C;
+            break;
+        }
+    }
+    return r;
+}
+
+#ifdef NON_MATCHING
+// Registers: the result and the constant 3 swap ($a0, $a2)
+int func_80037D58(Menu19 *m, int v) {
+    int r = 0;
+    Item19 *p;
+
+    for (p = m->m_2C; p; p = p->m_08) {
+        if (p->m_04 == 0 && p->m_00 == 3) {
+            if (p->m_31) {
+                p->m_2E = v;
+            } else {
+                p->m_2C = v;
+            }
+            r = 1;
+            break;
+        }
+    }
+    return r;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_19", func_80037D58);
+#endif
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_19", func_80037DC8);
+u8 *func_80037DC8(Menu19 *m, void *v) {
+    u8 *r = 0;
+    Item19 *p;
+
+    for (p = m->m_2C; p; p = p->m_08) {
+        if (p->m_04 == 0 && p->m_00 == 3) {
+            Res19 *x = func_8003AA90(v, p->m_0C);
+
+            if (x) {
+                r = x->m_28 + p->m_2C * 32;
+                break;
+            }
+        }
+    }
+    return r;
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_19", func_80037E70);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_19", func_80038168);
+void func_80038168(Menu19 *m, int k) {
+    Item19 *p;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_19", func_80038218);
+    for (p = m->m_2C; p; p = p->m_08) {
+        if (p->m_04 == k && p->m_00 == 3) {
+            if (!p->m_34) {
+                return;
+            }
+            if (p->m_31) {
+                int v = func_80097128(p->m_34);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_19", func_8003828C);
+                p->m_2E = v;
+                p->m_2C = v;
+                p->m_32 = 1;
+            } else {
+                p->m_2C = func_80097128(p->m_34);
+            }
+            return;
+        }
+    }
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_19", func_80038300);
+/* The letter stepped up, from 'A' to 'g'. */
+void func_80038218(Own19 *o) {
+    Slot19 *s = o->m_28;
+    Char19 *c;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_19", func_80038370);
+    if (s->m_04 & 1) {
+        c = s->m_10;
+    } else {
+        c = s->m_58;
+    }
+    if ((c->m_00 & 0x40007) == 1) {
+        if (++c->m_12 >= 0x68) {
+            c->m_12 = 0x41;
+        }
+    }
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_19", func_800383D8);
+/* The letter stepped down. */
+void func_8003828C(Own19 *o) {
+    Slot19 *s = o->m_28;
+    Char19 *c;
+
+    if (s->m_04 & 1) {
+        c = s->m_10;
+    } else {
+        c = s->m_58;
+    }
+    if ((c->m_00 & 0x40007) == 1) {
+        if (--c->m_12 < 0x41) {
+            c->m_12 = 0x67;
+        }
+    }
+}
+
+void func_80038300(Menu19 *m, Game19 *a) {
+    m->m_50++;
+    func_8003FC28(a, 2, m->m_3E);
+    {
+        int i = m->m_50;
+
+        if (i >= m->m_4C) {
+            i = -1;
+        }
+        func_800383D8(m, i, a, 0);
+    }
+}
+
+void func_80038370(Menu19 *m, Game19 *a) {
+    if (--m->m_50 >= 0) {
+        func_800383D8(m, m->m_50, a, 0);
+        func_8003FC28(a, 3, m->m_3F);
+    } else {
+        m->m_50 = 0;
+    }
+}
+
+/* Choice i of the menu shown (or none, for -1). */
+void func_800383D8(Menu19 *m, int i, Game19 *g, Item19 *it) {
+    Slot19 *s = m->m_28;
+    Char19 *c;
+
+    if (s->m_04 & 1) {
+        c = s->m_10;
+    } else {
+        c = s->m_58;
+    }
+    if (i != -1) {
+        if (!g) {
+            return;
+        }
+        if (g->m_A90 != 0 && g->m_A90 != 2 && g->m_A90 != 5) {
+            return;
+        }
+        m->m_50 = i;
+        if (it) {
+            it->m_2E = 5;
+        } else {
+            g->m_A80->m_2E = 5;
+        }
+        c->m_00 |= 0x800000;
+        c->m_10 = i;
+        c->m_13 = m->m_58;
+        c->m_12 = func_800804B8(c->m_0C[i]);
+    } else if (c->m_00 & 0x800000) {
+        if (it) {
+            it->m_2E = 0;
+        } else if (g) {
+            g->m_A80->m_2E = 0;
+        }
+        c->m_00 &= ~0x800000;
+        c->m_10 = 0;
+        c->m_11 = 0;
+        m->m_50 = -1;
+    }
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_19", func_80038504);
 
@@ -34,11 +305,71 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_19", func_80038828);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_19", func_8003899C);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_19", func_80038B24);
+void func_80038B24(Tab19 *t, void *a) {
+    int i;
 
+    for (i = 0; i < t->m_08; i++) {
+        Menu19 *e = t->m_0C[i];
+
+        if (e->m_00 == 4) {
+            func_80038504(e, a);
+        }
+    }
+}
+
+#ifdef NON_MATCHING
+// The original hoists its three constants into saved registers and reads the slot's flags twice
+void func_80038BBC(Tab19 *t, Game19 *g) {
+    int i;
+
+    for (i = 0; i < t->m_08; i++) {
+        Menu19 *e = t->m_0C[i];
+
+        if (e->m_02 & 0xF && e->m_00 == 5) {
+            Slot19 *s = e->m_28;
+            Char19 *c;
+
+            if (s->m_04 & 1) {
+                c = s->m_10;
+            } else {
+                c = s->m_58;
+            }
+            if (s->m_04 & 2 && c->m_00 & 0x400000 && e->m_50 != -1) {
+                func_80038300(e, g);
+            }
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_19", func_80038BBC);
+#endif
 
+#ifdef NON_MATCHING
+// The original hoists its three constants into saved registers and reads the slot's flags twice
+void func_80038CE4(Tab19 *t, Game19 *g) {
+    int i;
+
+    for (i = 0; i < t->m_08; i++) {
+        Menu19 *e = t->m_0C[i];
+
+        if (e->m_02 & 0xF && e->m_00 == 5) {
+            Slot19 *s = e->m_28;
+            Char19 *c;
+
+            if (s->m_04 & 1) {
+                c = s->m_10;
+            } else {
+                c = s->m_58;
+            }
+            if (s->m_04 & 2 && c->m_00 & 0x400000 && e->m_50 != -1) {
+                func_80038370(e, g);
+            }
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_19", func_80038CE4);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_19", func_80038E0C);
 

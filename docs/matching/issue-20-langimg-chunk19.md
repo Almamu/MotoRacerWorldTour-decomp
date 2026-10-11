@@ -1,0 +1,55 @@
+# The game's chunk_19: menus (#20)
+
+A menu (`Menu19`) and its list of entries (`Item19`, a linked list of
+kind, owner, name and values):
+- an entry of kind 3 found by owner, its value read or set (the second
+  value when its flag is set), or a named list's 32-byte entry from it;
+- an entry's value refreshed from `func_80097128`;
+- a choice moved up or down and shown, or cleared (`func_800383D8`:
+  the slot's letter set from the choice through chunk_55's
+  `func_800804B8`);
+- a slot's letter stepped through `'A'`-`'g'`;
+- a table of menus walked for those of a kind.
+
+One file, `src/langimg/chunk_19.cpp`, 0x8003762C-0x800394D8.
+
+23 functions: 10 match, 3 are parked, 10 are still asm.
+
+## The settings
+
+GCC 2.91.66, `-G8`, split addresses, divisions without checks, no small
+globals.
+
+## Notes
+
+- **A result variable and `break`.** The lookups keep their result in
+  `$a0`, set to 0 before the loop, and return it after: `int r = 0; for
+  (...) { if (...) { r = ...; break; } } return r;`. With `return`
+  inside the loop, GCC folded the variable away.
+- **A choice clamped in a local.** `func_80038300` passes the choice or
+  -1; a local set and then reset (`i = m->m_50; if (i >= m->m_4C) i =
+  -1;`) matched where a conditional expression didn't.
+- **The next and previous handlers.** `func_80038BBC` and
+  `func_80038CE4` keep three constants in saved registers and read the
+  slot's flags twice; written plainly GCC reads them once and doesn't
+  hoist. Parked.
+
+## The functions
+
+| Function | State | Notes |
+|---|---|---|
+| `func_8003762C`, `func_8003781C` | asm | 124 and 288 instructions |
+| `func_80037C80`, `func_80037CF8` | match | an entry's value |
+| `func_80037D58` | parked | an entry's value set: two registers swap |
+| `func_80037DC8` | matches | a named list's entry |
+| `func_80037E70` | asm | 190 instructions |
+| `func_80038168` | matches | an entry's value refreshed |
+| `func_80038218`, `func_8003828C` | match | a letter stepped |
+| `func_80038300`, `func_80038370` | match | the choice moved |
+| `func_800383D8` | matches | a choice shown or cleared |
+| `func_80038504` | asm | 108 instructions |
+| `func_800386B4`, `func_80038828`, `func_8003899C` | asm | 93 to 98 instructions |
+| `func_80038B24` | matches | a table's menus of kind 4 |
+| `func_80038BBC`, `func_80038CE4` | parked | the next and previous handlers |
+| `func_80038E0C`, `func_80038F44` | asm | 78 instructions |
+| `func_8003907C` | asm | 279 instructions |
