@@ -26,20 +26,16 @@ struct Cam58 {
     u8 m_04[4];
     short m_08;
     short m_0A;
-    SVec58 m_0C;
-    int m_14;
-    u8 m_18[0xC];
-    short m_24;
-    u8 m_26[2];
-    int m_28;
-    int m_2C;
-    int m_30;
-    u8 m_34[0xC];
-    SVec58 m_40;
-    SVec58 m_48;
-    int m_50;
-    int m_54;
-    short m_58;
+    SVec58 m_0C; // where it is
+    SVec58 m_14; // where it looks
+    SVec58 m_1C; // from
+    SVec58 m_24; // to
+    u8 m_2C[0x14];
+    SVec58 m_40; // from
+    SVec58 m_48; // to
+    int m_50;    // when it started
+    int m_54;    // how long it takes
+    short m_58;  // how far along, in 4096ths
 };
 
 // A camera's settings (0x34 bytes)
@@ -99,6 +95,7 @@ void func_80085258(void);
 void func_80085888(Set58 *c, int b);
 void func_80086350(Cam58 *c, SVec58 *v);
 void func_800863CC(Cam58 *c, SVec58 *v, int a);
+void func_80086424(Cam58 *c);
 void func_800869E4(void);
 int func_80086A38(Buf58 *b, int i);
 void func_80086A50(Pt58 *c, int a, int b);
@@ -162,7 +159,44 @@ void func_800863CC(Cam58 *c, SVec58 *v, int a) {
     c->m_58 = 0;
 }
 
+#ifdef NON_MATCHING
+// Registers: the products and the stores interleave differently
+/* The camera moved along: both pairs interpolated by the time elapsed. */
+void func_80086424(Cam58 *c) {
+    int t = D_800D60EC - c->m_50;
+    int n;
+    int r = 0;
+    int f;
+    int d0, d1, d2, d3, d4, d5, d6, d7;
+
+    if (t >= 0) {
+        n = c->m_54;
+        r = n < t ? n : t;
+    } else {
+        n = c->m_54;
+    }
+    f = (r << 12) / n;
+    d0 = (c->m_48.x - c->m_40.x) * (short)f;
+    d1 = (c->m_48.y - c->m_40.y) * (short)f;
+    d2 = (c->m_48.z - c->m_40.z) * (short)f;
+    d3 = (c->m_48.pad - c->m_40.pad) * (short)f;
+    d4 = (c->m_24.x - c->m_1C.x) * (short)f;
+    d5 = (c->m_24.y - c->m_1C.y) * (short)f;
+    d6 = (c->m_24.z - c->m_1C.z) * (short)f;
+    d7 = (c->m_24.pad - c->m_1C.pad) * (short)f;
+    c->m_58 = f;
+    c->m_0C.x = c->m_40.x + (d0 >> 12);
+    c->m_0C.y = c->m_40.y + (d1 >> 12);
+    c->m_0C.z = c->m_40.z + (d2 >> 12);
+    c->m_0C.pad = c->m_40.pad + (d3 >> 12);
+    c->m_14.x = c->m_1C.x + (d4 >> 12);
+    c->m_14.y = c->m_1C.y + (d5 >> 12);
+    c->m_14.z = c->m_1C.z + (d6 >> 12);
+    c->m_14.pad = c->m_1C.pad + (d7 >> 12);
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_58", func_80086424);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_58", func_800865B4);
 
