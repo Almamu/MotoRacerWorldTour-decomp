@@ -50,3 +50,4 @@ issue it worked on, and add it below.
 | [issue-50-langimg-chunk49.md](issue-50-langimg-chunk49.md) | The game's chunk_49: a pool of entries and its owner; a C++ destructor by its mangled name, a chained assignment's order |
 | [issue-41-langimg-chunk40.md](issue-41-langimg-chunk40.md) | The game's chunk_40: a bike's object's base class; zeroing last field first, a table of pairs through two symbols |
 | [issue-74-langimg-chunk73.md](issue-74-langimg-chunk73.md) | The game's chunk_73: the memory card slots; a pointer reloaded for every store, which way an idle test goes |
+| [issue-59-langimg-chunk58.md](issue-59-langimg-chunk58.md) | The game's chunk_58: a camera's moves and a buffer; four shorts copied with `lwl`/`lwr`, a gp global's neighbours through its address |
