@@ -37,8 +37,8 @@ extern int D_800CB1BC; // how many times each was constructed
 extern int D_800CAFAC;
 extern int D_800CAFA8;
 extern int D_800CAE90;
-extern Snd28 D_800CAFB8[2];
-extern Snd28 D_800CB02C;
+extern int D_800CAFB8; // two Snd28: declared small, so its address is an la
+extern int D_800CB02C; // the second
 extern int D_800CB0A0;
 extern int D_800CBC94;
 extern char *D_800C9E94; // names, by number
@@ -115,15 +115,13 @@ char *func_800499DC(int i) {
     return &D_800D4798;
 }
 
-#ifdef NON_MATCHING
-// The original loads the objects' addresses as if without split addresses (one register); see the write-up
 /* The static objects destroyed, the last time. */
 void func_80049A24(void) {
     if (--D_800CAFA8 == 0) {
-        Snd28 *b = D_800CAFB8;
+        Snd28 *b = (Snd28 *)&D_800CAFB8;
 
         if (b) {
-            Snd28 *p = &D_800CAFB8[2];
+            Snd28 *p = (Snd28 *)&D_800CB0A0;
 
             while (p != b) {
                 p--;
@@ -138,12 +136,7 @@ void func_80049A24(void) {
         func_8006FCAC(&D_800CAE90, 2);
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_28", func_80049A24);
-#endif
 
-#ifdef NON_MATCHING
-// Matches when built without split addresses (-mno-split-addresses), but the chunk's other functions need them; see the write-up
 /* The static objects constructed, the first time. */
 void func_80049AE8(void) {
     if (++D_800CB1BC == 1) {
@@ -153,7 +146,7 @@ void func_80049AE8(void) {
         func_8006FC70(&D_800CB0A0);
     }
     if (++D_800CAFA8 == 1) {
-        Snd28 *p = D_800CAFB8;
+        Snd28 *p = (Snd28 *)&D_800CAFB8;
         int i;
 
         for (i = 1; i != -1; i--) {
@@ -162,9 +155,6 @@ void func_80049AE8(void) {
         }
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_28", func_80049AE8);
-#endif
 
 #ifdef NON_MATCHING
 // Registers and the load order of the arguments; D_800C5E2C read without $gp here
@@ -189,20 +179,16 @@ int func_8004AACC(Buf28 *b) {
 }
 
 #ifdef NON_MATCHING
-// The two objects' addresses loaded as unsplit la macros (jal; nop): no split addresses here; see the write-up
+// The virtual call's registers: the original loads the function into $v0, its delta into $a0
 int func_8004AB0C(void) {
     Disp28 *d;
 
-    func_8008A1D0(&D_800CAFB8[0]);
-    func_8008A1D0(&D_800CB02C);
+    func_8008A1D0((Snd28 *)&D_800CAFB8);
+    func_8008A1D0((Snd28 *)&D_800CB02C);
     func_8004BA04(0);
     func_800963BC();
     d = D_800C886C;
-    {
-        Vt28 *vt = d->m_68;
-
-        vt->m_6C((u8 *)d + vt->m_68);
-    }
+    d->m_68->m_6C((u8 *)d + d->m_68->m_68);
     return 1;
 }
 #else
