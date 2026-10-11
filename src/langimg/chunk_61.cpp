@@ -264,17 +264,12 @@ void func_8008CF58(Zone61 *z) {
     }
 }
 
-#ifdef NON_MATCHING
-// The stack arguments' loads: the original reads the last one first
 Rect61 *func_8008D05C(Rect61 *r, int a, int *b, u16 x, u16 y, u16 w, u16 h) {
-    r->m_18 = a;
     r->m_08 = *b;
+    r->m_18 = a;
     func_8008D0A4(r, x, y, w, h);
     return r;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_61", func_8008D05C);
-#endif
 
 void func_8008D0A4(Rect61 *r, u16 x, u16 y, u16 w, u16 h) {
     r->m_00 = x;
