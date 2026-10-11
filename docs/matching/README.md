@@ -54,3 +54,4 @@ issue it worked on, and add it below.
 | [issue-70-langimg-chunk69.md](issue-70-langimg-chunk69.md) | The game's chunk_69: a game object's screens; 11-byte names copied as blocks, `memcpy` called rather than inlined |
 | [issue-62-langimg-chunk61.md](issue-62-langimg-chunk61.md) | The game's chunk_61: layers, zones and copies; relocations that `try_func` can't see, a mask in a local |
 | [issue-56-langimg-chunk55.md](issue-56-langimg-chunk55.md) | The game's chunk_55: text, a map and a pulse; a table in a local, a loop GCC doesn't see |
+| [issue-23-langimg-chunk22.md](issue-23-langimg-chunk22.md) | The game's chunk_22: script commands; a redundant test kept as its own statement, a callback given the object |
