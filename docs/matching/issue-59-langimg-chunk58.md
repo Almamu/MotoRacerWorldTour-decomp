@@ -30,7 +30,7 @@ small globals.
   unaligned loads and stores. Plain struct assignment (`c->m_40 = *v;`)
   matched, including the original's odd save and reload of `$s0`.
 - **A global read before the stores.** `func_800863CC` loads the clock
-  before storing the time and the fraction; it matched with the clock's
+  before storing the duration and the fraction; it matched with the clock's
   store written before them.
 - **Products before stores.** `func_80086424`'s original computes all
   eight differences times the fraction before storing any result; with an
