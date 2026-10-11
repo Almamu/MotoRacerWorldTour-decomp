@@ -100,22 +100,18 @@ void func_8007F2AC(Spr55 *p, u16 a, u16 b) {
     }
 }
 
-#ifdef NON_MATCHING
-// The three pointers' registers
 /* The value of the pair (a, b), or 0. */
 int func_8007F2C8(Tab55 *t, u8 a, u8 b) {
     int i;
+    Pair55 *e = t->m_18;
 
     for (i = 0; i < t->m_08; i++) {
-        if (t->m_18[i].m_00 == a && t->m_18[i].m_01 == b) {
-            return t->m_18[i].m_02;
+        if (e[i].m_00 == a && e[i].m_01 == b) {
+            return e[i].m_02;
         }
     }
     return 0;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_55", func_8007F2C8);
-#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_55", func_8007F33C);
 
