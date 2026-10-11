@@ -16,7 +16,7 @@ Also:
 
 One file, `src/langimg/chunk_58.cpp`, 0x80085258-0x80087468.
 
-19 functions: 9 match, 4 are parked, 6 are still asm.
+19 functions: 10 match, 3 are parked, 6 are still asm.
 
 ## The settings
 
@@ -37,11 +37,12 @@ small globals.
   inline storing as it goes, GCC kept each store in place (a store
   through a `short *` may change what the next load reads). Written as
   eight locals first, the shape is right; the registers aren't. Parked.
-- **Two declarations of one global.** `func_800869E4` stores to
-  `D_800CBD30` (a gp global) and to words 8 and 16 bytes after it through
-  its address, built with `lui`/`addiu`. Declared once more without a size
-  (`extern int D_800CBD30_w[] asm("D_800CBD30");`), GCC builds the
-  address that way; two registers still swap. Parked.
+- **A gp global's neighbours.** `func_800869E4` stores to `D_800CBD30`
+  (a gp global) and to words 8 and 16 bytes after it through its address,
+  built with `lui`/`addiu`. With the address in a pointer local (`int *w
+  = &D_800CBD30;`) it matched: the global is small, so GCC loads its
+  address with an `la` (chunk_28 has the rule). An earlier try, a second
+  unsized declaration of the symbol, left two registers swapped.
 
 ## The functions
 
@@ -56,7 +57,7 @@ small globals.
 | `func_800863CC` | matches | the camera moved to a point over a time |
 | `func_80086424` | parked | the camera's interpolation: registers |
 | `func_800865B4` | asm | 269 instructions |
-| `func_800869E4` | parked | globals reset: two registers swap |
+| `func_800869E4` | matches | globals reset |
 | `func_80086A38` | matches | a buffer's word |
 | `func_80086A50` | matches | a point and two values set |
 | `func_80086A78` | asm | 252 instructions |

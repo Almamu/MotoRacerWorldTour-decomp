@@ -768,9 +768,10 @@ What's left once the instructions are right is usually register choice.
   `(&D_800C75D4)[i * 2]`, `(&D_800C75D8)[i * 2]` (chunk_40).
 - **A gp global's neighbours through its address.** When the original
   stores to a small (gp) global directly but to the words after it
-  through its address built with `lui`/`addiu`, a second declaration of
-  the same symbol without a size (`extern int X_w[] asm("X");`) makes GCC
-  build the address that way (chunk_58; its registers still swap there).
+  through its address built with `lui`/`addiu`, take the address into a
+  pointer local (`int *w = &X; w[2] = -1;`). The global being small, GCC
+  loads its address with an `la` (which maspsx leaves alone) and stores
+  through it (chunk_58, chunk_57).
 - **`memcpy` inlined or called.** GCC 2.91.66 expands a constant-size
   `memcpy` inline when it knows the destination's type (a `u8 *` here);
   the original's call came with the destination declared `void *`

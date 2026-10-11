@@ -29,9 +29,9 @@ globals from `D_800CBD24` on.
   matched.
 - **A gp global's neighbours, again.** `func_800846FC` clears
   `D_800CBD30` (a gp global) and the four words after it through its
-  address. A second declaration without a size (chunk_58's technique)
-  matched there; `func_800846AC`, which also sets them, is parked on the
-  gp store's place.
+  address, a pointer local (`int *w = &D_800CBD30;`, chunk_58's
+  technique); `func_800846AC`, which also sets them, is parked on the gp
+  store's place.
 - **A call's arguments read first.** `func_80084D58` matched with the
   window's two fields read into locals before the call (the permuter).
 - **A recursive lookup.** `func_800841BC` returns a node's value or, if

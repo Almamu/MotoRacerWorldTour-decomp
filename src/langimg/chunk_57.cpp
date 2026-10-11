@@ -91,7 +91,6 @@ extern Time57 D_800D6124; // the clock
 extern u32 D_800D60FC;
 extern int D_800D6100; // the frame's length
 extern int D_800CBD30;
-extern int D_800CBD30_w[] asm("D_800CBD30"); // the same words, by index
 extern Msg57 D_800C73F8[];
 extern int D_800C89D0;
 extern int D_800C89D8;
@@ -298,13 +297,14 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_57", func_800842E8);
 // The gp global's store: the original stores it first
 int func_800846AC(int a, int b, int c, int d, int e, int f) {
     int r;
+    int *w = &D_800CBD30;
 
     D_800CBD30 = a;
-    D_800CBD30_w[1] = b;
-    D_800CBD30_w[2] = c;
-    D_800CBD30_w[3] = d;
-    D_800CBD30_w[4] = e;
-    D_800CBD30_w[5] = f;
+    w[1] = b;
+    w[2] = c;
+    w[3] = d;
+    w[4] = e;
+    w[5] = f;
     r = 0;
     if (a && b && c != -1) {
         r = d != 0;
@@ -316,11 +316,13 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_57", func_800846AC);
 #endif
 
 void func_800846FC(void) {
+    int *w = &D_800CBD30;
+
     D_800CBD30 = 0;
-    D_800CBD30_w[1] = 0;
-    D_800CBD30_w[2] = -1;
-    D_800CBD30_w[3] = 0;
-    D_800CBD30_w[4] = -1;
+    w[1] = 0;
+    w[2] = -1;
+    w[3] = 0;
+    w[4] = -1;
 }
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_57", func_80084720);
