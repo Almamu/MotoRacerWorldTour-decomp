@@ -4,7 +4,7 @@ Bike methods (chunk_09): running into the back of another bike, a push
 sideways, the motion's two limits from the motor, and larger ones. One
 file, `src/langimg/chunk_12.cpp`, 0x800297B4-0x8002B800.
 
-11 functions: 4 match, 4 are parked, 3 are still asm.
+11 functions: 4 match, 5 are parked, 2 are still asm.
 
 ## The settings
 
@@ -22,7 +22,8 @@ checks, no small globals (`langimg.chunk_12_*`).
 | `func_8002A394` | matches | one of two setups by the motor's flags, then a third call |
 | `func_8002A3F0` | matches | the speed's vector scaled and passed to the motions |
 | `func_8002A7A0` | parked | the lean from the steering, wrapped within the motor's limit: two registers swapped in one branch (13 off) |
-| `func_8002AF8C`, `func_8002B40C` | asm | 288 and 254 instructions |
+| `func_8002AF8C` | parked | the springs: a first draft |
+| `func_8002B40C` | asm | 254 instructions |
 | `func_8002ABE8` | parked | the slope's pull: a first draft |
 | `func_8002AF3C` | matches | the motions' limits from the motor |
 
@@ -46,3 +47,14 @@ through `func_800998D0_void`, a `void` declaration of the same symbol
 (`__asm__("func_800998D0")`), so the header and the definition stay as
 they are. The same for `func_80022D20`, which only this file calls,
 declared `void` here: `func_8002A268` went from 31 off to 24.
+
+## Sixth pass
+
+`func_8002AF8C`, the springs, is written as a first draft and parked (197
+of 288 off, mostly the same code shifted by register moves): each wheel's
+stiffness and damping (the motor's values at 0xE0/0xE4 and 0xE8/0xEC,
+raised by its tuning entry at 0x185), two thirds of it for a slow bike
+whose owner's value at 0x4FA is under 0x1000, push the force's y; then the
+value at 0x554's change, and for kind 3 bikes in the air a push along the
+heading. `motor.h` names the four spring values and `bike.h` the owner's
+short at 0x4FA.
