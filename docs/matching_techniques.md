@@ -1190,6 +1190,31 @@ What's left once the instructions are right is usually register choice.
   pointer only read before them). One variable for both put it in a saved
   register on both paths; one declared in each branch left the freeing
   path's in `$a1`.
+- **Stack addresses kept or recomputed: inline functions.** GCC 2.91.66
+  expands a call's arguments into pseudos, and CSE merges a local's
+  address (`sp+0x58`) used by two calls into one pseudo, kept in a saved
+  register across the calls between. Only the frame's first local escapes
+  (its address is the frame register itself). Code inlined from an
+  `inline` function is copied with each argument computed straight into
+  its `$aN`, so CSE has nothing to merge: the address is computed anew at
+  every call (`addiu $a0, $sp, 0x58`), as in many of the game's
+  functions. A value passed into an inline function's parameter goes the
+  other way: the parameter is a pseudo, so that address is kept. So when
+  the original recomputes some stack addresses and keeps others, the
+  recomputed ones are an inline function's locals or uses, and the kept
+  ones its caller's or its parameters'. chunk_17's `func_8003425C` matched
+  with two inline helpers (a turn with its own matrices, the camera's
+  offset with its own vectors), a caller-level matrix in a block passed
+  into the first, and the translation passed through an inline accessor,
+  `MatTrans17(&out)` (`return (Vec17 *)m->t;`), which kept `out.t` in
+  `$s3` as the original does (found by the permuter, with the base built by
+  the header-aware `mkbase_pp.py`). chunk_02b's three rotation functions
+  came from 131 to 22 off with the whole body as an inline function
+  called from the real one, the rotations through small inline helpers
+  taking an `int` angle (the `lh` the original has) and the vector by
+  pointer, and one translation through an accessor. No compiler or
+  option changes this (2.7.2 to 2.95.2, GCSE, CSE options, `-O1`,
+  `-fno-omit-frame-pointer`).
 - The permuter (`tools/permuter_setup.py`) is the tool for this. Most of
   its suggestions are noise (dummy variables, `x++; x--;`); keep the idea
   behind a good one, written plainly (the `ClearFlags` case above).
@@ -1510,15 +1535,12 @@ files (issue-1-langimg-sound.md, "The flags, function by function").
   flag doesn't fix them. The loops starting at a variable index (`func_80011960`,
   `func_80011A68`) don't have the problem. The slot loops also keep `~1`
   in a register (`ClearFlags`, above).
-- **Stack addresses kept in registers** (chunk_41's `func_800643E4` too;
-  chunk_02b: `func_80016268`,
-  `func_80016434`, `func_80016600`, `func_80016E34`; chunk_03:
-  `func_80018954`, though `func_80016C3C`'s original keeps `&rot`): the original
-  computes a local's address anew (`addiu $a0, $sp, 0x20`) for each call
-  it's passed to; GCC keeps every local's address but the first one's in
-  a saved register, so the frame and registers differ. Not the compiler
-  (2.7.2 to 2.95.2), the front end, GCSE, CSE options or `-O1`
-  ([issue-3-langimg-chunk02.md](matching/issue-3-langimg-chunk02.md)).
+- **Stack addresses kept in registers**: largely solved, see "Stack
+  addresses kept or recomputed: inline functions" under Register
+  allocation. Still parked: chunk_02b's `func_80016268` and `func_80016434`
+  (22 off), `func_80016600` (101: the first local's address is the frame
+  register itself here), `func_80016E34` (423); chunk_03's `func_80018954`
+  (111); chunk_41's `func_800643E4`.
 - **Constants through `$t2`** (chunk_31's `func_800505BC`): every
   constant is loaded into `$t2` just before its use, loop invariants
   included, and a bit is set from a test without a branch (`sltu`, `sll

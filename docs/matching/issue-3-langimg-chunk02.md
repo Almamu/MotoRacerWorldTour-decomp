@@ -79,7 +79,7 @@ twice, and GCC drops the first pair.
 |---|---|---|
 | `func_80016144` | matches | variadic: PsyQ's `stdarg.h`; the second loop as a `goto` |
 | `func_80016234`, `func_80016798` | match | |
-| `func_80016268`, `func_80016434`, `func_80016600` | parked | the rotation setters: stack addresses (below) |
+| `func_80016268`, `func_80016434`, `func_80016600` | parked | the rotation setters: 22, 22 and 101 off (below) |
 | `func_800167B8` | parked | registers: the original moves `o` to `$a2` |
 | `func_800167F8` | matches | locals declared `b`, then `a`, for their stack slots |
 | `func_8001687C`, `func_80016914` | match | the angle cache |
@@ -158,3 +158,18 @@ the code only by giving two matrices one variable.
   that read like a missing source file.
 - **`cc1` doesn't preprocess.** Testing a macro with `cc1` alone compiled
   it as a call; pipe through the compiler's `cpp`.
+
+## Stack-address pass
+
+The rotation setters are written with the body as an inline function called
+from the real one (code inlined from an `inline` function computes each
+stack address anew for every call, as the original's), the rotations through
+`RotX02b`/`RotY02b`/`RotZ02b` (an `int` angle, the original's `lh`; the
+vector by pointer) and `tmp`'s translation through an inline accessor,
+`MatTrans02b(&tmp)`, which keeps it in `$s0`: `func_80016268` and
+`func_80016434` from 131 to 22 off (the position's copy at the end
+scheduled otherwise), `func_80016600` from 111 to 101 (its first local's
+address, the frame register here, is kept in `$s0` in the original).
+`func_80016E34`'s two matrix products through `CompMatrixTo02b` took it from
+461 to 423 off. docs/matching_techniques.md, "Stack addresses kept or
+recomputed: inline functions".
