@@ -173,6 +173,16 @@ functions count as not done). CI draws them on every run and, on `main`
 once every check passed, replaces the single commit of the `badges`
 branch with them.
 
+The same counts go to [decompilati.onl](https://decompilati.onl), whose
+non-matching figure is the parked code alone (not added to the matching
+one). `tools/chunks.py progress FILE` writes the report (after `make
+sdk`, as for the badges): bytes of code over both executables, then each
+executable, split into the game's chunks and the libraries, each chunk
+with its source file and addresses, and the commit. CI writes it on every
+run and, on `main` once every check passed, sends it with the
+`DECOMPILATION_PROGRESS_TOKEN` secret. Without the secret (a fork) the
+step does nothing, and a failed report doesn't fail the run.
+
 ## Decompiling a function
 
 The loop for one function (read, write, compare with
