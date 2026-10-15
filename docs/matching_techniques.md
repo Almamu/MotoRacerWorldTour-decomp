@@ -229,6 +229,14 @@ globals), a script that tries every order is quicker than guessing:
 
 ### Branches
 
+- **The block laid out first is the `if`'s.** chunk_26's `func_80046B78`
+  sets a flag to 0 or 1 after a chain of tests; the original has the 0
+  block first, so its source is one condition for 0: `if (a || (b &&
+  ...)) x = 0; else x = 1;`. Written as nested `if`s ending in 1, GCC
+  laid out the 1s first.
+- **Two addresses, two calls.** `f(c ? a : b)` with two big objects
+  loads the first before the test; chunk_26's `func_80046870` builds each
+  in its branch (the `lui` in a delay slot): `if (c) f(a); else f(b);`.
 - **Tests GCC would merge.** `(f & 0x400004) == 0x400004 && !(f & 2)`
   becomes one test of `f & 0x400006`; the original tests them apart, with
   a load between: nested `if`s (`func_80013764`).
@@ -310,6 +318,10 @@ globals), a script that tries every order is quicker than guessing:
   }` (with `t` 0 on entry GCC drops the first test of `!t`). A `goto`
   loop gave the layout but no hoisting of the loop's constants; `for
   (;;)` and `do`/`while` came out rotated.
+  The same layout comes from `while (!found && n)`: chunk_26's
+  `func_80046194` and `func_80045F78` test the node at the top and the
+  flag at the bottom, and matched so; `while (n && !found)` put both
+  tests at the bottom.
 - **Empty constructors' loops.** A static object whose arrays' elements
   have empty constructors leaves count-down loops with nothing in them
   (chunk_47's `func_8006FB74`). Written `i = 63; do {} while (--i !=
