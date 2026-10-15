@@ -90,7 +90,11 @@ struct Bike {
     Vector3 m_B4;
     u8 m_padC0[0xC];
     int m_CC;
-    u8 m_padD0[0x14];
+    u8 m_padD0[0x4];
+    int m_D4; // an angle, with its rate at 0xD8
+    int m_D8;
+    int m_DC; // another, with its rate at 0xE0
+    int m_E0;
     int m_E4; // the engine speed asked for
     int m_E8;
     int m_EC;
