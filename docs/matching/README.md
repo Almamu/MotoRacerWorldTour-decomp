@@ -78,3 +78,4 @@ issue it worked on, and add it below.
 | [issue-37-langimg-chunk36.md](issue-37-langimg-chunk36.md) | The game's chunk_36: the race's checks between frames; one store order of 720, the run re-read in the loop, a dot product through an inline function |
 | [issue-15-langimg-chunk14.md](issue-15-langimg-chunk14.md) | The game's chunk_14: more of the bike; a nested `?:` for a dead zone, two names for one buffer, an assignment and its result in one statement |
 | [issue-64-langimg-chunk63.md](issue-64-langimg-chunk63.md) | The game's chunk_63: an animation's bounds; `new[]` of a class with an empty constructor, `delete` tested, the box through a pointer |
+| [issue-35-langimg-chunk34.md](issue-35-langimg-chunk34.md) | The game's chunk_34: the race's steps, laps and gates; the step re-read for its store, one result and one exit, a post-increment tested as a byte |
