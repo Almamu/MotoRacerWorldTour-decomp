@@ -7,7 +7,7 @@ settings' names and values, and the page's digits. One file,
 `src/langimg/chunk_70.cpp`, 0x8009D0E4-0x8009F180. It's a sibling of
 chunk_71 (the same callees and menu fields).
 
-39 functions: 33 match, 4 are parked, 2 are still asm.
+39 functions: 34 match, 4 are parked, 1 is still asm.
 
 ## The settings
 
@@ -58,7 +58,7 @@ globals (`D_800C935C`, `D_800C9360`, `D_800C9C04`, `D_800CBE98`).
 | `func_8009E930` | matches | the digits' caller |
 | `func_8009E954` | parked | the page's setup: rectangles and two rows of cells (registers) |
 | `func_8009EAD0` | matches | a flag set when a choice is 0 |
-| `func_8009EAEC` | asm | 459 instructions |
+| `func_8009EAEC` | matches | the memory card task (group C large functions) |
 
 ## GPU packets
 
@@ -68,3 +68,18 @@ original's store order, and its draw modes set through an inline helper. Its dra
 are the "GPU packets" pattern in the techniques, but with another
 primitive built right after each one GCC keeps the stepped pointer in its
 own register; that part isn't solved.
+
+## Group C large functions
+
+- `func_8009EAEC` (the memory card task: its state at 0 stepped by the
+  card's last result at 8, with debug `printf`s through `func_800A5DA4`)
+  matches. Two things mattered beyond the two switches' shape:
+  - the callees declared as their definitions are: `printf` and chunk_73's
+    `func_800A4384`, `func_800A442C` and `func_800A444C` return `int`.
+    Declared `void`, GCC took `$v0` for the values loaded right after
+    their calls where the original takes `$v1` (16 off, then 2, then 0);
+  - one case label before each of four debug tests that fall through into
+    each other (`case 7: if (r == 7) ...; case 8: if (r == 8) ...`). With
+    the four cases on one label the code was the same, but the jump table
+    in `.rodata` sent cases 4, 8 and 11 to the first test, which only the
+    full build showed (`tools/try_func.py` compares the text).
