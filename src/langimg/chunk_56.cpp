@@ -146,14 +146,47 @@ struct SVec56 {
     short z;
     short pad;
 };
+// A textured quad's corners (0x1C bytes)
+struct Quad56 {
+    int m_00[3];
+    u8 m_0C, m_0D; // its first corner's u, v
+    u16 m_0E;      // its palette
+    u8 m_10, m_11;
+    u16 m_12; // its page
+    u8 m_14, m_15;
+    u8 m_16, m_17;
+    u8 m_18[4];
+    Quad56() {
+    }
+};
+// A vertex as new[] makes them
+struct Vtx56 {
+    short x, y, z, pad;
+    Vtx56() {
+    }
+};
 struct Cam56 {
     Mat56 m_00;
     Sub56 m_20;
-    u8 m_40[4];
+    short m_40; // how many quads
+    u8 m_42[2];
     short m_44; // how many vertices
     u8 m_46[0x12];
     SVec56 *m_58;
+    Quad56 *m_5C;
 };
+// A texture's place: its corners and its palette and page
+struct Tex56 {
+    u8 m_00, m_01;
+    u16 m_02; // its palette
+    u8 m_04[2];
+    u16 m_06; // its page
+    u8 m_08[2];
+    u8 m_0A, m_0B;
+};
+extern Tex56 *D_800CC0C4;
+Quad56 func_8008D05C(int a, u8 *col, int x, int y, int w, int h);
+int func_80081A78(Cam56 *c, Vec56 *p, int n);
 // The rotation matrix, as GTE_SET_ROT but through $v0 and $v1
 #define GTE_SET_ROT_V(m) \
     __asm__ volatile("lw $2, 0(%0)\n\tlw $3, 4(%0)\n\t" \
@@ -630,7 +663,97 @@ void func_800816F8(Obj56 *h, int kind, int alloc) {
     }
 }
 
+// A colour: grey g and code a
+static inline void SetCol56(u8 *c, u8 g, int a) {
+    c[3] = a;
+    c[0] = g;
+    c[1] = g;
+    c[2] = g;
+}
+
+// The camera at p, unturned (func_80081F28's body)
+static inline void CamAt56(Cam56 *c, Vec56 *p) {
+    c->m_00.m[0][0] = 0x1000;
+    c->m_00.t[0] = 0;
+    c->m_00.m[0][2] = 0;
+    c->m_00.m[0][1] = 0;
+    c->m_00.m[1][1] = 0x1000;
+    c->m_00.t[1] = 0;
+    c->m_00.m[1][2] = 0;
+    c->m_00.m[1][0] = 0;
+    c->m_00.m[2][2] = 0x1000;
+    c->m_00.t[2] = 0;
+    c->m_00.m[2][1] = 0;
+    c->m_00.m[2][0] = 0;
+    {
+        int x = p->vx;
+        int y = p->vy;
+        int z = p->vz;
+
+        c->m_00.t[0] = x;
+        c->m_00.t[1] = y;
+        c->m_00.t[2] = z;
+    }
+    {
+        Sub56 *u = &c->m_20;
+
+        memset(u, 0, sizeof(*u));
+        u->m_04 = -1;
+        VecCopyL56(&c->m_20.m_08, p);
+    }
+}
+
+/* A camera at p with a quad of four textured squares in grey n: nine
+ * vertices, the texture's corners split in two each way. */
+#ifdef NON_MATCHING
+// 108 off: the right shape. The original puts the returned quad's temporary at 0x20 and the colour at 0x40; ours has the colour first (0x20) and the temporary at 0x28, which moves every copy's offsets. A named Quad56 temporary adds copies; the colour in an inner block or an inline doesn't move it. Also the grid loop reads t->m_01 before the first shift where ours reads it later.
+int func_80081A78(Cam56 *c, Vec56 *p, int n) {
+    u8 col[4];
+    Tex56 *t;
+    int w, h, wp, hp;
+    int i, j, k, x, y;
+
+    CamAt56(c, p);
+    c->m_44 = 9;
+    c->m_40 = 4;
+    c->m_5C = new Quad56[4];
+    c->m_58 = (SVec56 *)new Vtx56[c->m_44];
+    if (!c->m_5C || !c->m_58) {
+        func_80081EC8((Obj56 *)c);
+        return 0;
+    }
+    SetCol56(col, n, 0x2E);
+    c->m_5C[0] = func_8008D05C(0x51, col, 0, 1, 4, 3);
+    c->m_5C[1] = func_8008D05C(0x51, col, 1, 2, 5, 4);
+    c->m_5C[2] = func_8008D05C(0x51, col, 3, 4, 7, 6);
+    c->m_5C[3] = func_8008D05C(0x51, col, 4, 5, 8, 7);
+    t = D_800CC0C4;
+    k = 0;
+    w = ((t->m_0A - t->m_00 + 1) << 8) / 2;
+    wp = w >> 8;
+    h = ((t->m_0B - t->m_01 + 1) << 8) / 2;
+    hp = h >> 8;
+    for (j = 0; j < 2; j++) {
+        for (i = 0; i < 2; i++, k++) {
+            c->m_5C[k].m_12 = t->m_06 + 0x40;
+            x = t->m_00 + ((i * w) >> 8);
+            y = t->m_01 + ((j * h) >> 8);
+            c->m_5C[k].m_0E = t->m_02;
+            c->m_5C[k].m_0C = x;
+            c->m_5C[k].m_0D = y;
+            c->m_5C[k].m_10 = x + wp - 1;
+            c->m_5C[k].m_11 = y;
+            c->m_5C[k].m_14 = x + wp - 1;
+            c->m_5C[k].m_15 = y + hp - 1;
+            c->m_5C[k].m_16 = x;
+            c->m_5C[k].m_17 = y + hp - 1;
+        }
+    }
+    return 1;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_56", func_80081A78);
+#endif
 
 void func_80081EC8(Obj56 *o) {
     if (o->m_5C) {

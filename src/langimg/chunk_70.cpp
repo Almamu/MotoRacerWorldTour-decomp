@@ -240,7 +240,7 @@ void func_8009E3C0(Obj70 *o, int x, int y, int w);
 int func_8009D830(Obj70 *o);
 int func_800A4614(int a, int *p);
 int func_800A44F8(int a);
-void func_800A42EC(int a, void *b, u8 *c, int d);
+int func_800A42EC(int a, void *b, u8 *c, int d);
 int func_800A6100(const char *a, const char *b, int n);
 int func_80037C80(int a, Num70 *b);
 extern char D_800C9C10[];
@@ -507,7 +507,124 @@ int func_8009D830(Obj70 *o) {
     return 0;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_70", func_8009D9CC);
+// The menu the card task belongs to
+#define MENU70(o) ((Menu70 *)(o)->m_44)
+
+/* The memory card load task, each frame: its state (m_00) stepped by the
+ * card's last result (m_08). */
+void func_8009D9CC(Obj70 *o) {
+    o->m_08 = func_800A4614(0, &o->m_0C);
+    switch (o->m_00) {
+    case 0:
+        break;
+    case 1:
+        if (func_800A44F8(0) == 0x12) {
+            if ((u32)o->m_08 >= 2 && o->m_08 != 0x12) {
+                o->m_00 = 0;
+            } else {
+                func_8009E318(o, 9);
+                func_8009E1A0(o);
+                o->m_00 = 4;
+            }
+        }
+        break;
+    case 4:
+        if (*o->m_4C == 1) {
+            func_8009E318(o, 5);
+            func_800A42EC(0, o->m_3C, o->m_34, o->m_38);
+            o->m_00 = 2;
+            func_8009E24C(o);
+            MENU70(o)->m_A94 |= 0x200;
+        } else if (*o->m_4C == 2) {
+            o->m_00 = 0;
+            func_8009E24C(o);
+            func_8003CC9C(o->m_44, 1);
+        }
+        break;
+    case 2:
+        if (func_800A44F8(0) == 0x12 && o->m_08 == 1) {
+            o->m_00 = 19;
+            o->m_10 = 0;
+        }
+        break;
+    case 19:
+        if (o->m_10 < 100) {
+            o->m_10++;
+            func_8009E24C(o);
+            func_8009E318(o, 6);
+        } else {
+            func_8003CC9C(o->m_44, 1);
+            o->m_14 = 1;
+            MENU70(o)->m_A94 &= ~0x200;
+        }
+        break;
+    case 17:
+        func_8009E24C(o);
+        func_8009E318(o, 7);
+        o->m_00 = 0;
+        MENU70(o)->m_A94 &= ~0x200;
+        break;
+    }
+    switch (o->m_08) {
+    case 4:
+    case 7:
+    case 11:
+    case 17:
+        if (o->m_00 == 2) {
+            if (o->m_04 >= 6) {
+                o->m_00 = 17;
+                func_800A45B4(0);
+                o->m_10++;
+                func_8009E24C(o);
+                func_8009E318(o, 7);
+                MENU70(o)->m_A94 &= ~0x200;
+            } else {
+                func_800A42EC(0, o->m_3C, o->m_34, o->m_38);
+                o->m_04++;
+            }
+        } else {
+            func_8009E24C(o);
+            func_8009E318(o, 2);
+            o->m_00 = 0;
+            MENU70(o)->m_A94 &= ~0x200;
+        }
+        break;
+    case 14:
+        func_8009E24C(o);
+        func_8009E318(o, 3);
+        o->m_00 = 0;
+        MENU70(o)->m_A94 &= ~0x200;
+        break;
+    case 15:
+        func_8009E24C(o);
+        func_8009E318(o, 4);
+        o->m_00 = 12;
+        MENU70(o)->m_A94 &= ~0x200;
+        break;
+    case 2:
+        if (o->m_00 == 2) {
+            if (o->m_10 < 100) {
+                o->m_10++;
+                func_8009E24C(o);
+                func_8009E318(o, 8);
+            } else {
+                func_8003CC9C(o->m_44, 1);
+            }
+        } else {
+            func_800A45B4(0);
+            o->m_00 = 15;
+            func_8009E24C(o);
+            func_8009E318(o, 1);
+            MENU70(o)->m_A94 &= ~0x200;
+        }
+        break;
+    case 3:
+        if (o->m_00 != 12) {
+            func_8009E0E8(o);
+        }
+        break;
+    }
+}
 
 void func_8009DDA8(Menu70 *m) {
     Obj70 *o = m->m_A80->m_60;
@@ -836,9 +953,6 @@ void func_8009EAD0(Menu70 *m, int a) {
         p->m_08 = 1;
     }
 }
-
-// The menu the card task belongs to
-#define MENU70(o) ((Menu70 *)(o)->m_44)
 
 /* The memory card task, each frame: its state (m_00) stepped by the card's
  * last result (m_08). */
