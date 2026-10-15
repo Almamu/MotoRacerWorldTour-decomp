@@ -16,7 +16,7 @@ one). Through its two views (`m_A80`, `m_A84`, chosen by the mode at
 
 One file, `src/langimg/chunk_69.cpp`, 0x8009B17C-0x8009D0E4.
 
-23 functions: 18 match, 3 are parked, 2 are still asm.
+23 functions: 18 match, 4 are parked, 1 is still asm.
 
 ## The settings
 
@@ -66,7 +66,7 @@ global.
 | `func_8009B838` | matches | the name copied to the drawing |
 | `func_8009B8BC` | matches | a call when there's a screen |
 | `func_8009B8F8` | matches | a part moved by a fraction |
-| `func_8009B9B4` | asm | 257 instructions |
+| `func_8009B9B4` | parked | the speed graph: a saved register more (188 off) |
 | `func_8009BDB8` | matches | a run's measures computed and shown (group C large functions) |
 | `func_8009C3BC` | matches | the view's four items shown or hidden |
 | `func_8009C534` | matches | the screen's requests handled |
@@ -121,3 +121,13 @@ list, its effect, then a flash) matches:
   last two came out swapped; the permuter found the first). The screen's
   0x14 is read as a word here and as a `short` by `func_8009CD78`: a
   union (`m_14`, `m_14w`).
+
+## Group C: more functions
+
+- `func_8009B9B4` (the speed graph) is written and parked, 188 off: the
+  frame line, the two rows of ticks and the curve with a draw mode after
+  each segment are the original's packets in its order (the corners as one
+  4-short array: two 2-short arrays get 8-byte-aligned slots). The original
+  keeps the corners and the last point in temporaries after the two calls
+  (a frame of 0x30); GCC keeps one of them in a saved register more (0x38),
+  which shifts everything after. The chunk now includes `psyq.h`.

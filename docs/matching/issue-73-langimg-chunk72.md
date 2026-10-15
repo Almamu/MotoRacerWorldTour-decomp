@@ -7,7 +7,7 @@ a pack's header and blocks found by a hash of their names, a CRC check.
 Also a glyph lookup for text and a fast fill. One file,
 `src/langimg/chunk_72.cpp`, 0x800A1110-0x800A32A0.
 
-59 functions: 51 match, 6 are parked, 2 are still asm.
+59 functions: 52 match, 5 are parked, 2 are still asm.
 
 ## The settings
 
@@ -44,7 +44,8 @@ macro.
 | `func_800A1B4C` | matches | |
 | `func_800A1B54` | matches | the sounds' data by id (the data pointer declared small) |
 | `func_800A1BD0` to `func_800A1C74` | match | the CD's start, a file searched for twice |
-| `func_800A1CF8`, `func_800A1EFC` | parked | the CD reader (87 off); a block by its name's hash (74 off) |
+| `func_800A1CF8` | matches | the CD reader |
+| `func_800A1EFC` | parked | a block by its name's hash (74 off) |
 | `func_800A207C` | matches | a file's header, its entries' positions |
 | `func_800A2148`, `func_800A2234` | match | a block read with a CRC check; a block by name |
 | `func_800A2290` to `func_800A2304` | match | wrappers, a fast fill |
@@ -107,3 +108,13 @@ macro.
   then the ids gave the original's saved registers.
 - `func_800A1CF8` stays 2 off (the hook's address's high half in `$v1`);
   not tried with these changes.
+
+## Group C: more functions
+
+- `func_800A1CF8` (the CD reader) matches, from 2 off. The hook it calls at
+  the end is a global pointer read once: declared as a 4-byte object, GCC
+  reads it `$gp`-relative and maspsx expands that into a `lui` and a `lw`
+  through the same register, where the original builds the high half in
+  `$v1` and loads into `$v0`. Declared unsized (`extern Hook72
+  *D_800D6000[];`, read as `D_800D6000[0]`), GCC builds the address itself
+  and picks the original's registers.
