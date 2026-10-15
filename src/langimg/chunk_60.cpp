@@ -139,6 +139,29 @@ struct Menu60 {
 };
 
 // What holds four of the pieces
+// A camera's projection (chunk_65's Proj65)
+struct Proj60 {
+    int m_00;
+    int m_04;
+    int m_08;
+    int m_0C;
+    int m_10;
+    int m_14;
+    int m_18;
+    int m_1C;
+    int m_20;
+    int m_24;
+    int m_28;
+    int m_2C;
+    int m_30;
+    int m_34;
+    int m_38;
+    int m_3C;
+    int m_40;
+    int m_44;
+    int m_48;
+    int m_4C;
+};
 // What a holder is set up for
 struct Cfg60 {
     u8 m_00[0x18];
@@ -202,6 +225,9 @@ void func_80089F5C(Pool60 *p, int n);
 void func_800899C4(Pieces60 *o, int n, int size);
 void func_80089C7C(Ids60 *o);
 int func_800898C4(Buf60 *b);
+void func_800893E8(Proj60 *p);
+extern short D_800BA884[];
+long ratan2(long y, long x);
 int func_80089354(Menu60 *m, int a);
 int *func_8008965C(Buf60 *b);
 void func_8008A0C0(Hold60 *h, int flags);
@@ -274,7 +300,24 @@ void func_800893C8(void *a) {
     func_800961A0(a);
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_60", func_800893E8);
+// The projection's derived values: its focal length, the half-height and the
+// field of view's angle (as chunk_65's func_80093C80)
+void func_800893E8(Proj60 *p) {
+    int a = p->m_20 * p->m_44 / p->m_24;
+    int t;
+
+    p->m_14 = p->m_00;
+    p->m_18 = p->m_04;
+    p->m_28 = p->m_08;
+    p->m_30 = p->m_10;
+    p->m_2C = p->m_0C;
+    p->m_40 = a;
+    t = (p->m_08 << 12) / (D_800BA884[(p->m_10 / 2) & 0xFFF] * 2);
+    p->m_3C = t;
+    p->m_38 = ratan2(p->m_0C << 12, t * (a << 1)) * 2;
+    p->m_4C = (p->m_40 * p->m_40) >> 16;
+    p->m_48 = (D_800BA884[(p->m_30 / 2) & 0xFFF] << 8) / D_800BA884[(p->m_34 / 2) & 0xFFF];
+}
 
 Buf60 *func_80089508(Buf60 *b) {
     b->m_vt = D_800C8C7C;

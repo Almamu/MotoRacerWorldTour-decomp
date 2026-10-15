@@ -174,6 +174,19 @@ void ApplyRotMatrixLV(Vector3 *a, Vector3 *b);
 
 void func_80096ACC(Bits66 *b, int n, u32 v);
 int func_8009662C(int pos, u32 *buf, int n);
+// A 2 KB block read from the disc (alignment unknown, so copied as bytes)
+struct Sect66 {
+    u8 m_00[0x800];
+};
+extern Sect66 D_800D36D0, D_800D2ED0;
+extern char D_800D4705[]; // a path: its first part is 0x35 bytes before
+extern s8 D_800D2F6C[];
+struct Root66 {
+    char m_00[2];
+};
+extern const char D_800B7940[];
+void *memcpy(void *d, const void *s, unsigned int n);
+int func_800963E8(void);
 int func_8009707C(Plane66 *p, Vector3 *v);
 int func_800955C4(List66 *l, char *name);
 Rec66 *func_800952E0(int i, Rec66 *recs);
@@ -556,7 +569,21 @@ int func_800963BC(void) {
     return 1;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_66", func_800963E8);
+/* The disc's sector 16 read and kept; the path reset to its root, after the
+ * volume's name. */
+int func_800963E8(void) {
+    if (!func_8009662C(0x10, (u32 *)&D_800D36D0, 2)) {
+        return 0;
+    }
+    D_800D2ED0 = D_800D36D0;
+    *(Root66 *)D_800D4705 = *(Root66 *)D_800B7940;
+    memcpy(D_800D4705 - 0x35, D_800D2F6C, D_800D2F6C[0x20] + 0x21);
+    return 1;
+}
+
+// The root's path, "\\": what func_800963E8 copies (an inlined strcpy), after it
+// in .rodata. Defined after the function so that it isn't folded into a copy.
+extern "C" const char D_800B7940[4] __attribute__((section(".rodata"))) = "\\";
 
 /* The CD's shell open bit. */
 int func_80096508(void) {
