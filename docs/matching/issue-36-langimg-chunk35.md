@@ -20,7 +20,7 @@ More of the race (`Own35`, chunk_34's `Own34`), its run and bikes:
 
 One file, `src/langimg/chunk_35.cpp`, 0x800574EC-0x800593CC.
 
-12 functions: 4 match, 4 are parked, 4 are still asm.
+12 functions: 4 match, 5 are parked, 3 are still asm.
 
 ## The settings
 
@@ -55,13 +55,17 @@ globals `D_800C68BC` and `D_800CB3C4`.
 - **Still asm.** `func_80057814` (193 instructions), `func_80057D14` (172,
   with `$fp` and spills), `func_800583BC` (398) and `func_800589B0`
   (391), not tried.
+- **`func_80057814` (fifth pass), parked.** Written with pointers to the two
+  gate entries and no early returns; the racer at the other end of the gap
+  is in `$t1` where the original has `$a3` (where it also compares with
+  -1), and the lap in `$a3` where it has `$t2` (63 off).
 
 ## The functions
 
 | Function | State | Notes |
 |---|---|---|
 | `func_800574EC` | parked | the race restarted: registers |
-| `func_80057814` | asm | 193 instructions |
+| `func_80057814` | parked | a gate passed, the gap shown: registers |
 | `func_80057B18` | parked | the bikes reset: a constant |
 | `func_80057CF4` | matches | a call passed through |
 | `func_80057D14` | asm | 172 instructions |

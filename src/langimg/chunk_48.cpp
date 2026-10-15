@@ -27,6 +27,8 @@ struct List48 {
 struct Flag48 {
     int m_00;
     int m_04;
+    u8 m_08[0x3F];
+    s8 m_47; // a colour, 0 to 2
 };
 // A track's object, 0xCC bytes
 struct Vec48 {
@@ -43,7 +45,7 @@ struct Obj48 {
     int m_40;
     int m_44;
     int m_48;
-    u8 m_4C[0x28];
+    int m_4C[10]; // the time to each point
     int m_74;
     int m_78;
     int m_7C;
@@ -52,18 +54,41 @@ struct Obj48 {
     Flag48 *m_88;
     Flag48 *m_8C;
     Flag48 *m_90;
-    u8 m_94[0x38];
+    u8 m_94[0x18];
+    int m_AC;
+    int m_B0;
+    Vec48 m_B4;
+    u8 m_C0[0xC];
+};
+// A track: its length at 0x2C
+struct Trk48 {
+    u8 m_00[0x2C];
+    int m_2C;
 };
 // A bike, 0x568 bytes (chunk_38's Bike38)
+struct Def48;
 struct Bike48 {
-    u32 m_00; // flags: bit 6, in the race
-    u8 m_04[0x564];
+    union {
+        u32 m_00; // flags: bit 6, in the race
+        u8 m_00b[4];
+    };
+    u8 m_04[0x2C];
+    struct Def48 *m_30;
+    u8 m_34[0x534];
 };
 // The run (chunk_38's Run38)
 struct Run48 {
     u8 m_00[0x2E8];
     Bike48 m_2E8[5];
+    u8 m_1DF0[0x18];
+    int m_1E08; // the race's state
 };
+struct Game48 {
+    u8 m_00[0x378];
+    Run48 *m_378;
+};
+extern Game48 *D_800C5E14;
+extern int D_800D6100; // the frame's time
 // What an object is set up from
 struct Src48 {
     u8 m_00[0x3C];
@@ -74,7 +99,8 @@ struct Src48 {
 struct Def48 {
     u8 m_00[0x10C];
     int m_10C;
-    u8 m_110[0xE8];
+    u8 m_110[0xE4];
+    int m_1F4;
     int m_1F8;
     u8 m_1FC[0xC];
     int m_208;
@@ -109,6 +135,8 @@ extern int D_800C8470;
 extern int D_800C849C;
 extern int D_800C8714;
 extern int D_800C8484;
+extern int D_800C8504; // each point's next, 11 per kind
+void func_8001C4A0(Trk48 *t, int a, int b, Vec48 *v, MATRIX *m, int *z, Obj48 *o, int id);
 void *func_80070D98(Ent48 *e, int i);
 int func_80070CCC(void *a, Vec48 *p);
 
@@ -127,6 +155,9 @@ Obj48 *func_8007345C(Group48 *g, Group48 *h);
 int func_800731EC(Group48 *g, int k, Def48 *t, int c, int side);
 int func_80071994(void *o, int deep, Ent48 **pe, int *pi, Vec48 *x, int *pr, int *pflag);
 void func_80072D00(Obj48 *o);
+void func_80071ED8(Obj48 *o, Group48 *g, int c);
+int func_80074270(Group48 *g, Bike48 *b, int c);
+void func_80072ED4(Group48 *g, int c);
 void func_80072D80(Obj48 *o);
 void func_80072DA0(Group48 *g, Run48 *r);
 }
@@ -275,7 +306,89 @@ void func_800728E0(Obj48 *o, Src48 *q, int unused, int k, Def48 *t, int a, int n
     func_80072A3C(o, k, t->m_10C, n, prev, q, c);
 }
 
+static inline void VecCopyL48(Vec48 *d, Vec48 *s) {
+    int x = s->vx;
+    int y = s->vy;
+    int z = s->vz;
+
+    d->vx = x;
+    d->vy = y;
+    d->vz = z;
+}
+
+/* An object's run along its kind's points timed: the time to each point by
+ * the distances and the span, its first one from now; placed on the track
+ * with prev, given a random colour. */
+#ifdef NON_MATCHING
+// The original loads the frame's time first and walks the points' tables with the row's byte offset (k * 44) added to the point's; GCC loads the time late and folds the offsets otherwise, so the registers differ from the start (63 off; the tables as [k][11] arrays came out worse).
+void func_80072A3C(Obj48 *o, int k, int a, int n, Obj48 **prev, Src48 *q, int c) {
+    int now = D_800D60FC;
+    int span;
+    int i, j;
+    int *t;
+
+    o->m_7C = k;
+    o->m_78 = *(int *)((u8 *)&D_800C84EC + (k << 2));
+    o->m_80 |= 1;
+    if (!n) {
+        span = o->m_34;
+    } else {
+        span = o->m_34 - prev[n - 1]->m_34;
+    }
+    if (span <= 0) {
+        span = 1;
+    }
+    i = o->m_78;
+    j = *(int *)((u8 *)&D_800C8504 + ((k * 11 + i) << 2));
+    t = o->m_4C;
+    while (j != i) {
+        int d = *(int *)((u8 *)&D_800C860C + ((k * 11 + j) << 2)) -
+                *(int *)((u8 *)&D_800C860C + ((k * 11 + i) << 2));
+
+        t[i] = d * 1000 / span;
+        i = j;
+        j = *(int *)((u8 *)&D_800C8504 + ((k * 11 + i) << 2));
+    }
+    t[j] = -1;
+    o->m_44 = now;
+    o->m_48 = now + t[o->m_78];
+    if (prev) {
+        Trk48 *tr = (Trk48 *)c;
+        Group48 *g = (Group48 *)q;
+        int pos = o->m_38;
+        int z = 0;
+        Vec48 v;
+        MATRIX m;
+        int col;
+
+        if (pos < 0) {
+            pos += tr->m_2C;
+        }
+        if (tr->m_2C < pos) {
+            pos -= tr->m_2C;
+        }
+        func_8001C4A0(tr, pos, pos, &v, &m, &z, o, o->m_04);
+        o->m_B0 = o->m_AC;
+        o->m_AC = 0;
+        VecCopyL48(&o->m_B4, &v);
+        g->m_04 = g->m_04 * 214013 + 2531011;
+        col = ((g->m_04 >> 16) & 0x7FFF) % 3;
+        o->m_84->m_47 = col;
+        if (o->m_88) {
+            o->m_88->m_47 = col;
+        }
+        if (o->m_8C) {
+            o->m_8C->m_47 = col;
+        }
+        if (o->m_90) {
+            o->m_90->m_47 = col;
+        }
+    }
+    o->m_84->m_04 |= 2;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_48", func_80072A3C);
+#endif
 
 void func_80072D00(Obj48 *o) {
     o->m_84->m_04 &= ~6;
@@ -343,7 +456,49 @@ void func_80072DA0(Group48 *g, Run48 *r) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_48", func_80072ED4);
+/* A group each frame: its objects marked, one of its bikes picked at random
+ * and objects spawned for it, the objects moved, those done reset. */
+void func_80072ED4(Group48 *g, int c) {
+    if (g->m_2C && D_800C5E14->m_378->m_1E08 != 2) {
+        int i, k, keep;
+        Def48 *d;
+
+        g->m_00 = (D_800D6100 << 12) / 1000;
+        for (i = 0; i < g->m_30; i++) {
+            g->m_34[i].m_80 |= 2;
+        }
+        g->m_04 = g->m_04 * 214013 + 2531011;
+        k = ((g->m_04 >> 16) & 0x7FFF) % g->m_0C;
+        d = g->m_14[k]->m_30;
+        keep = 0;
+        if (d->m_10C <= D_800C872C || (g->m_14[k]->m_00b[0] >> 7)) {
+            keep = 1;
+        }
+        for (i = 0; i < g->m_0C; i++) {
+            if (func_80074270(g, g->m_14[i], c) && k == i) {
+                keep = 0;
+            }
+        }
+        if (!d->m_1F4) {
+            if (g->m_10 == 6) {
+                g->m_04 = g->m_04 * 214013 + 2531011;
+                g->m_10 = ((g->m_04 >> 16) & 0x7FFF) % 5;
+            }
+            if (func_800731EC(g, g->m_10, d, c, keep)) {
+                g->m_10 = 6;
+            }
+        }
+        for (i = 0; i < g->m_30; i++) {
+            func_80071ED8(&g->m_34[i], g, c);
+        }
+        for (i = 0; i < g->m_30; i++) {
+            if ((g->m_34[i].m_80 & 3) == 3) {
+                g->m_34[i].m_80 &= ~3;
+                func_80072D00(&g->m_34[i]);
+            }
+        }
+    }
+}
 
 #ifdef NON_MATCHING
 // The group and the result in swapped saved registers, and the span's computation (57 off).

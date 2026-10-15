@@ -22,7 +22,7 @@ at 4):
 
 One file, `src/langimg/chunk_48.cpp`, 0x8007142C-0x8007345C.
 
-14 functions: 6 match, 2 are parked, 6 are still asm.
+14 functions: 7 match, 3 are parked, 4 are still asm.
 
 ## The settings
 
@@ -64,6 +64,13 @@ globals `D_800C8454` and `D_800C8458`.
 - **Still asm.** `func_80071464` (143 instructions), `func_800716A0`
   (189), `func_80071BCC` (148), `func_80071ED8` (654), `func_80072A3C`
   (177) and `func_80072ED4` (198), not tried.
+- **`func_80072ED4` (fifth pass)** matched as written, with the bikes'
+  definition test written `d->m_10C <= D_800C872C` (the original keeps 1
+  when the definition's value isn't above the global).
+- **`func_80072A3C` (fifth pass), parked.** The original loads the frame's
+  time first and walks the points' tables with the row's byte offset added
+  to the point's; GCC loads the time late and folds the offsets otherwise
+  (63 off; the tables as `[k][11]` arrays came out worse).
 
 ## The functions
 
@@ -77,9 +84,9 @@ globals `D_800C8454` and `D_800C8458`.
 | `func_80071E1C` | parked | an object reset: registers |
 | `func_80071ED8` | asm | 654 instructions |
 | `func_800728E0` | matches | an object placed from its kind's tables |
-| `func_80072A3C` | asm | 177 instructions |
+| `func_80072A3C` | parked | an object's run timed: registers |
 | `func_80072D00` | matches | an object's four entries' flags cleared |
 | `func_80072D80` | matches | an object's values and the time |
 | `func_80072DA0` | matches | a group set up |
-| `func_80072ED4` | asm | 198 instructions |
+| `func_80072ED4` | matches | a group each frame |
 | `func_800731EC` | parked | a group's objects spawned: registers |

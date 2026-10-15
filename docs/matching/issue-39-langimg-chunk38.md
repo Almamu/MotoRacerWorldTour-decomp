@@ -17,7 +17,7 @@ The race of chunk_37 (`Own38`) and its run's five bikes (0x568 bytes):
 
 One file, `src/langimg/chunk_38.cpp`, 0x8005D15C-0x8005F464.
 
-17 functions: 10 match, 3 are parked, 4 are still asm.
+17 functions: 11 match, 3 are parked, 3 are still asm.
 
 ## The settings
 
@@ -66,6 +66,11 @@ global (`D_800CB3C8`).
 - **Still asm.** `func_8005EE48` passes vectors by value through stack
   copies; `func_8005F0D4` (161 instructions) wasn't tried;
   `func_8005D15C` and `func_8005E3A4` are 614 and 681 instructions.
+- **`func_8005F0D4` (fifth pass).** The picks' table is indexed by bytes
+  (the index shifted before the table's `lui`), and each struct copy goes
+  through a pointer to its destination taken first (`Set38 *d =
+  &D_800C71C4; *d = ...;`); assigned directly, the source's address came
+  first and the copy loop's registers were swapped.
 
 ## The functions
 
@@ -85,7 +90,7 @@ global (`D_800CB3C8`).
 | `func_8005E2A8` | matches | a bike of kind 1 passed to `func_8006C694` |
 | `func_8005E3A4` | asm | 681 instructions |
 | `func_8005EE48` | asm | 163 instructions (vectors by value) |
-| `func_8005F0D4` | asm | 161 instructions |
+| `func_8005F0D4` | matches | the players' picks copied to the globals |
 | `func_8005F358` | matches | a bike's controls cleared, returned |
 | `func_8005F380` | matches | a bike's controls cleared |
 

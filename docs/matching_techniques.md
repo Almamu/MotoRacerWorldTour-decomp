@@ -860,6 +860,13 @@ A struct whose members are all shorts and bytes is 2-aligned, and GCC
 copies it with `lwl`/`lwr` pairs; the original's `lw`/`sw` copy means an
 `int` member that aligns it (`RangeDef`, `func_80019F0C`).
 
+A block copy into a global whose destination address the original takes
+first (its `lui` in the test's delay slot, the destination in the lower
+register of the copy loop) goes through a pointer to the destination taken
+before the copy: `Set38 *d = &D_800C71C4; *d = pick->m_08;` (chunk_38's
+`func_8005F0D4`). Assigned directly, GCC took the source's address first and
+the loop's two pointers came out swapped.
+
 A struct assignment (`*d = *s`) copies a 12-byte vector with GCC's block
 move: the source's address in a register, the words through other
 registers than the original's. The sound engine's copies load the three

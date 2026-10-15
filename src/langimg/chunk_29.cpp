@@ -60,8 +60,13 @@ struct Ply29 {
     Vec29 m_F8; // where it looks from
     u8 m_104[0x18];
     Vec29 m_11C;
-    u8 m_128[0x2C];
+    u8 m_128[0x1C];
+    int m_144;
+    u8 m_148[8];
+    int m_150;
     int m_154; // a choice, 0 to 5
+    u8 m_158[0x38];
+    int m_190;
 };
 struct Lp29 {
     u8 m_00[0xC];
@@ -78,16 +83,26 @@ struct Bk29 {
     u8 m_3C[7];
     s8 m_43; // its player, or -1
     u8 m_44[0x144];
-    u16 m_188;
-    u8 m_18A[0x196];
+    union {
+        u16 m_188;
+        struct {
+            u8 m_188b;
+            s8 m_189;
+        } m_188s;
+    };
+    u8 m_18A[0x192];
+    int *m_31C;
     s8 m_320;
     u8 m_321;
     s8 m_322;
-    u8 m_323[0x3D];
+    u8 m_323;
+    u8 m_324[0x3C];
     int m_360;
     u8 m_364[0x79];
     s8 m_3DD;
-    u8 m_3DE[0x18A];
+    u8 m_3DE[0x14E];
+    int m_52C; // the race's state
+    u8 m_530[0x38];
 };
 struct Rc29 {
     int m_00; // the race's kind of game
@@ -178,7 +193,13 @@ int func_8004C1BC(Game29 *g, int i, int k);
 struct Body29 {
     u8 m_00[0x34];
     MATRIX *m_34;
+    u8 m_38[0x21];
+    s8 m_59;
+    u8 m_5A[0x3BD];
+    u8 m_417;
 };
+extern int *D_800CB2F4;
+void func_8003491C(int *a, Bk29 *b);
 extern int D_800D60EC;
 void *func_8008C500(void *a, Game29 *g, int b, Bk29 *k, void *e);
 void *func_8008C678(void *a, Game29 *g, Vec29 *v, int n);
@@ -439,7 +460,76 @@ void func_8004C430(Game29 *g, int i) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_29", func_8004C4E4);
+void func_8004C4E4(Game29 *g, int i, int c) {
+    Ply29 *p = g->m_43C[i];
+    int k = g->m_470[i];
+    Rc29 *r = g->m_378;
+    Bk29 *b = 0;
+    int m;
+
+    if (k >= 0) {
+        b = &r->m_2E8[k];
+    }
+    if (c >= 0) {
+        m = 5;
+        if (c < 6) {
+            m = c;
+        }
+    } else {
+        m = 0;
+    }
+    p->m_154 = m;
+    switch (m) {
+    case 1:
+        p->m_190 = 0x1AE1;
+        b->m_320 = m;
+        b->m_322 = 0;
+        if (b->m_31C && *b->m_31C && g->m_378->m_10->m_52C != 5 && g->m_378->m_10->m_52C != 6) {
+            func_8003491C(b->m_31C, b);
+            break;
+        }
+        p->m_154 = 0;
+    case 0:
+        p->m_190 = 0x1AE1;
+        b->m_322 = 1;
+        b->m_320 = 0;
+        if ((u32)(g->m_378->m_10->m_52C - 5) >= 2) {
+            break;
+        }
+        p->m_154 = 5;
+    default:
+        func_8004C420((Tab29 *)g, i, D_800CB2F8[p->m_154]);
+        p->m_190 = D_800CB2F4[p->m_154];
+        b->m_320 = 0;
+        b->m_322 = 0;
+        break;
+    case 2:
+        func_8004C420((Tab29 *)g, i, D_800CB2F8[2]);
+        p->m_190 = D_800CB2F4[2];
+        b->m_320 = 0;
+        b->m_322 = 0;
+        break;
+    }
+    {
+        Body29 *m2 = (Body29 *)b->m_30;
+
+        if (m2->m_59) {
+            m2->m_417 = 0;
+        }
+    }
+    p->m_144 = ((Tab29 *)g)->m_408[i] * 652;
+    p->m_150 = -((Tab29 *)g)->m_3F8[i];
+    g->m_438[i] = 1;
+    if (b->m_188s.m_189) {
+        u8 a = b->m_320;
+        u8 d = b->m_322;
+
+        b->m_320 = 0;
+        b->m_322 = 0;
+        b->m_321 = a;
+        b->m_323 = d;
+    }
+}
 
 void func_8004C764(Game29 *g, int i) {
     Ply29 *p = g->m_43C[i];

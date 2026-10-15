@@ -98,9 +98,9 @@ struct Run35 {
     int m_40[5]; // the places
     Times35 m_54[5];
     u8 m_F4[0xB4];
-    struct {
-        int m_00;
-        int m_04;
+    struct Pair35 {
+        int m_00; // the time at a gate
+        int m_04; // the lap
     } m_1A8[5][8];
     Bike35 m_2E8[5];
     int m_1DF0;
@@ -156,7 +156,15 @@ struct Own35 {
     u8 m_BC[0x248];
     int m_304;
     void *m_308;
-    u8 m_30C[0x6C];
+    u8 m_30C[0x54];
+    struct Gap35 {
+        s8 m_00; // the racer behind
+        s8 m_01; // the racer ahead
+        s8 m_02; // their places
+        s8 m_03;
+        u32 m_04; // their times at the gate
+        u32 m_08;
+    } m_360[2]; // each player's last gap
     Run35 *m_378;
     u8 m_37C[0x70];
     struct Cam35 *m_3EC;
@@ -207,6 +215,10 @@ void func_8006FF0C(void *a);
 void func_8006F7A0(void *a);
 extern int D_800CB3C4;
 extern int D_800D5F38;
+extern void *D_800C89FC;
+extern char D_800C68AC[];
+void func_80083380(void *h, int who, u32 dt, int place);
+void func_80057814(Own35 *o, int k, Bike35 *b, int g, int f);
 extern char D_800C68FC[];
 void func_8004FFE4(Run35 *r, int a);
 void func_8006BFEC(void *c, int a, int b);
@@ -339,7 +351,111 @@ void func_800574EC(Own35 *o, int k, Bike35 *b) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_35", func_800574EC);
 #endif
 
+#ifdef NON_MATCHING
+// Registers: the original keeps the racer at the other end of the gap in $a3 (where it also compares with -1) and the lap in $t2; GCC swaps them, and loads the hook before the place it passes (63 off).
+void func_80057814(Own35 *o, int k, Bike35 *b, int g, int f) {
+    struct Own35::Gap35 *gp;
+    struct Run35::Pair35 *e = &o->m_378->m_1A8[k][g];
+    u32 now = b->m_04;
+    int lap, who, other;
+    u32 dt;
+
+    e->m_00 = now;
+    lap = b->m_40;
+    e->m_04 = lap;
+    if (f) {
+        other = -1;
+        who = b->m_43;
+        gp = 0;
+        if (who != -1) {
+            if (o->m_378->m_40[k] > 0) {
+                int j = o->m_378->m_2C[o->m_378->m_40[k] - 1];
+                struct Run35::Pair35 *q = &o->m_378->m_1A8[j][g];
+                u32 t = q->m_00;
+
+                if (t != (u32)-1 && q->m_04 == lap) {
+                    other = j;
+                    gp = &o->m_360[who];
+                    gp->m_00 = other;
+                    {
+                        int p2 = o->m_378->m_40[gp->m_00];
+
+                        gp->m_02 = p2;
+                    }
+                    gp->m_04 = q->m_00;
+                    gp->m_01 = k;
+                    {
+                        int p3 = o->m_378->m_40[gp->m_01];
+
+                        gp->m_03 = p3;
+                    }
+                    dt = t - now;
+                    gp->m_08 = e->m_00;
+                }
+            }
+        } else if (o->m_378->m_40[k] > 0) {
+            int j = o->m_378->m_2C[o->m_378->m_40[k] - 1];
+            int w = Bike35At(o->m_378, j)->m_43;
+
+            if (w != -1) {
+                struct Run35::Pair35 *q = &o->m_378->m_1A8[j][g];
+                u32 t = q->m_00;
+
+                if (t != (u32)-1 && q->m_04 == lap) {
+                    who = w;
+                    gp = &o->m_360[who];
+                    gp->m_00 = j;
+                    {
+                        int p2 = o->m_378->m_40[gp->m_00];
+
+                        gp->m_02 = p2;
+                    }
+                    other = k;
+                    gp->m_04 = q->m_00;
+                    gp->m_01 = other;
+                    {
+                        int p3 = o->m_378->m_40[gp->m_01];
+
+                        gp->m_03 = p3;
+                    }
+                    dt = now - t;
+                    gp->m_08 = e->m_00;
+                }
+            }
+        }
+        if (other != -1) {
+            u32 t8 = gp->m_08;
+
+            if (t8 < gp->m_04) {
+                int x = gp->m_00;
+
+                gp->m_00 = t8;
+                gp->m_08 = x;
+            }
+            {
+                Run35 *r = o->m_378;
+
+                if (!o->m_304) {
+                    int p = r->m_40[other];
+
+                    if (D_800C89FC) {
+                        func_80083380(D_800C89FC, who, dt, p + '1');
+                    }
+                } else {
+                    int x = 0;
+
+                    if ((u32)(r->m_10->m_52C - 1) < 3 && D_800D5F38 != 14) {
+                        x = D_800D5F38 != 15;
+                    }
+                    func_80042FF0(o->m_B8, D_800C68AC, 5000, 1, (int)gp, 0, x);
+                }
+            }
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_35", func_80057814);
+#endif
 
 #ifdef NON_MATCHING
 // The original keeps -1 in a saved register for the bikes' laps and walks the bikes with two pointers (the bike and its lap); with -fmove-all-movables (the chunk's flag) it went from 116 to 38 off, the rest registers.
