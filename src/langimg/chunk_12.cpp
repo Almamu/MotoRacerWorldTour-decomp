@@ -13,6 +13,8 @@ void func_800297B4(Bike *b, Bike *o, int again);
 void func_8002A260(void);
 void func_8002A268(Bike *b, Vector3 *v);
 void func_8002A3F0(Bike *b);
+void func_8002A7A0(Bike *b, int steer, int f);
+extern int D_800D5F30;
 Vector3 *func_80099D74(Vector3 *v, int shift); // v << shift
 Vector3 *func_80099D48(Vector3 *v, int shift); // v >> shift
 Vector3 *func_800995C4(Vector3 *v, int len);
@@ -192,7 +194,127 @@ void func_8002A3F0(Bike *b) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_12", func_8002A3F0);
 #endif
 
+#ifdef NON_MATCHING
+// Registers only, in the steering branch for state 6: the input's magnitude and the angle at 0x3B0 in swapped registers ($v1/$a0 against $a0/$v1), 13 off. The rest (the dead-zone, the clamp into a temporary, the two bounded wrap loops) as the original.
+void func_8002A7A0(Bike *b, int steer, int f) {
+    Motion *m = b->m_5CC;
+    int i;
+
+    if (m->m_10) {
+        if (m->m_00 & 0x200) {
+            b->m_411 = 0;
+        } else {
+            b->m_411 = 1;
+        }
+        m = b->m_5CC;
+        if (m->m_10) {
+            return;
+        }
+    }
+    if (!(m->m_00 & 0x200)) {
+        b->m_411 = 1;
+    }
+    if (b->m_5C8->m_10) {
+        b->m_3A4 = 0;
+        b->m_400 = 0;
+        b->m_43D = 0;
+        if (!D_800D5F30) {
+            b->m_43D = 1;
+        } else if (D_800C5E14->m_378->m_10->m_state == 6) {
+            b->m_43D = 1;
+        }
+    } else {
+        if (b->m_411) {
+            if (f) {
+                if (D_800C5E14->m_378->m_10->m_state == 6) {
+                    int a = abs(steer);
+                    int g, c;
+
+                    if (a < 15) {
+                        b->m_43D = 1;
+                        goto tail;
+                    }
+                    b->m_400 = 0;
+                    g = 0;
+                    if (steer > 0) {
+                        g = -0x1000;
+                    } else if (steer < 0) {
+                        g = 0x1000;
+                    }
+                    c = b->m_3B0;
+                    g = (g - c) / 32;
+                    a = g * a;
+                    b->m_43D = 0;
+                    b->m_3B0 = c + a / 127;
+                } else if (abs(steer) < 15) {
+                    b->m_43D = 1;
+                } else {
+                    b->m_43D = 0;
+                    b->m_400 = (b->m_400 + -(steer * 3 << 11) / 127) / 2;
+                }
+                goto tail;
+            }
+            if (b->m_5CC->m_00 & 0x200) {
+                b->m_43D = 0;
+                b->m_400 = (b->m_400 - 0x1000) / 2;
+                goto tail;
+            }
+        }
+        if (b->m_5CC->m_00 & 0x100) {
+            b->m_43D = 0;
+            b->m_400 = (b->m_400 + 0x1000) / 2;
+            goto tail;
+        }
+        if (b->m_14A) {
+            if (!b->m_43D) {
+                b->m_43D = 1;
+                goto tail;
+            }
+        } else if (!b->m_43D) {
+            b->m_400 -= b->m_400 / 8;
+        }
+        if (D_800C5E14->m_378->m_10->m_state == 6 && !b->m_43D) {
+            b->m_43D = 1;
+        }
+    }
+tail:
+    if (b->m_14A) {
+        b->m_3A4 = 1;
+    }
+    if (b->m_43D) {
+        int d, e;
+
+        b->m_400 = 0;
+        d = (b->m_330.vy >> 14) - (b->m_360.vy >> 14);
+        b->m_30C.vx = 0;
+        if (d >= -0x666) {
+            if (d < 0x667) {
+                e = d;
+            } else {
+                e = 0x666;
+            }
+        } else {
+            e = -0x666;
+        }
+        d = e;
+        b->m_3B0 += d * 368 / 4096;
+    }
+    i = 0;
+    while (b->m_motor->m_15C < b->m_3B0 && i < 100) {
+        b->m_3B0 -= b->m_motor->m_15C;
+        i++;
+    }
+    while (b->m_3B0 < -b->m_motor->m_15C && i < 200) {
+        i++;
+        b->m_3B0 += b->m_motor->m_15C;
+    }
+    if (i >= 100) {
+        b->m_3B0 = 0;
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_12", func_8002A7A0);
+#endif
 
 static inline int Clamp1(int r) {
     if (r < 0) {
