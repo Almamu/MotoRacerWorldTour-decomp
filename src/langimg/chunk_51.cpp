@@ -1,6 +1,7 @@
 #include "common.h"
 #include "psyq.h"
 #include "langimg/cobjet.h"
+#include "langimg/ui.h"
 #include "stdarg.h"
 
 /* (docs/matching/issue-52-langimg-chunk51.md) */
@@ -337,7 +338,104 @@ void func_80077BC8(SVECTOR *d, Vector3 *s) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_51", func_80077BE4);
 
+extern "C" {
+extern u8 D_800C885C;                         // the text's mode
+extern u8 D_800C885D;                         // its brightness
+extern u8 D_800C8860, D_800C8861, D_800C8862; // its colour's bytes
+int func_80077EE0(UiTexture *t, int align, int x, int y, int sx, int sy, int scaled);
+}
+
+// A sprite of texture t at (x, y), its size scaled by sx and sy (4.12; their
+// inverse when scaled), placed by align (0x10/0x20 centred/right, 0x100/0x200
+// middle/bottom), drawn in the text's mode and colour
+#ifdef NON_MATCHING
+// A sprite drawn in the text's mode: the branches, the colour words and the packet as the original's, but the two colour shifts are computed in the other order, the fourth UV pair is read later, and the ordering table's index is tested as len < 2 where the original tests 1 < len (58 off). The texture's fourth UV pair is at 0xA here, not UiTexture's 0xC.
+int func_80077EE0(UiTexture *t, int align, int x, int y, int sx, int sy, int scaled) {
+    int w, h, x1;
+    u_long *p;
+
+    if (scaled) {
+        if (!sx) {
+            sx = 1;
+        }
+        if (!sy) {
+            sy = 1;
+        }
+        w = ((t->u1 - t->u0 + 1) << 12) / sx;
+        h = ((t->v2 - t->v0 + 1) << 12) / sy;
+    } else {
+        w = (t->u1 - t->u0 + 1) * sx / 4096;
+        h = (t->v2 - t->v0 + 1) * sy / 4096;
+    }
+    switch (align & 0xF0) {
+    case 0x10:
+        x -= w / 2;
+        break;
+    case 0x20:
+        x -= w;
+        break;
+    }
+    switch (align & 0xF00) {
+    case 0x100:
+        y -= h / 2;
+        break;
+    case 0x200:
+        y -= h;
+        break;
+    }
+    t->tpage &= ~0x60;
+    t->tpage |= (D_800C885C & 3) << 5;
+    p = (u_long *)D_800C8C70;
+    p[0] = 0x09000000;
+    if (D_800C885C & 8) {
+        if (D_800C885C & 4) {
+            p[1] = 0x66000000 | (D_800C8861 << 8) | (D_800C8862 << 16) | D_800C8860;
+        } else {
+            p[1] = 0x64000000 | (D_800C8861 << 8) | (D_800C8862 << 16) | D_800C8860;
+        }
+    } else if (D_800C885C & 4) {
+        int b = D_800C885D;
+
+        p[1] = 0x2E000000 | (b << 8) | (b << 16) | b;
+    } else {
+        switch (D_800C885C & 3) {
+        case 0: {
+            int b = D_800C885D;
+
+            p[1] = 0x2C000000 | (b << 8) | (b << 16) | b;
+            break;
+        }
+        case 1:
+            p[1] = D_800C885D | 0x2C000000;
+            break;
+        case 2:
+            p[1] = (D_800C885D << 8) | 0x2C000000;
+            break;
+        case 3:
+            p[1] = (D_800C885D << 16) | 0x2C000000;
+            break;
+        }
+    }
+    x1 = x + w - 1;
+    p[3] = *(u16 *)&t->u0 | (t->clut << 16);
+    p[5] = *(u16 *)&t->u1 | (t->tpage << 16);
+    p[7] = *(u16 *)&t->u2;
+    p[2] = XY(x, y);
+    p[4] = XY(x1, y);
+    p[6] = XY(x, y + h - 1);
+    p[8] = XY(x1, y + h - 1);
+    p[9] = *(u16 *)((u8 *)t + 0xA);
+    {
+        int z = 1 < D_800CBDC4->len ? 1 : D_800CBDC4->len - 1;
+
+        ADD_PRIM(D_800CBDC0 + z, D_800C8C70);
+    }
+    D_800C8C70 += 0x28;
+    return 1;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_51", func_80077EE0);
+#endif
 
 C51 *func_80078244(C51 *o) {
     func_8006BB70(o->m_160);

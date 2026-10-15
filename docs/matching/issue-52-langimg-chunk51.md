@@ -7,7 +7,7 @@ at 0x30 (its vtable at 0x68, `D_800C8884`), a subclass of it
 its users, and stubs. One file, `src/langimg/chunk_51.cpp`,
 0x800773E8-0x800792DC.
 
-51 functions: 39 match, 3 are parked, 9 are still asm.
+51 functions: 40 match, 4 are parked, 7 are still asm.
 
 ## The settings
 
@@ -61,3 +61,13 @@ stack argument's load scheduled earlier, 26 off).
   doesn't use.
 - `func_8007759C` (still asm) contains the same loop as the parked
   `func_80077844` (the mesh's points), with the same pointers walked.
+
+## Group B, more functions
+
+- **`func_80077EE0`** (a sprite drawn in the text's mode, placed by its
+  alignment) is written and parked, 58 off. The branches, the colour words
+  (`K | (g << 8) | (b << 16) | r`) and the packet are the original's, with
+  the texture page cleared and set in two statements. Left: the two colour
+  shifts come in the other order, the fourth UV pair is read later, and
+  the ordering table's index is tested as `len < 2` where the original has
+  `1 < len`. This texture's fourth UV pair is at 0xA, not `UiTexture`'s 0xC.
