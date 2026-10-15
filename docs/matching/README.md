@@ -84,3 +84,4 @@ issue it worked on, and add it below.
 | [issue-17-langimg-chunk16.md](issue-17-langimg-chunk16.md) | The game's chunk_16: more of the bike; a field read before the stores, two stack slots for the angles, a struct copied member by member |
 | [issue-19-langimg-chunk18.md](issue-19-langimg-chunk18.md) | The game's chunk_18: shapes, a bike's sound and a menu cursor; declare what a callee returns, a switch's range check |
 | [issue-54-langimg-chunk53.md](issue-54-langimg-chunk53.md) | The game's chunk_53: drawing models through the GTE; a vector copied field by field, the Z scale factors read in one statement |
+| [issue-55-langimg-chunk54.md](issue-55-langimg-chunk54.md) | The game's chunk_54: GTE drawing, a sprite facing the camera; a callee that returns its output, GTE loads and stores from memory |
