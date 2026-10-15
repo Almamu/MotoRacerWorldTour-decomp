@@ -193,7 +193,7 @@ struct Who56 {
 extern int D_800D5F38;
 extern int D_800D5F40;
 extern int D_800C8AC4; // the modes' limits (built with la)
-extern Str4 D_800C8B0C;
+extern Str4 D_800C8B0C[];
 char *func_800A5F90(char *d, int v);
 char *func_800A6000(char *d, int v, int width, int pad);
 int func_800A6850(int x);
@@ -223,9 +223,9 @@ struct Item56 {
     u8 m_00;
     u8 m_01; // its kind
 };
-extern short D_800C8AC0[2]; // a 3-byte string
-extern short D_800C8AB0;    // a 6-byte string
-extern short D_800C8AB8;    // a 5-byte string
+extern short D_800C8AC0[]; // a 3-byte string (unsized: not taken for small data)
+extern short D_800C8AB0[]; // a 6-byte string (unsized: not taken for small data)
+extern short D_800C8AB8[]; // a 5-byte string (unsized: not taken for small data)
 extern Ot56 *D_800CBDC4;
 extern int D_800CBDC0;
 extern int D_800C88FC;
@@ -728,16 +728,11 @@ void func_8008264C(void) {
     D_800CBD64 = D_800CC030[20];
 }
 
-#ifdef NON_MATCHING
-// Registers: the table's address and the index swap
 void func_8008267C(int i) {
     D_800D49A8 = i;
-    D_800C89F4->m_F8 = D_800C89F8[i + 2];
-    D_800C89F4->m_FC = D_800C89F8[i + 2];
+    D_800C89F4->m_F8 = *(int *)((u8 *)D_800C89F8 + (i << 2) + 8);
+    D_800C89F4->m_FC = *(int *)((u8 *)D_800C89F8 + (i << 2) + 8);
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_56", func_8008267C);
-#endif
 
 // A rectangle's four values set, as setRECT does
 static inline void SetRect56(short *r, int x, int y, int w, int h) {
@@ -812,8 +807,6 @@ void func_80082840(Grid56 *g) {
     memset(b + 0x108, 0, 8);
 }
 
-#ifdef NON_MATCHING
-// The strings' copies: " Laps" and " Lap" are likely strcpy'd literals (the block move's address split through $v0); ours, a memcpy from the symbols, loads it whole (12 off)
 /* The panel set up: its cells, the riders' count and the laps. */
 void func_80082904(Grid56 *g, Race56 *r) {
     int i;
@@ -836,9 +829,9 @@ void func_80082904(Grid56 *g, Race56 *r) {
     ((char *)g)[0xE8] = '/';
     ((char *)g)[0xE9] = r->m_378->m_04 + '0';
     if ((u32)r->m_378->m_04 >= 2) {
-        memcpy((char *)g + 0xEA, &D_800C8AB0, 6);
+        memcpy((char *)g + 0xEA, D_800C8AB0, 6);
     } else {
-        memcpy((char *)g + 0xEA, &D_800C8AB8, 5);
+        memcpy((char *)g + 0xEA, D_800C8AB8, 5);
     }
     func_80082A8C(g, r);
     if (r->m_378->m_1E3C) {
@@ -846,12 +839,7 @@ void func_80082904(Grid56 *g, Race56 *r) {
     }
     func_8008267C(D_800D49A8);
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_56", func_80082904);
-#endif
 
-#ifdef NON_MATCHING
-// The 3-byte string's copy: likely a strcpy'd literal (" \x82"), a block move with its address in $t3; ours, lh and lb straight from the symbol (9 off)
 /* How many bikes are in (a flag's bit 6), and the mode's marker. */
 void func_80082A8C(Grid56 *g, Race56 *r) {
     char *b = (char *)g;
@@ -875,9 +863,6 @@ void func_80082A8C(Grid56 *g, Race56 *r) {
         memcpy(&g->m_DA, D_800C8AC0, 3);
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_56", func_80082A8C);
-#endif
 
 void func_80082B14(char *p, Race56 *r) {
     int t = r->m_378->m_1E3C->m_40;
@@ -979,8 +964,6 @@ void func_80082DA4(Grid56 *g, int row, Tab56 *t, int flag, int col) {
     }
 }
 
-#ifdef NON_MATCHING
-// Registers: the 4-byte string's address goes through $v0 in the original
 void func_80082DE4(Grid56 *g, int row, Who56 *w, int mode) {
     char *q = g->m_90[row];
     int v = 0;
@@ -993,12 +976,9 @@ void func_80082DE4(Grid56 *g, int row, Who56 *w, int mode) {
     if (v < 1000) {
         func_800A5F90(q, v);
     } else {
-        *(Str4 *)q = D_800C8B0C;
+        *(Str4 *)q = D_800C8B0C[0];
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_56", func_80082DE4);
-#endif
 
 void func_80082E74(Grid56 *g, int k, Item56 *it, Race56 *r, int f) {
     void *v = 0;

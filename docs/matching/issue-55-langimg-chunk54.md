@@ -7,7 +7,7 @@ More of chunk_53's drawing through the GTE:
   matrix, then chunk_67's `func_800985A8` with the camera's matrix, the
   first two rows scaled by the texture's width and height (`D_800CBCA4`'s
   corners at 0/0xA and 1/0xB) over 32, the translation set from the
-  texture's centre (`func_8007F000`, parked);
+  texture's centre (`func_8007F000`);
 - the primitives from one to the end of the frame's (`D_800C8C70`) given
   a colour through the GTE's depth cueing (`dpcl`, IR0 cleared, the colour
   packed in 15 bits into register 28), each primitive's length from its
@@ -15,7 +15,7 @@ More of chunk_53's drawing through the GTE:
 
 One file, `src/langimg/chunk_54.cpp`, 0x8007D130-0x8007F290.
 
-13 functions: 2 are parked, 11 are still asm.
+13 functions: 1 matches, 1 is parked, 11 are still asm.
 
 ## The settings
 
@@ -65,5 +65,12 @@ globals `D_800C88FC` and `D_800CBCA4`.
 | `func_8007E744` | asm | 169 instructions (GTE) |
 | `func_8007E9E4` | asm | 210 instructions (GTE) |
 | `func_8007ED28` | asm | 183 instructions (GTE) |
-| `func_8007F000` | parked | a sprite facing the camera: scheduling |
+| `func_8007F000` | matches | a sprite facing the camera |
 | `func_8007F21C` | parked | the primitives' colours: registers |
+
+## Second pass
+
+- `func_8007F000` matches with the chunk built with `-mno-split-addresses`
+  (the Makefile's `langimg.chunk_54_CFLAGS`): its addresses are unsplit
+  `la`s, so the scheduler can't move the `lui`s. `func_8007F21C` is
+  unchanged by it, so the whole chunk takes the flag.

@@ -106,7 +106,7 @@ void func_80086F20(Buf58 *b, int n);
 }
 
 #ifdef NON_MATCHING
-// The table's address: the original builds it in $v1 directly
+// The table's address: the original builds it in $v1 directly, as an unsplit `la`; with -mno-split-addresses this matches, but func_80086A50 then doesn't (2 off)
 void func_80085258(void) {
     int i = 5;
     Ent58 *e = &D_800CBD68;

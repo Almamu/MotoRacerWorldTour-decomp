@@ -36,15 +36,29 @@ struct Src64 {
     int m_10;
 };
 
+struct Vec64 {
+    long m_00, m_04, m_08;
+};
+// What a channel follows: its position at 0x14
+struct Own64 {
+    u8 m_00[0x14];
+    Vec64 m_14;
+};
 // A channel (0x80 bytes)
 struct Chan64 {
     u8 m_00[4];
     Src64 *m_04;
     u8 m_08[4];
     int m_0C;
-    u8 m_10[0x26];
+    Own64 *m_10;
+    u8 m_14[8];
+    Vec64 m_1C; // its position
+    Vec64 m_28; // an offset
+    u8 m_34[2];
     u16 m_36; // flags
-    u8 m_38[0x48];
+    u8 m_38[4];
+    Vec64 *m_3C;
+    u8 m_40[0x40];
 };
 
 struct Anim64 {
@@ -83,10 +97,6 @@ struct Play64 {
     Pose64 m_2C; // the pose it started from
 };
 
-struct Vec64 {
-    long m_00, m_04, m_08;
-};
-
 // An object of the list
 struct Obj64 {
     u8 m_00[0x10];
@@ -115,6 +125,9 @@ void func_80091FB4(Pose64 *d, unsigned int f, void *a, void *b);
 int func_80092480(Play64 *p, unsigned int now);
 void func_8008E0C4(Obj64 *o, void *a);
 
+void func_80098768(MATRIX *m, Vec64 *v, Vec64 *out);
+Vec64 *func_800997D0(Vec64 *v, Vec64 *a);
+void func_800912AC(Anim64 *a);
 void func_800913C0(Anim64 *a);
 Ent64 *func_80091414(Tab64 *t, int id);
 Pack64 *func_800914AC(Tab64 *t, int id);
@@ -128,7 +141,55 @@ void func_800928FC(Ent64 *d, Vec64 *s);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_64", func_800910EC);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_64", func_800912AC);
+static inline void VecCopyL64(Vec64 *d, Vec64 *s) {
+    long x = s->m_00;
+    long y = s->m_04;
+    long z = s->m_08;
+
+    d->m_00 = x;
+    d->m_04 = y;
+    d->m_08 = z;
+}
+
+/* Each channel's position: its source turned by its owner's matrix (with the
+ * offset at 0x28 when flag 0x40 is set) for flag 0x20, else the followed
+ * object's; none for flag 0x10. */
+void func_800912AC(Anim64 *a) {
+    int n = a->m_00;
+    Chan64 *c = a->m_08;
+
+    for (; n; c++, n--) {
+        short f = c->m_36;
+
+        if (f & 0x10) {
+            continue;
+        }
+        if (f & 0x20) {
+            Vec64 t;
+            Vec64 *v = c->m_3C;
+            MATRIX *m;
+
+            if (f & 0x40) {
+                long x = v->m_00;
+                long y = v->m_04;
+                long z = v->m_08;
+
+                v = &t;
+                x += c->m_28.m_00;
+                y += c->m_28.m_04;
+                z += c->m_28.m_08;
+                t.m_00 = x;
+                t.m_04 = y;
+                t.m_08 = z;
+            }
+            m = (MATRIX *)c->m_04->m_10;
+            func_80098768(m, v, &c->m_1C);
+            func_800997D0(&c->m_1C, (Vec64 *)m->t);
+        } else {
+            VecCopyL64(&c->m_1C, &c->m_10->m_14);
+        }
+    }
+}
 
 void func_800913C0(Anim64 *a) {
     int n = a->m_00;

@@ -728,7 +728,7 @@ void func_800A0558(u8 *d, u8 *s, int n) {
 }
 
 #ifdef NON_MATCHING
-/* The word loop's count shifted from its copy, and its decrement scheduled before the store (4 off) */
+// The word loop's decrement: the original schedules it after the unaligned store, ours before it (3 off)
 /* LZ data unpacked: 8 flags to a byte, a literal byte or a 12-bit distance
  * and a 4-bit length (+3). */
 void func_800A0584(u8 *src, u8 *dst) {
@@ -768,8 +768,8 @@ void func_800A0584(u8 *src, u8 *dst) {
             }
             k = w;
             if (dist >= 5) {
-                w >>= 2;
                 k &= 3;
+                w >>= 2;
                 while (w) {
                     ((U32P *)dst)->m_v = *(u32 *)from;
                     from += 4;

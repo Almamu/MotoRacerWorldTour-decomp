@@ -18,7 +18,7 @@ shorts passed to `func_80097E4C`.
 
 One file, `src/langimg/chunk_64.cpp`, 0x800910EC-0x80093150.
 
-19 functions: 8 match, 2 are parked, 9 are still asm.
+19 functions: 9 match, 2 are parked, 8 are still asm.
 
 ## The settings
 
@@ -56,7 +56,7 @@ globals `D_800CBE58`, `D_800CBE5C` and `D_800CBE68`.
 | Function | State | Notes |
 |---|---|---|
 | `func_800910EC` | asm | 112 instructions |
-| `func_800912AC` | asm | 69 instructions |
+| `func_800912AC` | matches | each channel's position |
 | `func_800913C0` | matches | channels refreshed |
 | `func_80091414`, `func_800914AC` | match | an entry by id, or the default |
 | `func_80091544` | asm | 91 instructions (a pose set from a table) |
@@ -72,3 +72,11 @@ globals `D_800CBE58`, `D_800CBE5C` and `D_800CBE68`.
 | `func_800928FC` | matches | a vector's words to shorts |
 | `func_80092918`, `func_80092AD4` | asm | 112 and 104 instructions |
 | `func_80092C70` | asm | 313 instructions |
+
+## Second pass
+
+- `func_800912AC`: each channel's position, through its owner's matrix
+  (with an offset for flag 0x40) or copied from what it follows. The
+  offset is added the chunk_62 way (the three loads, then the adds, then
+  the stores), and the loop steps the channel before the count
+  (`c++, n--`). `Chan64` gained the fields it reads.

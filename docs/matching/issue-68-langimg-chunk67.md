@@ -14,7 +14,7 @@ The game's maths library.
 
 One file, `src/langimg/chunk_67.cpp`, 0x80097128-0x800990E8.
 
-30 functions: 13 match, 6 are parked, 11 are still asm.
+30 functions: 14 match, 5 are parked, 11 are still asm.
 
 ## The settings
 
@@ -65,7 +65,7 @@ globals.
 | `func_80097D08` | matches | a look-at matrix from two points |
 | `func_80097E4C`, `func_80097F68` | asm | GTE: a rotation from angles |
 | `func_80098090` | matches | a transpose |
-| `func_800980F4` | parked | an inverse in place: the negated translation's order (7 off) |
+| `func_800980F4` | matches | an inverse in place |
 | `func_80098178` | matches | an inverse |
 | `func_80098224` | matches | a look-at matrix from a direction |
 | `func_80098354` | parked | a rotation about y from a direction: registers |
@@ -79,3 +79,9 @@ globals.
 | `func_80098DD4`, `func_80098E38` | match | minima and maxima |
 | `func_80098E9C` | parked | a normalisation: where a constant is set |
 | `func_80098F94` | parked | a scaling to `1 << s`: registers |
+
+## Second pass
+
+- `func_800980F4`: the negated translation is three loads, three
+  negations, three stores (`x = v.x; ...; x = -x; ...; m->t.x = x;`);
+  negating in the loads' statements interleaved them.
