@@ -8,7 +8,7 @@ dispatched once for each parity of the frame, and a menu's entries
 searched and chosen. One file, `src/langimg/chunk_60.cpp`,
 0x80089200-0x8008B208.
 
-51 functions: 41 match, 3 are parked, 7 are still asm.
+51 functions: 42 match, 3 are parked, 6 are still asm.
 
 ## The settings
 
@@ -21,7 +21,7 @@ small globals (`langimg.chunk_60_*`), as chunk_71 and chunk_72.
 |---|---|---|
 | `func_80089200` | parked | an entry that can be chosen, searched down or up: the downward loop isn't rotated in the original (13 off) |
 | `func_800892DC` to `func_800893C8` | match | an entry chosen, its menu sound |
-| `func_800893E8` | asm | 72 instructions of angles and scales (as chunk_66's `func_80095F84`) |
+| `func_800893E8` | matches | a projection's derived values (third pass) |
 | `func_80089508` to `func_800897FC` | match | the frame buffer: constructors, destructor, its frames, its allocation |
 | `func_800898C4` | parked | the frame's ordering table cleared: a global read without `$gp` here (2 off) |
 | `func_80089930` to `func_80089C7C` | match | the pools and ids: constructors, destructors, allocation, reset |
@@ -51,3 +51,9 @@ small globals (`langimg.chunk_60_*`), as chunk_71 and chunk_72.
   globals (`%gp_rel` everywhere) except in `func_800898C4`, which reads it
   with `lui` and `lw` into one register: a declaration this file
   can't give with one symbol.
+
+## Third pass
+
+- `func_800893E8` matches: it is chunk_65's matched `func_80093C80` (a
+  projection's focal length, half-height and angle, through `ratan2` and
+  the table `D_800BA884`) on this file's `Proj60`, written the same way.

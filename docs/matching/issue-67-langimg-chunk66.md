@@ -7,7 +7,7 @@ object of settings with a "placed" flag; planes stored as a normal and a
 31-bit distance. One file, `src/langimg/chunk_66.cpp`,
 0x800950B0-0x80097128.
 
-59 functions: 49 match, 5 are parked, 5 are still asm.
+59 functions: 51 match, 5 are parked, 3 are still asm.
 
 ## The settings
 
@@ -36,12 +36,12 @@ with `lui`/`addiu`), divisions without checks, five small globals
 | `func_800950B0`, `func_800953A4`, `func_8009593C` | asm | 141, 137 and 402 instructions |
 | `func_800952E0` | parked | a track point into the camera's frame: the loads' order (43 off) |
 | `func_800955C4` to `func_800958E0` | match | a lookup by name, the constructor, setters, the placement |
-| `func_80095F84` | asm | 83 instructions of the sub-struct's maths |
+| `func_80095F84` | matches | a view's projection set (third pass) |
 | `func_800960D0` | parked | the sub-object made and called: the branches and registers (42 off) |
 | `func_800961A0` to `func_80096240` | match | a virtual call, a rate, a lookup by id |
 | `func_80096290` | parked | a pack loaded: GCC folds `size - (size - x)` (65 off) |
 | `func_800963BC` | matches | the pack freed |
-| `func_800963E8` | asm | a 0x800-byte copy and a string |
+| `func_800963E8` | matches | the disc's sector 16 kept, the path reset (third pass) |
 | `func_80096508` to `func_8009662C` | match | the CD's shell, sectors read, retried |
 | `func_800966DC`, `func_80096724` | match | the stream emptied, back to its start |
 | `func_8009674C` | parked | the stream over a buffer: registers (13 off) |
@@ -72,3 +72,23 @@ with `lui`/`addiu`), divisions without checks, five small globals
 - **The test that controls the loop.** `func_800955C4` loops while the
   result is -1, the count an inner `break`: `for (i = 0; r == -1 && i <
   n; i++)`.
+
+## Third pass
+
+- `func_80095F84` matches: the view's projection (at 0xA0) given the
+  view's two sizes, then chunk_65's projection maths through an inline
+  function (`Proj66Set`, the body of `func_80093C80`), the result passed
+  to the owner at 0x9C. The two sizes are read into locals before either
+  is stored (`int x = o->m_08; int y = o->m_0C;`), as the original's
+  loads; stored as read, the first store came before the second load.
+- `func_800963E8` matches: sector 16 read into `D_800D36D0` and copied to
+  `D_800D2ED0` as a 0x800-byte struct of bytes (GCC's copy loop with its
+  alignment test), the path at `D_800D4705` reset to `"\\"` and the
+  volume's name copied 0x35 bytes before it. The `"\\"` is an inlined
+  `strcpy`: its 2 bytes come from a 4-byte `.rodata` word, `D_800B7940`.
+  A literal goes to `.sdata` here (`-G8`); a `const char[4]` with
+  `__attribute__((section(".rodata")))` gave the place, but read where
+  its initializer is visible, GCC folded it into a fresh literal, again
+  in `.sdata`. Declared `extern` before the function and defined after
+  it, the copy reads `D_800B7940` (`*(Root66 *)D_800D4705 = *(Root66
+  *)D_800B7940`).

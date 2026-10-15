@@ -1323,6 +1323,18 @@ as done).
 
 ## Data
 
+- **A short literal kept in `.rodata`.** With `-G8` a string literal of
+  8 bytes or less goes to `.sdata`, where the original may have it in
+  `.rodata` (chunk_66's `D_800B7940`, the `"\\"` of an inlined
+  `strcpy`). A `const char D[4] __attribute__((section(".rodata"))) =
+  "\\";` gives the place, but where its initializer is visible GCC reads
+  the contents, not the array, and makes a fresh literal (in `.sdata`
+  again): declare it `extern` before the function that reads it and
+  define it after (chunk_66's `func_800963E8`).
+- **A local array's initializer is `.rodata`.** `int t[3] = {2, 1, 0};`
+  is copied from an anonymous word triple in `.rodata` (three loads, three
+  stores), which is what an unnamed `D_800B7B14` before a function is
+  (chunk_71's `func_800A09C0`).
 - **Orphan literals.** Identical string literals are merged within a
   source file, so an unreferenced copy of a string belongs to the next
   file. Until the chunks follow the original files such data is spelled
