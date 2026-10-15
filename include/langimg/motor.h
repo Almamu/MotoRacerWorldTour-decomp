@@ -50,7 +50,9 @@ struct Motor {
     short m_15A; // 0x15A: rolling resistance
     u8 m_15C[4];
     int m_160;
-    u8 m_164[8];
+    u8 m_164[4];
+    short m_168;
+    u8 m_16A[2];
     int m_16C;
     int m_170; // which of the entries at 0x185
     u8 m_174[0x11];

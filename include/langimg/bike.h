@@ -256,9 +256,10 @@ struct Bike {
     u8 m_52C[4];
     int m_530;
     AnimChan m_534;
-    u8 m_pad550[0x4];
+    int m_550; // the channel's state
     int m_554;
-    u8 m_pad558[0x8];
+    int m_558;
+    int m_55C; // the last m_554
     Frame m_560;
     Frame m_580;
     Motor *m_motor;
