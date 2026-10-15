@@ -92,7 +92,7 @@ settings
 | `src/langimg` chunk_23 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=D_800CABB7` |
 | `src/langimg` chunk_45 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (eleven) |
 | `src/langimg` chunk_66 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (five) |
-| `src/langimg` chunk_15, chunk_17, chunk_19, chunk_20, chunk_21, chunk_22, chunk_25, chunk_26, chunk_27, chunk_28, chunk_29, chunk_31, chunk_32, chunk_33, chunk_37, chunk_38, chunk_39, chunk_40, chunk_41, chunk_44, chunk_46, chunk_47, chunk_49, chunk_50, chunk_51, chunk_52, chunk_55, chunk_56, chunk_57, chunk_58, chunk_59, chunk_60, chunk_61, chunk_64, chunk_65, chunk_67, chunk_68, chunk_69, chunk_70, chunk_71, chunk_72, chunk_73, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
+| `src/langimg` chunk_15, chunk_17, chunk_19, chunk_20, chunk_21, chunk_22, chunk_25, chunk_26, chunk_27, chunk_28, chunk_29, chunk_31, chunk_32, chunk_33, chunk_37, chunk_38, chunk_39, chunk_40, chunk_41, chunk_44, chunk_46, chunk_47, chunk_49, chunk_50, chunk_51, chunk_52, chunk_55, chunk_56, chunk_57, chunk_58, chunk_59, chunk_60, chunk_61, chunk_62, chunk_64, chunk_65, chunk_67, chunk_68, chunk_69, chunk_70, chunk_71, chunk_72, chunk_73, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_06 to chunk_12 (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_02b (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `SCES_030.37` (`src/sces`) | GCC 2.91.66 | 0 | `-fsigned-char` | `--expand-div` |
@@ -1055,6 +1055,13 @@ What's left once the instructions are right is usually register choice.
   constant into `$t1` (`lui`/`ori`, `addu $t1, $zero, $zero` for 0, and
   reuses a 0 still there). That's a `register int r asm("$9")` set from C
   before each `GTE_MTC2(r, n)`; GCC picks the instructions.
+- **Short GTE functions are often C.** splat marks any function with a
+  `mtc2`/`mfc2` hand-written. chunk_62's `func_8008D27C` (three `mtc2`s,
+  `sqr`, three `mfc2`s and two adds) matched with `GTE_MTC2`,
+  `GTE_SQR0()` and `GTE_MFC2`, the first add written between the second
+  and third `mfc2` (`a += b;`) where the original has it. One that ends
+  with a `nop` in the `jr`'s delay slot GCC could have filled (chunk_65's
+  `func_80094670`) isn't.
 - **A register the caller sets: a local register variable.** chunk_65's
   subdivision functions read the renderer's state through `$t9`, which
   their caller set, also after their own calls. `register Rnd65 *g
@@ -1135,6 +1142,10 @@ What's left once the instructions are right is usually register choice.
   The same holds for a branch's registers: chunk_20's `func_8003AB24`
   compares with `bne $s4, $v0` (the found item first), which `p ==
   &s->m_4C[g].m_08[j]` gave; the other order swapped them.
+- **Add into the locals, then store.** chunk_62's `func_8008D168` adds
+  an offset to a vector into a local: with the three loads first, `x +=
+  b->vx; y += b->vy; z += b->vz; t.vx = x; ...` matched, `t.vx = x +
+  b->vx` took other registers.
 - **Field-by-field inlines for vectors.** `v->vx = 0; v->vy = 0; v->vz =
   0;` stores in that order, where a chained assignment stores the last
   field first; and a field-by-field copy lets GCC reuse values it knows,
