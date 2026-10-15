@@ -84,14 +84,58 @@ struct Win57 {
 };
 
 struct Disp57 {
-    u8 m_00[0x30];
+    u8 m_00[0xC];
+    int m_0C; // its width
+    u8 m_10[0x20];
     u8 m_30[4];
+};
+// The bike the dashboard shows (chunk_09's Bike)
+struct Phys57 {
+    u8 m_00[0x12C];
+    s8 m_12C; // its gear
+    u8 m_12D[3];
+    short m_130; // its engine speed
+    u8 m_132[0x1B2];
+    int m_2E4;
+    int m_2E8;
+};
+// A racer (chunk_36's Bike36): its kind in bits 1-5
+struct Racer57 {
+    u32 m_00;
+    u8 m_04[0x2C];
+    Phys57 *m_30;
+    u8 m_34[0x2EC];
+    s8 m_320;
+};
+struct Gauge57 {
+    u8 m_00[0xE0];
+    int m_E0;
+};
+struct Hold57 {
+    u8 m_00[0x52C];
+    int m_52C;
+};
+struct Run57 {
+    u32 m_00;
+    u8 m_04[0xC];
+    Hold57 *m_10;
+};
+struct Game57 {
+    u8 m_00[0x378];
+    Run57 *m_378;
 };
 
 extern Time57 D_800D6124; // the clock
 extern u32 D_800D60FC;
 extern int D_800D6100; // the frame's length
 extern int D_800CBD30;
+extern Game57 *D_800C5E14;
+extern int D_800D49A4;
+extern struct Dash57 {
+    int m_00[0x14];
+} D_800CBCE0; // the dashboard
+extern short D_800CBD24, D_800CBD26;
+extern s8 D_800CBD28, D_800CBD29;
 extern Msg57 D_800C73F8[];
 extern int D_800C89D0;
 extern int D_800C89D8;
@@ -135,6 +179,12 @@ void func_8008422C(Node57 *n);
 int func_800846AC(int a, int b, int c, int d, int e, int f);
 void func_800846FC(void);
 void func_80084D58(void);
+void func_80084B1C(int x, int y);
+void func_80019FA4(int *d, int a, int b);
+void func_80019FB0(int *d, int x, int y);
+void func_80019FBC(int *d, int v);
+void func_80019FF8(int *d, int on);
+int func_800334B0(Phys57 *b);
 int func_800A5CD0(u32 ms, int *m, int *sec, int *cs);
 char *func_800A6000(char *p, int v, int n, int pad);
 void func_80083380(Txt57 *t, int i, int v, int c);
@@ -511,7 +561,69 @@ void func_800846FC(void) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_57", func_80084720);
 
+/* The dashboard at x, y for the racer shown (w[1]): its scale, the engine
+ * speed, the gear and its warnings, then whether it's lit. */
+#ifdef NON_MATCHING
+// The dashboard's address: the original builds it again for each of its five calls; GCC keeps it in a saved register (one more, a frame of 0x30 against 0x28), which shifts everything (140 off). Declared as an array, a struct, unsplit: the same.
+void func_80084B1C(int x, int y) {
+    int *w = &D_800CBD30;
+    Racer57 *s = (Racer57 *)w[1];
+
+    if (s && (int)(s->m_00 << 26) >> 27 == 1 &&
+        (!s->m_320 || D_800C5E14->m_378->m_10->m_52C == 1 || D_800C5E14->m_378->m_10->m_52C == 2)) {
+        int k, a, f, on;
+        Racer57 *r;
+        Phys57 *b;
+        int g;
+
+        k = (D_800C886C->m_0C << 12) / 320;
+        func_80019FA4((int *)&D_800CBCE0, k, k * ((Gauge57 *)w[3])->m_E0 >> 12);
+        func_80019FB0((int *)&D_800CBCE0, x - 0x56, y - 0x2C);
+        r = (Racer57 *)w[1];
+        a = (int)(r->m_00 << 26) >> 27 == 1;
+        b = r->m_30;
+        func_80019FBC((int *)&D_800CBCE0, b->m_130);
+        if (a) {
+            int t = w[5];
+            int warn = 0;
+            int up;
+
+            if (b->m_2E8) {
+                warn = ((t & 7) < 3) == 0;
+            }
+            f = 0;
+            if (b->m_2E8) {
+                f = !(t & 7);
+            }
+            if (f) {
+                func_8006CA84(0x44, 0x7F);
+            }
+            g = b->m_12C;
+            up = 0;
+            if (!(((t + 4) & 7) < 3)) {
+                up = func_800334B0(b) != 0;
+            }
+            D_800CBD26 = g;
+            D_800CBD29 = up;
+            D_800CBD28 = warn;
+            Put57(&D_800CBD24, b->m_2E4);
+        } else {
+            D_800CBD29 = 0;
+            D_800CBD26 = b->m_12C;
+        }
+        if (D_800C5E14->m_378->m_10->m_52C != 5) {
+            on = 0;
+            if (D_800C5E14->m_378->m_10->m_52C != 6 &&
+                (!(D_800C5E14->m_378->m_00 & 0xA8) || D_800D49A4 == 1)) {
+                on = 1;
+            }
+            func_80019FF8((int *)&D_800CBCE0, on);
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_57", func_80084B1C);
+#endif
 
 void func_80084D58(void) {
     if (D_800D6124.m_t & 0x100) {
