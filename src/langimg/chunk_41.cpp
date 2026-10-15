@@ -113,10 +113,10 @@ int func_80063A5C(Obj41 *o);
 void func_800643BC(Obj41 *o, int f);
 void func_80063848(Obj41 *d, Obj41 *s);
 void func_8006973C(Mat41 *m, SVec41 *a);
-void func_80098674(Mat41 *a, Mat41 *b, Mat41 *out);
+Mat41 *func_80098674(Mat41 *a, Mat41 *b, Mat41 *out); // a product, returns out
 void func_8009887C(Vec41 *v, Vec41 *out);
-void func_800997D0(Vec41 *v, Vec41 *a);
-void func_80098768(Mat41 *m, Vec41 *v, Vec41 *out);
+Vec41 *func_800997D0(Vec41 *v, Vec41 *a); // v += a, returns v
+Vec41 *func_80098768(Mat41 *m, Vec41 *v, Vec41 *out);
 void func_800643E4(Obj41 *o);
 struct Mode41 {
     u8 m_00[0x3EC];
@@ -415,69 +415,85 @@ static inline void SetSVec41(SVec41 *v, int x, int y, int z) {
     v->z = z;
 }
 
-#ifdef NON_MATCHING
-// The local matrices' stack addresses: the original computes them for each call, ours keeps them in saved registers (the open problem of chunk_02b)
+static inline void SetVec41(Vec41 *v, int x, int y, int z) {
+    v->x = x;
+    v->y = y;
+    v->z = z;
+}
+
+// A matrix's translation set, all three loads first
+static inline void SetTrans41(Mat41 *m, Vec41 *v) {
+    int x = v->x;
+    int y = v->y;
+    int z = v->z;
+
+    m->t.x = x;
+    m->t.y = y;
+    m->t.z = z;
+}
+
+// A rotation matrix from three angles, its translation cleared
+static inline void Rot41(Mat41 *m, SVec41 *a, int x, int y, int z) {
+    SetSVec41(a, x, y, z);
+    func_8006973C(m, a);
+    m->t.z = 0;
+    m->t.y = 0;
+    m->t.x = 0;
+}
+
+// A matrix's translation
+static inline Vec41 *MatTrans41(Mat41 *m) {
+    return &m->t;
+}
+
+static inline void Angles41(Obj41 *o) {
+    Mat41 m1;
+    Mat41 m2;
+    Mat41 m3;
+    SVec41 a;
+    Mat41 m4;
+    SVec41 b;
+    Mat41 m5;
+    SVec41 c;
+    short *p = o->m_70;
+
+    o->m_298 = p[0];
+    o->m_29C = p[1];
+    o->m_2A0 = p[2];
+    Rot41(&m3, &a, 0, o->m_29C, 0);
+    Rot41(&m4, &b, -o->m_298, 0, 0);
+    func_80098674(&m3, &m4, &m2);
+    func_8009887C(&m4.t, &m2.t);
+    func_800997D0(MatTrans41(&m2), &m3.t);
+    Rot41(&m5, &c, 0, 0, -o->m_2A0);
+    func_80098674(&m2, &m5, &m1);
+    func_8009887C(&m5.t, &m1.t);
+    func_800997D0(&m1.t, MatTrans41(&m2));
+    o->m_2A4 = m1;
+}
+
 /* The matrix from the angles (y, then x, then z), the forward vector through it, the positions kept. */
 void func_800643E4(Obj41 *o) {
-    {
-        Mat41 m1;
-        Mat41 m2;
-        Mat41 m3;
-        SVec41 a;
-        Mat41 m4;
-        SVec41 b;
-        Mat41 m5;
-        SVec41 c;
-        short *p = o->m_70;
-
-        o->m_298 = p[0];
-        o->m_29C = p[1];
-        o->m_2A0 = p[2];
-        SetSVec41(&a, 0, o->m_29C, 0);
-        func_8006973C(&m3, &a);
-        m3.t.z = 0;
-        m3.t.y = 0;
-        m3.t.x = 0;
-        SetSVec41(&b, -o->m_298, 0, 0);
-        func_8006973C(&m4, &b);
-        m4.t.z = 0;
-        m4.t.y = 0;
-        m4.t.x = 0;
-        func_80098674(&m3, &m4, &m2);
-        func_8009887C(&m4.t, &m2.t);
-        func_800997D0(&m2.t, &m3.t);
-        SetSVec41(&c, 0, 0, -o->m_2A0);
-        func_8006973C(&m5, &c);
-        m5.t.z = 0;
-        m5.t.y = 0;
-        m5.t.x = 0;
-        func_80098674(&m2, &m5, &m1);
-        func_8009887C(&m5.t, &m1.t);
-        func_800997D0(&m1.t, &m2.t);
-        o->m_2A4 = m1;
-    }
+    Angles41(o);
     {
         Vec41 out;
         Vec41 v;
+        Mat41 *m = &o->m_2A4;
+        Vec41 *po = &out;
 
-        v.x = 0;
-        v.y = 0;
-        v.z = 0x1000;
-        func_80098768(&o->m_2A4, &v, &out);
-        func_800997D0(&out, &o->m_2A4.t);
-        VecCopyL41(&o->m_2FC, &out);
+        SetVec41(&v, 0, 0, 0x1000);
+        func_80098768(m, &v, po);
+        func_800997D0(po, MatTrans41(&o->m_2A4));
+        VecCopyL41(&o->m_2FC, po);
         VecCopyL41(&o->m_2E4, &o->m_2FC);
-        o->m_2A4.t.z = 0;
-        o->m_2A4.t.y = 0;
-        o->m_2A4.t.x = 0;
-        VecCopyL41(&o->m_2A4.t, (Vec41 *)o->m_64);
+        m->t.z = 0;
+        m->t.y = 0;
+        m->t.x = 0;
+        SetTrans41(m, (Vec41 *)o->m_64);
         VecCopyL41(&o->m_26C, &o->m_78);
         VecCopyL41(&o->m_78, (Vec41 *)o->m_64);
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_41", func_800643E4);
-#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_41", func_80064608);
 
@@ -608,8 +624,7 @@ static inline void LanePt41(Row41 *r, int i, int k, Vec41 *out, Vec41 *d) {
     func_800997D0(out, d);
 }
 
-#ifdef NON_MATCHING
-// Two sections' lane points and their height difference over the distance: only the second row's address, its index and table loaded into swapped registers (5 off).
+/* Two sections' lane points and their height difference over the distance. */
 void func_800650F8(Obj41 *o, int *out, Tab41 *t) {
     if (out) {
         int i = o->m_1F8;
@@ -633,6 +648,3 @@ void func_800650F8(Obj41 *o, int *out, Tab41 *t) {
         }
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_41", func_800650F8);
-#endif

@@ -799,7 +799,13 @@ globals), a script that tries every order is quicker than guessing:
   when unused: chunk_70's `func_8009EAEC` takes `$v1` (not `$v0`) for the
   values loaded after its `printf` (`func_800A5DA4`) and chunk_73's
   `func_800A4384`, `func_800A442C` and `func_800A444C`, all `int`; declared
-  `void` it was 16 off.
+  `void` it was 16 off. The C-defined vector helpers count too:
+  chunk_68's `func_800997D0` (`v += a`) returns `v` and chunk_67's
+  `func_80098768` returns its output (`addu $v0, $a2, $zero`); chunk_41
+  had both `void`, and declared as they are `func_800643E4` and
+  `func_800650F8` matched (a constant the original keeps in `$v1` was in
+  `$v0`). A sweep of a chunk's `void` prototypes against the C
+  definitions' return types finds these.
 - **Declare what a callee takes.** As with return types, a prototype
   with the wrong number of arguments changes the caller: chunk_25 passed
   `k` to `func_8001687C`, which takes nothing (chunk_02b's definition),

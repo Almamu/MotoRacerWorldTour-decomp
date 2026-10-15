@@ -14,12 +14,23 @@ struct VtEntry27 {
 
 struct Stage27;
 
+// chunk_59's grid of tiles (0x38 bytes)
+struct Grid27 {
+    u8 m_00[4];
+    int m_04; // the first tile's id
+    int m_08; // the ids' stride per player
+    int m_0C; // how many tiles
+    u8 m_10[0x18];
+    int m_28; // the stage's index
+    u8 m_2C[0xC];
+};
+
 // Another named object, found by its state
 struct Peer27 {
     u8 m_00[8];
     int m_08;
     u8 m_0C[0x24];
-    u8 m_30[0x38];       // chunk_59's grid of tiles
+    Grid27 m_30;         // 0x30, its m_28 at 0x58
     VtEntry27 *m_vtable; // 0x68
     u8 m_6C[0x30];
     void *m_9C;
@@ -44,10 +55,24 @@ struct Tile27 {
     int m_F4;
 };
 
+// The race's settings (what its m_10 points at)
+struct Hold27 {
+    u8 m_00[0x4E8];
+    int m_4E8;
+    int m_4EC[4]; // per stage
+    int m_4FC[4];
+    int m_50C[4];
+    int m_51C[4];
+    u8 m_52C[4];
+    int m_530;
+};
+
 // The race (what m_378 points at)
 struct Race27 {
     int m_00; // flags
-    u8 m_04[0x1E38];
+    u8 m_04[0xC];
+    Hold27 *m_10;
+    u8 m_14[0x1E28];
     void *m_1E3C;
 };
 
@@ -96,7 +121,8 @@ struct Obj27 {
     int m_70, m_74;
     struct Set27 *m_78; // chunk_59's voices
     int m_7C, m_80;
-    u8 m_84[0x1C];
+    u8 m_84[0x18];
+    u8 m_9C[4];
     void *m_A0;
     Stage27 *m_A4;
     void *m_A8;
@@ -104,12 +130,18 @@ struct Obj27 {
     int m_B4;
     int m_B8;
     int m_BC[2]; // the players' tiles
-    int m_C4[3]; // and the others'
-    u8 m_D0[0x220];
+    int m_C4[2]; // and the others'
+    int m_CC[2];
+    int m_D4[2];
+    int m_DC[2];
+    u8 m_E4[0x20C];
     void *m_2F0;
     u8 m_2F4[0x14];
     void *m_308;
-    u8 m_30C[0x3C];
+    u8 m_30C[4];
+    void *m_310;
+    void *m_314;
+    u8 m_318[0x30];
     int m_348;
     u8 m_34C[0x2C];
     Race27 *m_378;
@@ -122,6 +154,30 @@ struct Obj27 {
     Elem27 m_49C[2];
     Elem27 m_7A4[3];
     u8 m_C30[4]; // chunk_56's object
+    u8 m_C34[0x2C];
+    void *m_C60;
+    u8 m_C64[0xC];
+    struct Cam27 *m_C70;
+};
+
+// What the object's m_C70 points at
+struct Cam27 {
+    u8 m_00[4];
+    int m_04;
+    int m_08;
+    u8 m_0C[4];
+    int m_10;
+    u8 m_14[0x4C];
+    struct {
+        u8 m_00[4];
+        short m_04;
+    } *m_60;
+};
+
+// A tile's racer slot (at its 0xA0)
+struct Slot27 {
+    u8 m_00[0x44];
+    int m_44;
 };
 
 // An object on Cobjet: its vtable at 0x50
@@ -162,7 +218,7 @@ void func_800A12C4(int *a);
 int func_800A0D48(int *a);
 int func_8004B900(Obj27 *o, int a);
 int func_8004B844(Obj27 *o, int a);
-int func_80044F9C(Obj27 *o, int a, int b);
+int func_80044F9C(Obj27 *o, int a, int b, ...);
 void func_80087900(struct Set27 *s, int a, int b);
 int func_800B5A1C(void);
 int func_800A5DA4(const char *fmt, ...);
@@ -222,11 +278,25 @@ extern int D_800CB2C0;
 void func_80044DFC(Obj27 *o);
 void func_8003BF0C(Stage27 *s);
 void func_8003E3AC(Stage27 *s);
-void func_8004AC78(int a);
+int func_8004AC78(int a);
 void func_8004AEDC(void);
 void func_8004B480(void);
 Hd27 *func_80078FE8(int *list, int s);
 int func_80048494(Obj27 *o);
+void *__builtin_new(int n);
+void *func_8006AFEC(void *p);
+void func_8006B098(void *o, int n);
+void func_8006B128(void *o, int a);
+void func_8001D760(Elem27 *e, int a, int b, int c, int d, int e2, int f, int g, int h, int i,
+                   int j);
+void func_800939CC(void *v, int i, Tile27 *t, int a);
+void func_8008264C(void);
+void func_80079648(Peer27 *p, void (*f)(void), int a);
+void func_80069A88(void *p);
+void func_80069B24(void);
+extern s8 D_800C9D74;
+extern int D_800D49A0, D_800D49A4;
+int func_8004911C(Obj27 *o, int f);
 }
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_27", func_80046F2C);
@@ -330,7 +400,7 @@ int func_8004845C(Obj27 *o) {
 }
 
 #ifdef NON_MATCHING
-// The demo index's clamp, stored to D_800D5F64 before the two tables are read into locals (as the original), is an if (v >= 0) around the upper bound, the stage read through a local; left (20 off): the tables' two addresses built in the other order, and global loads after the calls in $v0 where the original uses $v1.
+// The demo index's clamp, stored to D_800D5F64 before the two tables are read into locals (as the original), is an if (v >= 0) around the upper bound, the stage read through a local, func_8004AC78 declared int as its definition; left (14 off, from 20): the tables' two addresses built in the other order, and one global load after a call in $v0 where the original uses $v1.
 int func_80048494(Obj27 *o) {
     int s;
 
@@ -572,7 +642,7 @@ int func_80048EC4(Obj27 *o) {
             e--;
             t->m_9C = *q--;
         } while (i >= 0);
-        func_8001D1C4(&D_800CA7D8, func_800891E8(p->m_30, o->m_BC[0])->m_A0);
+        func_8001D1C4(&D_800CA7D8, func_800891E8(&p->m_30, o->m_BC[0])->m_A0);
         for (i = 2; i >= 0; i--) {
             if (i < n || i == 2) {
                 t = (Tile27 *)VCALL1(p, 14, i == 2 ? 2 : o->m_C4[i]);
@@ -597,4 +667,102 @@ int func_800490C8(Obj27 *o) {
     return r;
 }
 
+// a / b, for constants the original divides at run time
+static inline int Ratio27(int a, int b) {
+    return a / b;
+}
+
+/* The race set up on its stage: the tiles' ids, the voices' banks, the
+ * racers' lights and the cameras' fog. */
+#ifdef NON_MATCHING
+// Written in full, the calls and their arguments as the original's; left: the original spills the peer and the stage's index to the stack (0x34, 0x38; a frame of 0x68 against 0x60) where GCC keeps them in saved registers, and adds the ids' constant to the first id before the product (`(m_04 + 2) + i * m_08`) where GCC adds it to the product (354 off).
+int func_8004911C(Obj27 *o, int f) {
+    int r = 0;
+    Peer27 *p = func_80078FC4(D_800CBC94, o->m_state);
+    int k;
+
+    if (f) {
+        k = 0;
+        if (o->m_378->m_00 & 0xA8) {
+            k = 3;
+            if (!D_800D49A4) {
+                k = 2;
+            }
+        }
+    } else {
+        k = p->m_30.m_28;
+    }
+    if (func_80044F9C(o, 1, k, 0, 1, 0x16, 0x10)) {
+        Grid27 *g = &p->m_30;
+        int s = g->m_28;
+        int i;
+
+        for (i = 0; i < 2; i++) {
+            o->m_CC[i] = g->m_04 + i * g->m_08;
+            o->m_D4[i] = g->m_04 + 2 + i * g->m_08;
+            o->m_C4[i] = g->m_04 + 3 + i * g->m_08;
+            o->m_DC[i] = g->m_04 + 6 + i * g->m_08;
+            o->m_BC[i] = g->m_04 + 7 + i * g->m_08;
+        }
+        o->m_310 = func_8006AFEC(__builtin_new(0x20));
+        func_8006B098(o->m_310, 0x20);
+        func_8006B128(o->m_310, o->m_D4[0]);
+        if (o->m_378->m_00 & 0xA8) {
+            o->m_314 = func_8006AFEC(__builtin_new(0x20));
+            func_8006B098(o->m_314, 0x20);
+            func_8006B128(o->m_314, o->m_D4[1]);
+        }
+        D_800C9D74 = !D_800D49A0;
+        for (i = 0; i < g->m_0C; i++) {
+            Slot27 *t = (Slot27 *)func_800891E8(g, o->m_BC[i])->m_A0;
+
+            if (D_800C9D74) {
+                t->m_44 = Ratio27(0x30000, 36);
+            } else {
+                t->m_44 = Ratio27(0xC000, 12);
+            }
+        }
+        {
+            Race27 *run = o->m_378;
+            Cam27 *c = o->m_C70;
+
+            func_8001D760(&D_800CA7D8, c->m_60->m_04, c->m_08 * c->m_10, run->m_10->m_4EC[s],
+                          run->m_10->m_4FC[s], run->m_10->m_50C[s], run->m_10->m_51C[s],
+                          run->m_10->m_530, c->m_04, c->m_08, c->m_10);
+        }
+        for (i = 1; i >= 0; i--) {
+            Race27 *run = o->m_378;
+
+            func_8001D760(&o->m_49C[i], 0, 0, run->m_10->m_4EC[s], run->m_10->m_4FC[s],
+                          run->m_10->m_50C[s], run->m_10->m_51C[s], run->m_10->m_530,
+                          o->m_C70->m_04, o->m_C70->m_08, o->m_C70->m_10);
+        }
+        for (i = 2; i >= 0; i--) {
+            func_8001D760(&o->m_7A4[i], 0, 0, 400, 400, 0, 80, 0, 0, 0, 0);
+        }
+        func_80087900(o->m_78, o->m_378->m_10->m_4EC[s], o->m_378->m_10->m_4E8);
+        if (p->m_08 == 6) {
+            r = 1;
+            func_80079648(func_80078FC4(D_800CBC94, o->m_state), func_80069B24, 0);
+            func_80069A88(o->m_9C);
+        }
+        {
+            int fog = o->m_378->m_10->m_51C[func_80078FC4(D_800CBC94, o->m_state)->m_30.m_28];
+            Tile27 *t = func_800891E8(&D_800C886C->m_30, o->m_BC[0]);
+
+            fog = (fog << 13) / 360;
+            func_800939CC(o->m_C60, 0, t, fog);
+            if (o->m_378->m_00 & 0xA8) {
+                func_800939CC(o->m_C60, 1, func_800891E8(&D_800C886C->m_30, o->m_BC[1]), fog);
+            }
+        }
+        func_8008264C();
+    }
+    if (!r) {
+        VCALL(o, 21);
+    }
+    return r;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_27", func_8004911C);
+#endif

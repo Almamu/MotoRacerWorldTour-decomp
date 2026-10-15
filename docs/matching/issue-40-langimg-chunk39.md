@@ -18,7 +18,7 @@ A player's controls, one entry (`Ent39`, 0x330 bytes) per pad:
 
 One file, `src/langimg/chunk_39.cpp`, 0x8005F464-0x80061484.
 
-32 functions: 28 match, 2 are parked, 2 are still asm.
+32 functions: 29 match, 1 is parked, 2 are still asm.
 
 ## The settings
 
@@ -77,5 +77,13 @@ small globals (`D_800C75F6`, `D_800C75F7`, `D_800CB410`).
 | `func_8006095C` | matches | a comparator |
 | `func_80060980` | asm | 564 instructions |
 | `func_80061250` | matches | a bike's reset, then three of its fields |
-| `func_80061284` | parked | a bike's reset: the vector's stack address kept in a register |
+| `func_80061284` | matches | a bike's reset |
 | `func_8006139C` | parked | a sprite's frame on its primitives: registers |
+
+## Inline helpers
+
+- `func_80061284` matches (from 73 off): the cameras placed through an
+  inline function whose own local is the model's position (`Cams39`), so
+  its address is computed again for each of the two calls (#289's
+  finding), and the channel at 0x100 reached through an inline accessor
+  (`Chan39Of`), as chunk_18's `func_80036850`.
