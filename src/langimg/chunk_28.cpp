@@ -293,10 +293,14 @@ void func_80049AE8(void) {
 }
 
 #ifdef NON_MATCHING
-// Registers and the load order of the arguments; D_800C5E2C read without $gp here
+// The arguments read into locals in order (23 off to 6); left: the name's address in $t0 where the original reuses $v1, and D_800C5E2C's high half in $v0 where the original loads it into $a3 itself (it's read without $gp here)
 char *func_80049B9C(int i, int x, int f) {
-    sprintf(&D_800CB1C0, D_800C5F2C, *(char **)((u8 *)&D_800C9E94 + (i << 2)), D_800C5E2C_w[0],
-            f == 1 ? D_800C5F48 : D_800C5F4C, 0x73);
+    char *fmt = D_800C5F2C;
+    char **name = (char **)((u8 *)&D_800C9E94 + (i << 2));
+    int w = D_800C5E2C_w[0];
+    char *s = f == 1 ? D_800C5F48 : D_800C5F4C;
+
+    sprintf(&D_800CB1C0, fmt, *name, w, s, 0x73);
     return &D_800CB1C0;
 }
 #else

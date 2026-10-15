@@ -790,7 +790,7 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_40", func_80062FB4);
 #endif
 
 #ifdef NON_MATCHING
-// The stores' order around the constants (0x199 twice, 3)
+// The original has &m_11C in $v0, reused for 0x199 after the vector's stores, so its li stays there; ours has it in $v1 and the li is scheduled first (13 off)
 void func_800630D8(Obj40 *o) {
     o->m_F2 = 0;
     o->m_D4 = 0;
@@ -802,8 +802,8 @@ void func_800630D8(Obj40 *o) {
     o->m_110 = 0;
     VecZero40(&o->m_11C);
     o->m_12E = 0x199;
-    o->m_158 = 3;
     o->m_130 = o->m_134 = 0x199;
+    o->m_158 = 3;
     o->m_128 = 0;
     o->m_F4 = 0;
     o->m_14F = 0;
