@@ -217,6 +217,7 @@ void func_8009F4E4(Menu71 *m, int b);
 int func_800A0078(char *d, char *s);
 Group71 *func_800A0148(Group71 *g);
 void func_800A0248(Group71 *g);
+int func_800A029C(Group71 *g, u32 a, char *name, int d, int e);
 int func_800A0420(Group71 *g, u32 a, char *name, int d, int e);
 Three71 *func_800A0C58(Three71 *t);
 
@@ -772,7 +773,63 @@ void func_800A0248(Group71 *g) {
     func_800A013C(&g->m_40);
 }
 
+/* A value put in the group's table of five in its order, the entries after
+ * it moved down one; 0 if it doesn't go in. */
+#ifdef NON_MATCHING
+// The search loops: the original keeps each loop's test at its top and jumps back to it (the first mode with a j, the second with its -1 test branching back); GCC rotates them, the counter's increment duplicated, which shifts the rest (80 off). The copy loop (eight pointers, an entry pointer stepped down) and the entry's stores are the original's.
+int func_800A029C(Group71 *g, u32 a, char *name, int d, int e) {
+    int r = 0;
+
+    if (a != (u32)-1) {
+        int i = 0;
+        E71 *p = g->m_e;
+        int j;
+
+        if (~p->m_00) {
+            if (g->m_00) {
+                while ((u32)p->m_00 < a) {
+                    if (++i >= 5) {
+                        goto out;
+                    }
+                    p++;
+                    if (!~p->m_00) {
+                        break;
+                    }
+                }
+            } else {
+                while (a < (u32)p->m_00) {
+                    if (++i >= 5) {
+                        goto out;
+                    }
+                    p++;
+                    if (!~p->m_00) {
+                        break;
+                    }
+                }
+            }
+        }
+        if (i < 5) {
+            r = 1;
+            for (j = 4; i < j; j--) {
+                E71 *q = &g->m_e[j];
+
+                q->m_00 = q[-1].m_00;
+                *(int *)q->m_name = *(int *)q[-1].m_name;
+                q->m_08 = q[-1].m_08;
+                q->m_0A = q[-1].m_0A;
+            }
+            g->m_e[i].m_0A = d;
+            g->m_e[i].m_00 = a;
+            g->m_e[i].m_08 = e;
+            *(int *)g->m_e[i].m_name = *(int *)name;
+        }
+    }
+out:
+    return r;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_800A029C);
+#endif
 
 /* The last entry set, if it's empty or the value goes the group's way. */
 int func_800A0420(Group71 *g, u32 a, char *name, int d, int e) {
