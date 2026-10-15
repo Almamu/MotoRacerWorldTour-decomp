@@ -27,9 +27,11 @@ struct Sub66 {
 // An object whose settings mark it to be redone (m_38 cleared)
 struct Obj66 {
     int m_00, m_04, m_08, m_0C;
-    int m_10, m_14; // its size
-    u8 m_18[0x20];
-    int m_38; // up to date
+    int m_10, m_14;             // its size
+    int m_18, m_1C, m_20, m_24; // its inner edges
+    int m_28, m_2C;             // its centre
+    int m_30, m_34;             // its inner size
+    int m_38;                   // up to date
     int m_3C;
     int m_40, m_44, m_48, m_4C;
     struct Obj66 *m_50;
@@ -260,6 +262,7 @@ int func_80096884(Bits66 *b);
 int func_800968D4(Bits66 *b);
 int func_80096508(void);
 void func_800958A0(RECT *r);
+int func_8009593C(Obj66 *o);
 void func_80096E8C(Plane66 *p, Vector3 *n, Vector3 *v);
 int func_8009574C(Obj66 *o, RECT *r);
 void func_800966DC(Bits66 *b);
@@ -502,7 +505,170 @@ int func_800958E0(Obj66 *o) {
     return 1;
 }
 
+/* Placed against its neighbours (m_54 left, m_58 right, m_5C above, m_60
+ * below) or by its sizes and positions (0x7FFFFFFF when unset), then its
+ * edges and centre; m_38 cleared if a neighbour isn't placed yet. */
+#ifdef NON_MATCHING
+// A size: absolute above 1.0 (16.16), else a fraction of the whole
+static inline int Size66(int v, int *whole, int d) {
+    if (v > 0x10000) {
+        return v >> 16;
+    }
+    return v * (*whole - d) >> 16;
+}
+
+// The layout's branches are the original's, but the tails differ: GCC merges the branches' final +1 into one block (and keeps the width's rest inline) where the original repeats it in each branch's delay slot and shares the m_10 - m_78 - x tail, which shifts the rest (334 off).
+int func_8009593C(Obj66 *o) {
+    int r = 0;
+    RECT rc;
+    Obj66 *a, *b;
+    short e;
+
+    o->m_38 = 1;
+    a = (Obj66 *)o->m_54;
+    if (a) {
+        b = (Obj66 *)o->m_58;
+        if (b) {
+            if (!a->m_38 || !b->m_38) {
+                goto fail_x;
+            }
+            rc.x = o->m_74 + (a->m_00 + a->m_08);
+            rc.w = b->m_00 - o->m_78 - rc.x + 1;
+        } else {
+            if (!a->m_38) {
+                goto fail_x;
+            }
+            rc.x = o->m_74 + (a->m_00 + a->m_08);
+            if (o->m_64 != 0x7FFFFFFF) {
+                rc.w = Size66(o->m_64, &o->m_10, 0);
+            } else {
+                rc.w = o->m_10 - o->m_78 - rc.x;
+            }
+        }
+    } else {
+        b = (Obj66 *)o->m_58;
+        if (b) {
+            if (!b->m_38) {
+                goto fail_x;
+            }
+            e = b->m_00 - o->m_78;
+            if (o->m_64 != 0x7FFFFFFF) {
+                rc.w = Size66(o->m_64, &o->m_10, 0);
+                rc.x = e - rc.w + 1;
+            } else if (o->m_6C != 0x7FFFFFFF) {
+                rc.x = Size66(o->m_6C, &o->m_10, 1);
+                rc.w = e - rc.x + 1;
+            } else {
+                rc.x = o->m_74;
+                rc.w = e - rc.x + 1;
+            }
+        } else {
+            if (o->m_6C == 0x7FFFFFFF) {
+                rc.x = o->m_74;
+            } else {
+                rc.x = Size66(o->m_6C, &o->m_10, 1);
+            }
+            if (o->m_64 != 0x7FFFFFFF) {
+                rc.w = Size66(o->m_64, &o->m_10, 0);
+            } else {
+                rc.w = o->m_10 - o->m_78 - rc.x;
+            }
+        }
+    }
+    goto y;
+fail_x:
+    o->m_38 = 0;
+y:
+    if (o->m_38) {
+        a = (Obj66 *)o->m_5C;
+        if (a) {
+            b = (Obj66 *)o->m_60;
+            if (b) {
+                if (!a->m_38 || !b->m_38) {
+                    goto fail_y;
+                }
+                rc.y = o->m_7C + (a->m_04 + a->m_0C);
+                rc.h = b->m_04 - o->m_80 - rc.y + 1;
+            } else {
+                if (!a->m_38) {
+                    goto fail_y;
+                }
+                rc.y = o->m_7C + (a->m_04 + a->m_0C);
+                if (o->m_68 != 0x7FFFFFFF) {
+                    rc.h = Size66(o->m_68, &o->m_14, 0);
+                } else {
+                    rc.h = o->m_14 - o->m_80 - rc.y;
+                }
+            }
+        } else {
+            b = (Obj66 *)o->m_60;
+            if (b) {
+                int f;
+
+                if (!b->m_38) {
+                    goto fail_y;
+                }
+                f = b->m_04 - o->m_80;
+                if (o->m_68 != 0x7FFFFFFF) {
+                    rc.h = Size66(o->m_68, &o->m_14, 0);
+                    rc.y = f - rc.h + 1;
+                } else if (o->m_70 != 0x7FFFFFFF) {
+                    rc.y = Size66(o->m_70, &o->m_14, 1);
+                    rc.h = f - rc.y + 1;
+                } else {
+                    rc.y = o->m_7C;
+                    rc.h = f - rc.y;
+                }
+            } else {
+                if (o->m_70 == 0x7FFFFFFF) {
+                    rc.y = o->m_7C;
+                } else {
+                    rc.y = Size66(o->m_70, &o->m_14, 1);
+                }
+                if (o->m_68 != 0x7FFFFFFF) {
+                    rc.h = Size66(o->m_68, &o->m_14, 0);
+                } else {
+                    rc.h = o->m_14 - o->m_80 - rc.y;
+                }
+            }
+        }
+        goto done;
+    fail_y:
+        o->m_38 = 0;
+    }
+done:
+    if (o->m_38) {
+        r = 1;
+        func_800958A0(&rc);
+        o->m_00 = rc.x;
+        o->m_08 = rc.w;
+        o->m_18 = rc.x + o->m_84;
+        o->m_1C = rc.x + rc.w - (o->m_88 + 1);
+        o->m_04 = rc.y;
+        o->m_0C = rc.h;
+        o->m_20 = rc.y + o->m_8C;
+        o->m_24 = rc.y + rc.h - (o->m_90 + 1);
+        o->m_F8 = o->m_FC = o->m_00 + rc.w / 2;
+        o->m_FA = o->m_FE = o->m_04 + rc.h / 2;
+    } else {
+        o->m_00 = 0;
+        o->m_04 = 0;
+        o->m_08 = 2;
+        o->m_0C = 2;
+        o->m_18 = 0;
+        o->m_1C = 1;
+        o->m_20 = 0;
+        o->m_24 = 1;
+    }
+    o->m_28 = (o->m_18 + o->m_1C) / 2;
+    o->m_2C = (o->m_20 + o->m_24) / 2;
+    o->m_30 = o->m_1C - o->m_18 + 1;
+    o->m_34 = o->m_24 - o->m_20 + 1;
+    return r;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_66", func_8009593C);
+#endif
 
 // The projection's derived values (chunk_65's func_80093C80, chunk_60's func_800893E8)
 static inline void Proj66Set(Proj66 *p) {
