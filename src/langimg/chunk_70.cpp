@@ -274,11 +274,11 @@ void func_8009E2E0(Obj70 *o);
 void func_8009E2FC(Obj70 *o);
 void func_8009E318(Obj70 *o, int i);
 void func_8009EAEC(Obj70 *o);
-void func_800A5DA4(const char *fmt, ...); // printf
-void func_800A4384(int a, void *b, int c, u8 *d, int e);
+int func_800A5DA4(const char *fmt, ...); // printf
+int func_800A4384(int a, void *b, int c, u8 *d, int e);
 int func_800A44B4(int a);
-void func_800A442C(int a, void *b);
-void func_800A444C(int a);
+int func_800A442C(int a, void *b);
+int func_800A444C(int a);
 void func_800A45B4(int a);
 void func_8003CC9C(int m, int a);
 extern char D_800C9C1C[], D_800C9C2C[], D_800C9C3C[], D_800C9C48[], D_800C9C54[], D_800C9C60[];
@@ -842,8 +842,6 @@ void func_8009EAD0(Menu70 *m, int a) {
 
 /* The memory card task, each frame: its state (m_00) stepped by the card's
  * last result (m_08). */
-#ifdef NON_MATCHING
-// Registers only: after some calls the original takes $v1 for a constant or the last argument's load where GCC takes $v0 (16 off); the two switches and every branch are the original's.
 void func_8009EAEC(Obj70 *o) {
     o->m_08 = func_800A4614(0, &o->m_0C);
     switch (o->m_00) {
@@ -931,8 +929,8 @@ void func_8009EAEC(Obj70 *o) {
         break;
     case 3:
         if (func_800A44F8(0) == 0x12 && o->m_08 == 1) {
-            o->m_10 = 0;
             o->m_00 = 20;
+            o->m_10 = 0;
         }
         break;
     case 20:
@@ -968,19 +966,19 @@ void func_8009EAEC(Obj70 *o) {
         o->m_00 = 0;
         MENU70(o)->m_A94 &= ~0x200;
         break;
-    case 4:
     case 7:
-    case 8:
-    case 11:
         if (o->m_08 == 7) {
             func_800A5DA4(D_800C9C3C);
         }
+    case 8:
         if (o->m_08 == 8) {
             func_800A5DA4(D_800C9C48);
         }
+    case 11:
         if (o->m_08 == 11) {
             func_800A5DA4(D_800C9C54);
         }
+    case 4:
         if (o->m_08 == 4) {
             func_800A5DA4(D_800C9C60);
         }
@@ -1054,6 +1052,3 @@ void func_8009EAEC(Obj70 *o) {
         break;
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_70", func_8009EAEC);
-#endif
