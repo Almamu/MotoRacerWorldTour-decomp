@@ -62,14 +62,26 @@ struct Stage27b {
     int m_FC;
     int m_100;
 };
+struct Stage27c {
+    u8 m_00[0x1C];
+    int m_1C;
+};
 struct Stage27 {
-    u8 m_00[8];
+    u8 m_00[4];
+    int m_04;
     int m_08;
-    u8 m_0C[0x150];
+    u8 m_0C[0x120];
+    int m_12C;
+    u8 m_130[2];
+    short m_132;
+    u8 m_134[0x28];
     int *m_15C;
     int *m_160;
-    u8 m_164[0x934];
+    u8 m_164[0x92C];
+    int m_A90; // the stage's state
+    u8 m_A94[4];
     Stage27b *m_A98;
+    Stage27c *m_A9C;
 };
 
 // The object
@@ -199,6 +211,22 @@ void func_80048CF4(int a, int b, int *p, int v);
 void func_80048CFC(Obj27 *o);
 void func_80048DD0(Obj27 *o, int f);
 int func_800490C8(Obj27 *o);
+struct Hd27 {
+    u8 m_00[0x14];
+    int m_14;
+};
+extern int D_800D5F64, D_800D5F68, D_800D49EC, D_800D49E8;
+extern int D_800D496C, D_800D4970, D_800D5F50, D_800D5F54;
+extern int D_800C57EC[], D_800C57F8[];
+extern int D_800CB2C0;
+void func_80044DFC(Obj27 *o);
+void func_8003BF0C(Stage27 *s);
+void func_8003E3AC(Stage27 *s);
+void func_8004AC78(int a);
+void func_8004AEDC(void);
+void func_8004B480(void);
+Hd27 *func_80078FE8(int *list, int s);
+int func_80048494(Obj27 *o);
 }
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_27", func_80046F2C);
@@ -301,7 +329,90 @@ int func_8004845C(Obj27 *o) {
     return 1;
 }
 
+#ifdef NON_MATCHING
+// The demo index's clamp: the original stores the clamped value to D_800D5F64 before the two tables' loads; GCC moves the store after them, which keeps the value in another register (27 off). The clamp itself is an if (v >= 0) around the upper bound, the stage read through a local.
+int func_80048494(Obj27 *o) {
+    int s;
+
+    func_80044DFC(o);
+    func_8003BF0C(o->m_A4);
+    {
+        Stage27 *a = o->m_A4;
+
+        a->m_04 = o->m_64;
+        s = a->m_A90;
+    }
+    switch (s) {
+    case 4:
+        func_800AFC0C(o->m_60, o);
+        func_8003E3AC(o->m_A4);
+        o->m_A4->m_A90 = 3;
+        break;
+    case 7: {
+        func_800487D0(o);
+        D_800D49EC = 10;
+        {
+            int v = D_800D5F64;
+            int r;
+
+            if (v >= 0) {
+                r = 2;
+                if (v < 3) {
+                    r = v;
+                }
+            } else {
+                r = 0;
+            }
+            D_800D5F64 = r;
+            D_800D5F68 = D_800C57F8[r];
+            func_8004AC78(D_800C57EC[r]);
+        }
+        if (++D_800D5F64 >= 3) {
+            D_800D5F64 = 0;
+        }
+        break;
+    }
+    case 6:
+        if (o->m_B4) {
+            if (o->m_BC[0]) {
+                if (o->m_A4->m_132 >= o->m_A4->m_12C) {
+                    VCALL1(D_800C886C, 4, 0);
+                    func_800487D0(o);
+                    o->m_B8 = 1;
+                    o->m_BC[0] = 0;
+                    func_80045168(&D_800CABC0, 2, -1, 2, 0x11, 2, &D_800CB2C0, 7);
+                    D_800D49EC = s;
+                }
+            } else {
+                func_800487D0(o);
+                if ((u32)(D_800D49EC - 4) < 2) {
+                    if (D_800D49EC == 4) {
+                        D_800D5F50 = D_800D496C;
+                        D_800D5F54 = D_800D4970;
+                    }
+                    func_8004B480();
+                } else {
+                    func_8004AEDC();
+                }
+            }
+        } else if (o->m_A4->m_A9C->m_1C) {
+            func_800487D0(o);
+            D_800D5FC8 = D_800D49E8;
+            func_8004B480();
+        } else {
+            func_800487D0(o);
+            func_80045168(&D_800CABC0, 2, -1, 2, 0x11, 2, &D_800CB2C0, 7);
+        }
+        break;
+    }
+    if (o->m_state != -1) {
+        func_80078FE8(D_800CBC94, o->m_state)->m_14 |= 1;
+    }
+    return 1;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_27", func_80048494);
+#endif
 
 void func_800487D0(Obj27 *o) {
     func_80045168(&D_800CABC0, 0, -1, 1, o);

@@ -50,11 +50,26 @@ struct Slot38 {
     Name38 m_187;
     u8 m_192[6];
 };
+struct Vec38 {
+    int x, y, z;
+};
+// A set of collision shapes (its entries' table at 0)
+struct Coll38 {
+    u8 *m_00;
+};
 // A bike's body
 struct Body38 {
     u8 m_00[0x54];
     struct Bike38 *m_54;
-    u8 m_58[0x548];
+    u8 m_58[9];
+    s8 m_61;
+    u8 m_62[0x1C2];
+    Coll38 *m_224;
+    Coll38 *m_228;
+    u8 m_22C[8];
+    Vec38 m_234; // its front contact point
+    Vec38 m_240; // its back one
+    u8 m_24C[0x354];
     Slot38 *m_5A0;
 };
 struct Stat38 {
@@ -73,7 +88,9 @@ struct Bike38 {
     Ctl38 *m_28;
     Stat38 *m_2C;
     Body38 *m_30;
-    u8 m_34[0x534];
+    u8 m_34[0x154];
+    s8 m_188;
+    u8 m_189[0x3DF];
 };
 // What func_8005E000 copies from
 struct Rec38 {
@@ -193,6 +210,21 @@ extern int D_800D11B8, D_800D11BC;
 void *memset(void *d, int c, int n);
 void func_800AFB98(int n);
 void func_8005F0D4(void);
+Vec38 *func_80099D48(Vec38 *v, int shift); // v >> shift
+int func_8001B350(Coll38 *s, Vec38 *v);
+void func_80096E28(void *e, Vec38 *out, int shift);
+int func_80025614(Body38 *m, int front, int back, Vec38 n0, Vec38 n1, Vec38 p0, Vec38 p1, int k);
+int func_8005EE48(void *o, struct Bike38 *b);
+}
+
+static inline void VecCopyL38(Vec38 *d, Vec38 *s) {
+    int x = s->x;
+    int y = s->y;
+    int z = s->z;
+
+    d->x = x;
+    d->y = y;
+    d->z = z;
 }
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_38", func_8005D15C);
@@ -459,7 +491,59 @@ void func_8005E2A8(Own38 *o) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_38", func_8005E3A4);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_38", func_8005EE48);
+int func_8005EE48(void *o, Bike38 *b) {
+    Body38 *m = b->m_30;
+    Vec38 a, c, n0, n1, p0, p1;
+    int r = 0;
+
+    a = m->m_234;
+    func_80099D48(&a, 5);
+    c = m->m_240;
+    func_80099D48(&c, 5);
+    if (m->m_224 && m->m_228) {
+        int again = 0;
+        Vec38 *pa;
+
+        {
+            int i, j;
+
+        top:
+            pa = &a;
+            VecCopyL38(&p0, pa);
+            i = func_8001B350(m->m_224, &p0);
+            if (i >= 0) {
+                func_80096E28(m->m_224->m_00 + (i * 4 + 0x1C), &n0, 26);
+            }
+            VecCopyL38(&p1, &c);
+            j = func_8001B350(m->m_228, &p1);
+            if (j >= 0) {
+                func_80096E28(m->m_228->m_00 + (j * 4 + 0x1C), &n1, 26);
+            }
+            if (i < 0 && j < 0) {
+                goto out;
+            }
+            r = 1;
+            if (m->m_61) {
+                goto out;
+            }
+            {
+                int v = func_80025614(m, i >= 0, j >= 0, n0, n1, p0, p1, 0x333);
+
+                if (b->m_188 || !v || again) {
+                    goto out;
+                }
+            }
+            again = 1;
+            VecCopyL38(pa, &m->m_234);
+            func_80099D48(pa, 5);
+            VecCopyL38(&c, &m->m_240);
+            func_80099D48(&c, 5);
+            goto top;
+        }
+    }
+out:
+    return r;
+}
 
 // The pick of index i
 static inline Pick38 *Pick38At(int i) {

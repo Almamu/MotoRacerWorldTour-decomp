@@ -21,7 +21,9 @@ struct St40 {
 struct Obj40 {
     u8 m_00[4];
     int m_04; // Cobjet's flags
-    u8 m_08[0x48];
+    u8 m_08[0x2C];
+    struct Shp40 *m_34;
+    u8 m_38[0x18];
     void *m_50; // the vtable
     int m_54;
     s8 m_58;
@@ -136,6 +138,64 @@ struct Ply40 {
     u8 m_3EC[0x17C];
 };
 
+// A shape: a position at 0x14
+struct Shp40 {
+    u8 m_00[0x14];
+    Vec40 m_14;
+};
+struct Mdl40 {
+    u8 m_00[0x1C];
+    short m_1C; // its points' shift
+};
+struct Mod40 {
+    u8 m_00[0x128];
+    Vec40 m_128;
+};
+// A matrix: rotation then translation
+struct Mat40 {
+    short m[9];
+    short pad;
+    Vec40 t;
+};
+// An animation sequence: its key's angles from 0x10 of the pointer at 0x10
+struct Seq40 {
+    u8 m_00[0x10];
+    short *m_10;
+};
+// A bike as func_80062098 sees it (0x568 bytes)
+struct Bike40 {
+    u8 m_00[0x30];
+    Obj40 *m_30;
+    u8 m_34[0x154];
+    s8 m_188; // a crash to start
+    s8 m_189; // the crash's state
+    u8 m_18A;
+    u8 m_18B[5];
+    u8 m_190[0xE8];
+    Vec40 m_278;
+    u8 m_284[0x20];
+    Mat40 m_2A4;
+    u8 m_2C4[0x20];
+    struct Bike40 *m_2E4;
+    u8 m_2E8[0x10];
+    s8 *m_2F8; // the crash's steps
+    u8 m_2FC;
+    s8 m_2FD;
+    u8 m_2FE[0x2A];
+    u8 m_328[4];
+    Mdl40 *m_32C;
+    Mod40 *m_330;
+    u8 m_334[0x2C];
+    union {
+        int m_360;
+        u8 m_360b[0x10];
+    };
+    Seq40 m_370;
+    u8 m_384[0x40];
+    Seq40 *m_3C4;
+    u8 m_3C8[0x18];
+    void **m_3E0;
+};
 // A track's segment: its length
 struct Seg40 {
     int m_00;
@@ -198,6 +258,16 @@ void func_800627B8(Ply40 *p);
 void func_800627C0(Ply40 *p, int b);
 int func_800627D8(Ply40 *p);
 int func_800627E4(Ply40 *p);
+extern int D_800D60FC;
+extern int D_800C7570;
+void func_80034D14(void *o, int a);
+void func_800354D0(void *v, Shp40 *s);
+void func_80099DA0(Vec40 *d, Vec40 *s, int k);
+void func_8009243C(void *s, void *a, int t, void *b);
+void func_80092480(void *s, int t);
+Vec40 *func_800997A4(Vec40 *d, Vec40 *s);
+void func_8008E354(void *a, Seq40 *s, int n, int *t);
+void func_80062098(Bike40 *p, int dt);
 }
 
 static inline void VecSet40(Vec40 *v, int x, int y, int z) {
@@ -316,7 +386,97 @@ void func_800615C4(void *x, Holder40 *o, int f) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_40", func_800618BC);
 
+// A short vector widened, all three loads first
+static inline void SVecToVec40(Vec40 *d, short *s) {
+    int x = s[0];
+    int y = s[1];
+    int z = s[2];
+
+    d->x = x;
+    d->y = y;
+    d->z = z;
+}
+
+#ifdef NON_MATCHING
+// Saved registers: the bike in $s5 where the original has $s4 and the step's index in $s2 where it has $s5, and the original keeps the matrix at 0x2A4's address in $s0 for the transform and the translation's copy; GCC adds the offset at each use (109 off). The crash state is re-read through its byte field (its sign extension), the shape's position copied field by field.
+void func_80062098(Bike40 *p, int dt) {
+    Vec40 t, u, w, y, x;
+    int done = 0;
+
+    if (p->m_188) {
+        p->m_189 = 1;
+        func_800623DC((Ply40 *)p);
+    }
+    if (p->m_189) {
+        func_80034D14(p->m_190, dt);
+        func_800354D0(p->m_190, p->m_30->m_34);
+        VecCopyL40(&p->m_30->m_78, &p->m_30->m_64);
+        {
+            Obj40 *o = p->m_30;
+
+            Shp40 *s = o->m_34;
+            int tx = s->m_14.x;
+            int ty = s->m_14.y;
+            int tz = s->m_14.z;
+
+            t.x = tx;
+            t.y = ty;
+            t.z = tz;
+            VecCopyL40(&o->m_64, &t);
+        }
+        if (!p->m_360 || p->m_189 == -1 || p->m_2FD) {
+            s8 *q = p->m_2F8;
+
+            p->m_2FD = 0;
+            if (q) {
+                int k = -1;
+
+                if (*q != -1) {
+                    k = *q;
+                    p->m_2F8 = q + 1;
+                }
+                if (p->m_189 == -2) {
+                    p->m_189 = -3;
+                }
+                if (p->m_189 == -1) {
+                    Seq40 *sq = &p->m_370;
+
+                    p->m_189 = -2;
+                    SVecToVec40(&u, sq->m_10 + 8);
+                    func_80099DA0(&t, &u, 12 - p->m_32C->m_1C);
+                    func_8009243C(p->m_360b, p->m_3E0[k], D_800D60FC, 0);
+                    func_80092480(p->m_360b, D_800D60FC);
+                    p->m_3C4 = sq;
+                    SVecToVec40(&w, sq->m_10 + 8);
+                    func_80099DA0(&u, &w, 12 - p->m_32C->m_1C);
+                    func_800997A4(&x, &u);
+                    func_80099898((Vector3 *)&y, (Vector3 *)&x, (Vector3 *)&t);
+                    {
+                        Mat40 *mt = &p->m_2A4;
+
+                        func_80098768((MATRIX *)mt, (long *)&y, (long *)&w);
+                        func_800997D0((long *)&w, (long *)&p->m_2A4.t);
+                        VecCopyL40(&p->m_278, &w);
+                        VecCopyL40(&mt->t, &p->m_278);
+                    }
+                    func_8008E354(p->m_328, p->m_3C4, 0x18, &D_800C7570);
+                    VecSet40(&p->m_330->m_128, 0, 0, 0);
+                } else if (k >= 0) {
+                    func_8009243C(p->m_360b, p->m_3E0[k], D_800D60FC, p->m_2E4->m_3C4);
+                } else {
+                    done = 1;
+                }
+            }
+        }
+    }
+    if (done) {
+        p->m_189 = 0;
+        p->m_18A = 1;
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_40", func_80062098);
+#endif
 
 void func_800623DC(Ply40 *p) {
     u8 *q;

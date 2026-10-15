@@ -15,7 +15,7 @@ Also two destructors of classes on `Cobjet`, and a word stored.
 
 One file, `src/langimg/chunk_27.cpp`, 0x80046F2C-0x8004970C.
 
-18 functions: 13 match, 1 is parked, 4 are still asm.
+18 functions: 13 match, 2 are parked, 3 are still asm.
 
 ## The settings
 
@@ -56,7 +56,7 @@ global (`D_800C5868`).
 | `func_8004818C`, `func_800490C8` | match | a check through the vtable |
 | `func_800481E0` | matches | the race's cleanup |
 | `func_8004845C` | matches | the stage told the state |
-| `func_80048494` | asm | 207 instructions |
+| `func_80048494` | parked | the game's step: a store's place |
 | `func_800487D0` | matches | an event sent, the stage told |
 | `func_80048824` | matches | another object set up, a value from `func_800B5A1C` passed to it |
 | `func_80048980` | matches | another object's fields set |
@@ -71,3 +71,13 @@ global (`D_800C5868`).
 ## Second pass
 
 - Built with `-fmove-all-movables` (the Makefile's CFLAGS for the chunk, group A's finding in the techniques): every matched function still matches, and the parked ones it touches come closer. `func_80048EC4` went from 107 to 75 off.
+
+## Group B follow-up
+
+- `func_80048494` written and parked (27 off): the game's step by the
+  stage's state at 0xA90 (4: `func_800AFC0C` and chunk_22's `func_8003E3AC`,
+  then 3; 7: the next entry of two tables by `D_800D5F64`, clamped to 0-2;
+  6: by the flags at 0xB4 and 0xBC). The stage is read through a local (no reload after the
+  store at 4); the clamp is `if (v >= 0) { r = 2; if (v < 3) r = v; }
+  else r = 0;`, which gives the original's branches. Left: GCC moves the
+  clamped value's store below the two tables' loads.

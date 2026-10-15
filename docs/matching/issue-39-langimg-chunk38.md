@@ -17,7 +17,7 @@ The race of chunk_37 (`Own38`) and its run's five bikes (0x568 bytes):
 
 One file, `src/langimg/chunk_38.cpp`, 0x8005D15C-0x8005F464.
 
-17 functions: 11 match, 3 are parked, 3 are still asm.
+17 functions: 12 match, 3 are parked, 2 are still asm.
 
 ## The settings
 
@@ -63,9 +63,8 @@ global (`D_800CB3C8`).
     its two halves through the records' addresses, the result in `$v1`;
     an inline function copying the four fields takes the source's
     address after the first word.
-- **Still asm.** `func_8005EE48` passes vectors by value through stack
-  copies; `func_8005F0D4` (161 instructions) wasn't tried;
-  `func_8005D15C` and `func_8005E3A4` are 614 and 681 instructions.
+- **Still asm.** `func_8005D15C` and `func_8005E3A4` (614 and 681
+  instructions); `func_8005EE48` matched later (see the follow-up below).
 - **`func_8005F0D4` (fifth pass).** The picks' table is indexed by bytes
   (the index shifted before the table's `lui`), and each struct copy goes
   through a pointer to its destination taken first (`Set38 *d =
@@ -89,7 +88,7 @@ global (`D_800CB3C8`).
 | `func_8005E1D0` | matches | a value read for a bike of kind 1 |
 | `func_8005E2A8` | matches | a bike of kind 1 passed to `func_8006C694` |
 | `func_8005E3A4` | asm | 681 instructions |
-| `func_8005EE48` | asm | 163 instructions (vectors by value) |
+| `func_8005EE48` | matches | the bike's contact points against two shapes |
 | `func_8005F0D4` | matches | the players' picks copied to the globals |
 | `func_8005F358` | matches | a bike's controls cleared, returned |
 | `func_8005F380` | matches | a bike's controls cleared |
@@ -97,3 +96,21 @@ global (`D_800CB3C8`).
 ## Second pass
 
 - `func_8005DE2C` came from 83 to 39 off with its parameters copied into locals; still parked.
+
+## Group B follow-up
+
+- `func_8005EE48` matches: the bike's front and back contact points
+  (0x234 and 0x240 of its body, each shifted by 5) looked up in the body's
+  two collision sets with chunk_04's `func_8001B350`, the hits' normals
+  fetched, and chunk_10's `func_80025614` called with the four vectors by
+  value; tried again once when that call returns non-zero (and the
+  bike's byte at 0x188 is clear). Three things made it
+  match:
+  - the retry is a `goto` back to a label, not a loop: as a `for (;;)`
+    GCC hoisted the contact points' addresses out of it;
+  - the front point's address is a pointer set right after the label
+    (`top: pa = &a;`): `reorg` then copies that first instruction into the
+    backward jump's delay slot, as in the original;
+  - the early exits go through one `out: return r;`, so the result comes
+    from its saved register; written as `return r;` GCC returned the
+    constant 1.
