@@ -24,7 +24,7 @@ pointers, flags at 0x20). The functions:
 
 One file, `src/langimg/chunk_20.cpp`, 0x800394D8-0x8003B600.
 
-19 functions: 14 match, 4 are parked, 1 is still asm.
+19 functions: 16 match, 2 are parked, 1 is still asm.
 
 ## The settings
 
@@ -71,12 +71,17 @@ globals.
     registers. It matches with `memcpy` declared returning `void` (GCC
     then doesn't treat it as its builtin), not with `common.h`'s.
 
+## Second pass
+
+- `func_8003991C`: chunk_20 built with `-fmove-all-movables`, and the saved index read inside its branch (`short cur = p->m_0A;`).
+- `func_8003B51C`: `memcpy` called through a second declaration returning `void`, with the asm label `memcpy` (`memcpy20`).
+
 ## The functions
 
 | Function | State | Notes |
 |---|---|---|
 | `func_800394D8` | parked | an item stepped back: the loop's constants |
-| `func_8003991C` | parked | an item's objects updated: registers |
+| `func_8003991C` | matches | an item's objects updated |
 | `func_80039BD8` | matches | every group's items passed to `func_80038B24` |
 | `func_80039CE4` | matches | an entry's pointer by name |
 | `func_80039D4C` | matches | a value turned into 4096ths of a turn |
@@ -93,4 +98,4 @@ globals.
 | `func_8003B3C4` | matches | an element by name |
 | `func_8003B47C` | matches | empty |
 | `func_8003B484` | matches | the scene set up |
-| `func_8003B51C` | parked | a saved list copied back: registers |
+| `func_8003B51C` | matches | a saved list copied back |

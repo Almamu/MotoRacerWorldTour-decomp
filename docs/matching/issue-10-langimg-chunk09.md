@@ -4,7 +4,7 @@ The motor's gearing (wheel speed from engine speed, per gear) and the
 bike's object: its constructor and destructor, its frame helpers, its
 heading. One file, `src/langimg/chunk_09.cpp`, 0x800236F0-0x80025614.
 
-19 functions: 10 match, 7 are parked, 2 are still asm (after the
+19 functions: 11 match, 6 are parked, 2 are still asm.
 near-misses pass and the pass over the large functions). Two of chunk_08's
 parked functions match now too (#9).
 
@@ -44,6 +44,10 @@ functions on a struct (`Bike`, `include` nothing yet), so no vtable is
 emitted here. `Motor` moved to `include/langimg/motor.h`, shared with
 chunk_08.
 
+## Second pass
+
+- `func_80023E48`: chunk_09 built with `-fmove-all-movables` (/1000's multiplier hoisted into `$fp`), the outputs and the upshift points indexed (`out[i]`, `m->m_upshift[g]`, strength-reduced as the original's pointers), and the last gear's case first.
+
 ## The functions
 
 | Function | State | Notes |
@@ -51,7 +55,7 @@ chunk_08.
 | `func_800236F0`, `func_80023788`, `func_800237E8` | match | wheel speed in a gear; a gear's ratio; all six |
 | `func_8002385C` | parked | the upshift points: two saved registers swapped (11 off) |
 | `func_80023A30` | asm | 262 instructions |
-| `func_80023E48` | parked | the speed over time through the gears: the original hoists `/1000`'s multiplier and spills two arguments |
+| `func_80023E48` | matches | the speed over time through the gears |
 | `func_80024064` | matches | the constructor; it matched once `func_8006BB70`, the animation channel's constructor, was declared to return its object (the permuter's finding) |
 | `func_80024168` | matches | the top engine speed and the gearing from the motor |
 | `func_800242A4` | matches | the destructor |

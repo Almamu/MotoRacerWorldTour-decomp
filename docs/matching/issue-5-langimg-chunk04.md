@@ -5,7 +5,7 @@ More of the code GCC 2.91.66 built between the classes: the sequence set
 and grids of 32-unit cells with a coarse index and GTE plane tests.
 One file, `src/langimg/chunk_04.cpp`, 0x8001983C-0x8001B778.
 
-34 functions: 24 match, 6 are parked, 4 are still asm (after the pass
+34 functions: 25 match, 5 are parked, 4 are still asm.
 over the large functions).
 
 ## The settings
@@ -17,11 +17,15 @@ is a bare `div`/`mflo`, and no function of the chunk has ASPSX's checks.
 The sequence types moved to `include/langimg/seq.h` (`Seq` is a `CName`,
 found through `CName::Get`; `SeqSet` holds them along `Seq::m_next`).
 
+## Second pass
+
+- `func_8001983C`: chunk_04 built with `-fmove-all-movables`, the constants written as literals again, and the seen table indexed by bytes (`(char *)seen + (t << 2)`).
+
 ## The functions
 
 | Function | State | Notes |
 |---|---|---|
-| `func_8001983C` | parked | a sequence's frame; registers only (6 off) |
+| `func_8001983C` | matches | a sequence's frame; registers only (6 off) |
 | `func_80019A98`, `func_80019B2C`, `func_80019BC4` | match | flags, links and direction of a sequence's entries |
 | `func_80019C78`, `func_80019D0C`, `func_80019D60`, `func_80019DC0` | match | find by name, start, reset |
 | `func_80019E30` | matches | the set's frame; the state read into a local |

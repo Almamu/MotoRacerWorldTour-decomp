@@ -113,8 +113,6 @@ int func_8001AE40(void *self, int *plane, SVECTOR *a, SVECTOR *b, SVECTOR *out);
 void func_8001B6B4(RaceSort *t, RaceWorld *w);
 }
 
-#ifdef NON_MATCHING
-/* Registers only (6 off): two constants in $a3, and an address add */
 /* A sequence's frame: each entry's linked object applied
  * (func_80017B88), the state set while any is running, the object
  * types seen flagged in D_800C5E14; and when it has stopped, its objects
@@ -133,9 +131,6 @@ int func_8001983C(Seq *s) {
             seen = (int *)(D_800C5E14 + 0xE4);
         }
         for (; e; e = e->m_next) {
-            int none = 0xFFF000;
-            int types = 0xC0000000;
-            int one = 1;
             Cobjet *o = 0;
             int i = e->m_obj;
             CobjetList *objs = s->m_objs;
@@ -146,7 +141,7 @@ int func_8001983C(Seq *s) {
             if (i >= 0) {
                 o = objs->m_items[i];
             }
-            if (!o || (o->m_04 & 0x100000) || (*(int *)e & none) == none) {
+            if (!o || (o->m_04 & 0x100000) || (*(int *)e & 0xFFF000) == 0xFFF000) {
                 continue;
             }
             k = (CobjetLinkedPos *)s->m_links->m_items[e->m_link];
@@ -157,10 +152,14 @@ int func_8001983C(Seq *s) {
             }
             s->m_state = st | run;
             if (seen) {
-                int t = ((u32)(o->m_04 & types) >> 30) - 1;
+                int t = ((u32)(o->m_04 & 0xC0000000) >> 30) - 1;
 
-                if (t >= 0 && !seen[t]) {
-                    seen[t] = one;
+                if (t >= 0) {
+                    int *p = (int *)((char *)seen + (t << 2));
+
+                    if (!*p) {
+                        *p = 1;
+                    }
                 }
             }
         }
@@ -184,9 +183,6 @@ int func_8001983C(Seq *s) {
     }
     return s->m_state;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_8001983C);
-#endif
 
 /* Sets and clears flags on the sequence's objects. Returns whether it has
  * entries. */

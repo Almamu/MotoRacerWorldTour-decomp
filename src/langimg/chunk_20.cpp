@@ -144,6 +144,9 @@ extern int D_800CBE84;
 
 void *__builtin_new(unsigned int n);
 void *memcpy(void *d, const void *s, unsigned int n);
+// memcpy as func_8003B51C calls it: declared void (as the original's
+// prototype must have been), its result unused
+void memcpy20(void *d, const void *s, unsigned int n) asm("memcpy");
 int atoi(const char *s);
 int func_80097128(void *p);
 void func_80038B24(Item20 *t, void *a);
@@ -288,11 +291,8 @@ void func_800394D8(Item20 *p, Scene20 *s) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_20", func_800394D8);
 #endif
 
-#ifdef NON_MATCHING
-// Registers: the item in $s4 and the index's offset in $s6 in the original, swapped here, and the saved index loaded twice (lh, lhu)
 void func_8003991C(Item20 *p, Scene20 *s, int a, int b, int c, int d, int e) {
     int i;
-    short cur;
 
     if ((p->m_20 & 0x800) && !e) {
         return;
@@ -315,13 +315,14 @@ void func_8003991C(Item20 *p, Scene20 *s, int a, int b, int c, int d, int e) {
                 f->m_04(s->m_44, 3, o);
             }
         }
-        cur = p->m_0A;
         if (i == p->m_0A && !b) {
             if (a == 0 || a == 3) {
                 func_80038168(p->m_0C[i], 0);
                 func_8003781C(p->m_0C[i], s, p, 0, 0);
             }
         } else if (a == 1 || a == 3) {
+            short cur = p->m_0A;
+
             p->m_0A = i;
             func_80038168(p->m_0C[i], 1);
             func_80037E70(p->m_0C[i], s, p, 0);
@@ -332,9 +333,6 @@ void func_8003991C(Item20 *p, Scene20 *s, int a, int b, int c, int d, int e) {
         p->m_20 |= 0x800;
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_20", func_8003991C);
-#endif
 
 void func_80039BD8(Scene20 *s, void *a) {
     int i;
@@ -659,8 +657,6 @@ void func_8003B484(Scene20 *s, int a, Fns20 *b, int *src, unsigned int size, int
     func_8001D760(s->m_38, 0, 0, s->m_0C, s->m_0C, 0, 0x50, 0, 0, 0, 0);
 }
 
-#ifdef NON_MATCHING
-// Registers in the last store: it matches with memcpy declared returning void (no builtin), not with common.h's
 void func_8003B51C(Scene20 *s, int *src, unsigned int size, int c) {
     int i;
 
@@ -671,13 +667,10 @@ void func_8003B51C(Scene20 *s, int *src, unsigned int size, int c) {
         for (i = 0; i < s->m_AB4; i++) {
             if (func_80097128(s->m_AB8[i].m_04)) {
                 s->m_A80 = s->m_AB8[i].m_08;
-                memcpy(s->m_A88, s->m_AB8[i].m_0C, s->m_AB8[i].m_00 * 4 - 1);
+                memcpy20(s->m_A88, s->m_AB8[i].m_0C, s->m_AB8[i].m_00 * 4 - 1);
                 s->m_A8C = s->m_AB8[i].m_00 - 1;
                 return;
             }
         }
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_20", func_8003B51C);
-#endif

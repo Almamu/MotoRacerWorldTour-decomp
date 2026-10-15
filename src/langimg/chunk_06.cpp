@@ -325,7 +325,7 @@ void func_8001F10C(Particles *p) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_06", func_8001F13C);
 
 #ifdef NON_MATCHING
-/* Registers and scheduling (79 off); 0x1000 not hoisted as in the original */
+/* Registers (23 off): the position, the definition and the speed in other temporaries ($a1, $a3, $t0, $t1 and $a2 for the speed in the original) */
 /* The particles' frame: moved, slowed, aged and faded; the live ones
  * counted. */
 void func_8001F67C(Particles *ps) {
@@ -335,7 +335,6 @@ void func_8001F67C(Particles *ps) {
     int live = 0;
 
     do {
-        int full = 0x1000;
         int life = p->m_life;
 
         if (life) {
@@ -348,13 +347,20 @@ void func_8001F67C(Particles *ps) {
                 p->m_prev.vx = x;
                 p->m_prev.vy = y;
                 p->m_prev.vz = z;
-                p->m_pos.vx = x + p->m_vel.vx;
-                p->m_pos.vy = y + p->m_vel.vy;
-                p->m_pos.vz = z + p->m_vel.vz;
-                p->m_vel.vy -= (d->m_gravity * dt) >> 12;
+                {
+                    int g = d->m_gravity * dt;
+                    int vx = p->m_vel.vx;
+                    int vy = p->m_vel.vy;
+                    int vz = p->m_vel.vz;
+
+                    p->m_pos.vx = x + vx;
+                    p->m_pos.vy = y + vy;
+                    p->m_pos.vz = z + vz;
+                    p->m_vel.vy = vy - (g >> 12);
+                }
                 func_80099574(&p->m_vel, d->m_drag);
                 live++;
-                p->m_alpha = full - ((life * p->m_fade) >> 6);
+                p->m_alpha = 0x1000 - ((life * p->m_fade) >> 6);
                 life -= dt;
             } else {
                 life = 0;
