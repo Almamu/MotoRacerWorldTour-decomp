@@ -59,6 +59,19 @@ extern int D_800C8860;
 int func_80077BE4(void *tex, int align, int x, int y);
 
 void func_80018954(MATRIX *view, Cobjet *o, long *sxy);
+void func_80018AEC(int *prim, int page, int x, int y);
+// The font state (chunk_55's): mode, its byte, flags, the colour
+extern int D_800C89D0;
+extern u8 D_800C89D4, D_800C89D5;
+extern int D_800C89D8;
+extern void *D_800C89E8; // the fonts
+extern void *D_800C8C0C; // the texts
+extern int D_800C4988;   // a blink timer
+void *func_80081318(void *fonts, int i);
+void *func_80086A38(void *texts, int id);
+int func_80080F30(u8 *font, void *text, int x, int y);
+void func_80080F8C(void);
+void func_800806D4(u8 *font, void *text, int x, int y, int n, u8 *a, int *b);
 /* The subclasses' vtables: one entry each, their destructor */
 extern int D_800C4948[];
 extern int D_800C4958[];
@@ -797,7 +810,172 @@ void func_80018954(MATRIX *view, Cobjet *o, long *sxy) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_03", func_80018954);
 #endif
 
+#ifdef NON_MATCHING
+/* The shape is the original's (the box as the GPU packets idiom, the second
+ * packet's pointer stored before its tag); left: registers throughout, the
+ * second link using the stored pointer where the original reads the global
+ * again, and the draw state's call with its two registers swapped (53 off) */
+/* Draws a prim's text at (x, y) if on screen, by its kind (plain, shadowed,
+ * boxed, blinking) or typed out; page is its colour, halved. */
+void func_80018AEC(int *prim, int page, int x, int y) {
+    int saved = D_800C886C->m_64;
+
+    if (D_800C89E8) {
+        u8 *font = (u8 *)func_80081318(D_800C89E8, ((u32)prim[0] >> 8) & 7);
+
+        if (font) {
+            u8 *c = (u8 *)&page;
+
+            c[0] >>= 1;
+            c[1] >>= 1;
+            c[2] >>= 1;
+            c[3] >>= 1;
+            if ((prim[0] & 0xF8) != 0xF8) {
+                DRAW_SET(D_800C886C, (prim[0] << 24) >> 27);
+            }
+            if (x >= D_800C8D90->x && y >= D_800C8D90->y && x < D_800C8D90->x1 &&
+                y < D_800C8D90->y1) {
+                void *text = 0;
+
+                if (prim[0] & 0x40000) {
+                    if (((short *)prim)[4] != -1) {
+                        text = func_80086A38(D_800C8C0C, ((short *)prim)[4]);
+                    }
+                } else {
+                    text = (void *)prim[3];
+                }
+                if (text && *(s8 *)text) {
+                    int align = func_800188CC(prim) | (((u32)prim[0] >> 15) & 7);
+
+                    if (!(prim[0] & 0x400000)) {
+                        int col;
+
+                        if (D_800C89D4 != 8 || D_800C89D5 != 0x80) {
+                            D_800C89D4 = 8;
+                            D_800C89D5 = 0x80;
+                            func_80080F8C();
+                        }
+                        D_800C89D0 = align;
+                        col = page & 0xFFFFFF;
+                        if (col != D_800C89D8) {
+                            D_800C89D8 = col;
+                            func_80080F8C();
+                        }
+                        switch (((u32)prim[0] >> 25) & 0xF) {
+                        case 0:
+                        case 2:
+                            func_80080F30(font, text, x, y);
+                            break;
+                        case 1:
+                            func_80080F30(font, text, x, y);
+                            if (D_800C89D8) {
+                                D_800C89D8 = 0;
+                                func_80080F8C();
+                            }
+                            func_80080F30(font, text, x + font[0] / 9, y + font[0] / 10);
+                            break;
+                        case 3: {
+                            int r = func_80080F30(font, text, x, y);
+                            int x0 = x - 2;
+                            int y0 = y + 1;
+                            int w = r & 0xFFFF;
+                            int h = r >> 16;
+                            u_long *p;
+                            int code;
+
+                            switch (align & 0xF0) {
+                            case 0x10:
+                                w /= 2;
+                            case 0x20:
+                                x0 -= w;
+                            }
+                            switch (align & 0xF00) {
+                            case 0x100:
+                                h /= 2;
+                            case 0x200:
+                                y0 -= h;
+                            }
+                            {
+                                int xy0 = XY(x0, y0);
+                                int x1 = (x + w + 2) & 0xFFFF;
+                                int xy1 = x1 | (y0 << 16);
+                                int y1 = y + h - 2;
+                                u_long *q;
+
+                                code = 0x40FFFFFF;
+                                p = (u_long *)D_800C8C70;
+                                p[0] = 0x03000000;
+                                p[1] = code;
+                                p[2] = xy0;
+                                p[3] = xy1;
+                                ADD_PRIM(D_800CBDC0 + 1, D_800C8C70);
+                                p = (u_long *)D_800C8C70;
+                                q = p + 4;
+                                D_800C8C70 = (u8 *)q;
+                                p[4] = 0x06000000;
+                                q[6] = 0x55555555;
+                                q[1] = 0x4CFFFFFF;
+                                q[2] = xy0;
+                                q[3] = (x0 & 0xFFFF) | (y1 << 16);
+                                q[4] = x1 | (y1 << 16);
+                                q[5] = xy1;
+                                ADD_PRIM(D_800CBDC0 + 1, D_800C8C70);
+                            }
+                            D_800C8C70 += 0x1C;
+                            break;
+                        }
+                        case 5:
+                            if (D_800C4988 > 1000) {
+                                func_80080F30(font, text, x, y);
+                                if (D_800C4988 > 2000) {
+                                    D_800C4988 = 0;
+                                }
+                            }
+                            break;
+                        case 4:
+                            break;
+                        }
+                    } else {
+                        int n;
+                        int k;
+
+                        if (prim[0] & 0x800000) {
+                            u8 m;
+
+                            D_800C89D0 = align | 0x8000;
+                            m = ((u8 *)prim)[0x13];
+                            if (D_800C89D4 != m || D_800C89D5 != 0x80) {
+                                D_800C89D4 = m;
+                                D_800C89D5 = 0x80;
+                                func_80080F8C();
+                            }
+                            n = ((u8 *)prim)[0x10];
+                        } else {
+                            if (D_800C89D4 != 8 || D_800C89D5 != 0x80) {
+                                D_800C89D4 = 8;
+                                D_800C89D5 = 0x80;
+                                func_80080F8C();
+                            }
+                            D_800C89D0 = align;
+                            if (page != D_800C89D8) {
+                                D_800C89D8 = page;
+                                func_80080F8C();
+                            }
+                            n = -1;
+                        }
+                        k = ((u8 *)prim)[0x11];
+                        func_800806D4(font, text, x, y, n, (u8 *)prim + 0x12, &k);
+                        ((u8 *)prim)[0x11] = k;
+                    }
+                }
+            }
+        }
+    }
+    DRAW_SET(D_800C886C, saved);
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_03", func_80018AEC);
+#endif
 
 #ifdef NON_MATCHING
 /* Equivalent; scheduling: the original stores D_800C885C and D_800C885D

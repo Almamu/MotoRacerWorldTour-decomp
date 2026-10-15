@@ -761,8 +761,19 @@ void func_80061250(Obj39 *o) {
     o->m_3DD = 0x1A;
 }
 
-#ifdef NON_MATCHING
-// The vector's stack address: the original computes it for each call, ours keeps it in a saved register (the open problem of chunk_02b)
+// The channel at 0x100 of a link's object
+static inline Ctl39 *Chan39Of(Lnk39 *l) {
+    return &l->m_08->m_100;
+}
+
+// Both cameras placed at a model's position
+static inline void Cams39(Obj39 *o, Def39 *d) {
+    Vec39 v = d->m_08;
+
+    func_80081F28(o->m_54, &v);
+    func_80081F28(o->m_C8, &v);
+}
+
 /* A bike's state reset: its sound stopped, its controls cleared, its cameras placed. */
 void func_80061284(Obj39 *o) {
     Lnk39 *l;
@@ -781,9 +792,8 @@ void func_80061284(Obj39 *o) {
     o->m_187[2] = 0;
     o->m_187[3] = 0;
     l = &o->m_328;
-    c = &l->m_08->m_100;
-    c->m_36 &= ~0x1000;
-    c = &l->m_08->m_100;
+    Chan39Of(l)->m_36 &= ~0x1000;
+    c = Chan39Of(l);
     if (!(c->m_36 & 0x1000)) {
         c->m_0C = c->m_04 ? c->m_04->m_10 : 0;
     }
@@ -795,17 +805,11 @@ void func_80061284(Obj39 *o) {
     o->m_3D1 = 0;
     o->m_3D2 = 0;
     if (o->m_30) {
-        Vec39 v = o->m_30->m_08;
-
-        func_80081F28(o->m_54, &v);
-        func_80081F28(o->m_C8, &v);
+        Cams39(o, o->m_30);
     }
     o->m_184 = 0;
     o->m_538 = -1;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_39", func_80061284);
-#endif
 
 #ifdef NON_MATCHING
 // Registers and order: the original adds the clut last and keeps the frame's width in $t7

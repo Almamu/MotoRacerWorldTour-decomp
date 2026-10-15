@@ -134,3 +134,14 @@ global (`D_800CB3C8`).
     assembler's `$at` form, as the original's.
   Its struct `Arg38` is new; the file already had a `Set38`, and a second
   one changed the other functions' code.
+
+## Small tables
+
+- `func_8005D15C` from 529 to 504 off, and now the original's size (614
+  instructions): the tables `D_800CAE90` and `D_800CB0A0` declared as
+  small objects (`extern int D_800CAE90, D_800CB0A0;`, passed as
+  `&D_800CAE90`), so each address is one `la` that GCC builds again for
+  each call instead of keeping it in a saved register. Left: the race and
+  its argument in other saved registers from the start (`$s4`/`$s1`
+  against `$s2`/`$s0`; copying the parameters into locals changed
+  nothing) and the cameras' copy loop.

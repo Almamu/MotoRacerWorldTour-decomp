@@ -8,20 +8,45 @@ struct View22 {
         int m_n : 2;
         unsigned m_hi : 2;
     } m_2C;
-    u8 m_30[0x40];
+    u32 m_30; // bit 9, a text id at bits 10-25
+    u8 m_34[0x3C];
     void (*m_70)(struct Game22 *g);
 };
 
 // A view's entry: its kind, and a word with a number and a mask
 struct Obj22 {
     int m_00; // -1 for none
-    u8 m_04[0x1C];
+    u8 m_04[4];
+    short m_08; // how many elements
+    short m_0A; // the current one
+    struct Elem22 **m_0C;
+    u8 m_10[0x10];
     struct {
         unsigned m_n : 10;
         unsigned m_b : 2;
         int m_mask : 16;
         unsigned m_c : 4;
     } m_20;
+};
+
+// An element's state: its flags and two words
+struct State22 {
+    u8 m_00[4];
+    int m_04;
+    u8 m_08[8];
+    int *m_10;
+    u8 m_14[0x44];
+    int *m_58;
+};
+
+// A view entry's element: its kind, flags
+struct Elem22 {
+    short m_00;
+    u16 m_02;
+    u8 m_04[0x24];
+    State22 *m_28;
+    u8 m_2C[0x24];
+    int m_50;
 };
 
 // A script call's context: its key and the game object
@@ -61,17 +86,27 @@ struct Game22 {
     u8 m_00[0x10];
     int m_10; // timers
     int m_14;
-    u8 m_18[0x24];
+    int m_18, m_1C, m_20; // text ids
+    u8 m_24[0x18];
     Arg22 m_3C; // the scripts' contexts, by set
     Arg22 m_44;
-    u8 m_4C[0x110];
+    u8 m_4C[0x44];
+    void *m_90[8]; // images, by m_178
+    void *m_B0, *m_B4;
+    void *m_B8; // the font
+    u8 m_BC[8];
+    int m_C4;
+    int m_C8, m_CC, m_D0; // x's
+    int m_D4;             // y
+    u8 m_D8[0x84];
     int *m_15C;
     u8 m_160[0x18];
     int m_178;
     u8 m_17C[0x904];
     View22 *m_A80;
     View22 *m_A84;
-    u8 m_A88[8];
+    u8 m_A88[4];
+    int m_A8C;
     int m_A90; // the mode
     int m_A94; // flags
     u8 m_A98[0x24];
@@ -120,6 +155,33 @@ int func_8003F0F8(Game22 *g, int kind, int set);
 void func_80038E0C(Obj22 *o, Game22 *g);
 void func_80038F44(Obj22 *o, Game22 *g);
 extern int D_800D6128; // the frame's time
+extern int D_800C89D0;
+extern u8 D_800C89D4, D_800C89D5;
+extern u8 D_800C885C, D_800C885D;
+extern void *D_800C8C0C;
+extern u8 *D_800C8C70;  // the next free GPU packet
+extern u32 *D_800CBDC0; // the ordering table
+void func_80077BE4(void *img, int a, int x, int y);
+void *func_80086A38(void *b, int id);
+void func_80080F30(void *font, void *t, int x, int y);
+void func_80080F8C(void);
+void func_8003E6FC(Game22 *g);
+}
+
+// ui.h's ADD_PRIM: links packet p in at ordering table entry ot (lwl/swl on the links' 3 bytes)
+#define ADD_PRIM22(ot, p) \
+    do { \
+        u32 _l, _p; \
+        __asm__ volatile("lwl %0, 2(%2)\n\tsll %1, %3, 8\n\tswl %0, 2(%3)\n\tswl %1, 2(%2)" \
+                         : "=&r"(_l), "=&r"(_p) \
+                         : "r"(ot), "r"(p)); \
+    } while (0)
+#define XY22(x, y) (((x) & 0xFFFF) | ((y) << 16))
+
+// A draw mode packet: its tag and the mode word
+static inline void SetDM22(u32 *p, u32 mode) {
+    p[0] = 0x01000000;
+    p[1] = mode;
 }
 
 int func_8003D60C(Game22 *g) {
@@ -735,7 +797,148 @@ void func_8003E5B0(Game22 *g) {
     }
 }
 
+#ifdef NON_MATCHING
+// The shape is the original's (the id's two calls merged, the element's state read through it each time); left: the first loop's counter and flag zeroed in the other order, and the packets' registers (35 off).
+void func_8003E6FC(Game22 *g) {
+    int mode = g->m_A90;
+
+    if ((mode == 0 || mode == 5) && (g->m_A94 & 0x40)) {
+        void *img = 0;
+        void *font;
+
+        switch (g->m_178) {
+        case 0:
+            img = g->m_90[0];
+            break;
+        case 1:
+            img = g->m_90[1];
+            break;
+        case 2:
+            img = g->m_90[2];
+            break;
+        case 3:
+            img = g->m_90[3];
+            break;
+        case 4:
+            img = g->m_90[4];
+            break;
+        case 5:
+            img = g->m_90[5];
+            break;
+        case 6:
+            img = g->m_90[6];
+            break;
+        case 7:
+            img = g->m_90[7];
+            break;
+        }
+        font = g->m_B8;
+        if (font) {
+            View22 *v;
+            void *t;
+            int found, i;
+
+            if (mode == 1 || mode == 4) {
+                v = g->m_A84;
+            } else {
+                v = g->m_A80;
+            }
+            D_800C89D0 = 0x100;
+            if (D_800C89D4 || D_800C89D5 != 0x80) {
+                D_800C89D4 = 0;
+                D_800C89D5 = 0x80;
+                func_80080F8C();
+            }
+            D_800C885C = 0;
+            D_800C885D = 0x80;
+            if (img) {
+                func_80077BE4(img, 0x120, g->m_C8, g->m_D4);
+                t = func_80086A38(D_800C8C0C, g->m_18);
+                if (t) {
+                    func_80080F30(font, t, g->m_C8 + 5, g->m_D4);
+                }
+            }
+            found = 0;
+            for (i = 0; i < (v->m_2C.m_n + 1) * 3; i++) {
+                Obj22 *o = func_8003B038(v, i, 0);
+
+                if (o && o->m_08 && (o->m_0C[o->m_0A]->m_02 & 0xF) == 1) {
+                    found = 1;
+                }
+            }
+            if (found) {
+                if (g->m_B0) {
+                    func_80077BE4(g->m_B0, 0x120, g->m_D0, g->m_D4);
+                }
+                t = func_80086A38(D_800C8C0C, g->m_1C);
+                if (t) {
+                    func_80080F30(font, t, g->m_D0 + 5, g->m_D4);
+                }
+            }
+            found = 0;
+            if (g->m_A90 == 5) {
+                for (i = 0; i < 3; i++) {
+                    Obj22 *o = func_8003B038(v, i, 0);
+
+                    if (o) {
+                        int j;
+
+                        for (j = 0; j < o->m_08; j++) {
+                            Elem22 *e = o->m_0C[j];
+
+                            if ((e->m_02 & 0xF) && e->m_00 == 5) {
+                                State22 *st = e->m_28;
+                                int *w;
+
+                                w = (e->m_28->m_04 & 1) ? e->m_28->m_10 : e->m_28->m_58;
+                                if ((e->m_28->m_04 & 2) && (*w & 0x400000) && e->m_50 > 0) {
+                                    found = 1;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if ((g->m_A8C != 1 || found) && !(g->m_A94 & 0x200)) {
+                if (g->m_B4) {
+                    func_80077BE4(g->m_B4, 0x120, g->m_CC, g->m_D4);
+                }
+                if (!(v->m_30 & 0x200)) {
+                    t = func_80086A38(D_800C8C0C, (v->m_30 >> 10) & 0xFFFF);
+                } else {
+                    t = func_80086A38(D_800C8C0C, g->m_20);
+                }
+                if (t) {
+                    func_80080F30(font, t, g->m_CC + 5, g->m_D4);
+                }
+            }
+            if (g->m_C4) {
+                u32 *q = (u32 *)D_800C8C70;
+                u32 *ot;
+                u32 *p;
+
+                q[0] = 0x05000000;
+                q[1] = 0x2A101010;
+                q[2] = XY22(0, g->m_D4 - 7);
+                q[3] = XY22(0x200, g->m_D4 - 7);
+                q[4] = XY22(0, g->m_D4 + 7);
+                q[5] = XY22(0x200, g->m_D4 + 7);
+                ADD_PRIM22(D_800CBDC0 + 1, D_800C8C70);
+                p = (u32 *)D_800C8C70;
+                SetDM22(p + 6, 0xE1000240);
+                p += 6;
+                ot = D_800CBDC0 + 1;
+                D_800C8C70 = (u8 *)p;
+                ADD_PRIM22(ot, D_800C8C70);
+                p += 2;
+                D_800C8C70 = (u8 *)p;
+            }
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_22", func_8003E6FC);
+#endif
 
 void func_8003EC6C(Game22 *g, int i, int v) {
     g->m_ABC[i].m_04 = v;
