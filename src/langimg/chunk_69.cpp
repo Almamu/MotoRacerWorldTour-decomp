@@ -17,6 +17,27 @@ struct Draw69 {
     Name69 m_187; // the name
 };
 
+// An item with flags at 4 (chunk_23's NamedEntry)
+struct Flag69 {
+    u8 m_00[4];
+    int m_04;
+};
+// An object holding an item at 0x28
+struct Hold69 {
+    u8 m_00[0x28];
+    Flag69 *m_28;
+};
+// An item with a short at 8
+struct Sh69 {
+    u8 m_00[8];
+    short m_08;
+};
+struct Lay69 {
+    u8 m_00[8];
+    Sh69 *m_08;
+    u8 m_0C[8];
+    Sh69 *m_14;
+};
 // What a view's m_60 points to
 struct Scr69 {
     u8 m_00[4];
@@ -29,7 +50,13 @@ struct Scr69 {
     u8 m_1C[0x120];
     int m_13C;
     int m_140;
-    u8 m_144[0x2090];
+    u8 m_144[0x207C];
+    Hold69 *m_21C0;
+    Hold69 *m_21C4;
+    Flag69 *m_21C8;
+    Flag69 *m_21CC;
+    short m_21D0;
+    u8 m_21D2[2];
     int m_21D4;
     int m_21D8;
     int m_21DC;
@@ -38,7 +65,9 @@ struct Scr69 {
 
 struct View69 {
     char *m_00; // its name
-    u8 m_04[0x5C];
+    u8 m_04[0x48];
+    Lay69 *m_4C;
+    u8 m_50[0x10];
     Scr69 *m_60;
 };
 
@@ -197,6 +226,7 @@ void func_8004AFBC(void);
 int func_8006CA84(int id, int a); // returns a handle (chunk_71)
 void func_800792DC(Gfx69 *g);
 void func_8009C3BC(View69 *v, int a);
+void *func_8003AB24(void *s, int g, int a, int b, int c, int d, int e);
 void func_8009D804(Scr69 *s);
 Save69 *func_8009E0A0(Scr69 *s);
 void func_800A0884(void *p);
@@ -284,7 +314,28 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_69", func_8009B9B4);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_69", func_8009BDB8);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_69", func_8009C3BC);
+/* The view's four items shown (flag 2) or hidden, and its layout's two
+ * values set to match. */
+void func_8009C3BC(View69 *v, int on) {
+    Scr69 *s = v->m_60;
+
+    if (on) {
+        s->m_21C0->m_28->m_04 |= 2;
+        s->m_21C4->m_28->m_04 |= 2;
+        s->m_21C8->m_04 |= 2;
+        s->m_21CC->m_04 |= 2;
+        v->m_4C->m_14->m_08 = 0;
+        v->m_4C->m_08->m_08 = 2;
+        func_8003AB24(v, 0, 3, 0, 1, -1, 0);
+    } else {
+        s->m_21C0->m_28->m_04 &= ~2;
+        s->m_21C4->m_28->m_04 &= ~2;
+        s->m_21C8->m_04 &= ~2;
+        s->m_21CC->m_04 &= ~2;
+        v->m_4C->m_14->m_08 = s->m_21D0;
+        v->m_4C->m_08->m_08 = 0;
+    }
+}
 
 void func_8009C534(Game69 *o) {
     View69 *v = o->m_A80;
