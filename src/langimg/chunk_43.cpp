@@ -157,29 +157,6 @@ static inline void VecCopyL43(Vec43 *d, Vec43 *s) {
     d->z = z;
 }
 
-// A matrix copied three words, two, then three at a time (chunk_09's MatCopy)
-static inline void MatCopy43(MATRIX *d, MATRIX *s) {
-    int *p = (int *)d;
-    int *q = (int *)s;
-    int a = q[0];
-    int b = q[1];
-    int c = q[2];
-
-    p[0] = a;
-    p[1] = b;
-    p[2] = c;
-    a = q[3];
-    b = q[4];
-    p[3] = a;
-    p[4] = b;
-    a = q[5];
-    b = q[6];
-    c = q[7];
-    p[5] = a;
-    p[6] = b;
-    p[7] = c;
-}
-
 static inline void ZeroVec43(Vec43 *v) {
     v->x = 0;
     v->y = 0;
@@ -249,8 +226,31 @@ add:
     func_80067230(m, &m->m_27C, 0);
 }
 
-#ifdef NON_MATCHING
-// A model copied from another, then set up: everything but the view matrix's copy matches; that copy (three, two, three words through a pointer) has its registers in another order, and the original loads the destination before the first word (13 off).
+// A matrix copied three words, two, then three at a time, each word its own
+// variable (one reused for two words gets other registers)
+static inline void MatCopy43(MATRIX *d, MATRIX *s) {
+    int *q = (int *)s;
+    int *p = (int *)d;
+    int x0 = q[0];
+    int x1 = q[1];
+    int x2 = q[2];
+    int x3, x4, x5, x6, x7;
+
+    p[0] = x0;
+    p[1] = x1;
+    p[2] = x2;
+    x3 = q[3];
+    x4 = q[4];
+    p[3] = x3;
+    p[4] = x4;
+    x5 = q[5];
+    x6 = q[6];
+    x7 = q[7];
+    p[5] = x5;
+    p[6] = x6;
+    p[7] = x7;
+}
+
 void func_80067650(Model43 *d, Model43 *s, int a) {
     Ctr43 *cs = (Ctr43 *)&s->m_1B4;
     Ctr43 *cd = (Ctr43 *)&d->m_1B4;
@@ -293,9 +293,6 @@ void func_80067650(Model43 *d, Model43 *s, int a) {
     ZeroVec43(&d->m_30C);
     ZeroVec43(&d->m_318);
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_43", func_80067650);
-#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_43", func_800678C8);
 

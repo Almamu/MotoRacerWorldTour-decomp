@@ -22,7 +22,7 @@ at 0x28):
 
 One file, `src/langimg/chunk_43.cpp`, 0x800673CC-0x800692EC.
 
-10 functions: 5 match, 2 are parked, 3 are still asm.
+10 functions: 6 match, 1 is parked, 3 are still asm.
 
 ## The settings
 
@@ -55,12 +55,13 @@ globals `D_800CB42C` to `D_800CB460` (twelve of them).
 
 ## Group B, more functions
 
-- **`func_80067650`** (a model copied from another, then set up) is written
-  and parked, 13 off. Everything matches but the view matrix's copy: the
-  original copies it three, two, then three words through a pointer (as
-  chunk_09's `MatCopy`; a struct assignment gives four-register groups),
-  loading the destination before the first word, and its three registers
-  in another order. The block at 0x1B4 is copied as the original does it,
+- **`func_80067650`** (a model copied from another, then set up) matches.
+  The view matrix is copied three, two, then three words through a pointer
+  (as chunk_09's `MatCopy`; a struct assignment gives four-register
+  groups), with **each word in its own variable**: reusing three variables
+  for the eight words made each one a single long-lived pseudo, and GCC
+  gave them other registers (13 off). This is #298's "one variable doing
+  two jobs" rule. The block at 0x1B4 is copied as the original does it,
   words and two vectors (`Ctr43`).
 
 ## The functions
@@ -70,7 +71,7 @@ globals `D_800CB42C` to `D_800CB460` (twelve of them).
 | `func_800673CC` | matches | the bike's byte at 0x188 set |
 | `func_800673DC` | matches | five values cleared |
 | `func_8006741C` | matches | the velocity set from a direction |
-| `func_80067650` | parked | a model copied from another: one copy's registers |
+| `func_80067650` | matches | a model copied from another |
 | `func_800678C8` | asm | 476 instructions |
 | `func_80068038` | matches | the value at 0x33C |
 | `func_800681A4` | asm | 480 instructions |
