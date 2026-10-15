@@ -15,7 +15,7 @@ Around them:
 
 One file, `src/langimg/chunk_29.cpp`, 0x8004B4B0-0x8004D560.
 
-31 functions: 23 match, 3 are parked, 5 are still asm.
+31 functions: 23 match, 4 are parked, 4 are still asm.
 
 ## The settings
 
@@ -57,7 +57,7 @@ small globals.
 
 | Function | State | Notes |
 |---|---|---|
-| `func_8004B4B0` | asm | 240 instructions |
+| `func_8004B4B0` | parked | the race's seats: a constant's register |
 | `func_8004B844`, `func_8004B900` | match | the menus' items set up |
 | `func_8004B96C` | matches | a file's path |
 | `func_8004BA04` | asm | 311 instructions |
@@ -98,3 +98,16 @@ small globals.
   pointer swap registers (8 off).
 - The chunk now includes `psyq.h` (`MATRIX`) and has its own `Vec29`; the
   bike, the run and the game got the fields these use.
+
+## Group B follow-up, continued
+
+- `func_8004B4B0` written and parked (150 off, most of it a shift): the
+  race's five seats (`D_800D5E48`, 8 bytes each: a colour byte and a kind,
+  1 a player, 3 the computer's, 2 a ghost) filled by the mode `D_800D5F40`
+  (a jump table) and the player count `D_800D5F3C` (a `switch`), the
+  colours from `D_800D5F50` plus 1 or 8 times `D_800D5F34`, then three
+  `func_80045168` calls. The counters are initialised after the calls.
+  Left: the original keeps the constant 1 in a saved register across
+  `func_80050E88` for the player count's compare, which shifts everything
+  after it by one instruction. A permuter run found only changes to the
+  meaning.

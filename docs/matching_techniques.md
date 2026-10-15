@@ -117,8 +117,10 @@ without the flag (`tools/try_func.py NAME -D NON_MATCHING
 chunk_06 and chunk_24 have it too (their parked functions got closer,
 nothing matched yet), and so do chunk_59, chunk_68, chunk_72 and chunk_74
 (chunk_72's `func_800A1CF8` from 92 off to 2, chunk_59's `func_80088FD4`
-from 104 to 16), and chunk_55 (its string-width loop `func_8007F33C`
-keeps -1, -4, 0xFFFF and a base in saved registers: 169 off to 92).
+from 104 to 16), chunk_37 (its new `func_8005CDA4` keeps a loop's 4 in
+`$s7` with it, from 214 off to 134) and chunk_55 (its string-width loop
+`func_8007F33C` keeps -1, -4, 0xFFFF and a base in saved registers: 169
+off to 92).
 
 ### Unsplit addresses (`-mno-split-addresses`)
 
