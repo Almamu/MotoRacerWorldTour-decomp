@@ -92,7 +92,7 @@ settings
 | `src/langimg` chunk_23 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=D_800CABB7` |
 | `src/langimg` chunk_45 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (eleven) |
 | `src/langimg` chunk_66 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (five) |
-| `src/langimg` chunk_17, chunk_19, chunk_21, chunk_22, chunk_25, chunk_26, chunk_27, chunk_28, chunk_29, chunk_31, chunk_33, chunk_39, chunk_40, chunk_41, chunk_44, chunk_46, chunk_47, chunk_49, chunk_50, chunk_51, chunk_52, chunk_55, chunk_56, chunk_57, chunk_58, chunk_59, chunk_60, chunk_61, chunk_64, chunk_67, chunk_68, chunk_69, chunk_70, chunk_71, chunk_72, chunk_73, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
+| `src/langimg` chunk_17, chunk_19, chunk_21, chunk_22, chunk_25, chunk_26, chunk_27, chunk_28, chunk_29, chunk_31, chunk_33, chunk_37, chunk_39, chunk_40, chunk_41, chunk_44, chunk_46, chunk_47, chunk_49, chunk_50, chunk_51, chunk_52, chunk_55, chunk_56, chunk_57, chunk_58, chunk_59, chunk_60, chunk_61, chunk_64, chunk_67, chunk_68, chunk_69, chunk_70, chunk_71, chunk_72, chunk_73, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_06 to chunk_12 (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_02b (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `SCES_030.37` (`src/sces`) | GCC 2.91.66 | 0 | `-fsigned-char` | `--expand-div` |
@@ -237,6 +237,10 @@ globals), a script that tries every order is quicker than guessing:
 - **A field read before a copy.** chunk_33's `func_80053D4C` loads a
   found object's pointer before copying a vector to the stack: `Ent33x *y
   = x->m_04;` first, then the copy.
+- **The stores in a load's delay.** chunk_37's `func_8005B8D0` stores
+  three of a bike's fields after loading a byte of the run's: the byte's
+  store written before them (`b->m_42 = o->m_378->m_1F44;`) put them in
+  the load's delay, as above; written after, they came before the load.
 
 ### Result variables
 
@@ -435,6 +439,18 @@ globals), a script that tries every order is quicker than guessing:
   both loops, the first loop's two registers swapped; with a second
   count and a second end they took the original's (the function matched
   with the constant below).
+- **Two counts through an inline function.** chunk_37's
+  `func_8005B788` counts the same bikes twice, by kind, and copies each
+  count out of one register: an inline function taking the run and the
+  kind, called with `o->m_378` each time, matched.
+- **Count-down copies behind a test.** The same function copies with a
+  count going down to 0 behind a `blez`: `if (n > 0) do { ... } while
+  (--n);`. `for (k = 0; k < n; k++)` kept the count going up (`slt`). Its
+  last loop, a `blez` on `4 - n` and a `bgez` at the bottom, is `k = 4 -
+  n; if (k > 0) do { ... } while (--k >= 0);`.
+- **A loop counter of its own.** A counter later reused for something
+  else (a call's result) swapped a loop's two registers; a separate
+  variable matched (chunk_37's `func_8005B8D0`).
 
 ### Temporaries and folding
 
@@ -572,7 +588,10 @@ globals), a script that tries every order is quicker than guessing:
   D_800C7F18;`) and indexing by bytes (`*(short *)((u8 *)&D_800C7F18 +
   (i << 1))`). The same scalar declarations put two vtables' and an
   array's addresses in the registers the original loads them into
-  (`func_8006F7D4`, `func_8006FB74`).
+  (`func_8006F7D4`, `func_8006FB74`). chunk_37's tables too:
+  `(&D_800D5F70)[n++]` (`func_8005B788`), and, in a product, only by
+  bytes after the other factor: `o->m_3C4.pad * *(int *)((u8
+  *)&D_800CB400 + (i << 2))` (`func_8005C128`).
 - **Why the scalar declaration works: the object's size.** With split
   addresses, GCC splits the address of a global bigger than 8 bytes
   (`lui` into a temporary, `addiu` into the target, each free to move).
