@@ -48,6 +48,16 @@ struct BikeOwner {
     int m_564;
 };
 
+// The bike's link to another (0x6C bytes)
+struct BikeLink {
+    void *m_00;
+    int m_04, m_08, m_0C, m_10;
+    Vector3 m_14;
+    int m_20, m_24, m_28;
+    Vector3 m_2C;
+    int m_38, m_3C, m_40, m_44, m_48, m_4C, m_50, m_54, m_58, m_5C, m_60, m_64, m_68;
+};
+
 // A bike (0x5D4 bytes); its base class is func_80062E40's
 struct Bike {
     u8 m_pad0[0x34];
@@ -66,7 +76,8 @@ struct Bike {
     u8 m_5E;
     u8 m_5F;
     u8 m_60;
-    u8 m_pad61[0x3];
+    u8 m_61;
+    u8 m_pad62[0x2];
     Vector3 m_pos;
     short m_rx;
     short m_ry;
@@ -108,7 +119,9 @@ struct Bike {
     s8 m_14F;
     u8 m_pad150[0x4];
     int m_154;
-    u8 m_pad158[0xD4];
+    u8 m_pad158[0x5C];
+    BikeLink m_1B4;
+    u8 m_pad220[0xC];
     Frame *m_22C;
     Frame *m_230;
     Vector3 m_234;
@@ -231,7 +244,9 @@ struct Bike {
     u8 m_pad4DB[0x5];
     AnimChan m_4E0;
     int m_4FC;
-    u8 m_pad500[0x10];
+    int m_500;
+    int m_504;
+    u8 m_pad508[0x8];
     int m_510;
     u8 m_pad514[0x14];
     s8 m_528;
