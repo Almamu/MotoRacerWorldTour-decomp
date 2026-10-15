@@ -92,7 +92,7 @@ settings
 | `src/langimg` chunk_23 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=D_800CABB7` |
 | `src/langimg` chunk_45 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (eleven) |
 | `src/langimg` chunk_66 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (five) |
-| `src/langimg` chunk_17, chunk_19, chunk_20, chunk_21, chunk_22, chunk_25, chunk_26, chunk_27, chunk_28, chunk_29, chunk_31, chunk_32, chunk_33, chunk_37, chunk_38, chunk_39, chunk_40, chunk_41, chunk_44, chunk_46, chunk_47, chunk_49, chunk_50, chunk_51, chunk_52, chunk_55, chunk_56, chunk_57, chunk_58, chunk_59, chunk_60, chunk_61, chunk_64, chunk_65, chunk_67, chunk_68, chunk_69, chunk_70, chunk_71, chunk_72, chunk_73, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
+| `src/langimg` chunk_15, chunk_17, chunk_19, chunk_20, chunk_21, chunk_22, chunk_25, chunk_26, chunk_27, chunk_28, chunk_29, chunk_31, chunk_32, chunk_33, chunk_37, chunk_38, chunk_39, chunk_40, chunk_41, chunk_44, chunk_46, chunk_47, chunk_49, chunk_50, chunk_51, chunk_52, chunk_55, chunk_56, chunk_57, chunk_58, chunk_59, chunk_60, chunk_61, chunk_64, chunk_65, chunk_67, chunk_68, chunk_69, chunk_70, chunk_71, chunk_72, chunk_73, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_06 to chunk_12 (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_02b (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `SCES_030.37` (`src/sces`) | GCC 2.91.66 | 0 | `-fsigned-char` | `--expand-div` |
@@ -252,6 +252,10 @@ globals), a script that tries every order is quicker than guessing:
 - **A return per test.** chunk_38's `func_8005E0D8` returns 0 from a
   block of its own after two tests: `if (!a) return 0; if (!b) return 0;`
   gave it, `if (!a || !b) return 0;` didn't.
+- **A stored field read back.** chunk_15's `func_80030C98` stores a
+  `short` parameter and computes from the field: `b->m_298 = v; b->m_290
+  = (b->m_298 << 12) / 1000;` gave the copy of the value the original
+  makes; computing from `v` didn't.
 - **The result set after the early return.** chunk_32's `func_80051618`
   returns 0 at once without a path and otherwise keeps its result in a
   saved register, zeroed in the delay slot of the branch into the body:
@@ -334,6 +338,10 @@ globals), a script that tries every order is quicker than guessing:
   unsigned test (`addiu`, `sltiu 2`). chunk_56's `func_80082BEC` tests
   them apart: `if (v != -1) { if (v != 0) { ... } else { c[0] = 0; } }
   else { c[0] = 0; }`, the two `else`s merged by cross-jumping.
+- **An empty case shapes the compare tree.** chunk_15's `func_80030458`
+  switches over 4 and 5 with a balanced tree (`== 4`, `< 5`, `== 5`);
+  with only those two cases GCC compared twice, and an empty `case 3:
+  break;` gave the tree.
 - **Empty cases at the end of a switch.** chunk_56's `func_800816F8`
   has a jump table for 1 to 8 whose last two entries go to the end, and
   each case loads the same pointer itself. Without `case 7: break; case 8:
@@ -1056,6 +1064,12 @@ What's left once the instructions are right is usually register choice.
   definition", even as the file's first line). For the permuter, the
   base declares a plain `Rnd65 *g;` and `compile.sh` adds the `register
   ... asm("$25")` back with `sed` (pycparser doesn't read it).
+- **A `mult` inside an `asm` and the HI/LO hazard.** maspsx puts the
+  `nop`s ASPSX needs between a `mfhi`/`mflo` and a `mult` only before a
+  `mult` it recognises: `mult` and a tab. `MULSHIFT` wrote `mult %2, %3`
+  with a space, so after a division by a constant (`mfhi`, one
+  instruction, then the macro's `mult`) the original's `nop` was missing
+  (chunk_15's `func_80031138`); the macro now writes `mult\t`.
 - **Handwritten functions with an `asm` macro.** splat marks functions
   "handwritten" when they hold instructions GCC doesn't emit (here `sub`
   in a fixed-point multiply). They can still be C: the game used an `asm`
