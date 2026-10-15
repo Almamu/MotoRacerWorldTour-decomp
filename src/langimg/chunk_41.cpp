@@ -624,8 +624,7 @@ static inline void LanePt41(Row41 *r, int i, int k, Vec41 *out, Vec41 *d) {
     func_800997D0(out, d);
 }
 
-#ifdef NON_MATCHING
-// Two sections' lane points and their height difference over the distance: only the second row's address, its index and table loaded into swapped registers (5 off).
+/* Two sections' lane points and their height difference over the distance. */
 void func_800650F8(Obj41 *o, int *out, Tab41 *t) {
     if (out) {
         int i = o->m_1F8;
@@ -649,6 +648,3 @@ void func_800650F8(Obj41 *o, int *out, Tab41 *t) {
         }
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_41", func_800650F8);
-#endif
