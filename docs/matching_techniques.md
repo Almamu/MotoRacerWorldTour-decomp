@@ -92,7 +92,7 @@ settings
 | `src/langimg` chunk_23 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=D_800CABB7` |
 | `src/langimg` chunk_45 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (eleven) |
 | `src/langimg` chunk_66 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (five) |
-| `src/langimg` chunk_19, chunk_22, chunk_25, chunk_28, chunk_29, chunk_31, chunk_39, chunk_40, chunk_41, chunk_44, chunk_46, chunk_47, chunk_49, chunk_50, chunk_51, chunk_52, chunk_55, chunk_56, chunk_57, chunk_58, chunk_59, chunk_60, chunk_61, chunk_67, chunk_68, chunk_69, chunk_70, chunk_71, chunk_72, chunk_73, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
+| `src/langimg` chunk_19, chunk_22, chunk_25, chunk_27, chunk_28, chunk_29, chunk_31, chunk_39, chunk_40, chunk_41, chunk_44, chunk_46, chunk_47, chunk_49, chunk_50, chunk_51, chunk_52, chunk_55, chunk_56, chunk_57, chunk_58, chunk_59, chunk_60, chunk_61, chunk_67, chunk_68, chunk_69, chunk_70, chunk_71, chunk_72, chunk_73, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_06 to chunk_12 (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_02b (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `SCES_030.37` (`src/sces`) | GCC 2.91.66 | 0 | `-fsigned-char` | `--expand-div` |
@@ -196,6 +196,12 @@ globals), a script that tries every order is quicker than guessing:
   field the original reads before a store was read first in the source:
   `D_800CBCA4 = o->m_54;` before `D_800CBCA0 = -1;`, the two stores then
   scheduled in either order (`func_80016A8C`).
+- **A global's store that stays after the fields'.** GCC 2 assumes a
+  scalar global and a field reached through a pointer don't overlap, and
+  schedules their stores in either order; an array element may overlap.
+  chunk_27's `func_800481E0` stores to `D_800D5FCC` after five stores
+  through the object: declared `int`, GCC moved it above them; declared
+  `int D_800D5FCC[2]` (with its neighbour `D_800D5FD0`), it stayed.
 - **Read the fields first.** For the same reason, a function that loads
   all of a struct's fields before its first store through another pointer
   had them in locals: the 2D items' `x0`, `y0`, `x1`, `y1` before the
@@ -620,6 +626,10 @@ mean a `short` field.
   low 30 bits and then sets bit 30, storing after each: `w &= 0xC0000000;
   ...; w |= 0x40000000;` (GCC 2.x keeps the dead first store). The same
   two writes as bitfields became one constant store.
+- **`xori` and `bnez`: a comparison as a value.** `if (x == 8)` gives
+  `li` and `bne`; the original's `xori $v0, $v0, 8; bnez` is the
+  comparison computed as a value first, in a local or returned by an
+  inline function (chunk_27's `func_80048CFC`).
 - **A bitfield word stored twice.** chunk_59's `func_8008784C` stores
   its bitfield word after setting a 12-bit field and again after clearing
   the next two. Written together, GCC merged them into one store; with
