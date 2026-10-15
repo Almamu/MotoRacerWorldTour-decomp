@@ -254,6 +254,17 @@ int func_80050E88(int i);
 int func_8004B4B0(void);
 }
 
+extern "C" {
+int func_80097AC8(int x); // a square root
+void func_8004FE58(void *a, short *v);
+MATRIX *func_80098674(MATRIX *a, MATRIX *b, MATRIX *out); // a product
+long *func_8009887C(long *in, long *out);
+Vec29 *func_80098768(MATRIX *m, Vec29 *v, Vec29 *out);
+Vec29 *func_800997D0(Vec29 *v, Vec29 *a); // v += a
+void func_800980F4(MATRIX *m);
+void func_8004D300(Game29 *g, int i);
+}
+
 #ifdef NON_MATCHING
 // The race's seats from the mode, written in full: the original keeps the constant 1 in a saved register across the second call (for the player count's switch), which shifts everything after it by one instruction (150 off); the cases and loops are laid out as the original's.
 int func_8004B4B0(void) {
@@ -867,4 +878,89 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_29", func_8004CEFC);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_29", func_8004D068);
 
+// The racer's bike, or 0
+static inline Bk29 *Bike29At(Rc29 *r, int k) {
+    Bk29 *b = 0;
+
+    if (k >= 0) {
+        b = &r->m_2E8[k];
+    }
+    return b;
+}
+
+// A vector set, the first and last stores at the stack's offsets
+static inline void SetVec29(Vec29 *v, int x, int y, int z) {
+    v->vx = x;
+    v->vy = y;
+    v->vz = z;
+}
+
+// The matrix turned by half a turn about y (through func_8004FE58), its
+// translation added to t
+static inline void Turn29(MATRIX *m, long *t) {
+    MATRIX out;
+    MATRIX r;
+    SVECTOR a;
+
+    a.vx = 0;
+    a.vy = 0x800;
+    a.vz = 0;
+    func_8004FE58(&r, &a.vx);
+    r.t[0] = r.t[1] = r.t[2] = 0;
+    func_80098674(m, &r, &out);
+    func_8009887C(r.t, out.t);
+    func_800997D0((Vec29 *)out.t, (Vec29 *)t);
+    *m = out;
+}
+
+#ifdef NON_MATCHING
+// Written in the original's shape (frame, slots and calls): the product and the half turn in an inline function so their addresses are recomputed, &w and the view's translation kept as the original's. Left: the product's address (sp+0x30) is merged with w's, which shares the slot, so GCC builds it in $s1 early and addresses the angle through it (33 off).
+void func_8004D300(Game29 *g, int i) {
+    int k = g->m_470[i];
+    Body29 *m = 0;
+    Bk29 *b = Bike29At(g->m_378, (s8)g->m_378->m_1E24[k]);
+
+    if (b && (b->m_00 & 0x7E) == 0x42) {
+        m = (Body29 *)b->m_30;
+    }
+    if (m) {
+        long unused[8];
+        MATRIX *mm = m->m_34;
+        int cs, sn;
+
+        sn = mm->m[0][2];
+        cs = mm->m[2][2];
+        Ply29 *p = g->m_43C[i];
+        int l = func_80097AC8(sn * sn + cs * cs);
+
+        if (l) {
+            l = 0x1000000 / l;
+        }
+        sn = sn * l >> 12;
+        cs = cs * l >> 12;
+        p->m_00.m[1][0] = 0;
+        p->m_00.m[0][1] = 0;
+        p->m_00.m[1][1] = 0x1000;
+        p->m_00.m[2][1] = 0;
+        p->m_00.m[1][2] = 0;
+        p->m_00.m[2][0] = -sn;
+        p->m_00.m[0][2] = sn;
+        p->m_00.m[0][0] = cs;
+        p->m_00.m[2][2] = cs;
+        Turn29(&p->m_00, p->m_00.t);
+        VecCopyL29(&p->m_F8, (Vec29 *)((u8 *)m + 0x64));
+        p->m_00.t[0] = p->m_00.t[1] = p->m_00.t[2] = 0;
+        {
+            Vec29 w, v;
+
+            SetVec29(&v, 0, 0x2000, 0);
+            func_80098768(&p->m_00, &v, &w);
+            func_800997D0(&w, (Vec29 *)p->m_00.t);
+            func_800997D0(&p->m_F8, &w);
+        }
+        func_800980F4(&p->m_00);
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_29", func_8004D300);
+#endif

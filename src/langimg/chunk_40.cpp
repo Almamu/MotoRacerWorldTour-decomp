@@ -100,12 +100,17 @@ struct Obj40 {
     int m_198;
     Vec40 m_19C;
     Vec40 m_1A8;
-    u8 m_1B4[0x6C];
+    u8 m_1B4[0x40];
+    int m_1F4; // its segment
+    int m_1F8; // its point in it
+    u8 m_1FC[0x24];
     St40 *m_220;
     St40 *m_224;
     St40 *m_228;
     St40 *m_22C;
     St40 *m_230;
+    u8 m_234[0x2F6];
+    u8 m_52A;
 };
 
 // What a player's m_0C points to
@@ -114,13 +119,19 @@ struct Model40 {
     int m_114[1]; // the parts' numbers
 };
 
+// Three angles and a pad, as copied whole
+struct Rot40 {
+    short v[4];
+};
 // A player (0x568 bytes)
 struct Ply40 {
     u8 m_00[0xC];
     Model40 *m_0C;
     u8 m_10[0x20];
     Obj40 *m_30;
-    u8 m_34[0x15C];
+    u8 m_34[0x10];
+    s8 m_44; // its side offset
+    u8 m_45[0x14B];
     u8 m_190[0x174];
     u8 m_304[0x14];
     Cobjet *m_318;
@@ -135,7 +146,12 @@ struct Ply40 {
     int m_3D8;
     u8 m_3DC[0xC];
     int m_3E8; // bits waiting
-    u8 m_3EC[0x17C];
+    u8 m_3EC[0x154];
+    int m_540;
+    u8 m_544[4];
+    Vec40 m_548;        // its start
+    struct Rot40 m_554; // its start's angles
+    u8 m_55C[0xC];
 };
 
 // A shape: a position at 0x14
@@ -254,6 +270,50 @@ void func_800614C0(Ply40 *p, int i);
 void func_80061510(Ply40 *p, Cobjet *o);
 void func_80061540(Cobjet *o, int n, int *parts);
 void func_800623DC(Ply40 *p);
+// A track's point (20 bytes) and segment (20 bytes)
+struct Pt40 {
+    Vec40 m_00;
+    u8 m_0C[8];
+};
+struct TSeg40 {
+    u8 m_00[4];
+    Pt40 *m_04;
+    u8 m_08[0xC];
+};
+// The camera's track
+struct Cam40 {
+    u8 m_00[0x24];
+    int m_24;
+    TSeg40 *m_28;
+};
+struct St52C40 {
+    u8 m_00[0x52C];
+    int m_52C;
+};
+struct Run40 {
+    u8 m_00[0x10];
+    St52C40 *m_10;
+};
+struct Game40 {
+    u8 m_00[0x378];
+    Run40 *m_378;
+    u8 m_37C[0x70];
+    Cam40 *m_3EC;
+};
+extern Game40 *D_800C5E14;
+extern short D_800B8884[]; // angles by cosine
+void func_80036850(void *a);
+int func_8001B76C(Cam40 *c);
+void func_80098E9C(Vec40 *v);
+Vec40 *func_800996D4(Vec40 *out, int a, Vec40 *v);
+Vec40 *func_8009975C(Vec40 *d, Vec40 *s, int k);
+Vec40 *func_800997D0_40(Vec40 *v, Vec40 *a) asm("func_800997D0");
+Vec40 *func_800998D0_40(Vec40 *d, Vec40 *a, Vec40 *b) asm("func_800998D0");
+void func_8002659C(Obj40 *o);
+void func_800673DC(Obj40 *o);
+void func_800672F0(Obj40 *o);
+void func_80061284(Ply40 *p);
+void func_80062440(Ply40 *p);
 void func_800627B8(Ply40 *p);
 void func_800627C0(Ply40 *p, int b);
 int func_800627D8(Ply40 *p);
@@ -491,7 +551,93 @@ void func_800623DC(Ply40 *p) {
     p->m_3D8 = 0;
 }
 
+// The bike back on the track: at its start in the race's state 5, else on
+// the camera's track at its point, turned along it
+#ifdef NON_MATCHING
+// The bike put back on the track, in the original's shape and frame: the side offset's three vectors' addresses kept as the original's (pointer for the call, the copy from the stack). Left: the two branches' point copies and the direction's copy use other temporaries (16 off).
+void func_80062440(Ply40 *b) {
+    Obj40 *m;
+    int ok;
+
+    b->m_318 = 0;
+    b->m_320 = b->m_321;
+    b->m_322 = b->m_323;
+    func_80036850(b->m_190);
+    m = b->m_30;
+    if (*(s8 *)&m->m_59) {
+        Game40 *g = D_800C5E14;
+
+        ok = 0;
+        if (g->m_378->m_10->m_52C == 5) {
+            VecCopyL40(&m->m_64, &b->m_548);
+            *(Rot40 *)b->m_30->m_70 = b->m_554;
+            if (!b->m_540) {
+                m->m_52A = 0;
+            }
+        } else if (g) {
+            Cam40 *c = g->m_3EC;
+
+            if (c && func_8001B76C(c) && c->m_24) {
+                int k = m->m_1F8;
+                int sg = m->m_1F4;
+
+                if (!k && sg == 1) {
+                    k = 1;
+                }
+                if (k >= 0) {
+                    TSeg40 *e = &c->m_28[sg];
+                    Vec40 v, d, q, t, t2, r;
+
+                    v = e->m_04[k].m_00;
+                    VecCopyL40(&b->m_30->m_64, &v);
+                    ok = 1;
+                    if (k > 0) {
+                        q = e->m_04[k - 1].m_00;
+                        func_800998D0_40(&t, &v, &q);
+                        VecCopyL40(&d, &t);
+                    } else if (!k) {
+                        q = e->m_04[1].m_00;
+                        func_800998D0_40(&t2, &q, &v);
+                        VecCopyL40(&d, &t2);
+                    }
+                    func_80098E9C(&d);
+                    if (b->m_44) {
+                        Vec40 *pt = &t;
+
+                        q.y = 0;
+                        q.x = d.z;
+                        q.z = -d.x;
+                        func_800996D4(&r, b->m_44 * 3, &q);
+                        func_8009975C(pt, &r, 2);
+                        VecCopyL40(&q, &t);
+                        func_800997D0_40(&b->m_30->m_64, &q);
+                    }
+                    {
+                        int a = D_800B8884[(d.z + 0x1000) >> 1];
+
+                        if (d.x < 0) {
+                            a = -a;
+                        }
+                        b->m_30->m_70[0] = 0;
+                        b->m_30->m_70[1] = a;
+                        b->m_30->m_70[2] = 0;
+                    }
+                }
+            }
+        }
+        func_8002659C(m);
+        if (ok && D_800C5E14) {
+            b->m_30->m_61 = 1;
+        }
+    } else {
+        func_800673DC(m);
+        func_800672F0(m);
+    }
+    func_80061284(b);
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_40", func_80062440);
+#endif
 
 void func_800627B8(Ply40 *p) {
     p->m_3E8 = 0;

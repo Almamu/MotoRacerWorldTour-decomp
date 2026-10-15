@@ -15,7 +15,7 @@ Around them:
 
 One file, `src/langimg/chunk_29.cpp`, 0x8004B4B0-0x8004D560.
 
-31 functions: 23 match, 4 are parked, 4 are still asm.
+31 functions: 23 match, 5 are parked, 3 are still asm.
 
 ## The settings
 
@@ -53,6 +53,18 @@ small globals.
   player, the index and the run read in that order, and the modes as a
   `switch` whose mode 1 falls into mode 0 and mode 0 into the default.
 
+## Group B, more functions
+
+- **`func_8004D300`** (a camera behind its bike, turned half a turn) is
+  written and parked, 33 off. Its frame (0x90, an unused 0x20 at 0x10 the
+  original reserves too), its slots and its calls are the original's: the
+  half turn and the product in an inline function (their addresses
+  recomputed, #289's finding), `&w`, the view's translation and the
+  position kept in saved registers, the sine and cosine read before the
+  view, the offset set through `SetVec29`. Left: the product's matrix and
+  `w` share the slot at 0x30, and GCC merges the two addresses, building
+  it in `$s1` early (and addressing the angle through it).
+
 ## The functions
 
 | Function | State | Notes |
@@ -79,7 +91,7 @@ small globals.
 | `func_8004CD5C` | matches | a player's view from their current object |
 | `func_8004CEFC` | asm | 91 instructions |
 | `func_8004D068` | asm | 166 instructions |
-| `func_8004D300` | asm | 152 instructions |
+| `func_8004D300` | parked | a camera behind a bike: an address merged |
 
 ## Fourth pass
 
