@@ -16,8 +16,8 @@ struct Link21 {
     char m_name[4];
 };
 
-// What's at 0xD8
-struct Cam21 {
+// chunk_61's colour zone: off, four fixed colours, or fading
+struct Zone21 {
     int m_00;
     int m_04;
     int m_08, m_0C;
@@ -25,7 +25,7 @@ struct Cam21 {
     int m_18, m_1C;
 };
 
-// Its parameters
+// The zone's parameters: its colours' indices in the table
 struct Par21 {
     int m_00, m_04, m_08, m_0C;
     int m_10, m_14, m_18, m_1C;
@@ -36,7 +36,7 @@ struct Scene21 {
     u8 m_00[0x38];
     void *m_38; // a racer (chunk_05's)
     u8 m_3C[0x9C];
-    struct Cam21 m_D8;
+    struct Zone21 m_D8;
     u8 m_F8[0x50];
     int *m_148; // a table
     int m_14C;  // its size
@@ -85,8 +85,8 @@ void func_8003CD30(Scene21 *s);
 void func_8003CD38(Scene21 *s);
 void func_8003CD88(Scene21 *s);
 void func_8003BD5C(Scene21 *s, int mode, Par21 *p);
-void func_8008C7E8(Cam21 *c, int a, int b, int d, int e);
-void func_8008C808(Cam21 *c, int mode, int *a, int *b, int *d, int *e);
+void func_8008C7E8(Zone21 *c, int a, int b, int d, int e);
+void func_8008C808(Zone21 *c, int mode, int *a, int *b, int *d, int *e);
 }
 
 void func_8003B600(Scene21 *s, int *src, unsigned int size, unsigned int size2, int reuse,
@@ -147,8 +147,9 @@ Link21 *func_8003B7E0(Scene21 *s, const char *name) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_21", func_8003B850);
 
+/* The colour zone off (0), set from the table (1) or fading (2, 3). */
 void func_8003BD5C(Scene21 *s, int mode, Par21 *p) {
-    Cam21 *k;
+    Zone21 *k;
 
     switch (mode) {
     case 0:
