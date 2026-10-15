@@ -15,7 +15,7 @@ Also two destructors of classes on `Cobjet`, and a word stored.
 
 One file, `src/langimg/chunk_27.cpp`, 0x80046F2C-0x8004970C.
 
-18 functions: 13 match, 2 are parked, 3 are still asm.
+18 functions: 13 match, 3 are parked, 2 are still asm.
 
 ## The settings
 
@@ -56,7 +56,7 @@ global (`D_800C5868`).
 | `func_8004818C`, `func_800490C8` | match | a check through the vtable |
 | `func_800481E0` | matches | the race's cleanup |
 | `func_8004845C` | matches | the stage told the state |
-| `func_80048494` | parked | the game's step: registers after the calls |
+| `func_80048494` | parked | the game's step: the tables' addresses' order |
 | `func_800487D0` | matches | an event sent, the stage told |
 | `func_80048824` | matches | another object set up, a value from `func_800B5A1C` passed to it |
 | `func_80048980` | matches | another object's fields set |
@@ -66,7 +66,7 @@ global (`D_800C5868`).
 | `func_80048CFC` | matches | the race's mode checked |
 | `func_80048DD0` | matches | the destructor |
 | `func_80048EC4` | parked | the racers given their tiles' slots: registers |
-| `func_8004911C` | asm | 380 instructions |
+| `func_8004911C` | parked | the race set up on its stage: spills and a sum's order |
 
 ## Second pass
 
@@ -90,3 +90,22 @@ global (`D_800C5868`).
   the call, as the original. Left: the two tables' addresses built in the
   other order, and the global loads right after the calls in `$v0` where
   the original uses `$v1`.
+
+## Return types and a large function
+
+- `func_80048494` from 20 to 14 off: chunk_28's `func_8004AC78` returns an
+  `int` (its definition does); declared `void` here, the global load after
+  the call used another register. Left: the two tables' addresses built in
+  the other order (pointer locals or the reads swapped made it worse) and
+  one load after a call.
+- `func_8004911C` (380 instructions, the race set up on its stage: the
+  tiles' ids from the stage's grid, two voice banks, the racers' lights by
+  the stage's index, the cameras' fog) is written in full and parked, 354
+  off. The calls and their arguments are the original's; the grid is
+  `Grid27` (`Peer27`'s 0x30, its index at 0x28 = the peer's 0x58), the
+  race's settings `Hold27`. `func_80044F9C` (chunk_25's, variadic,
+  returning what its callee returns) is declared `int (Obj27 *, int, int,
+  ...)`. Left: the original spills the peer and the stage's index to the
+  stack (a frame of 0x68 against 0x60), and adds the ids' constant to the
+  first id before the product (`(m_04 + 2) + i * m_08`) where GCC adds it
+  to the product (in both orders tried).

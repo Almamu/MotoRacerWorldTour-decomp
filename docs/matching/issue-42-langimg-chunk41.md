@@ -13,7 +13,7 @@ same object, `Bike31::m_30`). Its functions:
 
 One file, `src/langimg/chunk_41.cpp`, 0x80063428-0x800653F4.
 
-23 functions: 16 match, 3 are parked, 4 are still asm.
+23 functions: 18 match, 1 is parked, 4 are still asm.
 
 ## The settings
 
@@ -60,11 +60,11 @@ small globals.
 | `func_80064310` | matches | a vector's three shorts passed on |
 | `func_80064340` | matches | the constructor |
 | `func_800643BC` | matches | the destructor |
-| `func_800643E4` | parked | the orientation matrix: stack addresses in saved registers |
+| `func_800643E4` | matches | the orientation matrix and the forward vector |
 | `func_80064608` | asm | 294 instructions |
 | `func_80064AA0` | matches | a bike's values from its motor and the race |
 | `func_80065044` | parked | a speed from a table, capped: the cell's address the other way round (2 off) |
-| `func_800650F8` | parked | a slope between two points: two registers |
+| `func_800650F8` | matches | a slope between two points |
 
 ## Second pass
 
@@ -101,3 +101,20 @@ small globals.
     (`int r = ...; o->m_450 = k; o->m_3F0 = r;`).
   The repeated `MULSHIFT`s (with their shift loaded again where the
   original does) needed nothing special.
+
+## Inline helpers and return types
+
+- `func_800643E4` matches (from 139 off). The angles' three rotations go
+  through an inline function `Rot41` and the whole angle part through an
+  inline body (`Angles41`), so the stack matrices' addresses are computed
+  again for each call, as the original's (#289's finding); the product's
+  translation is passed through an accessor (`MatTrans41`). The forward
+  vector's part stays in the function, with the orientation matrix and the
+  result through pointer locals (kept in `$s2` and `$s1`, as the
+  original's), the vector set by `SetVec41` and the position by
+  `SetTrans41` (all three loads first). The last four instructions came
+  from the callees' return types: `func_800997D0` (chunk_68's, `v += a`)
+  and `func_80098768` both return their first or last argument (the
+  definition's `return v`, the asm's `addu $v0, $a2, $zero`); declared
+  `void` here, GCC used `$v0` for a constant the original keeps in `$v1`.
+- `func_800650F8` matches with the same two declarations, from 5 off.
