@@ -6,7 +6,7 @@ the first free place kept, arrays of them made with `new`, the
 position of a sound on the screen, and the channels' resets. One file,
 `src/langimg/chunk_44.cpp`, 0x800692EC-0x8006B3B0.
 
-50 functions: 33 match, 4 are parked, 13 are still asm.
+50 functions: 43 match, 2 are parked, 5 are still asm.
 
 ## The settings
 
@@ -39,3 +39,10 @@ sound played: two loads swapped, 4 off), `func_8006AD00` (the first free
 place: the original tests the first item before its loop, 21 off).
 Still asm: 13 functions of 43 to 276 instructions, among them
 `func_8006A028` (the GTE's leading-zero count).
+
+## Second pass
+
+- `func_8006A1B4` and `func_8006A848` match: both are virtual functions that pass their second argument on untouched (`func_8006A1B4(o, a)` calls the vtable's entry 7 with it), and the entry's function returns nothing.
+- `func_8006AD00` matches: the list's first item tested before a `do` loop counting down (`if (!*p++) { r = 0; goto done; } do {...} while (*p++);`).
+- New: `func_80069B24` (the channels' pattern steps each frame), `func_8006A2D4` (a text sound drawn), `func_8006A5D0` (a text kept in the buffer: the sound's address as `(r * 5 << 4) + base`), `func_8006A6B0` (a text taken out), `func_8006AA30` (a text sound added: its five stores in the order x, y, colour, -1, index, found by trying all 120), `func_8006AD60` (expired sounds removed, a `do` loop) and `func_8006AE54` (a player's sounds drawn) match.
+- `func_8006B134` (a group drawn with a box over its view) is written and parked, 36 off: the packets' constants and `ADD_PRIM`'s registers.

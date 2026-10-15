@@ -13,7 +13,7 @@ from 0x2E8). It covers:
 
 One file, `src/langimg/chunk_31.cpp`, 0x8004F6C8-0x800514F4.
 
-32 functions: 23 match, 5 are parked, 4 are still asm.
+32 functions: 24 match, 4 are parked, 4 are still asm.
 
 ## The settings
 
@@ -100,3 +100,8 @@ globals.
 | `func_800510B4`, `func_80051114` | match | a bike's entry from a table, a call when a flag is set |
 | `func_8005114C` | asm | 208 instructions |
 | `func_8005148C` | matches | a bike's position from its model |
+
+## Second pass
+
+- `func_800507B0` matches: the bikes of kind 1 counted through an inline function taking the kind (`Count31(r, 1)`), which sets the constant first as the original.
+- Built with `-fmove-all-movables` (the Makefile's CFLAGS for the chunk, group A's finding in the techniques): every matched function still matches, and the parked ones it touches come closer. `func_80050A4C` went from 141 to 6 off.

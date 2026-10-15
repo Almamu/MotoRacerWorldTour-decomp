@@ -13,7 +13,7 @@ same object, `Bike31::m_30`). Its functions:
 
 One file, `src/langimg/chunk_41.cpp`, 0x80063428-0x800653F4.
 
-23 functions: 14 match, 3 are parked, 6 are still asm.
+23 functions: 15 match, 2 are parked, 6 are still asm.
 
 ## The settings
 
@@ -65,3 +65,8 @@ small globals.
 | `func_80064AA0` | asm | 369 instructions |
 | `func_80065044` | parked | a speed from a table, capped: the cell's address the other way round (2 off) |
 | `func_800650F8` | asm | 191 instructions |
+
+## Second pass
+
+- `func_80065044` matches: the cell's address as a byte offset added to the row (`(Cell41 *)((j << 5) + (u8 *)row)`).
+- Built with `-fmove-all-movables` (the Makefile's CFLAGS for the chunk, group A's finding in the techniques): every matched function still matches, and the parked ones it touches come closer. `func_80063A68` went from 116 to 86 off.

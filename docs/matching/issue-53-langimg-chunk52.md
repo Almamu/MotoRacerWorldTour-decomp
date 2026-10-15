@@ -14,7 +14,7 @@ The display's object (`Gfx52`) and the graphics system around it:
 
 One file, `src/langimg/chunk_52.cpp`, 0x800792DC-0x8007B3C0.
 
-27 functions: 12 match, 4 are parked, 11 are still asm.
+27 functions: 13 match, 3 are parked, 11 are still asm.
 
 ## The settings
 
@@ -61,3 +61,7 @@ globals.
 | `func_80079DC0` | asm | 247 instructions |
 | `func_8007A198` | asm | 332 instructions |
 | `func_8007A6C4`, `func_8007A884`, `func_8007AA74`, `func_8007AC90`, `func_8007AED0`, `func_8007B164` | asm | 113 to 166 instructions |
+
+## Second pass
+
+- `func_80079648` matches: `EnterCriticalSection` returns a value (the syscall's), so `lib/psyq/include/psyq.h` now declares it `int`.

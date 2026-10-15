@@ -135,7 +135,7 @@ langimg.chunk_56_GCC  := 2.91.66-psx
 langimg.chunk_56_CFLAGS :=
 langimg.chunk_56_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=D_800C89F4,D_800C89F8,D_800CBD48,D_800CBD58,D_800CBD5C,D_800CBD60,D_800CBD64
 langimg.chunk_31_GCC  := 2.91.66-psx
-langimg.chunk_31_CFLAGS :=
+langimg.chunk_31_CFLAGS := -fmove-all-movables
 langimg.chunk_31_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=
 langimg.chunk_39_GCC  := 2.91.66-psx
 langimg.chunk_39_CFLAGS :=
@@ -147,7 +147,7 @@ langimg.chunk_52_GCC  := 2.91.66-psx
 langimg.chunk_52_CFLAGS :=
 langimg.chunk_52_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=
 langimg.chunk_41_GCC  := 2.91.66-psx
-langimg.chunk_41_CFLAGS :=
+langimg.chunk_41_CFLAGS := -fmove-all-movables
 langimg.chunk_41_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=D_800CB428,D_800CB42C,D_800CB430,D_800CB434,D_800CB438,D_800CB43C,D_800CB440,D_800CB444,D_800CB448,D_800CB44C,D_800CB450,D_800CB454,D_800CB458,D_800CB45C,D_800CB460,D_800CB464,D_800CB468,D_800CB46C,D_800CB470,D_800CB474
 langimg.chunk_67_GCC  := 2.91.66-psx
 langimg.chunk_67_CFLAGS :=
@@ -192,7 +192,7 @@ langimg.chunk_59_GCC  := 2.91.66-psx
 langimg.chunk_59_CFLAGS :=
 langimg.chunk_59_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=
 langimg.chunk_27_GCC  := 2.91.66-psx
-langimg.chunk_27_CFLAGS :=
+langimg.chunk_27_CFLAGS := -fmove-all-movables
 langimg.chunk_27_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=D_800C5868
 langimg.chunk_26_GCC  := 2.91.66-psx
 langimg.chunk_26_CFLAGS :=
@@ -249,10 +249,10 @@ langimg.chunk_34_GCC  := 2.91.66-psx
 langimg.chunk_34_CFLAGS :=
 langimg.chunk_34_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=
 langimg.chunk_35_GCC  := 2.91.66-psx
-langimg.chunk_35_CFLAGS :=
+langimg.chunk_35_CFLAGS := -fmove-all-movables
 langimg.chunk_35_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=D_800C68BC,D_800CB3C4
 langimg.chunk_43_GCC  := 2.91.66-psx
-langimg.chunk_43_CFLAGS :=
+langimg.chunk_43_CFLAGS := -fmove-all-movables
 langimg.chunk_43_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=D_800CB42C,D_800CB430,D_800CB434,D_800CB438,D_800CB43C,D_800CB440,D_800CB444,D_800CB448,D_800CB44C,D_800CB458,D_800CB45C,D_800CB460
 langimg.chunk_16_GCC  := 2.91.66-psx
 langimg.chunk_16_CFLAGS :=

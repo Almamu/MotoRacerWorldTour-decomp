@@ -13,7 +13,7 @@ What's here:
 
 One file, `src/langimg/chunk_28.cpp`, 0x8004970C-0x8004B4B0.
 
-19 functions: 11 match, 2 are parked, 6 are still asm.
+19 functions: 12 match, 1 is parked, 6 are still asm.
 
 ## The settings
 
@@ -63,3 +63,7 @@ small globals.
 | `func_8004AEDC`, `func_8004B480` | match | call chains |
 | `func_8004AF0C` | matches | the state from a key |
 | `func_8004AFBC` | asm | 316 instructions |
+
+## Second pass
+
+- `func_8004AB0C` matches: the virtual function it calls returns a value (`int (*m_6C)(void *)`), which put the function and its delta in the original's registers.
