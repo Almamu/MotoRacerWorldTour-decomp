@@ -1,4 +1,5 @@
 #include "common.h"
+#include "psyq.h"
 
 struct Vec69 {
     int x;
@@ -89,7 +90,8 @@ struct Scr69 {
     struct Text69 *m_90;
     u8 m_94[4];
     struct Bits69 *m_98;
-    u8 m_9C[8];
+    void *m_9C; // the graph's corners' objects
+    void *m_A0;
     Flag69 *m_A4;
     u8 m_A8[0x10];
     int m_B8[0x21]; // the speeds sampled
@@ -97,7 +99,9 @@ struct Scr69 {
     int m_140;
     u8 m_144[0x1EB4];
     struct Stats69 m_1FF8[6]; // per track and units
-    u8 m_2160[0x20];
+    u8 m_2160[0x18];
+    int m_2178;                // the graph's top value
+    int m_217C;                // its bottom value
     struct Text69 *m_2180[11]; // the measures' lines
     int m_21AC[2];             // the units' names, kph and mph
     int m_21B4;
@@ -288,6 +292,31 @@ extern char D_800C9308[];
 extern char D_800C9314[];
 extern char D_800C931C[];
 
+// The camera, its view matrix at 0x60 (cobjet.h's Camera)
+struct Cam69 {
+    u8 m_00[0x60];
+    MATRIX m_60;
+};
+extern Cam69 *D_800C8864;
+extern u8 *D_800C8C70;            // the next free GPU packet
+extern unsigned long *D_800CBDC0; // the ordering table
+extern char D_800C92CC[];
+
+// Links packet p in at ordering table entry ot (ui.h's ADD_PRIM)
+#define ADD_PRIM69(ot, p) \
+    do { \
+        unsigned long _l, _p; \
+        __asm__ volatile("lwl %0, 2(%2)\n\tsll %1, %3, 8\n\tswl %0, 2(%3)\n\tswl %1, 2(%2)" \
+                         : "=&r"(_l), "=&r"(_p) \
+                         : "r"(ot), "r"(p)); \
+    } while (0)
+#define XY69(x, y) (((x) & 0xFFFF) | ((y) << 16))
+
+static inline void SetDM69(u32 *p, u32 mode) {
+    p[0] = 0x01000000;
+    p[1] = mode;
+}
+
 extern "C" {
 void func_8003B7B0(Game69 *o);
 void func_8003CD30(Game69 *o);
@@ -312,6 +341,8 @@ Name69 *func_800A09C0(int *p);
 void func_800A6788(int a, int b);
 void func_8009C84C(Game69 *o, int f);
 int func_800A60AC(const char *a, const char *b);
+void func_80018954(MATRIX *view, void *o, short *sxy);
+void func_8009B9B4(Game69 *o);
 void func_8009BDB8(Game69 *o);
 void func_8006976C(void *a, int b, void *c);
 int func_80023E48(void *m, int *out, int dt, int n);
@@ -450,7 +481,104 @@ void func_8009B8F8(Game69 *o, int a, Run69 *r) {
     sc->m_18 = 1;
 }
 
+#ifdef NON_MATCHING
+// The speed graph: the frame, both rows of ticks and the curve with its draw modes in the original's order; the original keeps the corners and the last point in temporaries after the two calls (a frame of 0x30), GCC one of them in a saved register more (0x38), which shifts everything (188 off).
+void func_8009B9B4(Game69 *o) {
+    View69 *v = o->m_A80;
+    Scr69 *g = v->m_60;
+    short c[4]; // the two corners' screen positions
+    int x0, y0, x1, y1, lx, ly, w, h, n, x, y, d;
+    u32 *p;
+
+    if (func_800A60AC(v->m_00, D_800C92CC)) {
+        return;
+    }
+    func_80018954(&D_800C8864->m_60, g->m_9C, &c[0]);
+    func_80018954(&D_800C8864->m_60, g->m_A0, &c[2]);
+    x0 = c[0];
+    y0 = c[1];
+    x1 = c[2];
+    y1 = c[3];
+    lx = x0;
+    ly = y0;
+    w = x1 - x0;
+    if (!w) {
+        return;
+    }
+    h = y0 - y1;
+    if (!h) {
+        return;
+    }
+    p = (u32 *)D_800C8C70;
+    p[0] = 0x05000000;
+    p[1] = 0x4800FF00;
+    p[2] = XY69(x0, y1);
+    p[3] = XY69(x0, y0);
+    p[4] = XY69(x1, y0);
+    p[5] = 0x55555555;
+    ADD_PRIM69(D_800CBDC0 + 1, D_800C8C70);
+    D_800C8C70 += 0x18;
+    switch (g->m_14w) {
+    case 0:
+        n = 4;
+        break;
+    case 1:
+        n = 3;
+        break;
+    case 2:
+        n = 2;
+        break;
+    }
+    for (y = y1; y < y0; y += h / n) {
+        p = (u32 *)D_800C8C70;
+        p[0] = 0x03000000;
+        p[1] = 0x4000FF00;
+        p[2] = XY69(x0 - 2, y);
+        p[3] = XY69(x0 + 2, y);
+        ADD_PRIM69(D_800CBDC0 + 1, D_800C8C70);
+        D_800C8C70 += 0x10;
+    }
+    for (x = x0; x < x1; x += w / 5) {
+        p = (u32 *)D_800C8C70;
+        p[0] = 0x03000000;
+        p[1] = 0x4000FF00;
+        p[2] = XY69(x, y0 - 2);
+        p[3] = XY69(x, y0 + 2);
+        ADD_PRIM69(D_800CBDC0 + 1, D_800C8C70);
+        D_800C8C70 += 0x10;
+    }
+    {
+        int k = 0x7D0000 / w;
+        int s = (g->m_2178 - g->m_217C) / h;
+
+        for (x = x0; x < x1; x += 16) {
+            d = (g->m_B8[(x - x0) * k / 4096] - g->m_217C) / s;
+            y = y0 - d;
+            p = (u32 *)D_800C8C70;
+            p[0] = 0x03000000;
+            p[1] = 0x4200FFFF;
+            p[2] = XY69(lx, ly);
+            p[3] = XY69(x, y);
+            ADD_PRIM69(D_800CBDC0 + 1, D_800C8C70);
+            p = (u32 *)D_800C8C70;
+            SetDM69(p + 4, 0xE1000220);
+            p += 4;
+            {
+                unsigned long *ot = D_800CBDC0 + 1;
+
+                D_800C8C70 = (u8 *)p;
+                ADD_PRIM69(ot, D_800C8C70);
+            }
+            p += 2;
+            D_800C8C70 = (u8 *)p;
+            lx = x;
+            ly = y;
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_69", func_8009B9B4);
+#endif
 
 // A time in hundredths as seconds and hundredths, or none
 static inline void Time69(Scr69 *s, int k, int v) {

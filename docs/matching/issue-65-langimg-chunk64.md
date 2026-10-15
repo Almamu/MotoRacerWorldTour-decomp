@@ -18,7 +18,7 @@ shorts passed to `func_80097E4C`.
 
 One file, `src/langimg/chunk_64.cpp`, 0x800910EC-0x80093150.
 
-19 functions: 10 match, 3 are parked, 6 are still asm.
+19 functions: 11 match, 2 are parked, 6 are still asm.
 
 ## The settings
 
@@ -55,7 +55,7 @@ globals `D_800CBE58`, `D_800CBE5C` and `D_800CBE68`.
 
 | Function | State | Notes |
 |---|---|---|
-| `func_800910EC` | parked | the channels posed under a root matrix: 6 off |
+| `func_800910EC` | matches | the channels posed under a root matrix |
 | `func_800912AC` | matches | each channel's position |
 | `func_800913C0` | matches | channels refreshed |
 | `func_80091414`, `func_800914AC` | match | an entry by id, or the default |
@@ -108,3 +108,12 @@ globals `D_800CBE58`, `D_800CBE5C` and `D_800CBE68`.
   pointer is loaded before the first angle and the other two angles are in
   swapped registers; four other forms of the helper and a 15-minute
   permuter run didn't change it.
+
+## Group C: more functions
+
+- `func_800910EC` (the channels posed under a root matrix) matches, from 6
+  off. Inside its rotation helper `Rot64` the original loads the first
+  angle, the part pointer and the other two angles, then adds the part's
+  offsets: written as four loads into locals followed by three `+=`, it
+  matched; summed in the call's arguments, the part pointer was loaded
+  first and the angles came out in swapped registers.

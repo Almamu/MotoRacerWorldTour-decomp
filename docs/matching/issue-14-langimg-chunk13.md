@@ -22,7 +22,7 @@ three called from chunk_14's `func_8002D870`:
 One file, `src/langimg/chunk_13.cpp`, 0x8002B800-0x8002D700. Named in
 `bike.h`: 0x550, 0x558, 0x55C; in `motor.h`: the `short` at 0x168.
 
-5 functions: 2 match, 2 are parked, 1 is still asm.
+5 functions: 3 match, 1 is parked, 1 is still asm.
 
 ## The settings
 
@@ -47,8 +47,6 @@ globals.
   `func_8002D1EC` and `func_8002CED4` are marked hand-written for the
   macro's `sub`.
 - **Parked.**
-  - `func_8002CED4`: the new length and the flag for the vector's limit
-    in swapped registers (6 off).
   - `func_8002D3C0`: GCC loads the channel's value once, before the
     state's test, for both the 0xFE0 test and the rate after it; the
     original loads it after the test and again for the rate (76 off).
@@ -60,6 +58,13 @@ globals.
 |---|---|---|
 | `func_8002B800` | matches | a point checked against the ground |
 | `func_8002B91C` | asm | 1390 instructions |
-| `func_8002CED4` | parked | a vector's height eased: registers |
+| `func_8002CED4` | matches | a vector's height eased |
 | `func_8002D1EC` | matches | a vector's height eased towards a plane |
 | `func_8002D3C0` | parked | the channel at 0x534's states: a load |
+
+## Near-misses pass
+
+- **`func_8002CED4` matches** (6 off before): the limit's flag written as a
+  conditional expression, `big = l ? (f || l > len + 0x2000) : 0;`. As
+  `l && (...)`, or set in `if`s, the length and the flag took each other's
+  temporaries.

@@ -555,6 +555,20 @@ globals), a script that tries every order is quicker than guessing:
 
 ### Temporaries and folding
 
+- **A constant multiply spelled so GCC expands it the original's way.**
+  `(x << 13) + (x << 12)` in the original is `x * 0x3000`, but GCC
+  expands `x * 0x3000` as `(x * 3) << 12` and the two written shifts pick
+  other registers. `(x << 12) * 3` gives the original's code (chunk_02b's
+  `func_80016A8C`, 20 off to 0): the `* 3` expanded as a shift and an add
+  of the shifted value.
+- **One variable for two values in turn.** When the original keeps a
+  call's result where it was computed and puts the next sum in another
+  temporary, the source may reuse one variable for two values one after the
+  other (chunk_15's `func_8003031C`: `l = f() >> 3; if (l + 0x80 < a) { l =
+  g(); ...`); with two variables the sum reused the first value's register.
+- **A flag as a conditional expression.** chunk_13's `func_8002CED4`
+  matched with `big = l ? (f || l > len + 0x2000) : 0;` where `l && (...)`
+  and `if`s gave the length and the flag each other's temporaries.
 - **Packed fields read in the original's order.** When the original
   extracts bitfields of one word in an order other than the one it stores
   them in (chunk_62's coordinates: y, z, then x, stored x, y, z), read them
@@ -874,6 +888,12 @@ globals), a script that tries every order is quicker than guessing:
   `int *`: chunk_61's `func_8008BCB0` copies the camera's position
   (three small words) into the camera through `int *` and then reloads
   them as the original does.
+- **Loads into locals, then the sums, for a call's arguments.** When the
+  original loads all of a call's operands (three angles and a pointer)
+  before adding them, write the loads as locals and the sums as `+=`
+  statements before the call; summed inside the argument list, GCC loaded
+  the pointer first and the angles into other registers (chunk_64's
+  `func_800910EC`, from 6 off to 0).
 - **Unused locals.** A frame bigger than its variables need means the
   original had locals the optimiser dropped: `int unused[6];` gives
   `func_8001184C`'s 0x30-byte frame.
@@ -1247,6 +1267,20 @@ two (or two merged into one).
   calls into inline helpers doesn't help for a global's address: it is a
   constant to CSE, whatever the call's origin (#289's finding is about
   stack addresses).
+- **The other way round: declare it unsized.** A global of 8 bytes or less
+  that isn't one of the chunk's small globals is read `$gp`-relative by
+  GCC, and maspsx expands that into a `lui` and a `lw` through the same
+  register. When the original builds the high half in another register
+  (`lui $v1, %hi(D)` then `lw $v0, %lo(D)($v1)`), it saw the global as a
+  large object: declare it unsized (`extern Hook72 *D_800D6000[];`, read as
+  `D_800D6000[0]`) and GCC splits the address itself (chunk_72's
+  `func_800A1CF8`, from 2 off to 0).
+- **A packed word read as shifts, not bitfields.** When two branches each
+  read a different field of the same packed word and the original keeps
+  their code apart, read the word into a `u32` local in each branch and
+  extract with shifts (`(int)(w << 10) >> 25`); as bitfields of one struct
+  GCC merged the two branches' identical tails (chunk_61's `func_8008C500`,
+  from 44 off to 0 with a shared `none:` exit for its two `return 0`s).
 - **Per-function aliases of a global.** When only one function wants a
   global accessed the other way, alias the symbol for that function with
   `__asm__` instead of changing the chunk's declaration:

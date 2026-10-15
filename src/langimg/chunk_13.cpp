@@ -68,8 +68,6 @@ int func_8002B800(Bike *b, Ground13 *g, Vector3 *p, Vector3 *n, int y, int f) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_13", func_8002B91C);
 
-#ifdef NON_MATCHING
-// Registers only: the new length and the flag for the vector's limit in swapped registers ($a0/$v1), 6 off. The declaration order, an inline function and reusing a dead variable didn't change it.
 int func_8002CED4(Bike *b, Vector3 *v, Vector3 n, int k, int f) {
     int r;
     int dot = func_80099C20(v, &n, 12);
@@ -143,7 +141,7 @@ int func_8002CED4(Bike *b, Vector3 *v, Vector3 n, int k, int f) {
                 r = 1;
                 v->vy = y + d;
                 l = func_8009931C(v);
-                big = l && (f || l > len + 0x2000);
+                big = l ? (f || l > len + 0x2000) : 0;
                 if (big) {
                     func_80023140(v, len, 24);
                     if (b->m_29C > 0x5000) {
@@ -167,9 +165,6 @@ int func_8002CED4(Bike *b, Vector3 *v, Vector3 n, int k, int f) {
     }
     return r;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_13", func_8002CED4);
-#endif
 
 int func_8002D1EC(Bike *b, Vector3 *v, Vector3 n) {
     int r = 0;

@@ -12,7 +12,7 @@ What's here:
 
 One file, `src/langimg/chunk_61.cpp`, 0x8008B208-0x8008D168.
 
-23 functions: 13 match, 2 are parked, 8 are still asm.
+23 functions: 14 match, 2 are parked, 7 are still asm.
 
 ## The settings
 
@@ -56,7 +56,7 @@ globals.
 | `func_8008B998` | parked | a point against a zone's planes: the last tests' branches |
 | `func_8008BA50` | asm | 152 instructions |
 | `func_8008BCB0` | parked | the camera along its path: a layout shift |
-| `func_8008C500` | asm | 94 instructions |
+| `func_8008C500` | matches | the texture of a bike's track point by the lap |
 | `func_8008C678` | matches | the nearest zone |
 | `func_8008C78C` | matches | seven counters stepped |
 | `func_8008C7E8`, `func_8008C808`, `func_8008C83C` | match | a layer's settings and colours |
@@ -96,3 +96,17 @@ What got it there:
   for the product (`Apply61`, its matrix a local): the product's
   translation address is recomputed for each call, as in the original
   (#289's finding), and the frame came down to the original's 0xC0.
+
+## Group C: more functions
+
+- `func_8008C500` (the texture for the point of the track a bike is on, by
+  the lap's parity) matches. What mattered:
+  - the sections are 0x68 bytes (chunk_48's `Ent48`), their points 20;
+  - the point's two 7-bit ids read as shifts of one `u32` word (`(int)(w
+    << 10) >> 25`, `(int)(w << 3) >> 25`), the word read into a local in
+    each branch; as bitfields GCC merged the two branches' tails;
+  - the even lap as the fall-through (`if (!odd)`), the odd lap's id tested
+    with a `goto` past the shared test;
+  - both "return 0" exits through one `none:` label after the normal
+    return, as the original lays them out;
+  - `func_8008BA50` takes the texture (`$a0`).

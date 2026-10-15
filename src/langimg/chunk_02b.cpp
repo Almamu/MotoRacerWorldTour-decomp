@@ -335,8 +335,6 @@ int func_80016A38(Cobjet *o) {
     return n;
 }
 
-#ifdef NON_MATCHING
-/* Registers only (20 off): the LOD sum and the lens fields */
 /* The level of detail for a point: its distance to the camera, scaled
  * (0 to 3). */
 static inline int CameraLod(Vector3 *pos) {
@@ -366,7 +364,7 @@ static inline int CameraLod(Vector3 *pos) {
     if (m < z) {
         m = z;
     }
-    lod = (((m * 2 + x + y + z) * l->m_48) >> 8) * 4 / ((l->m_14 << 13) + (l->m_14 << 12));
+    lod = (((m * 2 + x + y + z) * l->m_48) >> 8) * 4 / ((l->m_14 << 12) * 3);
     if ((u32)lod > 3) {
         lod = 3;
     }
@@ -398,9 +396,6 @@ void func_80016A8C(CobjetModel *o, MATRIX *m) {
         func_8007C354(model, m);
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02b", func_80016A8C);
-#endif
 
 #ifdef NON_MATCHING
 /* Registers (42 off): the matrix and the camera in each other's saved

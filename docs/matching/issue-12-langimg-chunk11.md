@@ -15,7 +15,7 @@ checks, no small globals (`langimg.chunk_11_*`).
 
 | Function | State | Notes |
 |---|---|---|
-| `func_80027614` | parked | the automatic gearbox: two register pairs (12 off) |
+| `func_80027614` | parked | the automatic gearbox: registers (10 off) |
 | `func_80027A90`, `func_800283D0` | asm | 276 (with `sprintf`) and 927 instructions |
 | `func_80027EE0` | matches | the ground and clutch flags from the motion, and `m_2E4` raised and lowered (316 instructions) |
 | `func_80029248` | parked | the engine's force: the first test's layout, and a flag GCC sets with `sltu` |
@@ -53,3 +53,11 @@ What made the difference:
   `gear + shift - 1` in the loop, as the original computes them.
 Left: the top speed and the clamped speed, and the gear and the shift,
 each in swapped registers.
+
+## Near-misses pass
+
+`func_80027614` went from 12 to 10 off with the change-down index written
+shift first (`b->m_shift + b->m_gear > 0 && sp <
+upshift[(b->m_shift - 1) + b->m_gear]`). Left: the kind-3 branch's divisor
+and clamped value in other temporaries, and the gear and shift loads in the
+change-down test.
