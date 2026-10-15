@@ -174,6 +174,19 @@ void ApplyRotMatrixLV(Vector3 *a, Vector3 *b);
 
 void func_80096ACC(Bits66 *b, int n, u32 v);
 int func_8009662C(int pos, u32 *buf, int n);
+// A 2 KB block read from the disc (alignment unknown, so copied as bytes)
+struct Sect66 {
+    u8 m_00[0x800];
+};
+extern Sect66 D_800D36D0, D_800D2ED0;
+extern char D_800D4705[]; // a path: its first part is 0x35 bytes before
+extern s8 D_800D2F6C[];
+struct Root66 {
+    char m_00[2];
+};
+extern const char D_800B7940[];
+void *memcpy(void *d, const void *s, unsigned int n);
+int func_800963E8(void);
 int func_8009707C(Plane66 *p, Vector3 *v);
 int func_800955C4(List66 *l, char *name);
 Rec66 *func_800952E0(int i, Rec66 *recs);
@@ -203,6 +216,46 @@ int func_80096B74(Bits66 *b, int n);
 int func_80096D84(Bits66 *b, int n, ...);
 
 int func_800963BC(void);
+// A camera's projection (chunk_65's Proj65)
+struct Proj66 {
+    int m_00;
+    int m_04;
+    int m_08;
+    int m_0C;
+    int m_10;
+    int m_14;
+    int m_18;
+    int m_1C;
+    int m_20;
+    int m_24;
+    int m_28;
+    int m_2C;
+    int m_30;
+    int m_34;
+    int m_38;
+    int m_3C;
+    int m_40;
+    int m_44;
+    int m_48;
+    int m_4C;
+};
+struct Owner66 {
+    u8 m_00[0x13C];
+    struct Proj66 *m_13C;
+};
+// A view: its position and its projection
+struct View66 {
+    u8 m_00[8];
+    int m_08;
+    int m_0C;
+    u8 m_10[0x8C];
+    Owner66 *m_9C;
+    Proj66 m_A0;
+    int m_F0;
+};
+extern short D_800BA884[];
+long ratan2(long y, long x);
+void func_80095F84(View66 *o);
 int func_80096884(Bits66 *b);
 int func_800968D4(Bits66 *b);
 int func_80096508(void);
@@ -451,7 +504,39 @@ int func_800958E0(Obj66 *o) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_66", func_8009593C);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_66", func_80095F84);
+// The projection's derived values (chunk_65's func_80093C80, chunk_60's func_800893E8)
+static inline void Proj66Set(Proj66 *p) {
+    int a = p->m_20 * p->m_44 / p->m_24;
+    int t;
+
+    p->m_14 = p->m_00;
+    p->m_18 = p->m_04;
+    p->m_28 = p->m_08;
+    p->m_30 = p->m_10;
+    p->m_2C = p->m_0C;
+    p->m_40 = a;
+    t = (p->m_08 << 12) / (D_800BA884[(p->m_10 / 2) & 0xFFF] * 2);
+    p->m_3C = t;
+    p->m_38 = ratan2(p->m_0C << 12, t * (a << 1)) * 2;
+    p->m_4C = (p->m_40 * p->m_40) >> 16;
+    p->m_48 = (D_800BA884[(p->m_30 / 2) & 0xFFF] << 8) / D_800BA884[(p->m_34 / 2) & 0xFFF];
+}
+
+/* The view's projection given its size, then passed to its owner. */
+void func_80095F84(View66 *o) {
+    Proj66 *p = &o->m_A0;
+
+    int x = o->m_08;
+    int y = o->m_0C;
+
+    p->m_08 = x;
+    p->m_0C = y;
+    Proj66Set(p);
+    o->m_F0 = p->m_3C << 12;
+    if (o->m_9C) {
+        o->m_9C->m_13C = p;
+    }
+}
 
 #ifdef NON_MATCHING
 /* The scale's two branches and the saved registers in another order (42 off) */
@@ -556,7 +641,21 @@ int func_800963BC(void) {
     return 1;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_66", func_800963E8);
+/* The disc's sector 16 read and kept; the path reset to its root, after the
+ * volume's name. */
+int func_800963E8(void) {
+    if (!func_8009662C(0x10, (u32 *)&D_800D36D0, 2)) {
+        return 0;
+    }
+    D_800D2ED0 = D_800D36D0;
+    *(Root66 *)D_800D4705 = *(Root66 *)D_800B7940;
+    memcpy(D_800D4705 - 0x35, D_800D2F6C, D_800D2F6C[0x20] + 0x21);
+    return 1;
+}
+
+// The root's path, "\\": what func_800963E8 copies (an inlined strcpy), after it
+// in .rodata. Defined after the function so that it isn't folded into a copy.
+extern "C" const char D_800B7940[4] __attribute__((section(".rodata"))) = "\\";
 
 /* The CD's shell open bit. */
 int func_80096508(void) {

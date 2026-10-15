@@ -110,6 +110,7 @@ Obj49 *func_80074D30(Obj49 *o);
 void func_80074D78(Obj49 *o, int f);
 int func_80098D1C(int i);
 Lnk49 *func_80074924(Obj49 *o);
+void func_800747A8(Obj49 *o, int dir, int *t, int n);
 void func_800746B0(Obj49 *o, int dflt, int dir, int e, int sub);
 struct Vec49 {
     int x;
@@ -341,7 +342,74 @@ void func_800746B0(Obj49 *o, int dflt, int dir, int e, int sub) {
     o->m_0Cf.m_e = e;
 }
 
+/* The current link set n links in from the start (or, going backwards, from
+ * the end of the first run of links), then stepped while the time *t covers
+ * each link's time. */
+#ifdef NON_MATCHING
+// Registers and the loops' layout: the original walks the backward count and the result in one register, copies n for the forward walk, and lays the time loop's test at its top (62 off).
+void func_800747A8(Obj49 *o, int dir, int *t, int n) {
+    if (dir) {
+        o->m_0Cf.m_a = dir;
+    }
+    if (o->m_0Cf.m_a >= 0) {
+        Lnk49 *p = (Lnk49 *)o->m_20;
+
+        if (p && n > 0) {
+            int k = n;
+
+            do {
+                p = p->m_00;
+            } while (--k);
+        }
+        o->m_28 = p;
+    } else {
+        Lnk49 *h = (Lnk49 *)o->m_20;
+        Lnk49 *p = h;
+        int c = 0;
+
+        if (h && !h->m_08) {
+            do {
+                p = p->m_00;
+                c++;
+            } while (!p->m_08);
+        }
+        c++;
+        if (c > 0) {
+            int k = c - (n + 1);
+
+            p = h;
+            if (p && k > 0) {
+                do {
+                    p = p->m_00;
+                } while (--k);
+            }
+            o->m_28 = p;
+        }
+    }
+    if (t) {
+        int go = 1;
+
+        while (go) {
+            Lnk49 *x;
+            int d;
+
+            if (*t <= 0) {
+                break;
+            }
+            x = func_80074924(o);
+            d = x->m_0C[((u32)o->m_0C >> 3) & 1];
+            if (d >= 0 && d < *t) {
+                *t -= d;
+                o->m_28 = x;
+            } else {
+                go = 0;
+            }
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_49", func_800747A8);
+#endif
 
 #ifdef NON_MATCHING
 // The mode's tests (the original's tree: == 2, < 3, == 3) and the loads' order
