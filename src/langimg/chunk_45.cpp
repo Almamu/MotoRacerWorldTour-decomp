@@ -603,8 +603,9 @@ void func_8006BA80(void) {
     }
 }
 
-#ifdef NON_MATCHING
-/* The loop's counter set before the array's address in the original (3 off) */
+// D_800CB498 declared small: its address is one la
+extern int D_800CB498_la __asm__("D_800CB498");
+
 void func_8006BABC(void) {
     int i;
     Unit4C *u;
@@ -613,14 +614,11 @@ void func_8006BABC(void) {
         func_8006A460(&D_800CB480);
     }
     if (++D_800CB490 == 1) {
-        for (u = D_800CB498, i = 3; i != -1; i--, u++) {
+        for (u = (Unit4C *)&D_800CB498_la, i = 3; i != -1; i--, u++) {
             func_8006A7D8(u);
         }
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006BABC);
-#endif
 
 int func_8006BB48(Flagged *o) {
     return o->m_48 != -1;
@@ -985,18 +983,16 @@ void func_8006C7A0(void) {
     func_80013F38(D_800D11D0, D_800D6130);
 }
 
-#ifdef NON_MATCHING
-/* The call's second and third arguments are set in the other order (3 off) */
+// D_800C7DD8 declared small: its address is one la
+extern int D_800C7DD8_la __asm__("D_800C7DD8");
+
 void func_8006C7CC(void) {
     if (func_80014724(D_800D11D0, D_800C7F30)) {
-        func_80013DE0(D_800D11D0, 13, D_800C7DD8);
+        func_80013DE0(D_800D11D0, 13, (SndName *)&D_800C7DD8_la);
         func_80011DA8(4, 40);
         ((u8 *)D_800D11D0)[3] = 1;
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006C7CC);
-#endif
 
 void func_8006C82C(void) {
     func_80014774(D_800D11D0);
