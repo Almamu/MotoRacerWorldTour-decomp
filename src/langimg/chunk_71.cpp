@@ -311,6 +311,17 @@ struct U32P {
 } __attribute__((packed));
 
 void func_800A0584(u8 *src, u8 *dst);
+// A file of the pack (chunk_72's Blk72): its size at 4
+struct Blk71 {
+    int m_00;
+    int m_04;
+};
+Blk71 *func_800A1EFC(void *h, char *name);
+void *func_800A2234(void *h, char *name, void *buf, int *out);
+int func_800B5A1C(void);
+void *func_800B5730(void *p, int size);
+void *malloc(int size);
+void *func_800A06AC(char *name, void *buf, int *size);
 }
 
 void func_8009F180(Menu71 *m) {
@@ -863,7 +874,44 @@ void func_800A0680(void) {
     D_800D4788[0] = func_800A207C("\\MR3.DAT;1", 0);
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_800A06AC);
+void *func_800A06AC(char *name, void *buf, int *size) {
+    u8 *res;
+    int len = func_800A1EFC(D_800D4788[0], name)->m_04;
+    int own = 0;
+
+    if (!buf) {
+        int avail;
+
+        own = 1;
+        avail = func_800B5A1C() - 16;
+        res = (u8 *)malloc(avail);
+        buf = (void *)((u32)(res + avail - len - 0x800) & ~3);
+    }
+    func_800A2234(D_800D4788[0], name, buf, 0);
+    if (*(int *)buf == 0x53535A4C) {
+        if (own) {
+            len = ((int *)buf)[1];
+            func_800A0584((u8 *)buf + 8, res);
+        } else {
+            int n = ((int *)buf)[1];
+            int k = len - 0x1400;
+            u8 *d = (u8 *)buf + ((n - k) & ~3);
+
+            func_800A0558(d, (u8 *)buf, len);
+            func_800A0584(d + 8, (u8 *)buf);
+            len = n;
+        }
+    } else if (own) {
+        memcpy(res, buf, len);
+    }
+    if (own) {
+        res = (u8 *)func_800B5730(res, len);
+    }
+    if (size) {
+        *size = len;
+    }
+    return res;
+}
 
 int *func_800A080C(int *p) {
     func_800A0834(p);
@@ -933,7 +981,77 @@ Cell71 *func_800A09C0(Card71 *c) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_800A09C0);
 #endif
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_800A0AE8);
+/* The settings' defaults: words of the block from 0 to 0x150 (past Three71's own fields), the three blocks of five reset between them. */
+void func_800A0AE8(Three71 *t) {
+    int *w = (int *)t;
+    unsigned int i;
+
+    w[0] = 0;
+    w[1] = 2;
+    w[2] = 0;
+    w[3] = 7;
+    w[4] = 7;
+    w[5] = 0;
+    w[6] = 0;
+    w[7] = 16;
+    w[9] = 14;
+    w[8] = 11;
+    w[10] = 0;
+    w[12] = 0;
+    w[11] = 0;
+    w[13] = 0;
+    w[14] = 0;
+    for (i = 0; i < 3; i++) {
+        func_800A0834(t->m_3C[i]);
+    }
+    w[31] = 0;
+    w[30] = 0;
+    w[32] = 0;
+    w[33] = 1;
+    w[34] = 1;
+    w[35] = 0;
+    w[36] = 0;
+    w[37] = 1;
+    w[38] = 1;
+    w[39] = 0;
+    w[40] = 0;
+    w[41] = 0;
+    w[42] = 0;
+    w[43] = 0;
+    w[44] = 0;
+    w[45] = 0;
+    w[46] = 0;
+    w[47] = 0;
+    w[48] = 0;
+    w[49] = 0;
+    w[50] = 0;
+    w[51] = 0;
+    w[52] = 0;
+    w[53] = 0;
+    w[54] = 0;
+    w[55] = 0;
+    w[56] = 1;
+    w[57] = 100;
+    w[58] = 60;
+    w[59] = 100;
+    w[60] = 100;
+    w[61] = 100;
+    w[62] = 100;
+    w[63] = 0;
+    w[64] = 14;
+    w[65] = 1;
+    w[66] = 0;
+    w[67] = 1;
+    w[68] = 1;
+    w[69] = -1;
+    w[70] = -1;
+    w[71] = -1;
+    w[72] = -1;
+    w[73] = 0;
+    w[74] = 0;
+    w[83] = -1;
+    w[84] = 0;
+}
 
 Three71 *func_800A0C58(Three71 *t) {
     int i;

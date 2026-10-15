@@ -8,7 +8,7 @@ sound settings applied, groups of named entries, an LZ unpacker and the
 open of `\MR3.DAT`. One file, `src/langimg/chunk_71.cpp`,
 0x8009F180-0x800A1110.
 
-57 functions: 47 match, 5 are parked, 5 are still asm (`func_8009F180`
+57 functions: 49 match, 5 are parked, 3 are still asm (`func_8009F180`
 matched during chunk_70, #71, once `func_800A41BC` was declared `int`).
 
 ## The settings
@@ -50,10 +50,10 @@ small and they're declared as scalars. chunk_72's split loads (`lui $v1`,
 | `func_800A0420` to `func_800A0558` | match | an entry offered a value, the data file looked for, a backward copy |
 | `func_800A0584` | parked | the LZ unpacker: the word loop's scheduling (4 off) |
 | `func_800A0680` | matches | `\MR3.DAT` read |
-| `func_800A06AC` | asm | 88 instructions |
+| `func_800A06AC` | matches | a file loaded, unpacked if LZSS |
 | `func_800A080C` to `func_800A0884` | match | constructors, the sound settings applied |
 | `func_800A09C0` | parked | the current cell's name: a register (third pass) |
-| `func_800A0AE8` | asm | 92 instructions |
+| `func_800A0AE8` | matches | the settings' defaults |
 | `func_800A0C58` to `func_800A0DC4` | match | the cards' state set up, reset, updated, a directory chosen |
 | `func_800A0E58` | asm | 174 instructions |
 
@@ -87,3 +87,17 @@ small and they're declared as scalars. chunk_72's split loads (`lui $v1`,
   constructor `func_8006A8FC`, the tracks' laps copied to `D_800C9EF0`,
   `func_80045168` started). The original computes `D_800CBC94`'s address
   again for its second call; GCC keeps it in `$s0`.
+
+## Group C follow-up
+
+- `func_800A06AC`: a file of the pack loaded into the caller's buffer or
+  near the end of the largest free block, unpacked in place when it
+  starts with `LZSS` (`func_800A0558` moves it up, `func_800A0584`
+  unpacks), the block shrunk to fit. The packed offset is computed with a
+  temporary (`int k = len - 0x1400; ... (n - k) & ~3`), and the flag for
+  the own buffer is declared after the length: with `own` first, the
+  name and the pack's address came out in swapped saved registers.
+- `func_800A0AE8`: the settings' defaults, words of the block written
+  through an `int *` (the block reaches past `Three71`'s fields into the
+  card's), the three blocks of five reset between them. The stores are in
+  address order except three pairs, and the loop's counter is `unsigned`.
