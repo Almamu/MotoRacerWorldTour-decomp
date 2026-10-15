@@ -1125,6 +1125,45 @@ mean a `short` field.
 
 What's left once the instructions are right is usually register choice.
 
+### Saved register order
+
+Which value lives across calls in `$s0`, `$s1`, ... is global-alloc's
+priority order (gcc 2.x `global.c`): the values are sorted by
+`floor_log2(refs) * refs / live_length` and the highest gets the lowest
+free register (`$s0` first, `$fp` last). Measured on small test functions
+compiled with the chunks' own cc1plus flags:
+
+- **More references win.** A reference is every read and write of the
+  value (its definition counts), weighted by loop depth: one read inside a
+  loop counts about as much as two outside. One extra use flips a pair
+  with equal live ranges (`f(x); f(x);` puts `x` in `$s0` over `y`).
+- **A shorter live range wins.** Of two call results used the same number
+  of times, the one defined later gets `$s0`, whatever the order they're
+  used in; of two parameters (both live from the entry), the one whose
+  last use comes first gets `$s0`. Defining a value later (reading a field
+  into its local just before it's needed rather than at the top) moves it
+  up.
+- **Ties go to the value born later.** Two parameters used together in
+  one expression: the second parameter gets `$s0`.
+- **No effect:** declaration order alone, `register`, an inner block
+  around the declaration, or a copy into a local that GCC coalesces away
+  (`int c = a;` with `a` dead after it).
+- **One variable doing two jobs is one long, low-priority value.** chunk_20's
+  `func_8003A9F4` used `v` both for the value passed to a call (0 or -1)
+  and for the result (0, then 1): one value live through the whole
+  function, which lost `$s0` to the object pointer. With the passed value
+  in its own block-local variable and the result in another, the two are
+  short-lived and don't overlap: GCC gives both the same `$s0` and the
+  pointer `$s1`, as in the original. When the original reuses one saved
+  register for two values whose lives don't overlap, look for two
+  variables in the source, not one.
+
+When two saved registers are swapped, count each value's references and
+compare their live ranges: the fix is a change that moves one of them, an
+extra or a missing use (a field read again through its owner instead of a
+local, or the opposite), a definition moved later, or a variable split in
+two (or two merged into one).
+
 - Declaration order of locals made no difference to registers in the
   cases tried (`FindEntry`); it does decide their stack slots (above).
 - **`MIN` and `MAX` as macros.** chunk_67's per-component minimum

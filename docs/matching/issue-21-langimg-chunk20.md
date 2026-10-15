@@ -24,7 +24,7 @@ pointers, flags at 0x20). The functions:
 
 One file, `src/langimg/chunk_20.cpp`, 0x800394D8-0x8003B600.
 
-19 functions: 16 match, 2 are parked, 1 is still asm.
+19 functions: 18 match, 1 is still asm.
 
 ## The settings
 
@@ -64,9 +64,6 @@ globals.
   - `func_8003991C` (an item's objects updated): registers (the item and
     the index's offset swapped) and the saved index, which the original
     loads twice (`lh`, `lhu`).
-  - `func_8003A9F4` (an object of kind 5 updated): the result and the
-    object in swapped saved registers. The permuter's match was a `do {
-    } while (0)` around the call and the stores.
   - `func_8003B51C` (a saved list copied back): the last store's
     registers. It matches with `memcpy` declared returning `void` (GCC
     then doesn't treat it as its builtin), not with `common.h`'s.
@@ -75,6 +72,15 @@ globals.
 
 - `func_8003991C`: chunk_20 built with `-fmove-all-movables`, and the saved index read inside its branch (`short cur = p->m_0A;`).
 - `func_8003B51C`: `memcpy` called through a second declaration returning `void`, with the asm label `memcpy` (`memcpy20`).
+
+## Saved register order
+
+- `func_8003A9F4`: the value passed to `func_800383D8` (0 or -1) in a
+  block-local variable of its own, the result (0, then 1) in another.
+  With one variable for both it lived through the whole function and lost
+  `$s0` to the object; split, the two are short-lived, don't overlap and
+  share `$s0`, the object in `$s1`, as in the original
+  (docs/matching_techniques.md, "Saved register order").
 
 ## The functions
 
@@ -89,7 +95,7 @@ globals.
 | `func_8003A760` | matches | an entry's value set from a block |
 | `func_8003A80C` | matches | the same, the entry by name |
 | `func_8003A86C` | matches | an object by name |
-| `func_8003A9F4` | parked | an object of kind 5 updated: registers |
+| `func_8003A9F4` | matches | an object of kind 5 updated |
 | `func_8003AA90` | matches | a link by name |
 | `func_8003AB24` | matches | a group's item updated |
 | `func_8003AC94` | matches | every item's objects, then the groups, updated |
