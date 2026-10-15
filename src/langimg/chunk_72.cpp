@@ -216,6 +216,7 @@ void func_800A25D4(void);
 void func_800A2618(void);
 void func_800A265C(void);
 void func_800A26A0(void);
+void func_800A26DC(void);
 
 void func_800A1228(Card72 *c);
 void func_800A1248(Card72 *c);
@@ -986,7 +987,27 @@ void func_800A26A0(void) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A26DC);
+/* The card's events opened (their handlers above), then enabled. */
+void func_800A26DC(void) {
+    EnterCriticalSection();
+    D_800D6080[0] = OpenEvent(0xF4000001, 4, 0x1000, func_800A2490);
+    D_800D60B8[0] = OpenEvent(0xF4000001, 0x8000, 0x1000, func_800A24CC);
+    D_800D6078[0] = OpenEvent(0xF4000001, 0x100, 0x1000, func_800A2510);
+    D_800D6088[0] = OpenEvent(0xF4000001, 0x2000, 0x1000, func_800A2554);
+    D_800D607C[0] = OpenEvent(0xF0000011, 4, 0x1000, func_800A2598);
+    D_800D60B0[0] = OpenEvent(0xF0000011, 0x8000, 0x1000, func_800A25D4);
+    D_800D6074[0] = OpenEvent(0xF0000011, 0x100, 0x1000, func_800A2618);
+    D_800D6084[0] = OpenEvent(0xF0000011, 0x2000, 0x1000, func_800A265C);
+    ExitCriticalSection();
+    EnableEvent(D_800D6080[0]);
+    EnableEvent(D_800D60B8[0]);
+    EnableEvent(D_800D6078[0]);
+    EnableEvent(D_800D6088[0]);
+    EnableEvent(D_800D607C[0]);
+    EnableEvent(D_800D60B0[0]);
+    EnableEvent(D_800D6074[0]);
+    EnableEvent(D_800D6084[0]);
+}
 
 /* The card's events closed. */
 void func_800A28B8(void) {
