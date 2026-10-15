@@ -95,6 +95,13 @@ struct Time49 {
 };
 extern Time49 D_800D6124;
 extern int D_800C87B4, D_800C8744; // vtables
+// The track's tables by kind and section (indexed by bytes, as chunk_48's)
+extern int D_800C845C; // how many sections per kind
+extern int D_800C849C; // the sections per kind, 4 each
+extern int D_800C84EC; // each section's first point
+extern int D_800C8504; // each point's next, 11 per section
+extern int D_800C860C; // each point's distance, 11 per section
+void func_80073AA0(void *g, int k, int *lo, int *hi);
 Ent49 *func_8007345C(Pool49 *p, Rng49 *r);
 int func_8007351C(Pool49 *p);
 Ent49 *func_800741D8(Pool49 *p, int *best, Who49 *w, Trk49 *t);
@@ -207,7 +214,52 @@ void func_8007356C(Pool49 *p, Pos49 *w, Trk49 *t) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_49", func_800736BC);
 
+#define TAB49(t, i) (*(int *)((u8 *)&(t) + ((i) << 2)))
+
+#ifdef NON_MATCHING
+// Registers: the sections' list pointer, the section and the first point in other registers than the original's, and the count reread each time round the outer loop (49 off).
+void func_80073AA0(void *g, int k, int *lo, int *hi) {
+    int *ids = (int *)((u8 *)&D_800C849C + (k << 4));
+    int s = ids[0];
+    int base;
+    int i;
+
+    *lo = 0x7FFFFFFF;
+    i = TAB49(D_800C84EC, s);
+    base = TAB49(D_800C860C, s * 11 + i);
+    *hi = 0x80000000;
+    if (*hi < base) {
+        *hi = base;
+    }
+    if (base < *lo) {
+        *lo = base;
+    }
+    for (i = 1; i < TAB49(D_800C845C, k); i++) {
+        int j, nx, w;
+
+        s = ids[i];
+        j = TAB49(D_800C84EC, s);
+        nx = (*(int (*)[][11]) & D_800C8504)[s][j];
+        do {
+            w = base + (*(int (*)[][11]) & D_800C860C)[s][j];
+            if (*hi < w) {
+                *hi = w;
+            }
+            if (w < *lo) {
+                *lo = w;
+            }
+            j = nx;
+            nx = (*(int (*)[][11]) & D_800C8504)[s][j];
+        } while (j != nx);
+        w += 0x19000;
+        if (*hi < w) {
+            *hi = w;
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_49", func_80073AA0);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_49", func_80073C2C);
 

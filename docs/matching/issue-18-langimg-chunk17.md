@@ -20,7 +20,7 @@ calls in a row.
 
 One file, `src/langimg/chunk_17.cpp`, 0x80033720-0x80035518.
 
-18 functions: 13 match, 5 are still asm.
+18 functions: 13 match, 2 are parked, 3 are still asm.
 
 ## The settings
 
@@ -63,9 +63,9 @@ global (`D_800C4D78`).
 | `func_80033720` | asm | 384 instructions |
 | `func_80033D1C`, `func_80034A08` | match | a vector's shorts passed on |
 | `func_80033D4C` | matches | the view reset |
-| `func_80033E4C` | asm | 209 instructions |
+| `func_80033E4C` | parked | the view each frame: the digits' loop and a flag's `sltiu` (183 off, 205 of 209 instructions built) |
 | `func_80034190` | matches | a vector halved, clamped and smoothed |
-| `func_8003425C` | asm | 116 instructions (matrices on the stack) |
+| `func_8003425C` | parked | a camera from the view: the stack matrices' addresses kept in saved registers (118 off, as chunk_30's cameras) |
 | `func_8003442C` | asm | 316 instructions |
 | `func_8003491C` | matches | what the view looks at |
 | `func_800349C0` | matches | what it looks at changed |

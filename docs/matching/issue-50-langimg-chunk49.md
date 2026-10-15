@@ -13,7 +13,7 @@ destructor, and globals saved from the game's timers.
 
 One file, `src/langimg/chunk_49.cpp`, 0x8007345C-0x80075440.
 
-26 functions: 14 match, 4 are parked, 8 are still asm.
+26 functions: 14 match, 5 are parked, 7 are still asm.
 
 ## The settings
 
@@ -60,7 +60,7 @@ globals.
 | `func_8007351C` | matches | how many entries are free |
 | `func_8007356C` | matches | the entries ahead passed on, with their heading |
 | `func_800736BC` | asm | 249 instructions |
-| `func_80073AA0` | asm | 99 instructions |
+| `func_80073AA0` | parked | a kind's range along the track: registers |
 | `func_80073C2C`, `func_80073E54` | asm | 138 and 225 instructions |
 | `func_800741D8` | parked | the entry nearest ahead: registers |
 | `func_80074270` | asm | 168 instructions |
@@ -87,3 +87,12 @@ globals.
   time. The original walks the backward count and the result in one
   register, copies n for the forward walk and lays the time loop's test
   at its top.
+
+## Fourth pass
+
+- `func_80073AA0` (the lowest and highest distance along the sections of
+  a kind, from chunk_48's tables) is parked 49 off: its loop over a
+  section's points matches in shape with the rows indexed as 2-D arrays
+  (`(*(int (*)[][11])&D_800C860C)[s][j]`, the row's byte offset added
+  before the table's), the first point by bytes as chunk_48 does; the
+  section and the list pointer are in other registers than the original's.

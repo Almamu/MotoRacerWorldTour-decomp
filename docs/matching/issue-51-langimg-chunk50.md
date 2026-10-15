@@ -16,7 +16,7 @@ One that follows the track (`Trk50`):
 
 One file, `src/langimg/chunk_50.cpp`, 0x80075440-0x800773E8.
 
-20 functions: 11 match, 1 is parked, 8 are still asm.
+20 functions: 11 match, 2 are parked, 7 are still asm.
 
 ## The settings
 
@@ -45,7 +45,7 @@ globals.
 | `func_80075468` | matches | a look-at matrix |
 | `func_80075588` | asm | 220 instructions |
 | `func_800758F4` | matches | two directions along the track |
-| `func_80075A1C` | asm | 116 instructions |
+| `func_80075A1C` | parked | half the ends' differences: copy registers |
 | `func_80075BEC` | asm | 490 instructions |
 | `func_80076390` | matches | a source copied in, a virtual call |
 | `func_80076420` | matches | the last position kept |
@@ -54,3 +54,12 @@ globals.
 | `func_80076504` | parked | an angle within half a turn: the angle's register |
 | `func_80076568`, `func_80076600` | match | destructors |
 | `func_80076658`, `func_80076948`, `func_80076BD8`, `func_80076E20`, `func_8007702C` | asm | 131 to 239 instructions |
+
+## Fourth pass
+
+- `func_80075A1C` (half the differences between a segment's two track
+  nodes' neighbours, at 0x84 and 0x8C) is parked: the four short vectors
+  copied to the stack (`lwl`/`lwr`) go through `$t4`/`$t5` in the original
+  and `$t0`/`$t1` here, and the differences' loads come in another order
+  (104 off, the structure the same). The four nodes are read before the
+  copies, as the original's.

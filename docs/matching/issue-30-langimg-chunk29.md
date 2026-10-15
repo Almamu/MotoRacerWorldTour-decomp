@@ -15,7 +15,7 @@ Around them:
 
 One file, `src/langimg/chunk_29.cpp`, 0x8004B4B0-0x8004D560.
 
-31 functions: 20 match, 2 are parked, 9 are still asm.
+31 functions: 22 match, 3 are parked, 6 are still asm.
 
 ## The settings
 
@@ -61,7 +61,7 @@ small globals.
 | `func_8004C02C` | parked | the scale's length: the original copies the column's pointer through several registers |
 | `func_8004C0E4` to `func_8004C0FC` | match | return 1 |
 | `func_8004C104` to `func_8004C184` | match | destructors |
-| `func_8004C1BC` | asm | 116 instructions |
+| `func_8004C1BC` | parked | a player given a bike: an address's order |
 | `func_8004C38C` | matches | both players set up |
 | `func_8004C3FC`, `func_8004C420` | match | a player's values set |
 | `func_8004C430` | matches | a player's choice stepped back, unless their bike is busy |
@@ -70,8 +70,26 @@ small globals.
 | `func_8004C7EC` | matches | a flag cleared on both players |
 | `func_8004C870` | matches | a player's state from their bike |
 | `func_8004C9D0` | matches | a player's state on a press (a `do { } while (0)`) |
-| `func_8004CB5C` | asm | 128 instructions |
-| `func_8004CD5C` | asm | 104 instructions |
+| `func_8004CB5C` | matches | a player's camera target, or the identity |
+| `func_8004CD5C` | matches | a player's view from their current object |
 | `func_8004CEFC` | asm | 91 instructions |
 | `func_8004D068` | asm | 166 instructions |
 | `func_8004D300` | asm | 152 instructions |
+
+## Fourth pass
+
+- `func_8004CD5C` (a player's view: from its current object's matrix, or
+  through the object it targets) matched with its translation copied
+  field by field (all three loads, then the stores) into a local, and the
+  scene's objects table read into a local before the index's test.
+- `func_8004CB5C` (the camera's target found through chunk_61's
+  `func_8008C500` or `func_8008C678`, else the view reset to the identity)
+  matched with the result set after the call (`func(...); r = 1;`, chunk_36's
+  case): set before it, GCC put the `1` before the arguments.
+- `func_8004C1BC` (a player given a bike: the bike's player and its time
+  set, a text with its number) is parked 2 off: the original adds the
+  player's index to `g + 0x470`, GCC adds `0x470` to the index first; with
+  the base read into a local first the order comes right but -1 and the
+  pointer swap registers (8 off).
+- The chunk now includes `psyq.h` (`MATRIX`) and has its own `Vec29`; the
+  bike, the run and the game got the fields these use.

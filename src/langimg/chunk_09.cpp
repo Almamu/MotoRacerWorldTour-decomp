@@ -27,6 +27,27 @@ void func_80033D1C(MATRIX *m, SVECTOR *rot); // a rotation matrix
 Vector3 *func_800997A4(Vector3 *a, Vector3 *b);
 Vector3 *func_80099B60(Vector3 *out, Vector3 *a, Vector3 *b, int shift); // a cross product
 Vector3 *func_80022D20(Vector3 *out, Vector3 *in);
+// A run's measures: times to two speeds, the time between two speeds, times
+// to two distances, the top speed (0x3C bytes)
+struct Stats09 {
+    int m_00; // a speed
+    int m_04; // the time to it
+    int m_08;
+    int m_0C;
+    int m_10, m_14; // a range of speeds
+    int m_18;       // the time spent in it
+    int m_1C;       // a distance
+    int m_20;       // the time to it
+    int m_24;       // the speed there
+    int m_28;
+    int m_2C;
+    int m_30;
+    int m_34; // the top speed
+    int m_38; // when
+};
+extern int D_800D49A8;
+int func_800A6850(int x);
+int func_80023A30(void *x, int *spd, int dt, int n, Stats09 *s);
 }
 
 #define IABS(x) ((x) < 0 ? -(x) : (x))
@@ -173,7 +194,80 @@ void func_8002385C(Motor *m) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_09", func_8002385C);
 #endif
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_09", func_80023A30);
+int func_80023A30(void *x, int *spd, int dt, int n, Stats09 *s) {
+    int prev = 0;
+    int t = 0;
+    int dist = 0;
+    int prevd = 0;
+    int i;
+
+    s->m_04 = 0;
+    s->m_0C = 0;
+    s->m_20 = 0;
+    s->m_24 = 0;
+    s->m_2C = 0;
+    s->m_30 = 0;
+    s->m_18 = 0;
+    s->m_38 = 0;
+    s->m_34 = 0;
+    for (i = 0; i < n; i++) {
+        int v = spd[i];
+        int k, mph;
+
+        dist += v * dt / 1000;
+        k = func_800A6850(v);
+        mph = D_800D49A8;
+        if (!s->m_04 && k >= s->m_00) {
+            int a = (v - prev) * 1000 / dt;
+            int to;
+
+            s->m_04 = t;
+            if (mph) {
+                to = s->m_00 * 40960 / 36;
+            } else {
+                to = s->m_00 * 155648 / 85;
+            }
+            s->m_04 -= (v - to) * 1000 / a;
+        }
+        if (!s->m_0C && k >= s->m_08) {
+            int a = (v - prev) * 1000 / dt;
+            int to;
+
+            s->m_0C = t;
+            if (mph) {
+                to = s->m_08 * 40960 / 36;
+            } else {
+                to = s->m_08 * 155648 / 85;
+            }
+            s->m_0C -= (v - to) * 1000 / a;
+        }
+        if (k >= s->m_10 && k < s->m_14) {
+            s->m_18 += dt;
+        }
+        if (s->m_20 <= 0 && dist / 4096 >= s->m_1C) {
+            int a = (dist - prevd) * 1000 / dt;
+
+            s->m_20 = t;
+            s->m_24 = v;
+            s->m_20 = t - (dist - (s->m_1C << 12)) * 1000 / a;
+        }
+        if (s->m_28 && s->m_2C <= 0 && dist / 4096 >= s->m_28) {
+            int a = (dist - prevd) * 1000 / dt;
+
+            s->m_2C = t;
+            s->m_30 = v;
+            s->m_2C = t - (dist - (s->m_28 << 12)) * 1000 / a;
+        }
+        if (s->m_34 < v) {
+            s->m_34 = v;
+            s->m_38 = t;
+        }
+        t += dt;
+        prev = v;
+        prevd = dist;
+    }
+    return 1;
+}
 
 /* The speed after each of n steps of dt from a standstill, full throttle
  * and shifting up at the upshift points: the motor's force less the drag
