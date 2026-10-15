@@ -146,7 +146,7 @@ struct Key68 {
 
 void func_8009A0B0(Hud68 *s, Menu68 *m);
 int func_800A60AC(const char *a, const char *b);
-void func_800B031C(int i, int c);
+int func_800B031C(int i, int c);
 int func_800B0264(int i);
 int sprintf(char *buf, const char *fmt, ...);
 extern char D_800C92B0[];
