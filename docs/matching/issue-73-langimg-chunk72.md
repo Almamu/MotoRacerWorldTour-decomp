@@ -7,7 +7,7 @@ a pack's header and blocks found by a hash of their names, a CRC check.
 Also a glyph lookup for text and a fast fill. One file,
 `src/langimg/chunk_72.cpp`, 0x800A1110-0x800A32A0.
 
-59 functions: 49 match, 6 are parked, 4 are still asm.
+59 functions: 50 match, 7 are parked, 2 are still asm.
 
 ## The settings
 
@@ -40,7 +40,7 @@ macro.
 | `func_800A138C` | matches | a slot's index |
 | `func_800A13C0` to `func_800A164C` | match | pointers, positions, the cards' first user |
 | `func_800A1654`, `func_800A17EC` | match | the loading spinner; a picture shown |
-| `func_800A195C` | asm | 124 instructions |
+| `func_800A195C` | parked | the game started: one instruction placed |
 | `func_800A1B4C` | matches | |
 | `func_800A1B54` | parked | the sounds' data by id: a hoisted `lui` (32 off) |
 | `func_800A1BD0` to `func_800A1C74` | match | the CD's start, a file searched for twice |
@@ -50,7 +50,7 @@ macro.
 | `func_800A2290` to `func_800A2304` | match | wrappers, a fast fill |
 | `func_800A2380` | parked | a character's glyph: the endings' order (23 off) |
 | `func_800A2490` to `func_800A26A0` | match | the card events' handlers and counters |
-| `func_800A26DC` | asm | 119 instructions |
+| `func_800A26DC` | matches | the card's events opened |
 | `func_800A28B8` to `func_800A2AB0` | match | the events closed and tested |
 | `func_800A2AC0`, `func_800A2DA8` | asm | 193 and 324 instructions |
 
@@ -85,3 +85,13 @@ macro.
   default `D_800C9F1C`) through chunk_58's buffer functions. The rectangle
   is set field by field (`w`, `h`, `x`, `y`); `setRECT` is a function in
   this build's headers.
+
+## Group C, continued
+
+- `func_800A26DC` (the card's eight events opened, then enabled) matches,
+  with the events' globals indexed `[0]` as `func_800A28B8` has them.
+- `func_800A195C` (the game started: the cards, the GTE, the sound, the
+  spinner, the display and its 49-argument layout call) is parked one
+  instruction off: the original sets the 1 it keeps in `$s0` in the delay
+  slot of `func_800A0CC4`'s call; GCC puts it in `ResetCallback`'s, which
+  shifts the rest.

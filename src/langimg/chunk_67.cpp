@@ -63,6 +63,7 @@ int func_80097AC8(int x);
 void func_80098E9C(Vec67 *v);
 SVec67 *func_800984A0(Mat67 *m, SVec67 *r);
 void func_80098BD8(Quat67 *q, Mat67 *m);
+void func_800989DC(Quat67 *q, Vec67 *o, Vec67 *v);
 void func_80099CB0(Vec67 *out, Vec67 *a, Vec67 *b);
 void func_80099DCC(Vec67 *out, Vec67 *v, int s);
 void func_800998D0(Vec67 *out, Vec67 *a, Vec67 *b);
@@ -386,7 +387,22 @@ SVec67 *func_80098968(SVec67 *d, Vec67 *v, int a) {
     return d;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_67", func_800989DC);
+/* Vector v turned by quaternion q into o (o's old value used for its dot
+ * product with q's axis), in 4.12. */
+void func_800989DC(Quat67 *q, Vec67 *o, Vec67 *v) {
+    int s = (q->w * q->w - q->x * q->x - q->y * q->y - q->z * q->z) << 4 >> 16;
+    int d = (q->x * o->x + q->y * o->y + q->z * o->z) << 4 >> 16;
+
+    o->x = (s * v->x + 2 * (q->x * d) +
+            (((q->w * q->y) >> 11) * v->z - ((q->w * q->z) >> 11) * v->y)) >>
+           12;
+    o->y = (s * v->y + 2 * (q->y * d) +
+            (((q->w * q->z) >> 11) * v->x - ((q->w * q->x) >> 11) * v->z)) >>
+           12;
+    o->z = (s * v->z + 2 * (q->z * d) +
+            (((q->w * q->x) >> 11) * v->y - ((q->w * q->y) >> 11) * v->x)) >>
+           12;
+}
 
 #ifdef NON_MATCHING
 // Registers and the stores' order (the same products and sums)

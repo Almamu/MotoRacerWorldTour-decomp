@@ -13,7 +13,7 @@ globals set or cleared together.
 
 One file, `src/langimg/chunk_57.cpp`, 0x800831BC-0x80085258.
 
-22 functions: 10 match, 3 are parked, 9 are still asm.
+22 functions: 11 match, 6 are parked, 5 are still asm.
 
 ## The settings
 
@@ -45,15 +45,15 @@ globals from `D_800CBD24` on.
 
 | Function | State | Notes |
 |---|---|---|
-| `func_800831BC` | asm | 113 instructions |
+| `func_800831BC` | parked | a text placed in its box: registers |
 | `func_80083380` | parked | a time written: registers |
 | `func_8008350C` | parked | a value slid: an unused 16-byte frame, the countdown read twice |
 | `func_80083618` | asm | 149 instructions |
 | `func_8008386C` | matches | a text cleared |
-| `func_8008388C` | asm | 110 instructions |
+| `func_8008388C` | parked | a message placed: registers |
 | `func_80083A44` | matches | a player's HUD cleared |
 | `func_80083AB8` | matches | how far through the lap |
-| `func_80083B08` | asm | 141 instructions |
+| `func_80083B08` | matches | a message's slide stepped |
 | `func_80083D18` | matches | a timer set |
 | `func_80083D40`, `func_80083E14` | match | a message shown |
 | `func_80083E78` | asm | 209 instructions |
@@ -62,6 +62,22 @@ globals from `D_800CBD24` on.
 | `func_800846AC` | parked | six globals set: the gp store's place |
 | `func_800846FC` | matches | the globals cleared |
 | `func_80084720` | asm | 256 instructions |
-| `func_80084B1C` | asm | 143 instructions |
+| `func_80084B1C` | parked | the dashboard: an address kept |
 | `func_80084D58` | matches | a text drawn while bit 8 of the clock is set |
 | `func_80084E1C` | asm | 271 instructions |
+
+## Group C, continued
+
+- `func_80083B08` (a message's slide stepped by its state at 0x7C) matches.
+  Its switch's jump table starts at 0, so `case 0:` is spelled out with
+  the default; the zero word after the table (the end of the file's
+  `.rodata`, padding for chunk_58's 8-byte-aligned table) is
+  `D_800B78B8`, defined after the function.
+- `func_800831BC` (a text placed in its box) and `func_8008388C` (a
+  message set to a texture and placed) store the box's words into shorts:
+  written directly GCC narrows the loads to `lhu`; through an inline
+  taking an `int` (`Put57`) they're the original's `lw`. Both parked on
+  registers (15 and 73 off).
+- `func_80084B1C` (the dashboard) is parked: the original builds the
+  dashboard's address for each of its five calls, GCC keeps it in a saved
+  register (140 off).

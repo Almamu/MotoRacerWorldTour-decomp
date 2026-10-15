@@ -16,7 +16,7 @@ use the device name format `"bu%02x:"`.
 
 One file, `src/langimg/chunk_73.cpp`, 0x800A32A0-0x800A54F0.
 
-17 functions: 12 match, 5 are still asm.
+17 functions: 13 match, 4 are still asm.
 
 ## The settings
 
@@ -42,7 +42,7 @@ globals.
 |---|---|---|
 | `func_800A32A0` | asm | 228 instructions |
 | `func_800A3614` | asm | 147 instructions |
-| `func_800A3848` | asm | 132 instructions |
+| `func_800A3848` | matches | a file erased |
 | `func_800A3A44` | asm | 483 instructions |
 | `func_800A41BC` | matches | the slots made idle |
 | `func_800A4244` | matches | a call, then 1 |
@@ -54,3 +54,12 @@ globals.
 | `func_800A45B4` | matches | a slot made idle |
 | `func_800A4608` | matches | a global stored |
 | `func_800A4614` | asm | 995 instructions |
+
+## Group C, continued
+
+`func_800A3848` (a file erased from card n and taken out of its
+directory, its space given back) matches, with `func_800A442C` passing its
+two arguments through. The directory loop steps `p++, i++` in that order;
+the result is set after the free space's update. `"%s%s%s"` is
+`D_800B7BD4`, defined in `.rodata` after the function (a literal that
+short would go to `.sdata` under `-G8`), then the unused `"bu%02x:%s"`.

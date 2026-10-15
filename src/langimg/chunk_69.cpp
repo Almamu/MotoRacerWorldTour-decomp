@@ -69,7 +69,9 @@ struct Scr69 {
 
 struct View69 {
     char *m_00; // its name
-    u8 m_04[0x48];
+    u8 m_04[0x30];
+    int m_34;
+    u8 m_38[0x14];
     Lay69 *m_4C;
     u8 m_50[0x10];
     Scr69 *m_60;
@@ -88,7 +90,9 @@ struct Pad69 {
     Part69 m_3C[3];
     u8 m_78[4];
     int m_7C;
-    u8 m_80[0x60];
+    int m_80[18];
+    int m_C8, m_CC;
+    u8 m_D0[0x10];
     u8 m_E0[0x4C];
     int m_12C;
     u8 m_130[4];
@@ -179,8 +183,17 @@ struct Run69 {
 };
 
 // The game's object
+// The game's flash (chunk_45's)
+struct Flash69 {
+    u8 m_00[0x34];
+    int m_34, m_38, m_3C, m_40; // colours
+    u8 m_44[0x10];
+    int m_54, m_58; // how long, since when
+    u8 m_5C[0x3C];
+};
 struct Game69 {
-    u8 m_00[0x170];
+    u8 m_00[0xD8];
+    Flash69 m_D8;
     int m_170;
     int m_174;
     u8 m_178[0x908];
@@ -258,6 +271,25 @@ void func_8009B8BC(Game69 *o);
 void func_8009B8F8(Game69 *o, int a, Run69 *r);
 void func_8009C944(Game69 *o, int s);
 void func_8009C964(Game69 *o, int s);
+// A script's item: its code at 8
+struct Key69 {
+    u8 m_00[8];
+    u16 m_08;
+};
+// A script's context: the game at 4
+struct Ctx69 {
+    u8 m_00[4];
+    Game69 *m_04;
+};
+struct Who69 {
+    u8 m_00[0xBC];
+    int m_BC;
+};
+extern int D_800C9364; // the cheats' list (declared small: its address is one la)
+extern int D_800C94C4;
+extern int D_800D5FD4;
+int func_800A68BC(int a, char *s, int b, int c);
+void func_8009CF14(Key69 *it, Who69 *w, Ctx69 *c);
 void func_8009C984(Game69 *o, int s);
 void func_8009CC18(Game69 *o);
 void func_8009CC38(Game69 *o);
@@ -601,4 +633,69 @@ void func_8009CEAC(Game69 *o, int s) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_69", func_8009CF14);
+/* A script's cheat: its code looked up in D_800C9364's list, then the
+ * matching effect (or a debug flag toggled), and a flash. */
+void func_8009CF14(Key69 *it, Who69 *w, Ctx69 *c) {
+    Game69 *o = c->m_04;
+    View69 *v;
+    Pad69 *p;
+    int k;
+
+    if (o->m_A90 == 1 || o->m_A90 == 4) {
+        v = o->m_A84;
+    } else {
+        v = o->m_A80;
+    }
+    p = o->m_A98;
+    k = func_800A68BC(it->m_08, (char *)&D_800C9364, D_800C94C4, -1);
+    if (k != -1) {
+        switch (k) {
+        case 5: {
+            int i;
+
+            for (i = 0; i < 18; i++) {
+                p->m_80[i] = 1;
+            }
+            break;
+        }
+        case 6:
+            p->m_C8 = 1;
+            p->m_CC = 1;
+            break;
+        case 8: {
+            u32 i;
+
+            for (i = 0; i < 3; i++) {
+                p->m_3C[i].m_00 = 0;
+                p->m_3C[i].m_04 = 0;
+                p->m_3C[i].m_08 = 0;
+                p->m_3C[i].m_0C = 0;
+                p->m_3C[i].m_10 = 0;
+            }
+        }
+        case 7:
+            p->m_7C = 1;
+            break;
+        case 9:
+            o->m_A94 |= 4;
+            w->m_BC = 1;
+            break;
+        default:
+            D_800D5FD4 ^= 1 << k;
+            break;
+        }
+    }
+    if (v->m_34 && k != -1) {
+        int lo = 0xDFDFDF;
+        int hi = 0xFFFFFF;
+        Flash69 *f = &o->m_D8;
+
+        o->m_D8.m_38 = hi;
+        o->m_D8.m_3C = hi;
+        o->m_D8.m_34 = lo;
+        o->m_D8.m_40 = lo;
+        f->m_54 = 500;
+        f->m_58 = 0;
+        func_8006CA84(6, 127);
+    }
+}

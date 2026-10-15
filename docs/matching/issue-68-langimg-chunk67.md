@@ -14,7 +14,7 @@ The game's maths library.
 
 One file, `src/langimg/chunk_67.cpp`, 0x80097128-0x800990E8.
 
-30 functions: 14 match, 5 are parked, 11 are still asm.
+30 functions: 15 match, 5 are parked, 10 are still asm.
 
 ## The settings
 
@@ -72,7 +72,7 @@ globals.
 | `func_80098418`, `func_800984A0` | match | angles from a matrix |
 | `func_800985A8`, `func_80098674`, `func_80098768`, `func_8009887C` | asm | GTE: matrix products, a vector through a matrix |
 | `func_80098968` | matches | a vector scaled by a sine |
-| `func_800989DC` | asm | 127 instructions |
+| `func_800989DC` | matches | a vector turned by a quaternion |
 | `func_80098BD8` | parked | a matrix from a quaternion: registers and the stores' order |
 | `func_80098CE4`, `func_80098D04` | match | the time, a seed set |
 | `func_80098D1C` | matches | a random number |
@@ -85,3 +85,10 @@ globals.
 - `func_800980F4`: the negated translation is three loads, three
   negations, three stores (`x = v.x; ...; x = -x; ...; m->t.x = x;`);
   negating in the loads' statements interleaved them.
+
+## Group C, continued
+
+`func_800989DC` (a vector turned by a quaternion, in 4.12) matches with
+each output's two cross terms grouped as one difference:
+`(s * v->x + 2 * (q->x * d) + ((q->w * q->y >> 11) * v->z - ...)) >> 12`;
+added one by one, the products came out in other registers.

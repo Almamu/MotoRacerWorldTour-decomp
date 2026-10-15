@@ -216,6 +216,33 @@ void func_800A25D4(void);
 void func_800A2618(void);
 void func_800A265C(void);
 void func_800A26A0(void);
+void func_800A26DC(void);
+// The display (chunk_51's A51): its sizes at 0xC and 0x10
+struct Disp72 {
+    u8 m_00[0xC];
+    int m_0C, m_10;
+};
+// chunk_51's G51
+struct Gfx72 {
+    u8 m_00[4];
+    Disp72 *m_04;
+};
+void *__builtin_new(unsigned int n);
+void func_8009793C(void);
+void func_800A0CC4(Card72 *c);
+void func_800AEBF0(int a, int b);
+void func_800AFB8C(int a);
+void func_800B0258(int a);
+void func_800450C0(char *s, int a);
+Gfx72 *func_80078DA8(Gfx72 *g, int a, int b, int c, int d, int e);
+int func_80078F5C(int *t, Gfx72 *g);
+void func_80078C78(Disp72 *o, int a, int b, int c, int e, int f, int g, int h, int i, ...);
+void func_800A0680(void);
+extern s8 D_800C9D3C;
+extern char D_800CABC0[];
+extern int D_800CBC94[];
+extern Disp72 *D_800C886C;
+int func_800A195C(void);
 
 void func_800A1228(Card72 *c);
 void func_800A1248(Card72 *c);
@@ -546,7 +573,38 @@ void func_800A17EC(int x, char *name) {
     func_80086E7C(&b, 2);
 }
 
+/* The game started: the cards, the GTE, the sound, the loading spinner, the
+ * display and its primitives' layout. */
+#ifdef NON_MATCHING
+// One instruction: the original sets the 1 it keeps in $s0 in the delay slot of func_800A0CC4's call and leaves ResetCallback's slot empty; GCC sets it after that call, in ResetCallback's slot, which shifts the rest by one (118 off, the code otherwise the original's).
+int func_800A195C(void) {
+    Gfx72 *g;
+    int on = 1;
+
+    func_8009793C();
+    func_800A0CC4(&D_800D4898);
+    ResetCallback();
+    InitGeom();
+    func_800AEBF0(0, 2);
+    func_800AFB8C(0x16);
+    func_800B0258(1);
+    func_800A1C10(0);
+    func_80015678(func_800A1654);
+    D_800C9D3C = on;
+    func_800450C0(D_800CABC0, 1);
+    g = func_80078DA8((Gfx72 *)__builtin_new(0x20), -1, -1, 0x200, 0x100, 6);
+    func_80078F5C(D_800CBC94, g);
+    func_80078C78(g->m_04, 0xE, 2, 8, 4, g->m_04->m_0C, g->m_04->m_10, on, 0x44, 2, 0, 2, 0, 7, on,
+                  2, on, 2, on, 2, on, 2, on, 2, on, 2, on, 7, on, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2,
+                  0, 2, 0, 7, on, 2, 0, 2, 0, 2, 0, 0x800, 0xC0);
+    D_800C886C = g->m_04;
+    SetGeomScreen(0x100);
+    func_800A0680();
+    return 1;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A195C);
+#endif
 
 void func_800A1B4C(void) {
 }
@@ -986,7 +1044,27 @@ void func_800A26A0(void) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A26DC);
+/* The card's events opened (their handlers above), then enabled. */
+void func_800A26DC(void) {
+    EnterCriticalSection();
+    D_800D6080[0] = OpenEvent(0xF4000001, 4, 0x1000, func_800A2490);
+    D_800D60B8[0] = OpenEvent(0xF4000001, 0x8000, 0x1000, func_800A24CC);
+    D_800D6078[0] = OpenEvent(0xF4000001, 0x100, 0x1000, func_800A2510);
+    D_800D6088[0] = OpenEvent(0xF4000001, 0x2000, 0x1000, func_800A2554);
+    D_800D607C[0] = OpenEvent(0xF0000011, 4, 0x1000, func_800A2598);
+    D_800D60B0[0] = OpenEvent(0xF0000011, 0x8000, 0x1000, func_800A25D4);
+    D_800D6074[0] = OpenEvent(0xF0000011, 0x100, 0x1000, func_800A2618);
+    D_800D6084[0] = OpenEvent(0xF0000011, 0x2000, 0x1000, func_800A265C);
+    ExitCriticalSection();
+    EnableEvent(D_800D6080[0]);
+    EnableEvent(D_800D60B8[0]);
+    EnableEvent(D_800D6078[0]);
+    EnableEvent(D_800D6088[0]);
+    EnableEvent(D_800D607C[0]);
+    EnableEvent(D_800D60B0[0]);
+    EnableEvent(D_800D6074[0]);
+    EnableEvent(D_800D6084[0]);
+}
 
 /* The card's events closed. */
 void func_800A28B8(void) {
