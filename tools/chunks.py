@@ -13,8 +13,8 @@ The function list comes from build/<target>.elf, so build first (make).
   tools/chunks.py status [--all]          progress per chunk (--all: every chunk)
   tools/chunks.py badges DIR              the README's progress badges, as SVG (CI publishes
                                           them to the badges branch)
-  tools/chunks.py progress FILE           the progress report for decompilati.onl, as JSON
-                                          (CI sends it from main)
+  tools/chunks.py report FILE             the progress report, in objdiff's report.json format
+                                          (CI uploads it as the `report` artifact)
   tools/chunks.py issues DIR              write each chunk's issue (title + body) to DIR
   tools/chunks.py issues DIR --create     ...and open them on GitHub (gh)
   tools/chunks.py sync [--dry-run]        tick done functions in the open chunk issues
@@ -244,60 +244,102 @@ def cmd_badges(args):
         print(f"{label}: {pct:.2f}% ({done:,}/{total:,} bytes)")
 
 
-def progress_code(funcs):
-    """decompilati.onl's code counts, in bytes: matching as for the badges,
-    non-matching the parked functions alone (their C isn't byte for byte)."""
-    return {
-        "total": sum(f["size"] for f in funcs),
-        "matching": sum(f["size"] for f in funcs if f["state"] in DONE),
-        "non_matching": sum(f["size"] for f in funcs if f["state"] == "parked"),
-    }
+# objdiff's report format (objdiff-core/protos/report.proto, version 2), as
+# objdiff writes it: snake_case names, 64-bit numbers as strings, addresses
+# as hex strings, zero values left out.
+REPORT_VERSION = 2
 
 
-def cmd_progress(args):
-    """The progress report for decompilati.onl (docs/decomp.md, "Progress";
-    the format is https://decompilati.onl/docs): both executables, each
-    split into the game's chunks and the libraries, as areas of a treemap
-    weighted by their code."""
-    areas = []
+def pct(part, whole):
+    return 100 * part / whole if whole else 0.0
+
+
+def nonzero(d):
+    return {k: v for k, v in d.items() if v not in (0, 0.0, "0", None, [], {})}
+
+
+def report_measures(units):
+    """objdiff's Measures for [(funcs, complete)]: matched as for the badges
+    (C that matches, Sony's objects, hand-written asm). A unit is complete
+    when all its functions are."""
+    funcs = [f for fs, _ in units for f in fs]
+    total = sum(f["size"] for f in funcs)
+    matched = sum(f["size"] for f in funcs if f["state"] in DONE)
+    nfunc = len(funcs)
+    nmatched = sum(1 for f in funcs if f["state"] in DONE)
+    complete = sum(f["size"] for fs, done in units if done for f in fs)
+    ncomplete = sum(1 for _, done in units if done)
+    return nonzero({
+        "fuzzy_match_percent": pct(matched, total),
+        "total_code": str(total),
+        "matched_code": str(matched),
+        "matched_code_percent": pct(matched, total),
+        "total_functions": nfunc,
+        "matched_functions": nmatched,
+        "matched_functions_percent": pct(nmatched, nfunc),
+        "complete_code": str(complete),
+        "complete_code_percent": pct(complete, total),
+        "total_units": len(units),
+        "complete_units": ncomplete,
+    })
+
+
+def cmd_report(args):
+    """The progress report, in objdiff's report.json format (docs/decomp.md,
+    "Progress"). One unit per chunk with its functions, in the categories
+    <target> and <target>_game or <target>_lib. CI uploads it as the
+    `report` artifact, where progress sites (decompilati.onl) read it."""
+    units, cats = [], {}
     for target, info in TARGETS.items():
-        rows = survey(target)
-        children = []
-        for lib, label, desc in ((False, "Game", info["game"]), (True, "Libraries", "PsyQ library code")):
-            group = [c for c in rows if c["lib"] == lib]
-            if not group:
+        for c in survey(target):
+            if not c["funcs"]:
                 continue
-            children.append({
-                "name": label,
-                "description": desc,
-                "code": progress_code([f for c in group for f in c["funcs"]]),
-                "children": [
-                    {"name": c["name"], "description": f"{c['src']}, {c['lo']:08X}-{c['hi']:08X}",
-                     "code": progress_code(c["funcs"])}
-                    for c in group if c["funcs"]
-                ],
-            })
-        areas.append({
-            "name": target,
-            "description": re.sub(r"`", "", info["what"]),
-            "code": progress_code([f for c in rows for f in c["funcs"]]),
-            "children": children,
-        })
+            done = all(f["state"] in DONE for f in c["funcs"])
+            kind = "lib" if c["lib"] else "game"
+            ids = [target, f"{target}_{kind}"]
+            for i, name in zip(ids, (re.sub(r"`", "", info["what"]),
+                                     f"{target}: {'PsyQ libraries' if c['lib'] else 'the game'}")):
+                cats.setdefault(i, {"name": name, "units": []})["units"].append((c["funcs"], done))
+            size = sum(f["size"] for f in c["funcs"])
+            units.append(nonzero({
+                "name": f"{target}/{c['name']}",
+                "measures": report_measures([(c["funcs"], done)]),
+                "sections": [nonzero({
+                    "name": ".text",
+                    "size": str(size),
+                    "fuzzy_match_percent": pct(sum(f["size"] for f in c["funcs"] if f["state"] in DONE), size),
+                    "metadata": {"virtual_address": hex(c["lo"])},
+                })],
+                "functions": [nonzero({
+                    "name": f["name"],
+                    "size": str(f["size"]),
+                    "fuzzy_match_percent": 100.0 if f["state"] in DONE else 0.0,
+                    "address": hex(f["addr"] - c["lo"]),
+                    "metadata": {"virtual_address": hex(f["addr"])},
+                }) for f in c["funcs"]],
+                "metadata": nonzero({
+                    "complete": done,
+                    "module_name": target,
+                    "source_path": c["src"],
+                    "progress_categories": ids,
+                }),
+            }))
+    all_units = [(c["funcs"], all(f["state"] in DONE for f in c["funcs"]))
+                 for t in TARGETS for c in survey(t) if c["funcs"]]
     report = {
-        "unit": "bytes",
-        "code": progress_code([f for t in TARGETS for c in survey(t) for f in c["funcs"]]),
-        "layout": "treemap",
-        "areas": areas,
+        "measures": report_measures(all_units),
+        "units": units,
+        "version": REPORT_VERSION,
+        "categories": [{"id": i, "name": v["name"], "measures": report_measures(v["units"])}
+                       for i, v in cats.items()],
     }
-    try:
-        commit = subprocess.run(["git", "log", "-1", "--format=%H%n%s"], cwd=ROOT,
-                                capture_output=True, text=True, check=True).stdout.split("\n", 1)
-        report["commit"], report["message"] = commit[0], commit[1].strip()
-    except (OSError, subprocess.CalledProcessError, IndexError):
-        pass
-    Path(args.file).write_text(json.dumps(report, indent=1) + "\n")
-    c = report["code"]
-    print(f"{c['matching']:,} matching and {c['non_matching']:,} non-matching of {c['total']:,} bytes")
+    out = Path(args.file)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(report, indent=1) + "\n")
+    m = report["measures"]
+    print(f"{int(m['matched_code']):,}/{int(m['total_code']):,} bytes "
+          f"({m['matched_code_percent']:.2f}%), {m['matched_functions']}/{m['total_functions']} functions, "
+          f"{m.get('complete_units', 0)}/{m['total_units']} chunks complete")
 
 
 def issue_title(c):
@@ -569,7 +611,7 @@ def main():
     sub.add_parser("check")
     p = sub.add_parser("badges")
     p.add_argument("dir")
-    p = sub.add_parser("progress")
+    p = sub.add_parser("report")
     p.add_argument("file")
     p = sub.add_parser("stamp")
     p.add_argument("target", choices=sorted(TARGETS))
@@ -581,7 +623,7 @@ def main():
     p.add_argument("--headers", type=int, required=True, help="the headers issue")
     p.add_argument("--create", action="store_true")
     args = ap.parse_args()
-    {"status": cmd_status, "badges": cmd_badges, "progress": cmd_progress, "issues": cmd_issues, "sync": cmd_sync, "check": cmd_check,
+    {"status": cmd_status, "badges": cmd_badges, "report": cmd_report, "issues": cmd_issues, "sync": cmd_sync, "check": cmd_check,
      "stamp": cmd_stamp, "relink": cmd_relink,
      "cleanup-issues": cmd_cleanup_issues}[args.cmd](args)
 
