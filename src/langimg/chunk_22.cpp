@@ -280,9 +280,10 @@ void func_8003D9CC(Game22 *g, int *sp, int *p) {
  * three entries' letters stepped up; in mode 0, the entries whose number
  * is the key started. */
 #ifdef NON_MATCHING
-// Registers: the context and the key in swapped saved registers ($s3/$s2), and the table's address formed in both of the view's branches (47 off; right in shape).
+// The context copied into a local (as func_8003DF7C): 37 off (from 47); left: the table's address formed in both of the view's branches, the loop counter cleared later and an object's copy in $a1.
 void func_8003D9EC(int *p, int x, Arg22 *c) {
-    Game22 *g = c->m_04;
+    Arg22 *cc = c;
+    Game22 *g = cc->m_04;
     View22 *v;
     int i;
     int f;
@@ -293,7 +294,7 @@ void func_8003D9EC(int *p, int x, Arg22 *c) {
     } else {
         v = g->m_A80;
     }
-    if (D_800C4D98[c->m_00 - 1]) {
+    if (D_800C4D98[cc->m_00 - 1]) {
         return;
     }
     i = 0;
@@ -307,10 +308,10 @@ void func_8003D9EC(int *p, int x, Arg22 *c) {
     }
     if (g->m_A90 == 5 && k == 0xFF) {
         for (; i < 3; i++) {
-            Obj22 *o = func_8003B038(v, i, c->m_00);
+            Obj22 *o = func_8003B038(v, i, cc->m_00);
 
             if (o) {
-                if (!(o->m_20.m_mask & c->m_00)) {
+                if (!(o->m_20.m_mask & cc->m_00)) {
                     return;
                 }
                 func_80038BBC(o, g);
@@ -321,10 +322,10 @@ void func_8003D9EC(int *p, int x, Arg22 *c) {
             return;
         }
         for (i = 0; i < 3; i++) {
-            Obj22 *o = func_8003B038(v, i, c->m_00);
+            Obj22 *o = func_8003B038(v, i, cc->m_00);
 
             if (o) {
-                if (!(o->m_20.m_mask & c->m_00)) {
+                if (!(o->m_20.m_mask & cc->m_00)) {
                     return;
                 }
                 if (k == o->m_20.m_n) {
@@ -334,7 +335,7 @@ void func_8003D9EC(int *p, int x, Arg22 *c) {
         }
     }
     func_8003E5B0(g);
-    D_800C4D98[c->m_00 - 1] = 1;
+    D_800C4D98[cc->m_00 - 1] = 1;
 }
 #else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_22", func_8003D9EC);
