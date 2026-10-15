@@ -42,13 +42,13 @@ struct Motor {
     u8 m_124[0x24];
     short m_148;
     short m_14A;
-    u8 m_14C[2];
+    short m_14C;
     short m_14E;
     int m_150;
     int m_154;
     short m_158;
     short m_15A; // 0x15A: rolling resistance
-    u8 m_15C[4];
+    int m_15C;
     int m_160;
     u8 m_164[4];
     short m_168;
