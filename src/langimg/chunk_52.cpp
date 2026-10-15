@@ -25,7 +25,8 @@ struct Gfx52 {
     u8 m_130[0x10];
     u16 m_140;
     u16 m_142;
-    u8 m_144[0x1C];
+    u8 m_144[0x18];
+    int m_15C; // drawing to the front buffer
     u16 m_160;
     u8 m_162[2];
     u16 m_164;
@@ -105,6 +106,14 @@ struct Disp52 {
 };
 extern u8 *D_800C8C6C, *D_800C8C70; // the primitive buffer's start and end this frame
 int func_8007968C(Disp52 *d);
+// The ordering table: its entries, and the range drawn to
+struct Ot52 {
+    u_long *m_ot;
+    int m_04;
+    int m_08;
+};
+extern u_long *D_800CBDC0; // the ordering table
+extern Ot52 *D_800CBDC4;
 extern s8 D_800B8868[];
 void *malloc(int n);
 int func_800895A0(u8 *p);
@@ -346,7 +355,51 @@ void func_80079848(Gfx52 *g) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_52", func_80079848);
 #endif
 
+// Links packet p in at ordering table entry ot (ui.h's ADD_PRIM)
+#define ADD_PRIM52(ot, p) \
+    do { \
+        u_long _l, _p; \
+        __asm__ volatile("lwl %0, 2(%2)\n\tsll %1, %3, 8\n\tswl %0, 2(%3)\n\tswl %1, 2(%2)" \
+                         : "=&r"(_l), "=&r"(_p) \
+                         : "r"(ot), "r"(p)); \
+    } while (0)
+#define OT_LAST52 (D_800CBDC0 + (D_800CBDC4->m_04 + D_800CBDC4->m_08 - 1))
+
+/* The drawing area set: its corners (in the buffer drawn to, unless 0x15C is set) as two
+ * packets at the ordering table's end. */
+#ifdef NON_MATCHING
+// The globals' addresses: the original builds each high half once (D_800C8C70, D_800CBDC0, D_800CBDC4 kept in $a3, $t1, $t0) and computes the ordering table's index before scaling; GCC builds them again at each use and folds the -1 into the address (127 off).
+void func_800798FC(Gfx52 *g, int x, int y, int w, int h) {
+    int x1 = x + w - 1;
+    int y1 = y + h - 1;
+    int buf = D_800B8868[0];
+    u_long *p;
+
+    if (!g->m_15C) {
+        p = (u_long *)D_800C8C70;
+        p[0] = 0x01000000;
+        p[1] = 0xE3000000 | (x & 0x3FF) | (((y + (buf << 8)) & 0x3FF) << 10);
+        ADD_PRIM52(OT_LAST52, D_800C8C70);
+        p = (u_long *)(D_800C8C70 += 8);
+        p[0] = 0x01000000;
+        p[1] = 0xE4000000 | (x1 & 0x3FF) | (((y1 + (buf << 8)) & 0x3FF) << 10);
+        ADD_PRIM52(OT_LAST52, D_800C8C70);
+        D_800C8C70 += 8;
+    } else {
+        p = (u_long *)D_800C8C70;
+        p[0] = 0x01000000;
+        p[1] = 0xE3000000 | (x & 0x3FF) | ((y & 0x3FF) << 10);
+        ADD_PRIM52(OT_LAST52, D_800C8C70);
+        p = (u_long *)(D_800C8C70 += 8);
+        p[0] = 0x01000000;
+        p[1] = 0xE4000000 | (x1 & 0x3FF) | ((y1 & 0x3FF) << 10);
+        ADD_PRIM52(OT_LAST52, D_800C8C70);
+        D_800C8C70 += 8;
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_52", func_800798FC);
+#endif
 
 #ifdef NON_MATCHING
 // Registers: the camera and the result's translation swap $s0 and $s1 (9 off)
