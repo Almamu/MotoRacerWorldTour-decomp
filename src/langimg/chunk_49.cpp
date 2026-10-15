@@ -125,6 +125,7 @@ void func_80074D78(Obj49 *o, int f);
 int func_80098D1C(int i);
 Lnk49 *func_80074924(Obj49 *o);
 void func_800747A8(Obj49 *o, int dir, int *t, int n);
+int func_80074AC8(Obj49 *o);
 void func_800746B0(Obj49 *o, int dflt, int dir, int e, int sub);
 struct Vec49 {
     int x;
@@ -578,7 +579,82 @@ void CobjetLinkDtor49(Node49 *l, int f) {
     }
 }
 
+// A GCC 2 vtable entry: the this adjustment and the function
+struct VtEntry49 {
+    short m_delta;
+    short m_index;
+    void *m_func;
+};
+
+/* An object stepped along its links by the time: when the current step's
+ * time is over, on to the next link (its first and last calls through the
+ * vtable), the progress at 0x10 in 16.16; again while it's past the end. */
+#ifdef NON_MATCHING
+// With the chunk's -fmove-all-movables the constants 2 and 1 stay in saved registers as in the original, but the next link and the direction land in other registers and the compare with 1 for 0x08 uses the hoisted one where the original loads 1 again (105 off).
+int func_80074AC8(Obj49 *o) {
+    int now = (&D_800CB880)[o->m_0Cf.m_b];
+    int called = 0;
+    int again;
+    int r;
+
+    do {
+        r = 0;
+        again = 0;
+        o->m_30 = 0;
+        if (o->m_28 && o->m_2C) {
+            Lnk49 *n = o->m_2C;
+            int dir = o->m_0Cf.m_a;
+            int f = 0;
+            int el;
+
+            if ((dir > 0 && n->m_08) || (dir < 0 && n->m_04->m_08)) {
+                f = 1;
+            }
+            el = now - o->m_24;
+            if (el >= o->m_14 || o->m_14 <= 0) {
+                int rest = el - o->m_14;
+
+                o->m_28 = o->m_2C;
+                if (f && o->m_08 == 1) {
+                    VtEntry49 *v;
+
+                    func_800747A8(o, 0, &rest, 0);
+                    v = &((VtEntry49 *)o->m_34)[4];
+                    ((void (*)(void *))v->m_func)((u8 *)o + v->m_delta);
+                }
+                if (o->m_04 == 2 || (o->m_04 == 1 && !f)) {
+                    VtEntry49 *v = &((VtEntry49 *)o->m_34)[6];
+
+                    ((void (*)(void *, int, int, int, int))v->m_func)((u8 *)o + v->m_delta, o->m_14,
+                                                                      0, called, rest);
+                } else {
+                    o->m_30 = (int)o->m_2C;
+                    o->m_2C = 0;
+                }
+                if (o->m_14 <= 0) {
+                    goto done;
+                }
+            }
+            o->m_10 = ((now - o->m_24) << 16) / o->m_14;
+        done:
+            o->m_18 = now;
+            r = o->m_2C || o->m_30;
+            if (o->m_10 > 0x10000) {
+                if (o->m_2C) {
+                    again = 1;
+                } else if (o->m_30) {
+                    again = 0;
+                    o->m_10 = 0x10000;
+                }
+            }
+        }
+        called = 1;
+    } while (again);
+    return r;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_49", func_80074AC8);
+#endif
 
 void func_80074D20(void) {
 }
