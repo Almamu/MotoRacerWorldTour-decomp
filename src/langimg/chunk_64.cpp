@@ -120,7 +120,7 @@ extern Ent64 D_800CBE60;           // the default 8-byte entry
 extern Pack64 D_800CBE68;          // the default 4-byte entry
 extern int D_800CBE58, D_800CBE5C; // how many times each was set up
 void func_80097E4C(void *a, int x, int y, int z);
-void func_80091544(Pose64 *d, void *s);
+void func_80091544(void *d, void *s);
 void func_80091FB4(Pose64 *d, unsigned int f, void *a, void *b);
 int func_80092480(Play64 *p, unsigned int now);
 void func_8008E0C4(Obj64 *o, void *a);
@@ -131,6 +131,10 @@ void func_800912AC(Anim64 *a);
 void func_800913C0(Anim64 *a);
 Ent64 *func_80091414(Tab64 *t, int id);
 Pack64 *func_800914AC(Tab64 *t, int id);
+void func_8008D0CC(Ent64 *d, Ent64 *s, int n);
+void func_8008D0FC(Ent64 *d, int n);
+void func_8008D120(Pack64 *d, Pack64 *s, int n);
+void func_8008D148(Pack64 *d, int n);
 int func_800923F0(Track64 *t, int i, unsigned int time);
 void func_8009243C(Play64 *p, Track64 *t, int a, int b);
 void func_800925A8(List64 *l, int a);
@@ -245,7 +249,40 @@ Pack64 *func_800914AC(Tab64 *t, int id) {
     return found ? &t->m_04[i] : &D_800CBE68;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_64", func_80091544);
+/* A table's entries copied into another's (by id or directly), the rest
+ * of its entries set to the defaults. */
+void func_80091544(void *dp, void *sp) {
+    Tab64 *d = (Tab64 *)dp;
+    Tab64 *s = (Tab64 *)sp;
+    int i;
+
+    if (s->m_01 == -1) {
+        func_8008D0CC(d->m_10, s->m_10, s->m_00);
+    } else {
+        for (i = 0; i < s->m_00; i++) {
+            Ent64 *e = func_80091414(s, i);
+            Ent64 *o = d->m_10;
+            int x = e->m_00;
+            int y = e->m_02;
+            int z = e->m_04;
+
+            o[i].m_00 = x;
+            o[i].m_02 = y;
+            o[i].m_04 = z;
+        }
+    }
+    if (s->m_02 == -1) {
+        func_8008D120(d->m_04, s->m_04, s->m_00);
+    } else {
+        for (i = 0; i < s->m_00; i++) {
+            d->m_04[i] = *func_800914AC(s, i);
+        }
+    }
+    if (d->m_00 != s->m_00) {
+        func_8008D0FC(d->m_10 + s->m_00, d->m_00 - s->m_00);
+        func_8008D148(d->m_04 + s->m_00, d->m_00 - s->m_00);
+    }
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_64", func_800916B0);
 
