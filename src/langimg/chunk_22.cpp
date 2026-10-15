@@ -50,12 +50,21 @@ struct Item22b {
 struct Slot22 {
     int m_00;
     int m_04;
-    u8 m_08[0x90];
+    // the handlers by kind, then a second copy from 0x44
+    int m_08, m_0C, m_10, m_14, m_18, m_1C, m_20, m_24, m_28, m_2C, m_30, m_34, m_38, m_3C, m_40,
+        m_44, m_48, m_4C, m_50, m_54, m_58, m_5C, m_60, m_64, m_68, m_6C, m_70, m_74, m_78, m_7C,
+        m_80, m_84, m_88, m_8C, m_90, m_94;
 };
 
 // The game object (chunk_69's Game69)
 struct Game22 {
-    u8 m_00[0x15C];
+    u8 m_00[0x10];
+    int m_10; // timers
+    int m_14;
+    u8 m_18[0x24];
+    Arg22 m_3C; // the scripts' contexts, by set
+    Arg22 m_44;
+    u8 m_4C[0x110];
     int *m_15C;
     u8 m_160[0x18];
     int m_178;
@@ -103,6 +112,14 @@ void func_8003D9EC(int *p, int x, Arg22 *c);
 void func_80038CE4(Obj22 *o, Game22 *g);
 void func_8003D334(Game22 *g, Obj22 *o);
 void func_8003DB9C(int *p, int x, Arg22 *c);
+void func_8003DF7C(int *p, int x, Arg22 *c);
+void func_8003E194(int *p, int x, Arg22 *c);
+void func_8003EC90(Game22 *g, int i, int set, void (*f)(int *p, int x, Arg22 *c));
+void func_8003E3AC(Game22 *g);
+int func_8003F0F8(Game22 *g, int kind, int set);
+void func_80038E0C(Obj22 *o, Game22 *g);
+void func_80038F44(Obj22 *o, Game22 *g);
+extern int D_800D6128; // the frame's time
 }
 
 int func_8003D60C(Game22 *g) {
@@ -485,11 +502,219 @@ void func_8003DE84(int *p, int x, Arg22 *c) {
     func_8003E5B0(g);
 }
 
+#ifdef NON_MATCHING
+// Registers only: the script context and the view in swapped saved registers ($s3/$s4, 12 off).
+void func_8003DF7C(int *p, int x, Arg22 *c) {
+    Game22 *g = c->m_04;
+    View22 *v;
+    int f;
+    int k;
+    int mode;
+    Obj22 *o;
+
+    if (g->m_A90 == 1 || g->m_A90 == 4) {
+        v = g->m_A84;
+    } else {
+        v = g->m_A80;
+    }
+    f = g->m_A94;
+    k = *p;
+    if (f & 0x80) {
+        if (k) {
+            return;
+        }
+        g->m_A94 = f & ~0x80;
+    }
+    mode = g->m_A90;
+    if (mode == 5) {
+        o = func_8003B038(v, 1, c->m_00);
+        if (o) {
+            int go;
+
+            if (!(o->m_20.m_mask & c->m_00)) {
+                return;
+            }
+            go = 0;
+            switch (k) {
+            case 0xFF:
+                go = 1;
+                g->m_10 = D_800D6128;
+                break;
+            case 0xFE:
+                if (!g->m_10 || g->m_10 > 800) {
+                    int t = g->m_14;
+
+                    if (t > 100) {
+                        g->m_14 = 0;
+                        go = 1;
+                        t = 0;
+                    }
+                    {
+                        int n = t + D_800D6128;
+
+                        g->m_10 = 0;
+                        g->m_14 = n;
+                    }
+                } else {
+                    g->m_10 += D_800D6128;
+                }
+                break;
+            case 0:
+                g->m_10 = 0;
+                break;
+            }
+            if (go) {
+                func_80038E0C(o, g);
+                func_8003E5B0(g);
+            }
+        }
+    }
+    if (mode == 8) {
+        return;
+    }
+    if (mode != 0) {
+        return;
+    }
+    o = func_8003B038(v, 1, c->m_00);
+    if (o) {
+        int n;
+
+        if (!(o->m_20.m_mask & c->m_00)) {
+            return;
+        }
+        n = o->m_20.m_n;
+        if (!n) {
+            n = 0xFF;
+        }
+        if (k == n) {
+            func_800394D8(o, g);
+        }
+    }
+    func_8003E5B0(g);
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_22", func_8003DF7C);
+#endif
 
+#ifdef NON_MATCHING
+// Registers only, as func_8003DF7C (the same code with other callees): the script context and the view in swapped saved registers ($s3/$s4, 12 off).
+void func_8003E194(int *p, int x, Arg22 *c) {
+    Game22 *g = c->m_04;
+    View22 *v;
+    int f;
+    int k;
+    int mode;
+    Obj22 *o;
+
+    if (g->m_A90 == 1 || g->m_A90 == 4) {
+        v = g->m_A84;
+    } else {
+        v = g->m_A80;
+    }
+    f = g->m_A94;
+    k = *p;
+    if (f & 0x80) {
+        if (k) {
+            return;
+        }
+        g->m_A94 = f & ~0x80;
+    }
+    mode = g->m_A90;
+    if (mode == 5) {
+        o = func_8003B038(v, 1, c->m_00);
+        if (o) {
+            int go;
+
+            if (!(o->m_20.m_mask & c->m_00)) {
+                return;
+            }
+            go = 0;
+            switch (k) {
+            case 0xFF:
+                go = 1;
+                g->m_10 = D_800D6128;
+                break;
+            case 0xFE:
+                if (!g->m_10 || g->m_10 > 800) {
+                    int t = g->m_14;
+
+                    if (t > 100) {
+                        g->m_14 = 0;
+                        go = 1;
+                        t = 0;
+                    }
+                    {
+                        int n = t + D_800D6128;
+
+                        g->m_10 = 0;
+                        g->m_14 = n;
+                    }
+                } else {
+                    g->m_10 += D_800D6128;
+                }
+                break;
+            case 0:
+                g->m_10 = 0;
+                break;
+            }
+            if (go) {
+                func_80038F44(o, g);
+                func_8003E5B0(g);
+            }
+        }
+    }
+    if (mode == 8) {
+        return;
+    }
+    if (mode != 0) {
+        return;
+    }
+    o = func_8003B038(v, 1, c->m_00);
+    if (o) {
+        int n;
+
+        if (!(o->m_20.m_mask & c->m_00)) {
+            return;
+        }
+        n = o->m_20.m_n;
+        if (!n) {
+            n = 0xFF;
+        }
+        if (k == n) {
+            func_8003907C(o, g);
+        }
+    }
+    func_8003E5B0(g);
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_22", func_8003E194);
+#endif
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_22", func_8003E3AC);
+void func_8003E3AC(Game22 *g) {
+    func_8003EC90(g, 0, 0, 0);
+    g->m_3C.m_00 = 1;
+    g->m_3C.m_04 = g;
+    g->m_ABC[0].m_00 = (int)&g->m_3C;
+    func_8003EC90(g, 1, 0, func_8003DF7C);
+    func_8003EC90(g, 2, 0, func_8003E194);
+    func_8003EC90(g, 4, 0, func_8003DD8C);
+    func_8003EC90(g, 3, 0, func_8003DE84);
+    func_8003EC90(g, 5, 0, func_8003D9EC);
+    func_8003EC90(g, 6, 0, func_8003DB9C);
+    func_8003EC90(g, 21, 0, (void (*)(int *, int, Arg22 *))func_8003D9CC);
+    func_8003EC90(g, 0, 1, 0);
+    g->m_44.m_00 = 2;
+    g->m_44.m_04 = g;
+    g->m_ABC[1].m_00 = (int)&g->m_44;
+    func_8003EC90(g, 1, 1, func_8003DF7C);
+    func_8003EC90(g, 2, 1, func_8003E194);
+    func_8003EC90(g, 4, 1, func_8003DD8C);
+    func_8003EC90(g, 3, 1, func_8003DE84);
+    func_8003EC90(g, 5, 1, func_8003D9EC);
+    func_8003EC90(g, 6, 1, func_8003DB9C);
+    func_8003EC90(g, 21, 1, (void (*)(int *, int, Arg22 *))func_8003D9CC);
+    func_8003E5B0(g);
+}
 
 /* The state from the view's pairs of entries. */
 void func_8003E5B0(Game22 *g) {
@@ -523,8 +748,133 @@ void func_8003EC6C(Game22 *g, int i, int v) {
     g->m_ABC[i].m_04 = v;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_22", func_8003EC90);
+void func_8003EC90(Game22 *g, int i, int set, void (*f)(int *p, int x, Arg22 *c)) {
+    switch (i) {
+    case 0:
+        g->m_ABC[set].m_08 = (int)f;
+        g->m_ABC[set].m_44 = (int)f;
+        g->m_ABC[set].m_0C = (int)f;
+        g->m_ABC[set].m_48 = (int)f;
+        g->m_ABC[set].m_10 = (int)f;
+        g->m_ABC[set].m_4C = (int)f;
+        g->m_ABC[set].m_14 = (int)f;
+        g->m_ABC[set].m_50 = (int)f;
+        g->m_ABC[set].m_1C = (int)f;
+        g->m_ABC[set].m_58 = (int)f;
+        g->m_ABC[set].m_18 = (int)f;
+        g->m_ABC[set].m_54 = (int)f;
+        g->m_ABC[set].m_20 = (int)f;
+        g->m_ABC[set].m_5C = (int)f;
+        g->m_ABC[set].m_24 = (int)f;
+        g->m_ABC[set].m_60 = (int)f;
+        g->m_ABC[set].m_3C = (int)f;
+        g->m_ABC[set].m_78 = (int)f;
+        g->m_ABC[set].m_28 = (int)f;
+        g->m_ABC[set].m_64 = (int)f;
+        g->m_ABC[set].m_38 = (int)f;
+        g->m_ABC[set].m_74 = (int)f;
+        g->m_ABC[set].m_40 = (int)f;
+        g->m_ABC[set].m_94 = (int)f;
+        break;
+    case 21:
+        g->m_ABC[set].m_40 = (int)f;
+        g->m_ABC[set].m_94 = (int)f;
+        break;
+    case 1:
+        g->m_ABC[set].m_08 = (int)f;
+        g->m_ABC[set].m_44 = (int)f;
+        break;
+    case 2:
+        g->m_ABC[set].m_0C = (int)f;
+        g->m_ABC[set].m_48 = (int)f;
+        break;
+    case 3:
+        g->m_ABC[set].m_14 = (int)f;
+        g->m_ABC[set].m_50 = (int)f;
+        break;
+    case 4:
+        g->m_ABC[set].m_10 = (int)f;
+        g->m_ABC[set].m_4C = (int)f;
+        break;
+    case 5:
+        g->m_ABC[set].m_1C = (int)f;
+        g->m_ABC[set].m_58 = (int)f;
+        break;
+    case 6:
+        g->m_ABC[set].m_18 = (int)f;
+        g->m_ABC[set].m_54 = (int)f;
+        break;
+    case 7:
+        g->m_ABC[set].m_20 = (int)f;
+        g->m_ABC[set].m_5C = (int)f;
+        break;
+    case 8:
+        g->m_ABC[set].m_24 = (int)f;
+        g->m_ABC[set].m_60 = (int)f;
+        break;
+    case 10:
+        g->m_ABC[set].m_28 = (int)f;
+        g->m_ABC[set].m_64 = (int)f;
+        break;
+    case 11:
+        g->m_ABC[set].m_30 = (int)f;
+        g->m_ABC[set].m_6C = (int)f;
+        break;
+    case 12:
+        g->m_ABC[set].m_38 = (int)f;
+        g->m_ABC[set].m_74 = (int)f;
+        break;
+    case 9:
+    case 13:
+        g->m_ABC[set].m_3C = (int)f;
+        g->m_ABC[set].m_78 = (int)f;
+        break;
+    }
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_22", func_8003F0F8);
+int func_8003F0F8(Game22 *g, int kind, int set) {
+    int r = 0;
+
+    switch (kind) {
+    case 1:
+        r = g->m_ABC[set].m_08;
+        break;
+    case 2:
+        r = g->m_ABC[set].m_0C;
+        break;
+    case 3:
+        r = g->m_ABC[set].m_14;
+        break;
+    case 4:
+        r = g->m_ABC[set].m_10;
+        break;
+    case 5:
+        r = g->m_ABC[set].m_1C;
+        break;
+    case 6:
+        r = g->m_ABC[set].m_18;
+        break;
+    case 7:
+        r = g->m_ABC[set].m_20;
+        break;
+    case 8:
+        r = g->m_ABC[set].m_24;
+        break;
+    case 10:
+        r = g->m_ABC[set].m_28;
+        break;
+    case 11:
+        r = g->m_ABC[set].m_30;
+        break;
+    case 12:
+        r = g->m_ABC[set].m_38;
+        break;
+    case 9:
+    case 13:
+        r = g->m_ABC[set].m_3C;
+        break;
+    }
+    return r;
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_22", func_8003F314);

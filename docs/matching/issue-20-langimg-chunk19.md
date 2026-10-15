@@ -13,7 +13,7 @@ kind, owner, name and values):
 
 One file, `src/langimg/chunk_19.cpp`, 0x8003762C-0x800394D8.
 
-23 functions: 19 match, none parked, 4 are still asm.
+23 functions: 19 match, 1 is parked, 3 are still asm.
 
 ## The settings
 
@@ -46,11 +46,22 @@ globals.
 - `func_8003899C`: new: the active entries counted.
 - `func_80038504`: new: a slider's value written into its text and its sequence started at the value's place; the divisor written `(hi + 1 - lo)`, the suffix's first byte signed.
 
+## Third pass
+
+- `func_8003762C` (new, parked): a menu's items by kind (a colour, a
+  text, a cursor through chunk_18's `func_80037318`, a sub-menu
+  recursively), the cases in the original's order (1, 2, 3, 5). The
+  original keeps 1 in a saved register for the kind's compare too (with
+  3, 5 and 0xFF0000), so its third argument goes on the stack; GCC
+  compares with 1 in `$t0` and keeps the argument in `$s5` (34 off). An
+  `if` chain instead of the `switch` was further off.
+
 ## The functions
 
 | Function | State | Notes |
 |---|---|---|
-| `func_8003762C`, `func_8003781C` | asm | 124 and 288 instructions |
+| `func_8003762C` | parked | a menu's items by kind: a constant |
+| `func_8003781C` | asm | 288 instructions |
 | `func_80037C80`, `func_80037CF8` | match | an entry's value |
 | `func_80037D58` | matches | an entry's value set |
 | `func_80037DC8` | matches | a named list's entry |
