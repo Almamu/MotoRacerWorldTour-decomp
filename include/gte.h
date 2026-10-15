@@ -60,5 +60,10 @@
     __asm__ volatile("mfc2 %0, $25\n\tmfc2 %1, $26\n\tmfc2 %2, $27" : "=r"(x), "=r"(y), "=r"(z))
 // The light matrix times V0, plus the translation (mvmva 1, 1, 0, 1, 0)
 #define GTE_MVMVA_LV0TR() __asm__ volatile("nop\n\tnop\n\t.word 0x4A4A2012")
+// IR1-IR3 squared into MAC1-MAC3 (sqr 0)
+#define GTE_SQR0() __asm__ volatile("nop\n\tnop\n\t.word 0x4AA00428")
+// The leading zeros (or ones) of a value: LZCS in, two instructions, LZCR out
+#define GTE_LZC(r, v) \
+    __asm__ volatile("mtc2 %1, $30\n\tnop\n\tnop\n\tmfc2 %0, $31" : "=r"(r) : "r"(v))
 
 #endif

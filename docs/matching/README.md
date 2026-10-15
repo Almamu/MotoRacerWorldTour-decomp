@@ -72,3 +72,4 @@ issue it worked on, and add it below.
 | [issue-33-langimg-chunk32.md](issue-33-langimg-chunk32.md) | The game's chunk_32: a race's sequence of steps, its bikes' paths and its display; the result set after the early return, a loop entered at its test, flags cleared one by one |
 | [issue-66-langimg-chunk65.md](issue-66-langimg-chunk65.md) | The game's chunk_65: a renderer's subdivision, clipping and projection; `$t9` as a register variable, which factor carries the shift, an edge loop counted down |
 | [issue-16-langimg-chunk15.md](issue-16-langimg-chunk15.md) | The game's chunk_15: more of the bike; `MULSHIFT`'s `mult` after a `mfhi`, a stored field read back, an empty case that shapes the switch |
+| [issue-63-langimg-chunk62.md](issue-63-langimg-chunk62.md) | The game's chunk_62: a tree of nodes, animation channels and a solver; GTE functions with macros, add into the locals then store, a vector set through an inline function |
