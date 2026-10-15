@@ -92,7 +92,7 @@ settings
 | `src/langimg` chunk_23 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=D_800CABB7` |
 | `src/langimg` chunk_45 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (eleven) |
 | `src/langimg` chunk_66 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (five) |
-| `src/langimg` chunk_14, chunk_15, chunk_17, chunk_19, chunk_20, chunk_21, chunk_22, chunk_24, chunk_25, chunk_26, chunk_27, chunk_28, chunk_29, chunk_31, chunk_32, chunk_33, chunk_34, chunk_35, chunk_36, chunk_37, chunk_38, chunk_39, chunk_40, chunk_41, chunk_44, chunk_46, chunk_47, chunk_48, chunk_49, chunk_50, chunk_51, chunk_52, chunk_55, chunk_56, chunk_57, chunk_58, chunk_59, chunk_60, chunk_61, chunk_62, chunk_63, chunk_64, chunk_65, chunk_67, chunk_68, chunk_69, chunk_70, chunk_71, chunk_72, chunk_73, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
+| `src/langimg` chunk_14, chunk_15, chunk_17, chunk_19, chunk_20, chunk_21, chunk_22, chunk_24, chunk_25, chunk_26, chunk_27, chunk_28, chunk_29, chunk_31, chunk_32, chunk_33, chunk_34, chunk_35, chunk_36, chunk_37, chunk_38, chunk_39, chunk_40, chunk_41, chunk_43, chunk_44, chunk_46, chunk_47, chunk_48, chunk_49, chunk_50, chunk_51, chunk_52, chunk_55, chunk_56, chunk_57, chunk_58, chunk_59, chunk_60, chunk_61, chunk_62, chunk_63, chunk_64, chunk_65, chunk_67, chunk_68, chunk_69, chunk_70, chunk_71, chunk_72, chunk_73, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_06 to chunk_12 (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_02b (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `SCES_030.37` (`src/sces`) | GCC 2.91.66 | 0 | `-fsigned-char` | `--expand-div` |
@@ -288,6 +288,11 @@ globals), a script that tries every order is quicker than guessing:
   `func_80058FCC` tests a state for 2 first, then below 3: `case 2:` with
   its own copy of the call that `case 3: case 4:` make gave it; with the
   three cases sharing one call GCC tested 1 first.
+- **What the join computes first fills the delay slots.** `reorg` copies
+  the first instructions of a join into the delay slots of the branches
+  that jump to it. chunk_43's `func_80068038` computes `len / 2` there
+  before loading a field: `if (len / 2 > m->m_278)` gave it; with the
+  field on the left, the delay slots stayed `nop`s.
 - **The `else` placed last.** chunk_20's `func_8003B248` lays the call
   for kind 5 out after both searches: `if (kind != 5) { ... } else { r =
   func_8003B3C4(s, name); }` gave it; `if (kind == 5)` first put the call

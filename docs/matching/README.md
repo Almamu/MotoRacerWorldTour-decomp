@@ -80,3 +80,4 @@ issue it worked on, and add it below.
 | [issue-64-langimg-chunk63.md](issue-64-langimg-chunk63.md) | The game's chunk_63: an animation's bounds; `new[]` of a class with an empty constructor, `delete` tested, the box through a pointer |
 | [issue-35-langimg-chunk34.md](issue-35-langimg-chunk34.md) | The game's chunk_34: the race's steps, laps and gates; the step re-read for its store, one result and one exit, a post-increment tested as a byte |
 | [issue-36-langimg-chunk35.md](issue-36-langimg-chunk35.md) | The game's chunk_35: the race's restart, collisions and camera; a case with its own call, variables reused across loops |
+| [issue-44-langimg-chunk43.md](issue-44-langimg-chunk43.md) | The game's chunk_43: a bike's model and its motion; the division first in the compare, one copy after two branches |
