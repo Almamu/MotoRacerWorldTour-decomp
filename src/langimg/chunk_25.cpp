@@ -97,12 +97,12 @@ extern char D_800CBC94[];
 extern u8 D_800D60E8[];
 extern Time25 D_800D6124;
 void __builtin_delete(void *p);
-void func_8003FC94(Keep25 *k);
+Keep25 *func_8003FC94(Keep25 *k);
 void func_8003FCF8(Keep25 *k);
-void func_8003FD2C(Keep25 *k);
-void func_8003FD4C(Keep25 *k, int a);
+int func_8003FD2C(Keep25 *k);
+int func_8003FD4C(Keep25 *k, int a);
 void func_8003FD54(Keep25 *k);
-void func_8001687C(Keep25 *k);
+void func_8001687C(void);
 void func_80017730(int a);
 int func_80078FC4(char *t, int a);
 void func_80078CCC(int f, int a, char *fmt, va_list ap);
@@ -205,21 +205,22 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_25", func_80044A14);
 #endif
 
 #ifdef NON_MATCHING
-// Registers or a loop's shape (the permuter's to find)
+// Registers (33 off): the loop's shape is the original's (entered at its test), but GCC copies the list and the result to other registers first
 /* The first entry from i on that's on (m_e) and set (m_00). */
 int func_80044AFC(List25 *l, int i) {
     int n = l->m_80;
     int r = 0;
 
     if (n > 0 && i >= 0 && i < n) {
-        for (; i < n; i++) {
-            if (l->m_08[i].m_10.m_e && l->m_08[i].m_00) {
-                l->m_88 = i;
-                r = 1;
-                break;
+        while (!l->m_08[i].m_10.m_e || !l->m_08[i].m_00) {
+            if (++i >= n) {
+                goto done;
             }
         }
+        l->m_88 = i;
+        r = 1;
     }
+done:
     return r;
 }
 #else
@@ -237,31 +238,28 @@ int func_80044B88(List25 *l) {
     return r;
 }
 
-#ifdef NON_MATCHING
-// Registers or a loop's shape (the permuter's to find)
-/* The entry for the owner's current, from the last. */
 int func_80044BF8(List25 *l) {
     int k = l->m_8C->m_A0->m_A80;
     int i = -1;
 
     if (k) {
-        i = 5;
-        if (l->m_08[5].m_00 != k) {
-            Elem25 *e = &l->m_08[4];
+        Elem25 *e;
 
-            do {
-                if (--i < 0) {
-                    break;
+        i = 5;
+        e = &l->m_08[4];
+        if (l->m_08[5].m_00 != k) {
+        next:
+            if (--i >= 0) {
+                if (e->m_00 != k) {
+                    e--;
+                    goto next;
                 }
-            } while (e--->m_00 != k);
+            }
         }
     }
     l->m_84 = i;
     return i;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_25", func_80044BF8);
-#endif
 
 Elem25 *func_80044C54(List25 *l) {
     if (l->m_84 != -1) {
@@ -270,25 +268,22 @@ Elem25 *func_80044C54(List25 *l) {
     return 0;
 }
 
-#ifdef NON_MATCHING
-// Registers or a loop's shape (the permuter's to find)
 Elem25 *func_80044C80(List25 *l, int key) {
-    Elem25 *e = l->m_08;
+    Elem25 *e;
     int i;
 
-    for (i = 0; i < 6; i++) {
+    for (i = 0, e = l->m_08; i < 6; i++) {
         int k2 = e->m_10.m_key;
 
         e++;
         if (k2 == key) {
-            return e - 1;
+            goto found;
         }
     }
     return 0;
+found:
+    return e - 1;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_25", func_80044C80);
-#endif
 
 int func_80044CBC(void) {
     return 1;
@@ -310,16 +305,11 @@ Keep25 *func_80044CC4(Keep25 *k) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_25", func_80044CC4);
 #endif
 
-#ifdef NON_MATCHING
-// Registers or a loop's shape (the permuter's to find)
 void func_80044D0C(Keep25 *k, int a) {
     Clear25();
-    func_8001687C(k);
+    func_8001687C();
     func_8003FD4C(k, a);
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_25", func_80044D0C);
-#endif
 
 void func_80044D70(Keep25 *k) {
     Clear25();
@@ -427,8 +417,6 @@ Item25 *func_80045154(Item25 *t) {
     return t;
 }
 
-#ifdef NON_MATCHING
-// One instruction: the list's store adds the index to the array's address the other way round
 /* The first free item of eight, set up: its values by its kind follow. */
 Item25 *func_80045168(Item25 *p, int a, int b, int kind, ...) {
     Item25 *t = 0;
@@ -480,7 +468,7 @@ Item25 *func_80045168(Item25 *p, int a, int b, int kind, ...) {
             more:
                 x = va_arg(ap, int);
                 if (x) {
-                    q[t->m_2C++] = x;
+                    *(int *)((char *)q + (t->m_2C++ << 2)) = x;
                     goto more;
                 }
             }
@@ -489,6 +477,6 @@ Item25 *func_80045168(Item25 *p, int a, int b, int kind, ...) {
     }
     return t;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_25", func_80045168);
-#endif
+
+// The word after its jump table, the end of this file's .rodata
+extern "C" const int D_800B74B0 __attribute__((section(".rodata"))) = 0;

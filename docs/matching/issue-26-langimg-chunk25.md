@@ -7,7 +7,7 @@ its calls; an object holding eight 0x50-byte items, claimed and set up
 from varargs by kind; and their constructors and destructor. One file,
 `src/langimg/chunk_25.cpp`, 0x8004316C-0x800452BC.
 
-25 functions: 16 match, 8 are parked, 1 is still asm.
+25 functions: 20 match, 4 are parked, 1 is still asm.
 
 ## The settings
 
@@ -27,6 +27,13 @@ globals.
   after the array's address taken into a local (the original hoists it).
 - **An empty `case 0`** makes the item's kinds a jump table from 0.
 
+## Second pass
+
+- `func_80045168`: the list's index as a byte offset (`(char *)q + (n << 2)`); the word after its jump table, which its `.s` carried, spelled out in `.rodata` (`D_800B74B0`).
+- `func_80044C80`: the found entry returned out of line (`goto found`), the counter set before the pointer.
+- `func_80044BF8`: the search with its test at the top (a `goto`), the pointer set right after the count.
+- `func_80044D0C`: `func_8001687C` declared as defined, without arguments (passing `k` kept it in another register).
+
 ## The functions
 
 | Function | State | Notes |
@@ -34,13 +41,14 @@ globals.
 | `func_8004316C` | asm | 1551 instructions |
 | `func_800449A8` | matches | the list reset |
 | `func_80044A14` | parked | an entry added: its flags' stores (the permuter's best is 170) |
-| `func_80044AFC`, `func_80044BF8`, `func_80044C80` | parked | entries searched: loop shapes and registers |
+| `func_80044AFC` | parked | entries searched: registers (the loop's shape now the original's) |
+| `func_80044BF8`, `func_80044C80` | match | entries searched |
 | `func_80044B88`, `func_80044C54` | match | the next entry, the current one |
 | `func_80044CBC`, `func_80044F34` | match | return 1 |
 | `func_80044CC4` | parked | the class's constructor: `this` returned from its register early (a C++ constructor, likely) |
-| `func_80044D0C` | parked | the object and its argument swap `$s0` and `$s1` |
+| `func_80044D0C` | matches | the globals cleared, then the base's calls |
 | `func_80044D70` to `func_80044ED8` | match | the five globals cleared or set back, around the base's calls |
 | `func_80044F3C`, `func_80044F9C`, `func_80044FC8` | match | a message formatted through a `va_list` |
 | `func_80044FE8`, `func_8004506C`, `func_80045154` | match | the items' constructor and destructor, an item's |
 | `func_800450C0` | parked | the timer's tick and the frame's time: registers |
-| `func_80045168` | parked | an item claimed and set up from varargs: one `addu`'s operands |
+| `func_80045168` | matches | an item claimed and set up from varargs |

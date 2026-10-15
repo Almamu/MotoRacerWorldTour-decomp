@@ -6,7 +6,7 @@ a sequence of objects and their linked entries, and the 2D drawing that
 `func_80016E34` and the item lists use. One file, `src/langimg/chunk_03.cpp`,
 0x800177E8-0x8001983C.
 
-33 functions: 29 match, 3 are parked, 1 is still asm (`func_80018AEC`, the
+33 functions: 30 match, 2 are parked, 1 is still asm.
 text drawer).
 
 ## The settings
@@ -48,6 +48,10 @@ passes `$a2` and `$a3` on untouched; its callee, `func_800A6100`, is a
 case-folded `strncmp` that uses `$a2` as its length. So `Equals` is
 `(const char *, int n, int)`, renamed `Equals__5CNamePCcii`.
 
+## Second pass
+
+- `func_80019578`: chunk_03 built with `-fmove-all-movables` (the constants -0xF01 and 2 hoisted, as the original's), and the linked entries' loop as the original has it: only the list's first entry tested, then the rest walked (its branch goes back to the `m_next` load).
+
 ## The functions
 
 | Function | State | Notes |
@@ -70,7 +74,7 @@ case-folded `strncmp` that uses `$a2` as its length. So `Equals` is
 | `func_80018AEC` | asm | the text drawer, 401 instructions; not written yet |
 | `func_80019114` | parked | a prim's 2D item: scheduling of two global stores and branch layout |
 | `func_800194E4` | matches | a 2D object's draw: the page tested twice, the prim read again |
-| `func_80019578` | parked | a sequence started: registers only (15 off) |
+| `func_80019578` | matches | a sequence started |
 
 - **Subclasses without names.** The three classes after `Cobjet` add only a
   destructor (their vtables, `D_800C4948`, `D_800C4958`, `D_800C4968`,

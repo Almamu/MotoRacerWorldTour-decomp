@@ -97,6 +97,12 @@ void func_8003907C(Obj22 *o, Game22 *g);
 void func_8003DD8C(int *p, int x, Arg22 *c);
 void func_8003DE84(int *p, int x, Arg22 *c);
 void func_8003E5B0(Game22 *g);
+void func_80038BBC(Obj22 *o, Game22 *g);
+void func_8003CDEC(Game22 *g);
+void func_8003D9EC(int *p, int x, Arg22 *c);
+void func_80038CE4(Obj22 *o, Game22 *g);
+void func_8003D334(Game22 *g, Obj22 *o);
+void func_8003DB9C(int *p, int x, Arg22 *c);
 }
 
 int func_8003D60C(Game22 *g) {
@@ -253,9 +259,143 @@ void func_8003D9CC(Game22 *g, int *sp, int *p) {
     D_800C4D98[i - 1] = 0;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_22", func_8003D9EC);
+/* Once per player (D_800C4D98): with the key 0xFF in mode 5, the view's
+ * three entries' letters stepped up; in mode 0, the entries whose number
+ * is the key started. */
+#ifdef NON_MATCHING
+// Registers: the context and the key in swapped saved registers ($s3/$s2), and the table's address formed in both of the view's branches (47 off; right in shape).
+void func_8003D9EC(int *p, int x, Arg22 *c) {
+    Game22 *g = c->m_04;
+    View22 *v;
+    int i;
+    int f;
+    int k;
 
+    if (g->m_A90 == 1 || g->m_A90 == 4) {
+        v = g->m_A84;
+    } else {
+        v = g->m_A80;
+    }
+    if (D_800C4D98[c->m_00 - 1]) {
+        return;
+    }
+    i = 0;
+    f = g->m_A94;
+    k = *p;
+    if (f & 0x80) {
+        if (k) {
+            return;
+        }
+        g->m_A94 = f & ~0x80;
+    }
+    if (g->m_A90 == 5 && k == 0xFF) {
+        for (; i < 3; i++) {
+            Obj22 *o = func_8003B038(v, i, c->m_00);
+
+            if (o) {
+                if (!(o->m_20.m_mask & c->m_00)) {
+                    return;
+                }
+                func_80038BBC(o, g);
+            }
+        }
+    } else {
+        if (g->m_A90) {
+            return;
+        }
+        for (i = 0; i < 3; i++) {
+            Obj22 *o = func_8003B038(v, i, c->m_00);
+
+            if (o) {
+                if (!(o->m_20.m_mask & c->m_00)) {
+                    return;
+                }
+                if (k == o->m_20.m_n) {
+                    func_8003CDEC(g);
+                }
+            }
+        }
+    }
+    func_8003E5B0(g);
+    D_800C4D98[c->m_00 - 1] = 1;
+}
+#else
+INCLUDE_ASM("asm/langimg/nonmatchings/chunk_22", func_8003D9EC);
+#endif
+
+/* As func_8003D9EC, unless the flag 0x200 is set: the letters stepped
+ * down, or func_8003D334 for each entry and again for those whose number
+ * (0xFE for 0xFF) is the key. */
+#ifdef NON_MATCHING
+// The global table's address: the original forms it with a separate lui/addiu into $s7 (an unsplit la, its delay slot left empty); split addresses here put the lui in the delay slot (97 off, right in shape).
+void func_8003DB9C(int *p, int x, Arg22 *c) {
+    Game22 *g = c->m_04;
+    View22 *v;
+    int i;
+    int f;
+    int k;
+
+    if (g->m_A90 == 1 || g->m_A90 == 4) {
+        v = g->m_A84;
+    } else {
+        v = g->m_A80;
+    }
+    i = 0;
+    f = g->m_A94;
+    k = *p;
+    if (f & 0x200) {
+        return;
+    }
+    if (D_800C4D98[c->m_00 - 1]) {
+        return;
+    }
+    if (f & 0x80) {
+        if (k) {
+            return;
+        }
+        g->m_A94 = f & ~0x80;
+    }
+    if (g->m_A90 == 5 && k == 0xFF) {
+        for (; i < 3; i++) {
+            Obj22 *o = func_8003B038(v, i, c->m_00);
+
+            if (o) {
+                if (!(o->m_20.m_mask & c->m_00)) {
+                    return;
+                }
+                func_80038CE4(o, g);
+            }
+        }
+    } else {
+        if (g->m_A90) {
+            return;
+        }
+        for (i = 0; i < 3; i++) {
+            Obj22 *o = func_8003B038(v, i, c->m_00);
+
+            if (o) {
+                int n;
+
+                if (!(o->m_20.m_mask & c->m_00)) {
+                    return;
+                }
+                func_8003D334(g, o);
+                n = o->m_20.m_n;
+                if (n == 0xFE) {
+                    n = 0xFF;
+                }
+                if (k == n) {
+                    func_8003D334(g, o);
+                }
+            }
+        }
+    }
+    func_8003E5B0(g);
+    D_800C4D98[c->m_00 - 1] = 1;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_22", func_8003DB9C);
+#endif
 
 void func_8003DD8C(int *p, int x, Arg22 *c) {
     Game22 *g = c->m_04;
@@ -351,8 +491,6 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_22", func_8003E194);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_22", func_8003E3AC);
 
-#ifdef NON_MATCHING
-// The original keeps the constants 1 and 2 it stores in saved registers too (six in all)
 /* The state from the view's pairs of entries. */
 void func_8003E5B0(Game22 *g) {
     View22 *v = g->m_A80;
@@ -378,9 +516,6 @@ void func_8003E5B0(Game22 *g) {
         }
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_22", func_8003E5B0);
-#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_22", func_8003E6FC);
 

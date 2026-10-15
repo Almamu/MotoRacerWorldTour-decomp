@@ -21,7 +21,7 @@ executables `OK` counts.
 
 1. [Tools](#tools)
 2. [Compilers and flags](#compilers-and-flags): find the compiler first,
-   per library; unsplit addresses; small globals; divisions; signed char
+   per library; unsplit addresses; loop constants (`-fmove-all-movables`); small globals; divisions; signed char
 3. [Source shape](#source-shape): statement order, result variables,
    branches, loops, temporaries, pointers, struct copies, types
 4. [Calls and declarations](#calls-and-declarations)
@@ -99,6 +99,23 @@ settings
 
 All at `-O2`, C++ with `-fno-exceptions -fno-rtti`, through maspsx
 (`--aspsx-version=2.79`) and `tools/maspsx_plus.py`.
+
+### Loop constants in saved registers (`-fmove-all-movables`)
+
+When the original keeps constants (5, -1, 0x400000, /1000's multiplier)
+in saved registers through a loop with calls, and GCC loads them where
+they're used, the chunk was built with `-fmove-all-movables`: loop.c then
+hoists every invariant, not only the ones it judges worth a register. It
+is per chunk (the Makefile's `<chunk>_CFLAGS`), and with it chunk_03,
+chunk_04, chunk_05, chunk_09, chunk_19, chunk_20 and chunk_22 matched
+functions that had been parked for this (chunk_22's `func_8003E5B0` with no
+change to its C), every function already matched in those chunks still
+matching. Locals written to hold such constants as a workaround (`int one
+= 1;`) go back to literals. A sweep of a chunk's parked functions with and
+without the flag (`tools/try_func.py NAME -D NON_MATCHING
+--cflags=-fmove-all-movables`) shows which chunks want it. chunk_02,
+chunk_06 and chunk_24 have it too (their parked functions got closer,
+nothing matched yet).
 
 ### Unsplit addresses (`-mno-split-addresses`)
 
@@ -762,6 +779,18 @@ globals), a script that tries every order is quicker than guessing:
   with `func_80099898` declared `void`, as `include/langimg/cobjet.h` has
   it, not returning a pointer (the permuter's find). Check the callee's
   last instructions before trusting either.
+- **Declare what a callee takes.** As with return types, a prototype
+  with the wrong number of arguments changes the caller: chunk_25 passed
+  `k` to `func_8001687C`, which takes nothing (chunk_02b's definition),
+  and kept `k` in another register for it; declared as defined,
+  `func_80044D0C` matched. And when a library function's real prototype
+  returns something the original's didn't (`memcpy`), a second declaration
+  returning `void` with an asm label (`void memcpy20(...)
+  asm("memcpy");`) calls the same symbol (chunk_20's `func_8003B51C`).
+- **An index as a byte offset.** An `addu` whose operands come out the
+  other way round (the array's address second) is an index scaled by hand:
+  `*(int *)((char *)q + (n << 2))` (chunk_25's `func_80045168`, chunk_04's
+  `func_8001983C`).
 - **Two locals in one stack slot: a union.** When the original writes a
   value of one type over a slot it just used for another (a vector, then
   a short vector read back), declare the two as a union, before the

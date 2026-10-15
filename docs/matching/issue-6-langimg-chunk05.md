@@ -5,7 +5,7 @@ ring of entries by distance, the racers' setup. One file,
 `src/langimg/chunk_05.cpp`, 0x8001B778-0x8001D760, built as chunk_04
 (GCC 2.91.66, `-G8`, split addresses, divisions without checks).
 
-14 functions: 8 match, 3 are parked, 3 are still asm (after the pass
+14 functions: 9 match, 2 are parked, 3 are still asm.
 over the large functions).
 
 The race types moved to `include/langimg/race.h`: the race's five
@@ -23,7 +23,7 @@ ring's first), a racer and its slot, a camera's state.
 | `func_8001C8C0` | parked | a position on the track, between two points, across a lane: a first draft (the track's sections, points and lanes are in `race.h`) |
 | `func_8001CBA0` | matches | the highest kind index along a chain |
 | `func_8001CC14` | parked | the ring by distance and its biggest gap: registers (111 off) |
-| `func_8001CF34` | parked | places by distance: the loop pass's pointers |
+| `func_8001CF34` | matches | places by distance |
 | `func_8001D018` | matches | the difference along the track, within half a lap |
 | `func_8001D07C`, `func_8001D108`, `func_8001D180`, `func_8001D1C4` | match | a camera's and a racer's setup, a destructor, a racer's slot |
 | `func_8001D23C` | asm | 330 instructions |
@@ -47,3 +47,7 @@ ring's first), a racer and its slot, a camera's state.
 - **The struct's size is in the stride.** The entries' records are 0x568
   bytes apart (`addiu $s0, $s0, 0x568`); a field added without its tail
   showed up as a stride of 0x538.
+
+## Second pass
+
+- `func_8001CF34`: chunk_05 built with `-fmove-all-movables`, and the places' loop counting with `j`.

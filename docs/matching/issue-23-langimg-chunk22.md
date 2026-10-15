@@ -17,7 +17,7 @@ entries.
 
 One file, `src/langimg/chunk_22.cpp`, 0x8003D60C-0x8003F6B8.
 
-23 functions: 13 match, 1 is parked, 9 are still asm.
+23 functions: 14 match, 2 are parked, 7 are still asm.
 
 ## The settings
 
@@ -46,6 +46,10 @@ globals.
   and an entry's number (10 bits) and mask (16 bits, signed, from bit
   12) are bitfields.
 
+## Second pass
+
+- `func_8003E5B0`: chunk_22 built with `-fmove-all-movables`, with no source change (its six constants hoisted).
+
 ## The functions
 
 | Function | State | Notes |
@@ -60,7 +64,7 @@ globals.
 | `func_8003D9EC`, `func_8003DB9C` | asm | 108 and 124 instructions |
 | `func_8003DD8C`, `func_8003DE84` | match | a key's handlers |
 | `func_8003DF7C`, `func_8003E194`, `func_8003E3AC` | asm | 129 to 134 instructions |
-| `func_8003E5B0` | parked | the state from the pairs: the stored constants in saved registers |
+| `func_8003E5B0` | matches | the state from the pairs |
 | `func_8003E6FC` | asm | 357 instructions |
 | `func_8003EC6C` | matches | a slot's value |
 | `func_8003EC90`, `func_8003F0F8`, `func_8003F314` | asm | 149 to 305 instructions |
