@@ -76,6 +76,35 @@ struct Sys52 {
     Vt52 *m_68;
 };
 extern Sys52 *D_800C886C[];
+// A drawable: its vtable at 0x14
+struct VtE52 {
+    short m_delta;
+    short m_index;
+    void *(*m_func)(void *self);
+};
+struct Drw52 {
+    u8 m_00[0x14];
+    VtE52 *m_14;
+};
+// The display with its two buffers' environments
+struct Disp52 {
+    u8 m_00[0x60];
+    Drw52 *m_60; // what's drawn
+    u8 m_64[8];
+    DRAWENV m_6C[2];
+    DISPENV m_124[2];
+    int m_14C; // the frames to wait
+    int m_150; // the frame's length
+    int m_154; // the last VSync's
+    int m_158;
+    u8 m_15C[0x14];
+    int m_170;             // the largest time
+    int (*m_174)(void *a); // a callback before drawing
+    void *m_178;
+    int m_17C;
+};
+extern u8 *D_800C8C6C, *D_800C8C70; // the primitive buffer's start and end this frame
+int func_8007968C(Disp52 *d);
 extern s8 D_800B8868[];
 void *malloc(int n);
 int func_800895A0(u8 *p);
@@ -253,7 +282,49 @@ void func_80079648(void *o, Cb52 cb, int arg) {
     ExitCriticalSection();
 }
 
+#ifdef NON_MATCHING
+// The primitives' size: the original loads the buffer's end (D_800C8C70) before its start, its lui in the branch's delay slot; GCC loads the start first and leaves a nop (32 off, all of it after that point).
+int func_8007968C(Disp52 *d) {
+    int ok;
+    int n;
+    Drw52 *o;
+
+    DrawSync(0);
+    ok = 1;
+    if (d->m_17C) {
+        n = d->m_14C == ok ? 0 : d->m_14C;
+    } else {
+        n = 0;
+    }
+    n = VSync(n);
+    d->m_154 = n;
+    d->m_150 = d->m_14C * 312;
+    if (d->m_150 < n) {
+        d->m_150 = (n + 311) / 312 * 312;
+    }
+    d->m_158 = D_800B886C[0];
+    PutDrawEnv(&d->m_6C[D_800B8868[0]]);
+    PutDispEnv(&d->m_124[D_800B8868[0]]);
+    o = d->m_60;
+    if (d->m_174) {
+        ok = d->m_174(d->m_178);
+    }
+    if (ok && o) {
+        int t = D_800C8C70 - D_800C8C6C;
+        VtE52 *v;
+
+        if (d->m_170 < t) {
+            d->m_170 = t;
+        }
+        v = &o->m_14[7];
+        DrawOTag((u_long *)v->m_func((u8 *)o + v->m_delta));
+    }
+    D_800B8868[0] ^= 1;
+    return 1;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_52", func_8007968C);
+#endif
 
 #ifdef NON_MATCHING
 // The system pointer's %hi: the original loads it each time round, ours keeps it in $s3
