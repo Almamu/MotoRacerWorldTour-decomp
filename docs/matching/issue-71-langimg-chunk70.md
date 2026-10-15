@@ -7,7 +7,7 @@ settings' names and values, and the page's digits. One file,
 `src/langimg/chunk_70.cpp`, 0x8009D0E4-0x8009F180. It's a sibling of
 chunk_71 (the same callees and menu fields).
 
-39 functions: 34 match, 4 are parked, 1 is still asm.
+39 functions: 35 match, 4 are parked, none is still asm.
 
 ## The settings
 
@@ -49,7 +49,7 @@ globals (`D_800C935C`, `D_800C9360`, `D_800C9C04`, `D_800CBE98`).
 | `func_8009D410` | parked | the settings' 15 names and values: each `memset`'s size in the call's delay slot (19 off) |
 | `func_8009D7A0` to `func_8009D804` | match | a label, the demo started and stopped |
 | `func_8009D830` | matches | the demo's playback |
-| `func_8009D9CC` | asm | the page's state machine (284 instructions, two jump tables) |
+| `func_8009D9CC` | match | the card load task: its state, then the card's result |
 | `func_8009DDA8` to `func_8009DF90` | match | a save's data in and out, the page's frame |
 | `func_8009E01C` to `func_8009E360` | match | the buffer, buttons' states and flags, the gauge's call |
 | `func_8009E3C0` | parked | the gauge: a frame, a tick and the fill, with hand-linked packets (160 off) |
@@ -83,3 +83,12 @@ own register; that part isn't solved.
     the four cases on one label the code was the same, but the jump table
     in `.rodata` sent cases 4, 8 and 11 to the first test, which only the
     full build showed (`tools/try_func.py` compares the text).
+
+## Group C, more functions
+
+- `func_8009D9CC` (the card load task, `func_8009EAEC`'s twin) matches.
+  The first switch has an empty `case 0` (its table starts at 0); the
+  result's `< 2` is unsigned and written as the reset's test (`if
+  ((u32)o->m_08 >= 2 && o->m_08 != 0x12) o->m_00 = 0; else ...`), so the
+  work falls after it; and `func_800A42EC` returns `int`, which moved the
+  retry counter's increment from `$v0` to `$v1`.

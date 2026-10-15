@@ -9,7 +9,7 @@ its strings emptied, the riders' count, the laps, each row's number,
 times and markers. One file, `src/langimg/chunk_56.cpp`,
 0x80081270-0x800831BC.
 
-34 functions: 29 match, 3 are parked, 2 are still asm.
+34 functions: 29 match, 4 are parked, 1 is still asm.
 
 ## The settings
 
@@ -60,7 +60,7 @@ small globals.
 | `func_8008142C`, `func_8008145C` | match | the map's constructor (a `memset`) and destructor (ten arrays freed) |
 | `func_800815B0` to `func_800816B4` | match | the object's constructor, reset, release and destructor |
 | `func_800816F8` | matches | the map's parts allocated or freed by kind |
-| `func_80081A78` | asm | 276 instructions |
+| `func_80081A78` | parked | a camera with four textured quads: a temporary's stack slot (108 off) |
 | `func_80081EC8` | matches | two arrays freed |
 | `func_80081F28` | matches | the camera at a position, unturned |
 | `func_80081FE0` | asm | 291 instructions |
@@ -93,3 +93,15 @@ small globals.
   match that way, no `strcpy` needed.
 - **A table indexed by bytes** (chunk_37's case): `func_8008267C` reads
   `*(int *)((u8 *)D_800C89F8 + (i << 2) + 8)`.
+
+## Group C, more functions
+
+- `func_80081A78` (a camera at a point with nine vertices and four quads
+  of the texture at `D_800CC0C4`, each split in two both ways): written
+  and parked, 108 off. The camera's setup is `func_80081F28`'s body as an
+  inline; `Quad56` (0x1C bytes, returned by value from `func_8008D05C`)
+  needs `int`s in front to be 4-aligned, or the copies are
+  `lwl`/`lwr`. Left: the original puts the call's returned temporary at
+  0x20 and the colour at 0x40, where ours has the colour first, which
+  moves every copy's offsets; a named temporary adds copies, and the
+  colour in an inner block or an inline doesn't move it.

@@ -8,7 +8,7 @@ sound settings applied, groups of named entries, an LZ unpacker and the
 open of `\MR3.DAT`. One file, `src/langimg/chunk_71.cpp`,
 0x8009F180-0x800A1110.
 
-57 functions: 50 match, 5 are parked, 2 are still asm (`func_8009F180`
+57 functions: 50 match, 7 are parked, none is still asm (`func_8009F180`
 matched during chunk_70, #71, once `func_800A41BC` was declared `int`).
 
 ## The settings
@@ -52,11 +52,11 @@ small and they're declared as scalars. chunk_72's split loads (`lui $v1`,
 | `func_8009F1F8` | parked | a menu's sound stopped (24 off) |
 | `func_8009F258` to `func_8009F734` | match | the sound options' keys, the menu music, saving the options |
 | `func_8009F760` | parked | seven words saved or restored: the copies' registers (49 off) |
-| `func_8009F82C` | asm | 161 instructions |
+| `func_8009F82C` | parked | a line drawn between two picked points: `ADD_PRIM`'s registers (7 off) |
 | `func_8009FAB0` to `func_8009FDE8` | match | the sprites' frames |
 | `func_8009FE70` | parked | the game set up once: the last call's stack arguments (12 off) |
 | `func_8009FFCC` to `func_800A0248` | match | the data file's name, names, entries, groups |
-| `func_800A029C` | asm | 97 instructions |
+| `func_800A029C` | parked | a name added to a group: its search loops rotated (80 off) |
 | `func_800A0420` to `func_800A0558` | match | an entry offered a value, the data file looked for, a backward copy |
 | `func_800A0584` | parked | the LZ unpacker: the word loop's scheduling (4 off) |
 | `func_800A0680` | matches | `\MR3.DAT` read |
@@ -123,3 +123,22 @@ small and they're declared as scalars. chunk_72's split loads (`lui $v1`,
 - `func_8009FE70` (the game set up once): 21 off to 12, with `D_800CBC94`
   and `D_800D4898` declared small so each address is one `la` at its use.
   Left: the last call's stack arguments stored in another order.
+
+## Group C, more functions
+
+- `func_8009F82C` (a line between two points picked on the camera's
+  view, packed as a LINE primitive): 7 off. The two points are one
+  `Pt71 pt[2]` so they sit at 0x10 and 0x14 (two locals are 8-aligned),
+  with their pointers declared in late blocks; `(x - 2) & 0xFFFF` gives
+  `lh` where `(u16)(x - 2)` doesn't. `ADD_PRIM(D_800CBDC0 + 1,
+  D_800C8C70)` called directly gives the original's loads. Left: the
+  macro's registers, `$a0`/`$v1` where the original has `$a1`/`$a0`; with
+  the macro's outputs swapped it's 5 off, but that breaks other matched
+  packets, so `ui.h` stays.
+- `func_800A029C` (a name added to the 5-entry group): 80 off. The copy
+  loop is right through a pointer stepped down (`E71 *q = &g->m_e[j];
+  q->f = q[-1].f`), which gives the original's strength-reduced field
+  pointers; indexed directly, GCC expands the multiply by 12 into shifts.
+  Left: GCC rotates the two search loops, where the original keeps each
+  test at its loop's top (`for (;;)`, a `goto` out and a single loop
+  tried).

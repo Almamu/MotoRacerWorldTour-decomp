@@ -51,9 +51,100 @@ int func_800A44B4(int n);
 int func_800A44F8(int n);
 void func_800A45B4(int n);
 void func_800A4608(int v);
+void func_800A2304(u8 *d, u32 c, int n);
+int func_800A2380(int ch);
+int func_800A2DA8(int n, char *path, u8 *hdr, int size, int flags);
+int func_800A5DA4(const char *fmt, ...);
+int open(char *name, int mode);
+int close(int fd);
+int func_800A32A0(int n, char *name, char *title, u8 *hdr, int size, int flags);
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_73", func_800A32A0);
+// The save icon: how many frames, its palette and its frames
+struct Clut73 {
+    char m_00[0x20];
+};
+struct Frame73 {
+    char m_00[0x80];
+};
+struct Icon73 {
+    int m_00;
+    Clut73 *m_04;
+    Frame73 *m_08[3];
+};
+// A card file's header
+struct Head73 {
+    u8 m_00[0x60];
+    Clut73 m_60;
+    Frame73 m_80[3];
+};
+// The literals func_800A32A0 reads, in .rodata (defined after it, see D_800B7BD4)
+extern const char D_800B7B9C[];
+extern const char D_800B7BA4[];
+extern const char D_800B7BA8[];
+
+/* A file saved: its path from the card's name, the game's directory and the
+ * name; unless the flags say otherwise, the card header filled in (the
+ * title in Shift-JIS, the icon's palette and frames, the size in blocks)
+ * and the file created first. */
+int func_800A32A0(int n, char *name, char *title, u8 *hdr, int size, int flags) {
+    char path[0x20];
+    char text[0x40];
+
+    sprintf(path, D_800B7B60, D_800BC89C[n], (char *)D_800D60D8[0], name);
+    if (!(flags & 0xF)) {
+        s8 *t;
+        u8 *q;
+        Icon73 *ic;
+        u32 i;
+        Head73 *h = (Head73 *)hdr;
+        int blocks;
+
+        if (title) {
+            sprintf(text, D_800B7B9C, (char *)D_800D608C[0], title);
+        } else {
+            sprintf(text, D_800B7BA4, (char *)D_800D608C[0]);
+        }
+        t = (s8 *)text;
+        q = hdr + 4;
+        func_800A2304(q, 0, 0x40);
+        func_800A2304(hdr + 0x44, 0, 0x1C);
+        blocks = (size + 0x1FFF) / 0x2000;
+        hdr[0] = 'S';
+        hdr[1] = 'C';
+        hdr[2] = ((Icon73 *)D_800D606C[0])->m_00 + 0x10;
+        blocks *= 0x2000;
+        hdr[3] = blocks / 0x2000;
+        while (*t) {
+            int c = func_800A2380((u8)*t++);
+
+            *q++ = c >> 8;
+            *q++ = c;
+        }
+        ic = (Icon73 *)D_800D606C[0];
+        h->m_60 = *ic->m_04;
+        for (i = 0; i < ((Icon73 *)D_800D606C[0])->m_00; i++) {
+            *(Frame73 *)(hdr + 0x80 + i * 0x80) = *((Icon73 *)D_800D606C[0])->m_08[i];
+        }
+        if (!(flags & 0x20)) {
+            int fd;
+
+            func_800A5DA4(D_800B7BA8, path, (s8)hdr[3]);
+            fd = open(path, ((s8)hdr[3] << 16) | 0x200);
+            if (fd == -1) {
+                return 8;
+            }
+            if (close(fd) == -1) {
+                return 11;
+            }
+        }
+    }
+    return func_800A2DA8(n, path, hdr, size, flags);
+}
+extern "C" const char D_800B7B9C[8] __attribute__((section(".rodata"))) = "%s :%s";
+extern "C" const char D_800B7BA4[4] __attribute__((section(".rodata"))) = "%s";
+extern "C" const char D_800B7BA8[24] __attribute__((section(".rodata"))) =
+    "save filename : %s %d\n";
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_73", func_800A3614);
 

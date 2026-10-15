@@ -1031,6 +1031,28 @@ mean a `short` field.
   (`func_8006BF4C`); packing values with bitfield stores (`func_8006BD78`)
   likewise.
 
+- **A copy loop over a pointer stepped down.** Where the original shifts
+  entries of 12-byte items with a field pointer each (eight
+  strength-reduced pointers stepped together), write the loop through a
+  pointer, `E71 *q = &g->m_e[j]; ...; q->f = q[-1].f; q--`; indexed
+  directly (`g->m_e[j].f = g->m_e[j - 1].f`), GCC expands the multiply by
+  12 into shifts each time (chunk_71's `func_800A029C`).
+- **Two stack points as one array.** Two 4-byte locals whose addresses go
+  to calls sit 8 bytes apart (each is 8-aligned); at 0x10 and 0x14 they
+  are one `Pt71 pt[2]`. Declare the pointers to them in late blocks, the
+  first before the first call (chunk_71's `func_8009F82C`).
+- **A second pointer to a buffer for one more saved register.** When the
+  original keeps a parameter twice (one register for the stores, another
+  for a later struct copy), reach the second use through a typed pointer
+  made from it (`Head73 *h = (Head73 *)hdr; h->m_60 = *src;`): chunk_73's
+  `func_800A32A0`, with a rounding written in two steps (`blocks *=
+  0x2000; hdr[3] = blocks / 0x2000;`) for the original's order.
+- **A reset test written first.** When the original falls through to a
+  one-store branch and jumps to the work, write the test inverted with
+  the store in the `if` (`if ((u32)r >= 2 && r != 0x12) s = 0; else
+  {...}`): chunk_70's `func_8009D9CC`, 7 off to 3, then 0 once a callee
+  returned `int`.
+
 ## Calls and declarations
 
 - **Declarations matter, not only code.** The boot executable was built
