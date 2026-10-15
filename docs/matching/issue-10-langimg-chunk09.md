@@ -72,6 +72,27 @@ chunk_08.
   computation (or through an inline copy of `func_80030C98`) gave the
   same code.
 
+## Inline-helpers pass
+
+`func_8002434C` from 151 to 2 off:
+- the matrix from the three angles as an inline function (`BikeMatrix09`),
+  its matrices and angle vectors its locals, so their addresses are
+  computed anew for each call; `m`'s translation, kept in `$s1` by the
+  original, through an inline accessor (`MatTrans09`);
+- the turns through inline helpers taking the angle as an `int` (the
+  original's `lh`; written in place GCC used `lhu`);
+- the heading's transform through an inline taking `&w`
+  (`Transform09(&b->m_mat, &u, &w)`), which keeps `&w` in `$s2` from the
+  first call as the original does, `u` set through an inline (`SetVec09`);
+- the heading's three copies all loads first (`VecCopy`): the original
+  reloads each copy's first word only;
+- `func_80099B60` and `func_80022D20` called through `void` declarations of
+  the same symbols (`__asm__("func_80099B60")`), as this caller saw them
+  (the permuter found the first).
+
+Left: 0x4000000 built in `$v0` where the original uses `$v1`. The
+permuter can't parse the `__asm__` declarations, so it can't run on it.
+
 ## The functions
 
 | Function | State | Notes |
@@ -83,7 +104,7 @@ chunk_08.
 | `func_80024064` | matches | the constructor; it matched once `func_8006BB70`, the animation channel's constructor, was declared to return its object (the permuter's finding) |
 | `func_80024168` | matches | the top engine speed and the gearing from the motor |
 | `func_800242A4` | matches | the destructor |
-| `func_8002434C` | parked | the bike's matrix from its angles: the stack layout matches, but the locals' addresses go to saved registers |
+| `func_8002434C` | parked | the bike's matrix from its angles: 2 off, one constant's register (inline-helpers pass) |
 | `func_80024584` | parked | placing the bike: the matrix copy's two pointers swap registers (26 off) |
 | `func_80024824` | parked | the bike reset: the order of a run of constant stores |
 | `func_80024C60`, `func_80024C90` | match | a motion cleared; the frames copied from their sources |

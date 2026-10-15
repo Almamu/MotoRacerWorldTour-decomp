@@ -17,7 +17,7 @@ The race of chunk_37 (`Own38`) and its run's five bikes (0x568 bytes):
 
 One file, `src/langimg/chunk_38.cpp`, 0x8005D15C-0x8005F464.
 
-17 functions: 12 match, 3 are parked, 2 are still asm.
+17 functions: 12 match, 4 are parked, 1 is still asm.
 
 ## The settings
 
@@ -75,7 +75,7 @@ global (`D_800CB3C8`).
 
 | Function | State | Notes |
 |---|---|---|
-| `func_8005D15C` | asm | 614 instructions |
+| `func_8005D15C` | parked | the race set up: registers |
 | `func_8005DAF4` | matches | the counter down, a call at 0 |
 | `func_8005DB30` | matches | the counter up, a call at 1 |
 | `func_8005DB70` | matches | a bike set up |
@@ -114,3 +114,23 @@ global (`D_800CB3C8`).
   - the early exits go through one `out: return r;`, so the result comes
     from its saved register; written as `return r;` GCC returned the
     constant 1.
+
+## Large functions
+
+- `func_8005D15C` (614 instructions, the race set up: the cameras from the
+  ghost's model, the run's list, the racers' names "n_curmotoX" with their
+  number, the bikes' values through chunk_41's `func_80064AA0`, the HUD's
+  colours) is written in full and parked: 609 instructions against 614,
+  529 off. The original rebuilds the tables' addresses (`D_800CAE90`,
+  `D_800CB0A0`) for each call where GCC keeps them in saved registers,
+  keeps the cameras' copy loop in temporaries, and has the race and its
+  argument in other saved registers. What came right:
+  - the name copied as an 11-byte struct from `D_800C6AD4` (in `.data`),
+    not a string literal (which would go to `.rodata` elsewhere);
+  - the HUD's colour through a pointer to its three bytes and an inline
+    copy (`Rgb38`); written through `D_800C886C` each time GCC read it
+    again after every byte;
+  - the globals it stores declared plainly (`extern int D_...;`): the
+    assembler's `$at` form, as the original's.
+  Its struct `Arg38` is new; the file already had a `Set38`, and a second
+  one changed the other functions' code.

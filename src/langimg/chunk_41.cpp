@@ -1,4 +1,5 @@
 #include "common.h"
+#include "mulshift.h"
 
 /* An object on chunk_40's class (docs/matching/issue-42-langimg-chunk41.md) */
 
@@ -47,7 +48,8 @@ struct Obj41 {
     int m_D0; // an angle, in 2pi * 4096ths
     u8 m_D4[0x38];
     int m_10C;
-    u8 m_110[0xC];
+    u8 m_110[8];
+    int m_118; // the top speed
     u8 m_11C[0x18];
     int m_134;
     u8 m_138[0x15];
@@ -84,11 +86,18 @@ struct Obj41 {
     Vec41 m_2E4;
     u8 m_2F0[0xC];
     Vec41 m_2FC;
-    u8 m_308[0xE8];
+    u8 m_308[0x2C];
+    int m_334;
+    u8 m_338[0xB8];
     int m_3F0;
-    u8 m_3F4[0x74];
-    int m_468;
-    u8 m_46C[0x28];
+    u8 m_3F4[0x5C];
+    int m_450; // its index
+    u8 m_454[8];
+    int m_45C, m_460, m_464, m_468;
+    int m_46C, m_470, m_474, m_478;
+    int m_47C, m_480, m_484, m_488;
+    int m_48C;
+    u8 m_490[4];
     int m_494;
 };
 extern int D_800C7684; // a vtable
@@ -109,16 +118,32 @@ void func_8009887C(Vec41 *v, Vec41 *out);
 void func_800997D0(Vec41 *v, Vec41 *a);
 void func_80098768(Mat41 *m, Vec41 *v, Vec41 *out);
 void func_800643E4(Obj41 *o);
+struct Mode41 {
+    u8 m_00[0x3EC];
+    int m_3EC; // the game mode
+};
 // A bike (chunk_31's Bike31): its mode in bits 1-5, its object
 struct Bk41 {
     int m_00;
-    u8 m_04[0x2C];
+    u8 m_04[0x28];
+    Mode41 *m_2C;
     Obj41 *m_30;
 };
+// The race's settings (also its camera's range)
 struct Trk41 {
     u8 m_00[0x34];
     int m_34;
     int m_38; // the range
+    u8 m_3C[0x50];
+    int m_8C;
+    u8 m_90[0xA8];
+    int m_138, m_13C, m_140, m_144, m_148, m_14C, m_150, m_154;
+    int m_158, m_15C, m_160, m_164, m_168, m_16C, m_170;
+    int m_174[3]; // by D_800D5F30
+};
+// A motor's values (0x34 bytes)
+struct Mot41 {
+    int m_00, m_04, m_08, m_0C, m_10, m_14, m_18, m_1C, m_20, m_24, m_28, m_2C, m_30;
 };
 struct Rul41 {
     u8 m_00[0x52C];
@@ -131,7 +156,9 @@ struct Rc41 {
 struct Game41 {
     u8 m_00[0x378];
     Rc41 *m_378;
-    u8 m_37C[0x70];
+    u8 m_37C[0x14];
+    Mot41 *m_390; // by bike
+    u8 m_394[0x58];
     Trk41 *m_3EC;
 };
 int func_8001D018(Trk41 *t, void *a, void *b);
@@ -162,6 +189,12 @@ struct Tab41 {
     Row41 *m_28;
 };
 extern int D_800CB44C;
+extern int D_800CB428, D_800CB430, D_800CB434, D_800CB438, D_800CB43C, D_800CB440, D_800CB444;
+extern int D_800CB450, D_800CB454, D_800CB458, D_800CB45C, D_800CB460, D_800CB464, D_800CB468;
+extern int D_800CB46C, D_800CB470, D_800CB474;
+extern int D_800D5F30;
+extern int D_800D5F4C;
+void func_80064AA0(Obj41 *o, Game41 *g, Bk41 *b, int k);
 void func_80097E4C(void *a, int x, int y, int z);
 Obj41 *func_80062E40(Obj41 *o); // the base's constructor, returning this
 void func_800643E4(Obj41 *o);
@@ -448,7 +481,100 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_41", func_800643E4);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_41", func_80064608);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_41", func_80064AA0);
+void func_80064AA0(Obj41 *o, Game41 *g, Bk41 *b, int k) {
+    int f, h, top;
+    int v;
+
+    if (b->m_2C->m_3EC == 5) {
+        o->m_334 = 700;
+    } else {
+        o->m_334 = 350;
+    }
+    switch (D_800D5F30) {
+    case 0:
+        f = g->m_3EC->m_174[0] + D_800D5F4C;
+        break;
+    case 1:
+        f = g->m_3EC->m_174[1] + D_800D5F4C;
+        break;
+    default:
+        f = g->m_3EC->m_174[2] + D_800D5F4C;
+        break;
+    }
+    if (f < 0x199) {
+        f = 0x199;
+    }
+    h = 0x2000 - f;
+    o->m_45C = MULSHIFT(g->m_390[k].m_0C, f, 12);
+    o->m_460 = g->m_390[k].m_10;
+    o->m_470 = MULSHIFT(g->m_390[k].m_14, f, 12);
+    o->m_46C = MULSHIFT(g->m_390[k].m_08, f, 12);
+    top = MULSHIFT(g->m_390[k].m_00, f, 12);
+    o->m_464 = top;
+    o->m_468 = g->m_390[k].m_04;
+    o->m_474 = g->m_390[k].m_18;
+    o->m_478 = MULSHIFT(g->m_390[k].m_1C, h, 12);
+    o->m_47C = MULSHIFT(g->m_390[k].m_20, h, 12);
+    o->m_480 = MULSHIFT(g->m_390[k].m_24, f, 12);
+    o->m_484 = MULSHIFT(g->m_390[k].m_28, f, 12);
+    o->m_488 = MULSHIFT(g->m_390[k].m_2C, f, 12);
+    o->m_48C = g->m_390[k].m_30;
+    o->m_118 = top;
+    D_800CB450 = MULSHIFT(g->m_3EC->m_138, f, 12);
+    D_800CB474 = MULSHIFT(g->m_3EC->m_13C, f, 12);
+    D_800CB468 = g->m_3EC->m_8C;
+    D_800CB430 = g->m_3EC->m_140;
+    D_800CB438 = g->m_3EC->m_144;
+    D_800CB45C = g->m_3EC->m_148;
+    D_800CB460 = g->m_3EC->m_14C;
+    D_800CB458 = MULSHIFT(g->m_3EC->m_150, h, 12);
+    D_800CB448 = MULSHIFT(g->m_3EC->m_154, f, 12);
+    D_800CB454 = g->m_3EC->m_158;
+    D_800CB428 = g->m_3EC->m_15C;
+    D_800CB43C = g->m_3EC->m_160;
+    D_800CB434 = g->m_3EC->m_164;
+    D_800CB444 = MULSHIFT(g->m_3EC->m_168, f, 12);
+    D_800CB440 = MULSHIFT(g->m_3EC->m_16C, f, 12);
+    D_800CB464 = MULSHIFT(g->m_3EC->m_170, f, 12);
+    switch (o->m_54->m_2C->m_3EC) {
+    case 1:
+        D_800CB46C = 1500;
+        D_800CB470 = 800;
+        D_800CB44C = 1;
+        break;
+    case 2:
+        D_800CB46C = 1500;
+        D_800CB470 = 800;
+        D_800CB44C = 1;
+        break;
+    case 3:
+        D_800CB46C = 1500;
+        D_800CB470 = 800;
+        D_800CB44C = 1;
+        break;
+    case 4:
+        D_800CB46C = 1500;
+        D_800CB470 = 800;
+        D_800CB44C = 1;
+        break;
+    case 5:
+        D_800CB46C = 1500;
+        D_800CB470 = 800;
+        D_800CB44C = 0;
+        break;
+    case 6:
+        D_800CB46C = 1500;
+        D_800CB470 = 800;
+        D_800CB44C = 0;
+        break;
+    }
+    {
+        int r = g->m_378->m_10->m_52C;
+
+        o->m_450 = k;
+        o->m_3F0 = r;
+    }
+}
 
 int func_80065044(Obj41 *o, int i, int j, int k, int s, int max, Tab41 *t) {
     int v = ((Cell41 *)((j << 5) + (u8 *)t->m_28[i].m_08[k]))->m_0E << 11;
