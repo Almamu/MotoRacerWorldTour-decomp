@@ -273,6 +273,16 @@ void func_8009E164(Obj70 *o);
 void func_8009E2E0(Obj70 *o);
 void func_8009E2FC(Obj70 *o);
 void func_8009E318(Obj70 *o, int i);
+void func_8009EAEC(Obj70 *o);
+void func_800A5DA4(const char *fmt, ...); // printf
+void func_800A4384(int a, void *b, int c, u8 *d, int e);
+int func_800A44B4(int a);
+void func_800A442C(int a, void *b);
+void func_800A444C(int a);
+void func_800A45B4(int a);
+void func_8003CC9C(int m, int a);
+extern char D_800C9C1C[], D_800C9C2C[], D_800C9C3C[], D_800C9C48[], D_800C9C54[], D_800C9C60[];
+extern char D_800C9C70[], D_800C9C84[], D_800C9C90[], D_800C9CA4[], D_800C9CB4[], D_800C9CC8[];
 void func_8009E724(void);
 int func_800A60AC(const char *a, const char *b);
 Btn70 *func_8003A86C(Hold70 *h, char *name);
@@ -827,4 +837,223 @@ void func_8009EAD0(Menu70 *m, int a) {
     }
 }
 
+// The menu the card task belongs to
+#define MENU70(o) ((Menu70 *)(o)->m_44)
+
+/* The memory card task, each frame: its state (m_00) stepped by the card's
+ * last result (m_08). */
+#ifdef NON_MATCHING
+// Registers only: after some calls the original takes $v1 for a constant or the last argument's load where GCC takes $v0 (16 off); the two switches and every branch are the original's.
+void func_8009EAEC(Obj70 *o) {
+    o->m_08 = func_800A4614(0, &o->m_0C);
+    switch (o->m_00) {
+    case 0:
+        break;
+    case 1:
+        if (func_800A44F8(0) == 0x12) {
+            if (o->m_08 == 14) {
+                if (func_800A44B4(0) >= 0x2000) {
+                    func_8009E318(o, 17);
+                    func_8009E1A0(o);
+                    o->m_00 = 5;
+                } else {
+                    func_8009E318(o, 15);
+                    o->m_00 = 0;
+                }
+            } else {
+                func_8009E318(o, 6);
+                func_8009E1A0(o);
+                o->m_00 = 6;
+            }
+        }
+        break;
+    case 7:
+        if (*o->m_4C == 1) {
+            func_8009E318(o, 7);
+            o->m_00 = 9;
+            func_8009E24C(o);
+            MENU70(o)->m_A94 |= 0x200;
+        } else if (*o->m_4C == 2) {
+            o->m_00 = 0;
+            func_8009E24C(o);
+            func_8003CC9C(o->m_44, 1);
+        }
+        break;
+    case 6:
+        if (*o->m_4C == 1) {
+            func_800A442C(0, o->m_3C);
+        }
+    case 5:
+        if (*o->m_4C == 1) {
+            func_8009E318(o, 11);
+            func_800A4384(0, o->m_3C, o->m_40, o->m_34, o->m_38);
+            o->m_00 = 3;
+            func_8009E24C(o);
+            MENU70(o)->m_A94 |= 0x200;
+        } else if (*o->m_4C == 2) {
+            o->m_00 = 0;
+            func_8009E24C(o);
+            func_8003CC9C(o->m_44, 1);
+        }
+        break;
+    case 9:
+        o->m_00 = 10;
+        break;
+    case 10:
+        o->m_00 = 8;
+        break;
+    case 8:
+        func_800A444C(0);
+        o->m_00 = 13;
+        o->m_10 = 0;
+        break;
+    case 13:
+        switch (o->m_08) {
+        case 0:
+            break;
+        case 1:
+            o->m_00 = 21;
+            break;
+        }
+        break;
+    case 21:
+        if (o->m_10 < 100) {
+            o->m_10++;
+            func_8009E24C(o);
+            func_8009E318(o, 8);
+        } else {
+            func_8009E318(o, 11);
+            func_800A4384(0, o->m_3C, o->m_40, o->m_34, o->m_38);
+            o->m_00 = 3;
+            func_8009E24C(o);
+            o->m_10 = 0;
+        }
+        break;
+    case 3:
+        if (func_800A44F8(0) == 0x12 && o->m_08 == 1) {
+            o->m_10 = 0;
+            o->m_00 = 20;
+        }
+        break;
+    case 20:
+        if (o->m_10 < 100) {
+            o->m_10++;
+            func_8009E24C(o);
+            func_8009E318(o, 12);
+        } else {
+            func_8003CC9C(o->m_44, 1);
+            o->m_14 = 1;
+            MENU70(o)->m_A94 &= ~0x200;
+        }
+        break;
+    case 18:
+        func_8009E318(o, 13);
+        func_8009E24C(o);
+        o->m_00 = 0;
+        MENU70(o)->m_A94 &= ~0x200;
+        break;
+    }
+    switch (o->m_08) {
+    case 9:
+        func_800A5DA4(D_800C9C1C);
+        func_8009E24C(o);
+        func_8009E318(o, 13);
+        o->m_00 = 0;
+        MENU70(o)->m_A94 &= ~0x200;
+        break;
+    case 16:
+        func_800A5DA4(D_800C9C2C);
+        func_8009E24C(o);
+        func_8009E318(o, 9);
+        o->m_00 = 0;
+        MENU70(o)->m_A94 &= ~0x200;
+        break;
+    case 4:
+    case 7:
+    case 8:
+    case 11:
+        if (o->m_08 == 7) {
+            func_800A5DA4(D_800C9C3C);
+        }
+        if (o->m_08 == 8) {
+            func_800A5DA4(D_800C9C48);
+        }
+        if (o->m_08 == 11) {
+            func_800A5DA4(D_800C9C54);
+        }
+        if (o->m_08 == 4) {
+            func_800A5DA4(D_800C9C60);
+        }
+        if (o->m_00 == 13) {
+            func_800A5DA4(D_800C9C70, o->m_10);
+            if (o->m_10 < 100) {
+                o->m_10++;
+                func_8009E24C(o);
+                func_8009E318(o, 9);
+            } else {
+                func_8009E0E8(o);
+                o->m_10 = 0;
+            }
+        } else if (o->m_00 == 3) {
+            func_800A5DA4(D_800C9C84);
+            if (o->m_04 >= 6) {
+                o->m_00 = 18;
+                func_800A45B4(0);
+                o->m_10++;
+                func_8009E24C(o);
+                func_8009E318(o, 13);
+                MENU70(o)->m_A94 &= ~0x200;
+            } else {
+                func_800A4384(0, o->m_3C, o->m_40, o->m_34, o->m_38);
+                o->m_04++;
+            }
+        } else {
+            func_8009E24C(o);
+            func_8009E318(o, 13);
+            o->m_00 = 0;
+            MENU70(o)->m_A94 &= ~0x200;
+        }
+        break;
+    case 15:
+        func_800A5DA4(D_800C9C90);
+        func_8009E1A0(o);
+        func_8009E318(o, 5);
+        o->m_00 = 7;
+        MENU70(o)->m_A94 &= ~0x200;
+        break;
+    case 2:
+        func_800A5DA4(D_800C9CA4, o->m_00);
+        if ((u32)(o->m_00 - 13) < 2) {
+            func_800A5DA4(D_800C9CB4, o->m_10);
+            o->m_00 = 14;
+            if (o->m_10 < 100) {
+                o->m_10++;
+                func_8009E24C(o);
+                func_8009E318(o, 10);
+            } else {
+                func_8009E0E8(o);
+                o->m_10 = 0;
+            }
+        } else if (o->m_00 == 3) {
+            func_800A5DA4(D_800C9CC8, 3);
+            func_8009E24C(o);
+            func_8009E318(o, 14);
+            MENU70(o)->m_A94 &= ~0x200;
+        } else {
+            func_800A45B4(0);
+            o->m_00 = 15;
+            func_8009E24C(o);
+            func_8009E318(o, 1);
+            MENU70(o)->m_A94 &= ~0x200;
+        }
+        break;
+    case 3:
+        if (o->m_00 != 7) {
+            func_8009E0E8(o);
+        }
+        break;
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_70", func_8009EAEC);
+#endif
