@@ -18,6 +18,10 @@ void func_80097F68(MATRIX *m, SVECTOR *r);
 void func_80022DE4(Vector3 *v, int shift, int a, int as, int b, int bs, int c, int cs);
 Vector3 *func_80099D74(Vector3 *v, int shift); // v << shift
 void func_80030CFC(Bike *b);
+void func_80062FB4(Bike *b);
+void func_8002E7E4(Bike *b, int v);
+void func_8006BB9C(AnimChan *c, int v);
+void func_80024824(Bike *b);
 void func_80026648(Bike *b, Motion *m);
 void func_8002AF3C(Bike *b);
 void func_80027EE0(Bike *b);
@@ -66,6 +70,19 @@ static inline void VecZero(Vector3 *v) {
     v->vx = 0;
     v->vy = 0;
     v->vz = 0;
+}
+
+// chunk_15's func_80030C98: the speed and its fractions
+static inline void SetSpeed09(Bike *b, short v) {
+    b->m_298 = v;
+    b->m_290 = (b->m_298 << 12) / 1000;
+    b->m_294 = (b->m_298 << 13) / 1000;
+}
+
+static inline void SetVec(Vector3 *v, int x, int y, int z) {
+    v->vx = x;
+    v->vy = y;
+    v->vz = z;
 }
 
 static inline void SetTrans(MATRIX *m, Vector3 *v) {
@@ -493,7 +510,161 @@ void func_80024584(Bike *b) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_09", func_80024584);
 #endif
 
+#ifdef NON_MATCHING
+// Scheduling only: the original stores the speed (50) and its fractions 0xCC and 0x199 after the vector at 0x3E8 is zeroed, in source order; GCC loads the constants earlier and interleaves the stores (18 off).
+void func_80024824(Bike *b) {
+    func_80062FB4(b);
+    b->m_3FC = 0;
+    b->m_440 = 0;
+    b->m_394 = 0;
+    b->m_398 = 0;
+    b->m_3B0 = 0;
+    b->m_3B4 = 0;
+    b->m_39C = 0;
+    b->m_3A0 = 0;
+    b->m_2F0 = 0x1000;
+    b->m_gear = 0;
+    b->m_28E = 0;
+    b->m_2B8 = b->m_118;
+    if (b->m_motor) {
+        b->m_2BC = b->m_2BE = b->m_motor->m_26;
+    }
+    b->m_clutch = 2;
+    b->m_2D0 = 10000;
+    b->m_2D4 = 10000;
+    b->m_2D8 = 10000;
+    b->m_shift = 0;
+    b->m_3F7 = 0;
+    b->m_2E2 = 0;
+    b->m_2EC = 0;
+    b->m_428 = 0;
+    b->m_2DC = 0;
+    b->m_2DD = 0;
+    b->m_2E1 = 0;
+    b->m_42C = 0;
+    b->m_430 = 0;
+    b->m_434 = 0;
+    b->m_438 = 0;
+    b->m_43C = 0;
+    b->m_411 = 1;
+    b->m_28C = 0x1000;
+    VecZero(&b->m_360);
+    VecZero(&b->m_36C);
+    VecZero(&b->m_330);
+    VecZero(&b->m_33C);
+    SetVec(&b->m_348, 0, 0x4000000, 0);
+    VecZero(&b->m_354);
+    b->m_3A5 = 0;
+    b->m_3A8 = 0;
+    b->m_3A4 = 0;
+    b->m_3AC = 0;
+    b->m_2C0 = 0;
+    b->m_29C = 0;
+    VecZero(&b->m_2F4);
+    VecZero(&b->m_300);
+    VecZero(&b->m_30C);
+    VecZero(&b->m_318);
+    VecZero(&b->m_2A0);
+    VecZero(&b->m_2AC);
+    func_8002E7E4(b, 0);
+    b->m_324 = 0;
+    b->m_32C = 0;
+    SetVec(&b->m_3B8, 0, 0x1000, 0);
+    VecZero(&b->m_234);
+    VecZero(&b->m_240);
+    VecZero(&b->m_3C4);
+    VecZero(&b->m_3D0);
+    VecZero(&b->m_3DC);
+    VecZero(&b->m_3E8);
+    SetSpeed09(b, 50);
+    b->m_250 = 0;
+    b->m_24C = 0;
+    b->m_2E4 = 0x333;
+    b->m_2E8 = 0;
+    b->m_EC = 10000;
+    b->m_2DE = 0;
+    b->m_2DF = 0;
+    b->m_2E0 = 0;
+    VecZero(&b->m_354);
+    VecZero((Vector3 *)&b->m_400);
+    b->m_3F4 = 1;
+    b->m_3F5 = 0;
+    SetVec(&b->m_254, 0, 0x1000, 0);
+    SetVec(&b->m_260, 0, 0x1000, 0);
+    b->m_40D = 0;
+    b->m_40E = 0;
+    b->m_40F = 0;
+    b->m_420 = 0;
+    b->m_424 = 0;
+    b->m_416 = 0;
+    b->m_40C = 0;
+    b->m_3F8 = 0;
+    b->m_42A = 0;
+    b->m_29A = 0;
+    func_80030CFC(b);
+    b->m_444 = 0;
+    b->m_448 = 0;
+    b->m_44C = 0;
+    b->m_450 = 0;
+    b->m_454 = 0;
+    b->m_458 = 0;
+    b->m_528 = 1;
+    b->m_529 = 0;
+    b->m_52A = 0;
+    b->m_530 = 0;
+    b->m_52C[0] = 0;
+    b->m_52C[1] = 0;
+    b->m_52C[2] = 0;
+    b->m_52C[3] = 0;
+    b->m_550 = 0;
+    b->m_554 = 0;
+    b->m_55C = 0;
+    b->m_558 = 0;
+    func_8006BB9C(&b->m_534, 0x1000);
+    b->m_43D = 0;
+    func_8006BB9C(&b->m_378, 0);
+    func_8006BB9C(&b->m_49C, 0);
+    b->m_48C = 0;
+    b->m_48D = 0;
+    b->m_48E = 0;
+    b->m_490 = 0;
+    b->m_494 = 0;
+    b->m_498 = 0;
+    b->m_4DC = 0;
+    b->m_4FC = 0;
+    func_8006BB9C(&b->m_4E0, 0);
+    b->m_508 = 0;
+    b->m_50C = 0;
+    b->m_510 = 0;
+    b->m_514 = 0;
+    func_8006BB9C(&b->m_4B8, 0);
+    b->m_4D4 = 1000;
+    b->m_4D8 = 0;
+    b->m_4D9 = 0;
+    b->m_4DA = 0;
+    b->m_410 = 0;
+    b->m_518 = 0;
+    VecZero(&b->m_51C);
+    b->m_2E3 = 0;
+    b->m_4DB = 1;
+    b->m_43E = 0;
+    b->m_52B = 0;
+    b->m_500 = 0;
+    b->m_504 = 0;
+    b->m_41C = 0;
+    b->m_5AC = 0;
+    b->m_5B0 = 0;
+    b->m_5BC = 0;
+    b->m_5B4 = 0;
+    b->m_5C4 = 0;
+    b->m_5A4 = 0;
+    func_80024C60(b, b->m_5C8);
+    func_80024C60(b, b->m_5CC);
+    func_80024C60(b, b->m_5D0);
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_09", func_80024824);
+#endif
 
 void func_80024C60(Bike *b, Motion *m) {
     m->m_00 = 0;
