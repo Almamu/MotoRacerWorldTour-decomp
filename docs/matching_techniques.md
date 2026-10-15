@@ -92,7 +92,7 @@ settings
 | `src/langimg` chunk_23 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=D_800CABB7` |
 | `src/langimg` chunk_45 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (eleven) |
 | `src/langimg` chunk_66 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (five) |
-| `src/langimg` chunk_17, chunk_19, chunk_20, chunk_21, chunk_22, chunk_25, chunk_26, chunk_27, chunk_28, chunk_29, chunk_31, chunk_32, chunk_33, chunk_37, chunk_38, chunk_39, chunk_40, chunk_41, chunk_44, chunk_46, chunk_47, chunk_49, chunk_50, chunk_51, chunk_52, chunk_55, chunk_56, chunk_57, chunk_58, chunk_59, chunk_60, chunk_61, chunk_64, chunk_67, chunk_68, chunk_69, chunk_70, chunk_71, chunk_72, chunk_73, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
+| `src/langimg` chunk_17, chunk_19, chunk_20, chunk_21, chunk_22, chunk_25, chunk_26, chunk_27, chunk_28, chunk_29, chunk_31, chunk_32, chunk_33, chunk_37, chunk_38, chunk_39, chunk_40, chunk_41, chunk_44, chunk_46, chunk_47, chunk_49, chunk_50, chunk_51, chunk_52, chunk_55, chunk_56, chunk_57, chunk_58, chunk_59, chunk_60, chunk_61, chunk_64, chunk_65, chunk_67, chunk_68, chunk_69, chunk_70, chunk_71, chunk_72, chunk_73, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_06 to chunk_12 (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_02b (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `SCES_030.37` (`src/sces`) | GCC 2.91.66 | 0 | `-fsigned-char` | `--expand-div` |
@@ -379,6 +379,9 @@ globals), a script that tries every order is quicker than guessing:
 - **A loop GCC won't rotate: `goto`.** chunk_47's list search tests the
   node at the top and loops back on "not found":
   `next: if (n) { found = ...; n = n->next; if (!found) goto next; }`.
+  chunk_65's `func_80094F30` draws a polygon's edges, then the closing
+  one, with a count from `n - 1` that isn't tested on entry: `n--; do {
+  ...; p++; } while (--n);`.
   chunk_32's `func_80051AE0` jumps to its test first and steps the index
   just before it: `goto test; next: i++; test: if (i < n) { ...; if (!r)
   goto next; }`; `for`, `while` and `while (!r && i < n)` copied the
@@ -492,6 +495,11 @@ globals), a script that tries every order is quicker than guessing:
   variable matched (chunk_37's `func_8005B8D0`).
 
 ### Temporaries and folding
+
+- **Which factor carries the shift.** chunk_65's `func_80093C80`
+  multiplies `t` by `a` doubled, the shift on `a` (`sll $a1, $a1, 1;
+  mult $a2, $a1`): `t * (a << 1)` gave it; GCC moved the `* 2` of `t *
+  (a * 2)` onto `t`.
 
 - **A vector operator: read, then operate in place.** chunk_68's
   `v += a` and `d = a - b` load the first operand's three fields, then
@@ -1039,6 +1047,15 @@ What's left once the instructions are right is usually register choice.
   constant into `$t1` (`lui`/`ori`, `addu $t1, $zero, $zero` for 0, and
   reuses a 0 still there). That's a `register int r asm("$9")` set from C
   before each `GTE_MTC2(r, n)`; GCC picks the instructions.
+- **A register the caller sets: a local register variable.** chunk_65's
+  subdivision functions read the renderer's state through `$t9`, which
+  their caller set, also after their own calls. `register Rnd65 *g
+  asm("$25");` declared in each function, never assigned, reads it, and
+  GCC doesn't save it around calls. cc1plus refuses a global register
+  variable in a `.cpp` ("global register variable follows a function
+  definition", even as the file's first line). For the permuter, the
+  base declares a plain `Rnd65 *g;` and `compile.sh` adds the `register
+  ... asm("$25")` back with `sed` (pycparser doesn't read it).
 - **Handwritten functions with an `asm` macro.** splat marks functions
   "handwritten" when they hold instructions GCC doesn't emit (here `sub`
   in a fixed-point multiply). They can still be C: the game used an `asm`
