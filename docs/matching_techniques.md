@@ -795,6 +795,11 @@ globals), a script that tries every order is quicker than guessing:
   When the shared header or the definition can't change, declare a `void`
   alias of the same symbol for that file, `void func_800998D0_void(...)
   __asm__("func_800998D0");`, and call that.
+  An `int` return also moves the registers right after the call even
+  when unused: chunk_70's `func_8009EAEC` takes `$v1` (not `$v0`) for the
+  values loaded after its `printf` (`func_800A5DA4`) and chunk_73's
+  `func_800A4384`, `func_800A442C` and `func_800A444C`, all `int`; declared
+  `void` it was 16 off.
 - **Declare what a callee takes.** As with return types, a prototype
   with the wrong number of arguments changes the caller: chunk_25 passed
   `k` to `func_8001687C`, which takes nothing (chunk_02b's definition),
@@ -1170,6 +1175,13 @@ What's left once the instructions are right is usually register choice.
   the symbol not being one of the chunk's small globals, expands that
   into one `la` (chunk_69's `func_8009CF14`, from 86 off to 0 with two
   other changes).
+- **Case labels inside a fall-through chain.** When a jump table sends
+  cases to different points of one run of tests (`if (r == 7) ...; if (r
+  == 8) ...`), each case has its own label before its test and falls
+  through: `case 7: if (r == 7) ...; case 8: if (r == 8) ...`. With the
+  cases on one label the code is the same, but the table in `.rodata`
+  sends them all to the first test; `tools/try_func.py` compares only the
+  text, so only the full build shows it (chunk_70's `func_8009EAEC`).
 - **A jump table from 0.** A switch whose table's first entry is the
   default's target and whose range test is `sltiu 7` (not `addiu -1`,
   `sltiu 6`) has a `case 0:`: spell it out on the default's body (chunk_57's
