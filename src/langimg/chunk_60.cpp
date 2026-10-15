@@ -166,12 +166,61 @@ struct Proj60 {
 struct Cfg60 {
     u8 m_00[0x18];
     int m_18;
+    u8 m_1C[0xC];
+    struct Model60 *m_28;
+};
+// A model: whether its frames are 12 bytes (1) or 8, and the frames
+struct Model60 {
+    u8 m_00[0x16];
+    u8 m_16;
+    u8 m_17;
+    u8 *m_18;
+};
+// A pooled item (0x68 bytes, func_80089F5C's), linked in its pool's list
+struct Node68 {
+    Node68 *m_00; // the newer
+    Node68 *m_04; // the older
+    T36 *m_08;
+    int m_0C[8];
+    u8 m_2C[2];
+    u8 m_2E, m_2F;
+    short *m_30;
+    u8 m_34, m_35;
+    u8 m_36, m_37;
+    u8 *m_38;
+    Node68 **m_3C;
+    short m_40;
+};
+// An entry of the game's table at 0xC70's 0x50 (16 bytes)
+struct Spr60 {
+    short m_00; // its frame
+    short m_02; // its id
+    u8 m_04, m_05;
+    short m_06;
+    Node68 *m_08[2]; // per holder
+};
+struct Tbl60 {
+    u8 m_00[0x50];
+    Spr60 *m_50;
+    u8 m_54[4];
+    short *m_58;
+};
+struct Game60 {
+    u8 m_00[0xC70];
+    Tbl60 *m_C70;
+};
+extern Game60 *D_800C5E14;
+// What func_8008A70C is given: the entry's index at 0xA
+struct Want60 {
+    u8 m_00[0xA];
+    short m_0A;
 };
 
 struct Hold60 {
     int m_00;
     Cfg60 *m_04;
-    u8 m_08[4];
+    u16 m_08;
+    u8 m_0A[2];
     u8 m_0C[0x20];
     u8 m_2C[0x10];
     u8 m_3C[0x10];
@@ -208,6 +257,7 @@ void func_80089B28(void *p, int flags);
 void *func_80089EE8(void *p);
 void func_80089F18(void *p, int flags);
 void func_8008A01C(Pool60 *p);
+void func_8008A70C(struct Hold60 *h, Want60 *w);
 void func_8008A1D0(Hold60 *h);
 void func_8008A220(Cnt60 *c);
 void func_8008A4E4(List60 *l, Node60 *n);
@@ -732,7 +782,77 @@ void func_8008A4E4(List60 *l, Node60 *n) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_60", func_8008A518);
 
+// An item taken from the pool and put at the head of its list, or 0
+static inline Node68 *Take60(Pool60 *p) {
+    Node68 *n;
+
+    if (!p->m_0C) {
+        return 0;
+    }
+    n = (Node68 *)p->m_free[--p->m_0C];
+    n->m_00 = 0;
+    n->m_04 = (Node68 *)p->m_00;
+    if (p->m_00) {
+        ((Node68 *)p->m_00)->m_00 = n;
+    }
+    p->m_00 = (int)n;
+    return n;
+}
+
+#ifdef NON_MATCHING
+// A sprite's node taken from the holder's pool (Take60) and filled from the game's table: the code is the original's, but the original leaves the second test's delay slot empty and loads -1 after the table's pointers, GCC fills it with the -1, which shifts everything by one instruction (121 off); the game pointer and the model in swapped registers.
+void func_8008A70C(Hold60 *h, Want60 *w) {
+    if (D_800C5E14 && w) {
+        u16 t = h->m_08;
+        Model60 *m = h->m_04->m_28;
+        Tbl60 *b = D_800C5E14->m_C70;
+        Spr60 *tbl = b->m_50;
+        short *ids = b->m_58;
+        int wide = m->m_16 == 1;
+        u8 *frames = m->m_18;
+        Spr60 *e;
+        Node68 *n;
+
+        if (w->m_0A == -1) {
+            return;
+        }
+        e = &tbl[w->m_0A];
+        if (!e->m_08[h->m_00]) {
+            n = Take60((Pool60 *)h->m_2C);
+            if (!n) {
+                return;
+            }
+            e->m_08[h->m_00] = n;
+            n->m_37 = 0;
+            n->m_2E = 0;
+            n->m_2F = 0;
+            *(short *)n->m_2C = t - 2;
+            n->m_34 = e->m_05;
+            n->m_35 = e->m_04;
+            n->m_0C[0] = 0;
+            n->m_0C[2] = 0;
+            n->m_0C[4] = 0;
+            n->m_0C[6] = 0;
+            n->m_0C[1] = 0;
+            n->m_0C[3] = 0;
+            n->m_0C[5] = 0;
+            n->m_0C[7] = 0;
+            n->m_30 = &ids[e->m_06];
+            if (wide) {
+                n->m_38 = frames + e->m_00 * 12;
+            } else {
+                n->m_38 = frames + e->m_00 * 8;
+            }
+            n->m_08 = func_80089CF4((Ids60 *)h->m_0C, e->m_02);
+            n->m_40 = e->m_02;
+            n->m_3C = &e->m_08[h->m_00];
+        }
+        *(short *)e->m_08[h->m_00]->m_2C = t;
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_60", func_8008A70C);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_60", func_8008A91C);
 

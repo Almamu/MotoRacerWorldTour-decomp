@@ -18,7 +18,7 @@ Also the four lists sorted with `qsort`, the first time only.
 
 One file, `src/langimg/chunk_40.cpp`, 0x80061484-0x80063428.
 
-23 functions: 16 match, 4 are parked, 3 are still asm.
+23 functions: 16 match, 5 are parked, 2 are still asm.
 
 ## The settings
 
@@ -58,6 +58,17 @@ globals.
   vectors copied with `VecCopyL40` at byte offsets of the model (re-read
   for each copy), then the two node functions per flag.
 
+## Group B, more functions
+
+- **`func_80062440`** (the bike put back on the track: at its start in the
+  race's state 5, else on the camera's track, turned along it) is written
+  and parked, 16 off. Its frame and saved registers are the original's:
+  the six vectors declared together in the original's slot order, the
+  flag set only after the model's test, the side offset's call through a
+  pointer to its result while the copy reads it from the stack. Left: the
+  two branches' point copies and the direction's copy use other
+  temporaries.
+
 ## The functions
 
 | Function | State | Notes |
@@ -68,7 +79,7 @@ globals.
 | `func_800618BC` | asm | 503 instructions |
 | `func_80062098` | parked | a bike's crash steps: registers |
 | `func_800623DC` | matches | a bike reset |
-| `func_80062440` | asm | 222 instructions |
+| `func_80062440` | parked | the bike back on the track: temporaries |
 | `func_800627B8`, `func_800627C0`, `func_800627D8`, `func_800627E4` | match | the waiting bits |
 | `func_80062828` | asm | 308 instructions |
 | `func_80062CF4` | matches | another bike within reach |

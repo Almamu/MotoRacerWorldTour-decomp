@@ -888,6 +888,12 @@ globals), a script that tries every order is quicker than guessing:
   `int *`: chunk_61's `func_8008BCB0` copies the camera's position
   (three small words) into the camera through `int *` and then reloads
   them as the original does.
+- **Loads into locals, then the sums, for a call's arguments.** When the
+  original loads all of a call's operands (three angles and a pointer)
+  before adding them, write the loads as locals and the sums as `+=`
+  statements before the call; summed inside the argument list, GCC loaded
+  the pointer first and the angles into other registers (chunk_64's
+  `func_800910EC`, from 6 off to 0).
 - **Unused locals.** A frame bigger than its variables need means the
   original had locals the optimiser dropped: `int unused[6];` gives
   `func_8001184C`'s 0x30-byte frame.
@@ -1261,6 +1267,20 @@ two (or two merged into one).
   calls into inline helpers doesn't help for a global's address: it is a
   constant to CSE, whatever the call's origin (#289's finding is about
   stack addresses).
+- **The other way round: declare it unsized.** A global of 8 bytes or less
+  that isn't one of the chunk's small globals is read `$gp`-relative by
+  GCC, and maspsx expands that into a `lui` and a `lw` through the same
+  register. When the original builds the high half in another register
+  (`lui $v1, %hi(D)` then `lw $v0, %lo(D)($v1)`), it saw the global as a
+  large object: declare it unsized (`extern Hook72 *D_800D6000[];`, read as
+  `D_800D6000[0]`) and GCC splits the address itself (chunk_72's
+  `func_800A1CF8`, from 2 off to 0).
+- **A packed word read as shifts, not bitfields.** When two branches each
+  read a different field of the same packed word and the original keeps
+  their code apart, read the word into a `u32` local in each branch and
+  extract with shifts (`(int)(w << 10) >> 25`); as bitfields of one struct
+  GCC merged the two branches' identical tails (chunk_61's `func_8008C500`,
+  from 44 off to 0 with a shared `none:` exit for its two `return 0`s).
 - **A bit test as an empty `if`.** When the original tests a flag with
   `andi`, then `bnez` past the work, and GCC gives `xori`/`andi`/`beqz`
   for `if (!((f >> 1) & 1)) {...}`, write the test the other way with an
