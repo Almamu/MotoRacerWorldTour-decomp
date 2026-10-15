@@ -7,7 +7,7 @@ a pack's header and blocks found by a hash of their names, a CRC check.
 Also a glyph lookup for text and a fast fill. One file,
 `src/langimg/chunk_72.cpp`, 0x800A1110-0x800A32A0.
 
-59 functions: 47 match, 6 are parked, 6 are still asm.
+59 functions: 49 match, 6 are parked, 4 are still asm.
 
 ## The settings
 
@@ -39,7 +39,8 @@ macro.
 | `func_800A1228` to `func_800A12C4` | match | the slots cleared, sorted by their counts (`qsort`) |
 | `func_800A138C` | matches | a slot's index |
 | `func_800A13C0` to `func_800A164C` | match | pointers, positions, the cards' first user |
-| `func_800A1654`, `func_800A17EC`, `func_800A195C` | asm | 102, 92 and 124 instructions |
+| `func_800A1654`, `func_800A17EC` | match | the loading spinner; a picture shown |
+| `func_800A195C` | asm | 124 instructions |
 | `func_800A1B4C` | matches | |
 | `func_800A1B54` | parked | the sounds' data by id: a hoisted `lui` (32 off) |
 | `func_800A1BD0` to `func_800A1C74` | match | the CD's start, a file searched for twice |
@@ -73,3 +74,14 @@ macro.
 - `func_800A2148`: chunk_74's `func_800A6448` is `void` (it was declared
   `u32` here), and the CRC test is `b->m_crc != crc`.
 - `func_800A2234` matched as it was, once `func_800A2148` did.
+
+## Group C follow-up
+
+- `func_800A1654`: the loading spinner, 32 three-point lines (`LINE_G3`,
+  written as words) out from (460, 425) through the sine table, their
+  length swinging between 11 and 16. The next angle is computed after the
+  first point's products, as the original's `addiu`.
+- `func_800A17EC`: a picture shown full screen (the named one, else the
+  default `D_800C9F1C`) through chunk_58's buffer functions. The rectangle
+  is set field by field (`w`, `h`, `x`, `y`); `setRECT` is a function in
+  this build's headers.

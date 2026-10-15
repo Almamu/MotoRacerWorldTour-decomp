@@ -61,10 +61,24 @@ struct Chan64 {
     u8 m_40[0x40];
 };
 
+// A model: the order its channels are posed in at 0x24
+struct Model64 {
+    u8 m_00[0x24];
+    s8 *m_24;
+};
 struct Anim64 {
     s8 m_00; // how many channels
-    u8 m_01[7];
+    u8 m_01[3];
+    Model64 *m_04;
     Chan64 *m_08;
+    u8 m_0C[4];
+    Vec64 m_10;   // its position
+    SVECTOR m_1C; // its angles
+};
+// A channel's part: its position and its angles
+struct Part64 {
+    Vec64 m_00;
+    short m_0C, m_0E, m_10;
 };
 
 // A pose (0x1C bytes)
@@ -120,7 +134,7 @@ extern Ent64 D_800CBE60;           // the default 8-byte entry
 extern Pack64 D_800CBE68;          // the default 4-byte entry
 extern int D_800CBE58, D_800CBE5C; // how many times each was set up
 void func_80097E4C(void *a, int x, int y, int z);
-void func_80091544(Pose64 *d, void *s);
+void func_80091544(void *d, void *s);
 void func_80091FB4(Pose64 *d, unsigned int f, void *a, void *b);
 int func_80092480(Play64 *p, unsigned int now);
 void func_8008E0C4(Obj64 *o, void *a);
@@ -131,15 +145,98 @@ void func_800912AC(Anim64 *a);
 void func_800913C0(Anim64 *a);
 Ent64 *func_80091414(Tab64 *t, int id);
 Pack64 *func_800914AC(Tab64 *t, int id);
+void func_8008D0CC(Ent64 *d, Ent64 *s, int n);
+void func_8008D0FC(Ent64 *d, int n);
+void func_8008D120(Pack64 *d, Pack64 *s, int n);
+void func_8008D148(Pack64 *d, int n);
 int func_800923F0(Track64 *t, int i, unsigned int time);
 void func_8009243C(Play64 *p, Track64 *t, int a, int b);
 void func_800925A8(List64 *l, int a);
 void func_80092824(void);
 void func_800928CC(void *a, SVECTOR *v);
+MATRIX *func_800985A8(MATRIX *a, MATRIX *b);
+void func_800910EC(Anim64 *a, MATRIX *root);
 void func_800928FC(Ent64 *d, Vec64 *s);
 }
 
+/* The channels posed in the model's order under a root matrix: each one's
+ * matrix from its part (or its own at 0x10), placed by its parent's. */
+#ifdef NON_MATCHING
+// Registers: GCC hoists the scratch matrix's address (sp+0x30) out of the channels' loop into a saved register, the original computes it at each use; the order list and the root matrix are also in swapped saved registers (81 off).
+void func_800910EC(Anim64 *a, MATRIX *root) {
+    int n = a->m_00;
+    Chan64 *ch = a->m_08;
+    s8 *order = a->m_04->m_24;
+
+    if (n > 0) {
+        MATRIX m;
+
+        MATRIX *mp = &m;
+        Vec64 *src = &a->m_10;
+
+        func_800928CC(mp, &a->m_1C);
+        {
+            long x = src->m_00;
+            long y = src->m_04;
+            long z = src->m_08;
+
+            mp->t[0] = x;
+            mp->t[1] = y;
+            mp->t[2] = z;
+        }
+        func_80098768(root, (Vec64 *)mp->t, (Vec64 *)mp->t);
+        func_800997D0((Vec64 *)mp->t, (Vec64 *)root->t);
+        func_800985A8(mp, mp);
+        do {
+            Chan64 *c = &ch[*order++];
+            short f = c->m_36;
+            MATRIX t;
+
+            if (!(f & 0x30)) {
+                MATRIX *pm = (MATRIX *)c->m_0C;
+                MATRIX *out;
+                MATRIX *dst;
+                Part64 *p;
+                long x, y, z;
+
+                if (!pm) {
+                    pm = &m;
+                }
+                if (f & 0x400) {
+                    out = (MATRIX *)c->m_10;
+                } else {
+                    int ax = *(short *)&c->m_14[0];
+                    int ay, az;
+
+                    p = (Part64 *)c->m_3C;
+                    ay = *(short *)&c->m_14[2];
+                    az = *(short *)&c->m_14[4];
+                    func_80097E4C(&t, ax + p->m_0C, ay + p->m_0E, az + p->m_10);
+                    out = &t;
+                }
+                p = (Part64 *)c->m_3C;
+                x = p->m_00.m_00;
+                y = p->m_00.m_04;
+                z = p->m_00.m_08;
+                if (f & 0x40) {
+                    x += c->m_28.m_00;
+                    y += c->m_28.m_04;
+                    z += c->m_28.m_08;
+                }
+                out->t[0] = x;
+                out->t[1] = y;
+                out->t[2] = z;
+                dst = (MATRIX *)c->m_10;
+                func_80098768(pm, (Vec64 *)out->t, (Vec64 *)dst->t);
+                func_800997D0((Vec64 *)dst->t, (Vec64 *)pm->t);
+                func_800985A8(out, dst);
+            }
+        } while (--n);
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_64", func_800910EC);
+#endif
 
 static inline void VecCopyL64(Vec64 *d, Vec64 *s) {
     long x = s->m_00;
@@ -245,7 +342,40 @@ Pack64 *func_800914AC(Tab64 *t, int id) {
     return found ? &t->m_04[i] : &D_800CBE68;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_64", func_80091544);
+/* A table's entries copied into another's (by id or directly), the rest
+ * of its entries set to the defaults. */
+void func_80091544(void *dp, void *sp) {
+    Tab64 *d = (Tab64 *)dp;
+    Tab64 *s = (Tab64 *)sp;
+    int i;
+
+    if (s->m_01 == -1) {
+        func_8008D0CC(d->m_10, s->m_10, s->m_00);
+    } else {
+        for (i = 0; i < s->m_00; i++) {
+            Ent64 *e = func_80091414(s, i);
+            Ent64 *o = d->m_10;
+            int x = e->m_00;
+            int y = e->m_02;
+            int z = e->m_04;
+
+            o[i].m_00 = x;
+            o[i].m_02 = y;
+            o[i].m_04 = z;
+        }
+    }
+    if (s->m_02 == -1) {
+        func_8008D120(d->m_04, s->m_04, s->m_00);
+    } else {
+        for (i = 0; i < s->m_00; i++) {
+            d->m_04[i] = *func_800914AC(s, i);
+        }
+    }
+    if (d->m_00 != s->m_00) {
+        func_8008D0FC(d->m_10 + s->m_00, d->m_00 - s->m_00);
+        func_8008D148(d->m_04 + s->m_00, d->m_00 - s->m_00);
+    }
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_64", func_800916B0);
 

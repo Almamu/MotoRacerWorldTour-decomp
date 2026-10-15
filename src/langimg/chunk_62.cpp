@@ -110,6 +110,7 @@ u32 func_8008DFA0(u32 x);
 void func_8008E054(Node62 *o, int x, int y, int z);
 void func_8008E0C4(Anim62 *o, Tab62 *t);
 void func_8008E658(Anim62 *o, Model62 *m);
+void func_8008E1F8(Anim62 *o, Tab62 *t, int on, int *ids);
 void func_8008E354(Anim62 *o, Tab62 *t, int on, int *ids);
 }
 
@@ -268,24 +269,27 @@ void func_8008E054(Node62 *o, int x, int y, int z) {
     o->m_28.vz = pz;
 }
 
-static inline s8 func_8008E0C4_min(s8 a, s8 b) {
-    return a < b ? a : b;
-}
-
 #ifdef NON_MATCHING
-// The original loads the two counts with lbu and compares them shifted (a byte minimum); GCC loads with lb. It also extracts the three packed coordinates before storing them (54 off).
+// The counts' byte minimum and the coordinates' order now as the original's; left: the channel's address kept in a register for its three stores, and the table entry's copy (41 off, from 54).
 void func_8008E0C4(Anim62 *o, Tab62 *t) {
-    int n = func_8008E0C4_min(o->m_00, t->m_00);
+    int a = o->m_00 << 24;
+    int b = t->m_00 << 24;
+    int n = (a < b ? a : b) >> 24;
     int i;
 
     for (i = 0; i < n; i++) {
         Pack62 *p = func_800914AC(t, i);
         SVECTOR *d = &o->m_08[i].m_14;
-        Pack62 q = *p;
+        Pack62 q;
+        int x, y, z;
 
-        d->vx = q.m_x << 2;
-        d->vy = q.m_y << 2;
-        d->vz = q.m_z << 2;
+        q = *p;
+        y = q.m_y;
+        z = q.m_z;
+        x = q.m_x;
+        d->vx = x << 2;
+        d->vy = y << 2;
+        d->vz = z << 2;
         if (o->m_08[i].m_36 & 0x40) {
             Ent62 *e = func_80091414(t, i);
             Vec62 v;
@@ -299,10 +303,83 @@ void func_8008E0C4(Anim62 *o, Tab62 *t) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_62", func_8008E0C4);
 #endif
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_62", func_8008E1F8);
+void func_8008E1F8(Anim62 *o, Tab62 *t, int on, int *ids) {
+    if (on) {
+        Ent62 dent;
+        Pack62 def;
+        int i, next, n;
+        Chan62 *c;
+        Pack62 *src;
+        Ent62 *esrc;
+        s8 *idx;
+        s8 *eidx;
+        s8 direct;
 
-#ifdef NON_MATCHING
-// Registers: the entry's pointer in $a0 where the original has $v0, which also changes the order the three coordinates are extracted in (14 off).
+        dent.m_00 = 0;
+        dent.m_02 = 0;
+        dent.m_04 = 0;
+        def.m_x = 0;
+        def.m_y = 0;
+        def.m_z = 0;
+        i = 0;
+        src = t->m_04;
+        esrc = t->m_10;
+        idx = t->m_08;
+        eidx = t->m_0C;
+        direct = t->m_03;
+        n = (s8)o->m_00;
+        c = o->m_08;
+        next = *ids++;
+        do {
+            Pack62 *p;
+            Ent62 *e;
+
+            if (direct) {
+                p = src++;
+            } else {
+                p = &def;
+                if (idx && *idx == i) {
+                    p = src++;
+                    idx++;
+                }
+            }
+            if (direct) {
+                e = esrc++;
+            } else {
+                e = &dent;
+                if (eidx && *eidx == i) {
+                    e = esrc++;
+                    eidx++;
+                }
+            }
+            if (i == next) {
+                Pack62 q;
+                int x, y, z;
+
+                q = *p;
+                y = q.m_y;
+                z = q.m_z;
+                x = q.m_x;
+                c->m_14.vx = x << 2;
+                c->m_14.vy = y << 2;
+                c->m_14.vz = z << 2;
+                if (c->m_36 & 0x40) {
+                    int x = e->m_00;
+                    int y = e->m_02;
+                    int z = e->m_04;
+
+                    c->m_28.vx = x;
+                    c->m_28.vy = y;
+                    c->m_28.vz = z;
+                }
+                next = *ids++;
+            }
+            c++;
+            i++;
+        } while (--n);
+    }
+}
+
 void func_8008E354(Anim62 *o, Tab62 *t, int on, int *ids) {
     if (on) {
         Pack62 def;
@@ -327,19 +404,23 @@ void func_8008E354(Anim62 *o, Tab62 *t, int on, int *ids) {
 
             if (direct) {
                 p = src++;
+            } else if (idx && *idx == i) {
+                p = src++;
+                idx++;
             } else {
                 p = &def;
-                if (idx && *idx == i) {
-                    p = src++;
-                    idx++;
-                }
             }
             if (i == next) {
-                Pack62 q = *p;
+                Pack62 q;
+                int x, y, z;
 
-                c->m_14.vx = q.m_x << 2;
-                c->m_14.vy = q.m_y << 2;
-                c->m_14.vz = q.m_z << 2;
+                q = *p;
+                y = q.m_y;
+                z = q.m_z;
+                x = q.m_x;
+                c->m_14.vx = x << 2;
+                c->m_14.vy = y << 2;
+                c->m_14.vz = z << 2;
                 if (c->m_36 & 0x40) {
                     c->m_40[0] = 0;
                     c->m_40[1] = 0;
@@ -355,9 +436,6 @@ void func_8008E354(Anim62 *o, Tab62 *t, int on, int *ids) {
         } while (--n);
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_62", func_8008E354);
-#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_62", func_8008E46C);
 

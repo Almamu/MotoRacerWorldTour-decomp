@@ -16,7 +16,7 @@ one). Through its two views (`m_A80`, `m_A84`, chosen by the mode at
 
 One file, `src/langimg/chunk_69.cpp`, 0x8009B17C-0x8009D0E4.
 
-23 functions: 14 match, 2 are parked, 7 are still asm.
+23 functions: 16 match, 2 are parked, 5 are still asm.
 
 ## The settings
 
@@ -59,9 +59,9 @@ global.
 | `func_8009B8F8` | matches | a part moved by a fraction |
 | `func_8009B9B4` | asm | 257 instructions |
 | `func_8009BDB8` | asm | 385 instructions |
-| `func_8009C3BC` | asm | 94 instructions |
+| `func_8009C3BC` | matches | the view's four items shown or hidden |
 | `func_8009C534` | matches | the screen's requests handled |
-| `func_8009C694` | asm | 110 instructions |
+| `func_8009C694` | matches | the view's record picked and named |
 | `func_8009C84C` | matches | the name kept from the drawing |
 | `func_8009C944`, `func_8009C964`, `func_8009C984` | match | a request flag set when the state is 2 |
 | `func_8009C9A4` | parked | the record set up, with a label: the record's address |
@@ -73,3 +73,15 @@ global.
 | `func_8009CD78` | matches | the block copied back |
 | `func_8009CEAC` | matches | three slots reset |
 | `func_8009CF14` | asm | 122 instructions |
+
+## Group C follow-up
+
+- `func_8009C3BC`: the view's four items (two through objects at 0x21C0
+  and 0x21C4, two directly) get flag 2 set or cleared, and the layout's
+  two values are set to match; with flag set, chunk_20's `func_8003AB24`.
+  Matched as written once `View69` and `Scr69` had the fields.
+- `func_8009C694`: the record (0x198 bytes, `Draw69`) for the mode, the
+  track's laps (`D_800C9330`'s table copied to the stack) and the player,
+  named from the saved name. `D_800D5F34` is also read as a number here
+  (an `asm` alias, as in chunk_71), and the scene's words at 0x14 and
+  0x21D0 are written as words.

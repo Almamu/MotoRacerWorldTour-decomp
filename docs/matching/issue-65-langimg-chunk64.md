@@ -18,7 +18,7 @@ shorts passed to `func_80097E4C`.
 
 One file, `src/langimg/chunk_64.cpp`, 0x800910EC-0x80093150.
 
-19 functions: 9 match, 2 are parked, 8 are still asm.
+19 functions: 10 match, 3 are parked, 6 are still asm.
 
 ## The settings
 
@@ -55,11 +55,11 @@ globals `D_800CBE58`, `D_800CBE5C` and `D_800CBE68`.
 
 | Function | State | Notes |
 |---|---|---|
-| `func_800910EC` | asm | 112 instructions |
+| `func_800910EC` | parked | the channels posed under a root matrix: registers |
 | `func_800912AC` | matches | each channel's position |
 | `func_800913C0` | matches | channels refreshed |
 | `func_80091414`, `func_800914AC` | match | an entry by id, or the default |
-| `func_80091544` | asm | 91 instructions (a pose set from a table) |
+| `func_80091544` | matches | a table copied into another |
 | `func_800916B0` | asm | 578 instructions |
 | `func_80091FB4` | asm | 272 instructions |
 | `func_800923F0` | matches | the last key at or before a time |
@@ -80,3 +80,19 @@ globals `D_800CBE58`, `D_800CBE5C` and `D_800CBE68`.
   offset is added the chunk_62 way (the three loads, then the adds, then
   the stores), and the loop steps the channel before the count
   (`c++, n--`). `Chan64` gained the fields it reads.
+
+## Group C follow-up
+
+- `func_80091544`: a table's entries copied into another's (all at once
+  when a count is -1, else one by one by id through `func_80091414` and
+  `func_800914AC`), the rest set to the defaults (`func_8008D0FC`,
+  `func_8008D148`). The 8-byte entries are copied with the table's base
+  read into a local and indexed (`Ent64 *o = d->m_10; ... o[i].m_00 =
+  x;`), the three values loaded first; through `&d->m_10[i]` the address
+  came out before the loads.
+- `func_800910EC` written and parked (81 off): the channels posed in the
+  model's order under a root matrix. GCC hoists the scratch matrix's
+  address out of the loop into a saved register where the original
+  computes it at each use, and the order list and the root are in swapped
+  saved registers. `Anim64` gained its model at 4, position at 0x10 and
+  angles at 0x1C.

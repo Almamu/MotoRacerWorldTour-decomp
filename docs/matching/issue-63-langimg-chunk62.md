@@ -22,7 +22,7 @@ and a tree of nodes (`Node62`, a child at 0 and a sibling at 8):
 
 One file, `src/langimg/chunk_62.cpp`, 0x8008D168-0x8008F368.
 
-13 functions: 5 match, 3 are parked, 5 are still asm.
+13 functions: 7 match, 2 are parked, 4 are still asm.
 
 ## The settings
 
@@ -56,19 +56,20 @@ globals.
     original loads the two counts with `lbu` and takes their minimum on
     the values shifted left by 24 (a byte minimum); GCC loads them with
     `lb`. It also extracts the three packed coordinates before storing
-    them (54 off).
+    them (54 off; 41 after the follow-up below).
   - `func_8008E354` (the angles of the channels listed, positions
     cleared): the entry's pointer in `$a0` where the original has `$v0`,
     which also changes the order the three coordinates are extracted in
     (14 off). The default entry cleared first and the count read last (a
-    permuter's find) took it from 69.
+    permuter's find) took it from 69. Matched in the follow-up below.
   - `func_8008DFA0` (the square root): the original keeps its argument in
     `$a0` (returned as is below 2); GCC moves it to `$t0` first (one
     instruction more, 45 off).
 - **Still asm.** `func_8008D880` (457 instructions) and `func_8008E70C`
   (792) are GTE code with `$t9`, marked hand-written; `func_8008D2DC`
-  (361) spills to the stack and uses `$fp`; `func_8008E1F8` (87) and
-  `func_8008E46C` (123) are more of the table loops, not tried.
+  (361) spills to the stack and uses `$fp`; `func_8008E46C` (123) is more
+  of the table loops, not tried (`func_8008E1F8` matched in the follow-up
+  below).
 
 ## The functions
 
@@ -82,8 +83,25 @@ globals.
 | `func_8008DFA0` | parked | a square root: registers |
 | `func_8008E054` | matches | a node eased towards a point |
 | `func_8008E0C4` | parked | the channels from a table: the counts' loads |
-| `func_8008E1F8` | asm | 87 instructions |
-| `func_8008E354` | parked | the channels listed: registers |
+| `func_8008E1F8` | matches | the channels listed, angles and positions |
+| `func_8008E354` | matches | the channels listed, positions cleared |
 | `func_8008E46C` | asm | 123 instructions |
 | `func_8008E658` | matches | an animation given a model |
 | `func_8008E70C` | asm | 792 instructions (GTE) |
+
+## Group C follow-up
+
+- `func_8008E1F8` (new) and `func_8008E354` (parked before): the channels
+  listed in `ids` get their angles from the table's 4-byte entries (and,
+  with flag 0x40, their positions from its 8-byte entries; `func_8008E354`
+  clears them). Two things matched them: the packed coordinates read into
+  locals in the order y, z, x before the three stores (`y = q.m_y; z =
+  q.m_z; x = q.m_x;`), which gave the original's extraction order, and
+  the entry's selection as an `if` / `else if` / `else` chain (`direct`,
+  then the id test, then the default), which put the entry's pointer in
+  `$v0` as the original's. In `func_8008E1F8` the next id is read after
+  the table's pointers (`next = *ids++;` last), the default entries are
+  cleared first, and the 8-byte entry's three values go through locals.
+- `func_8008E0C4` (still parked) came from 54 to 41 off: the counts'
+  minimum is taken on the values shifted left by 24 (`int a = o->m_00 <<
+  24; ... (a < b ? a : b) >> 24`), and the coordinates are read y, z, x.
