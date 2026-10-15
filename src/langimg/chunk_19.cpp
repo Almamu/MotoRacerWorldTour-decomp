@@ -5,7 +5,10 @@ struct Item19 {
     int m_00; // its kind: 3
     int m_04; // whose
     struct Item19 *m_08;
-    char m_0C[0x20];
+    union {
+        char m_0C[0x20];
+        int m_0Ci[2];
+    };
     s8 m_2C;
     s8 m_2D;
     s8 m_2E;
@@ -32,7 +35,8 @@ struct Slot19 {
     int m_04;
     u8 m_08[8];
     Char19 *m_10;
-    u8 m_14[0x44];
+    u8 m_14[0x40];
+    int m_54; // its colour
     Char19 *m_58;
 };
 
@@ -126,7 +130,35 @@ struct Res19 {
     u8 *m_28;
 };
 
+// A group of menus (36 bytes)
+struct Grp19 {
+    u8 m_00[0xC];
+    struct Menu19 **m_0C;
+    u8 m_10[0x14];
+};
+struct Row19 {
+    u8 m_00[8];
+    Grp19 *m_08;
+};
+// The menus' context: the text's owner, the menus by group
+struct Ctx19 {
+    u8 m_00[0x38];
+    void *m_38;
+    u8 m_3C[0x10];
+    Row19 *m_4C;
+};
+struct Ref19 {
+    u8 m_00[0xA];
+    short m_0A;
+};
+
 extern "C" {
+int func_80017E10(void *o, char *s, int n);
+void func_800184A4(void *o, int h);
+void func_80018224(void *o, int h, Slot19 *s);
+void func_80017A9C(int h, int a);
+void func_80037318(Item19 *it, Ctx19 *x, int dir, Menu19 *m);
+void func_8003762C(Menu19 *n, Ctx19 *x, Ref19 *r, int a);
 void func_8003FC28(void *o, int i, int j);
 Res19 *func_8003AA90(void *v, char *name);
 int func_80097128(void *p);
@@ -161,7 +193,51 @@ void func_80038370(Menu19 *m, Game19 *a);
 void func_80038B24(Tab19 *t, void *a);
 }
 
+#ifdef NON_MATCHING
+// The original keeps 1 in a saved register for the item kind's compare too (with 3, 5 and 0xFF0000; the chunk has -fmove-all-movables), so the reference r goes on the stack; GCC compares with 1 in $t0 and keeps r in $s5 (34 off).
+void func_8003762C(Menu19 *n, Ctx19 *x, Ref19 *r, int a) {
+    Item19 *it;
+
+    for (it = n->m_2C; it; it = it->m_08) {
+        if (it->m_04 != 2) {
+            continue;
+        }
+        switch (it->m_00) {
+        case 1:
+            if (n->m_28->m_04 & 0x40) {
+                n->m_28->m_54 = it->m_0Ci[0];
+            }
+            break;
+        case 2: {
+            int h = func_80017E10(x->m_38, it->m_0C, strlen(it->m_0C));
+
+            func_800184A4(x->m_38, h);
+            func_80018224(x->m_38, h, n->m_28);
+            func_80017A9C(h, -1);
+            break;
+        }
+        case 3:
+            func_80037318(it, x, a, n);
+            break;
+        case 5: {
+            Grp19 *g = x->m_4C[it->m_0Ci[1]].m_08;
+
+            if (g) {
+                func_8003762C(g[it->m_0Ci[0]].m_0C[r->m_0A], x, r, a);
+            }
+            break;
+        }
+        default:
+            if (n->m_28->m_04 & 0x40) {
+                n->m_28->m_54 = 0xFF0000;
+            }
+            break;
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_19", func_8003762C);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_19", func_8003781C);
 

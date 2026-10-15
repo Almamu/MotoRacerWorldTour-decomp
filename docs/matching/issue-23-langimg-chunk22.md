@@ -17,7 +17,7 @@ entries.
 
 One file, `src/langimg/chunk_22.cpp`, 0x8003D60C-0x8003F6B8.
 
-23 functions: 14 match, 2 are parked, 7 are still asm.
+23 functions: 17 match, 4 are parked, 2 are still asm.
 
 ## The settings
 
@@ -50,6 +50,26 @@ globals.
 
 - `func_8003E5B0`: chunk_22 built with `-fmove-all-movables`, with no source change (its six constants hoisted).
 
+## Third pass
+
+- `func_8003E3AC` (new): the two sets of the scripts' handlers
+  registered through `func_8003EC90`, each set's context (`Arg22` at 0x3C
+  and 0x44) stored in its slot; the function addresses stay in saved
+  registers across the calls as written.
+- `func_8003EC90` (new): a handler stored by its kind into a slot's two
+  copies (0x08-0x40 and 0x44-0x94), all of them for kind 0, through a
+  `switch`; the slot's words are now named by offset.
+- `func_8003F0F8` (new): a slot's handler read by its kind (a `switch`, 9
+  and 13 sharing a case).
+- `func_8003DF7C` and `func_8003E194` (new, parked): the timed keys'
+  handlers, the same code with other callees: a key held (0xFE) steps two
+  timers, released (0xFF) starts one. The mode is read again after the
+  flag 0x80 is cleared (`mode = g->m_A90;` after the store), the cases
+  are in the original's order (0xFF, 0xFE, 0), and the flag `go` is set
+  after the mask's test; left: the script context and the view in swapped
+  saved registers (12 off each). The body as one inline function taking
+  the two callees was further off.
+
 ## The functions
 
 | Function | State | Notes |
@@ -61,10 +81,13 @@ globals.
 | `func_8003D8B4`, `func_8003D8FC` | match | the `0x100` flag set |
 | `func_8003D924`, `func_8003D970` | match | values through the table |
 | `func_8003D9CC` | matches | a slot cleared (a `do { } while (0)`) |
-| `func_8003D9EC`, `func_8003DB9C` | asm | 108 and 124 instructions |
+| `func_8003D9EC`, `func_8003DB9C` | parked | written in the second pass |
 | `func_8003DD8C`, `func_8003DE84` | match | a key's handlers |
-| `func_8003DF7C`, `func_8003E194`, `func_8003E3AC` | asm | 129 to 134 instructions |
+| `func_8003DF7C`, `func_8003E194` | parked | the timed keys' handlers: registers |
+| `func_8003E3AC` | matches | the handlers registered |
 | `func_8003E5B0` | matches | the state from the pairs |
 | `func_8003E6FC` | asm | 357 instructions |
 | `func_8003EC6C` | matches | a slot's value |
-| `func_8003EC90`, `func_8003F0F8`, `func_8003F314` | asm | 149 to 305 instructions |
+| `func_8003EC90` | matches | a handler stored by kind |
+| `func_8003F0F8` | matches | a handler read by kind |
+| `func_8003F314` | asm | 233 instructions |
