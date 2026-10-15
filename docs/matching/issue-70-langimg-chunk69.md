@@ -16,7 +16,7 @@ one). Through its two views (`m_A80`, `m_A84`, chosen by the mode at
 
 One file, `src/langimg/chunk_69.cpp`, 0x8009B17C-0x8009D0E4.
 
-23 functions: 16 match, 2 are parked, 5 are still asm.
+23 functions: 17 match, 2 are parked, 4 are still asm.
 
 ## The settings
 
@@ -72,7 +72,7 @@ global.
 | `func_8009CD24` | matches | the 0x15AC-byte block passed on |
 | `func_8009CD78` | matches | the block copied back |
 | `func_8009CEAC` | matches | three slots reset |
-| `func_8009CF14` | asm | 122 instructions |
+| `func_8009CF14` | matches | a script's cheat codes |
 
 ## Group C follow-up
 
@@ -85,3 +85,16 @@ global.
   named from the saved name. `D_800D5F34` is also read as a number here
   (an `asm` alias, as in chunk_71), and the scene's words at 0x14 and
   0x21D0 are written as words.
+
+## Group C, continued
+
+`func_8009CF14` (a script's handler: a code looked up in `D_800C9364`'s
+list, its effect, then a flash) matches:
+- the list is declared small (`extern int D_800C9364;`, passed as
+  `(char *)&D_800C9364`): GCC then accesses it `$gp`-relative and maspsx,
+  the symbol not being one of the chunk's small globals, expands it into
+  one `la`, which the scheduler can't split into the branches' delay slots
+  as it did the `lui` of an array's address;
+- the flash's colours go through two locals (`lo`, `hi`), and the call is
+  the two-argument `func_8006CA84(6, 127)` after the stores through a
+  pointer to the flash.
