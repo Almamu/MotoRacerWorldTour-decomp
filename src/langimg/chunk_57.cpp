@@ -654,7 +654,7 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_57", func_80084720);
 /* The dashboard at x, y for the racer shown (w[1]): its scale, the engine
  * speed, the gear and its warnings, then whether it's lit. */
 #ifdef NON_MATCHING
-// The dashboard's address: the original builds it again for each of its five calls; GCC keeps it in a saved register (one more, a frame of 0x30 against 0x28), which shifts everything (140 off). Declared as an array, a struct, unsplit: the same.
+// The dashboard declared small, so its address is built at each of the five calls and the frame is 0x28 as the original's; left: the arguments and the race in other saved registers, and the warning flags' compares (sltiu in the original, xori here), 99 off.
 void func_80084B1C(int x, int y) {
     int *w = &D_800CBD30;
     Racer57 *s = (Racer57 *)w[1];

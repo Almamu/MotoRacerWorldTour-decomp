@@ -68,7 +68,7 @@ globals from `D_800CBD24` on.
 | `func_800846AC` | parked | six globals set: the gp store's place |
 | `func_800846FC` | matches | the globals cleared |
 | `func_80084720` | asm | 256 instructions |
-| `func_80084B1C` | parked | the dashboard: an address kept |
+| `func_80084B1C` | parked | the dashboard: registers (99 off) |
 | `func_80084D58` | matches | a text drawn while bit 8 of the clock is set |
 | `func_80084E1C` | asm | 271 instructions |
 
@@ -97,3 +97,13 @@ pointer stepped after it ("GPU packets" in the techniques); what's left is
 the text measuring before them: the label's x and y in swapped saved
 registers and the measured width read back from the stack where the
 original keeps it in a register.
+
+## Inline helpers and small symbols
+
+- `func_80084B1C` (the dashboard): 142 off to 99. The dashboard object
+  declared small (`extern int D_800CBCE0;`, passed as `(int *)&D_800CBCE0`)
+  makes GCC build its address at each of the five calls as the original
+  does, and the frame is the original's 0x28. Moving the calls into inline
+  helpers alone changed nothing: a constant address is CSE'd whatever the
+  call's origin. Left: the arguments and the race in other saved registers,
+  and the warning flags' compares (`sltiu` in the original, `xori` here).
