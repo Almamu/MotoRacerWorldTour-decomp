@@ -15,10 +15,12 @@ struct Name69 {
 struct Draw69 {
     u8 m_00[0x170];
     int m_170;
-    u8 m_174[8];
+    int m_174;
+    u8 m_178[4];
     Name69 m_17C; // the name before
     Name69 m_187; // the name
-    u8 m_192[6];
+    u8 m_192[2];
+    int *m_194;
 };
 
 // An item with flags at 4 (chunk_23's NamedEntry)
@@ -43,6 +45,12 @@ struct Lay69 {
     Sh69 *m_14;
 };
 // What a view's m_60 points to
+// A word with a 4-bit field at bit 16
+struct Bits69 {
+    unsigned m_lo : 16;
+    unsigned m_16 : 4;
+};
+
 struct Scr69 {
     u8 m_00[4];
     Draw69 *m_04;
@@ -51,7 +59,19 @@ struct Scr69 {
     short m_14;
     u8 m_16[2];
     int m_18;
-    u8 m_1C[0x120];
+    u8 m_1C[0x14];
+    struct Text69 *m_30;
+    u8 m_34[0x1C];
+    struct Text69 *m_50;
+    u8 m_54[8];
+    struct Run69 *m_5C[8];
+    u8 m_7C[0x14];
+    struct Text69 *m_90;
+    u8 m_94[4];
+    struct Bits69 *m_98;
+    u8 m_9C[8];
+    Flag69 *m_A4;
+    u8 m_A8[0x94];
     int m_13C;
     int m_140;
     u8 m_144[0x207C];
@@ -269,6 +289,7 @@ void func_800A67E8(int a);
 void func_8009B838(Game69 *o, int f);
 void func_8009B8BC(Game69 *o);
 void func_8009B8F8(Game69 *o, int a, Run69 *r);
+void func_8009B5E8(Game69 *o);
 void func_8009C944(Game69 *o, int s);
 void func_8009C964(Game69 *o, int s);
 // A script's item: its code at 8
@@ -300,7 +321,43 @@ void func_8009CEAC(Game69 *o, int s);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_69", func_8009B17C);
 
+#ifdef NON_MATCHING
+// Registers only: in the loop the table's value and the name's byte come out in other temporaries ($a2/$v1 where the original has $v1/$a2 and $a3/$t0), 10 off.
+void func_8009B5E8(Game69 *o) {
+    Scr69 *s = o->m_A80->m_60;
+    Draw69 *d = s->m_04;
+    int k = 0;
+    int i;
+
+    if (d->m_174 == 5) {
+        s->m_30->m_0C[0] = 0;
+        s->m_50->m_0C[0] = 0;
+        s->m_90->m_0C[0] = 0;
+        s->m_98->m_16 = 0;
+        s->m_A4->m_04 &= ~2;
+    } else {
+        s->m_98->m_16 = 1;
+        s->m_A4->m_04 |= 2;
+    }
+    for (i = 0; i < 6; i++) {
+        s->m_5C[k]->m_50 = d->m_194[i] - 1;
+        *s->m_5C[k]->m_48 = (u8)d->m_187.c[i];
+        func_8009B8F8(o, 3, s->m_5C[k]);
+        k++;
+    }
+    s->m_5C[k]->m_50 = d->m_194[6] - 1;
+    *s->m_5C[k]->m_48 = (u8)d->m_187.c[6];
+    func_8009B8F8(o, 3, s->m_5C[k]);
+    k++;
+    s->m_5C[k]->m_50 = d->m_194[7] - 1;
+    *s->m_5C[k]->m_48 = (u8)d->m_187.c[7];
+    func_8009B8F8(o, 3, s->m_5C[k]);
+    s->m_08 = d->m_187;
+    s->m_18 = 1;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_69", func_8009B5E8);
+#endif
 
 /* The name copied to the screen's drawing, unless f. */
 void func_8009B838(Game69 *o, int f) {
