@@ -92,7 +92,7 @@ extern int D_800C4938;
 extern int D_800C8C68;
 extern int D_800CBE90;
 extern int D_800CBE94;
-extern u8 D_800C55E8[];
+extern int D_800C55E8; // stored at 0x68; declared small so its address is one la
 extern char D_800CBC94[];
 extern int D_800D60E8; // chunk_74's, declared small so its address is one la
 extern Time25 D_800D6124;
@@ -289,11 +289,9 @@ int func_80044CBC(void) {
     return 1;
 }
 
-#ifdef NON_MATCHING
-// Registers or a loop's shape (the permuter's to find)
 Keep25 *func_80044CC4(Keep25 *k) {
     func_8003FC94(k);
-    k->m_68 = D_800C55E8;
+    k->m_68 = (u8 *)&D_800C55E8;
     k->m_70 = 0;
     k->m_74 = 0;
     k->m_78 = 0;
@@ -301,9 +299,6 @@ Keep25 *func_80044CC4(Keep25 *k) {
     k->m_80 = 0;
     return k;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_25", func_80044CC4);
-#endif
 
 void func_80044D0C(Keep25 *k, int a) {
     Clear25();
