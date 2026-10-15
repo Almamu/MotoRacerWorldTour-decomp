@@ -17,7 +17,7 @@ entries.
 
 One file, `src/langimg/chunk_22.cpp`, 0x8003D60C-0x8003F6B8.
 
-23 functions: 19 match, 2 are parked, 2 are still asm.
+23 functions: 19 match, 3 are parked, 1 is still asm.
 
 ## The settings
 
@@ -80,6 +80,19 @@ globals.
   table's address formed in both of the view's branches, the loop counter
   cleared later and an object's copy in `$a1`.
 
+## Large functions pass
+
+- `func_8003E6FC` (357 instructions, the scene's labels by mode: the
+  image picked by 0x178, the texts through chunk_58's `func_80086A38`
+  and `func_80080F30`, then a highlight box as a GPU packet and a draw
+  mode) is written and parked, 35 off. The text id read either from the
+  view's word or the scene is two calls, one per arm (merged by GCC as in
+  the original); the element's state is read through `e->m_28` at each
+  use (the original loads its flags twice); the box's packet goes through
+  its own pointer before the draw mode (the "GPU packets" idiom). Left:
+  the first loop's counter and flag zeroed in the other order, and the
+  packets' registers.
+
 ## The functions
 
 | Function | State | Notes |
@@ -96,7 +109,7 @@ globals.
 | `func_8003DF7C`, `func_8003E194` | match | the timed keys' handlers (the context copied into a local) |
 | `func_8003E3AC` | matches | the handlers registered |
 | `func_8003E5B0` | matches | the state from the pairs |
-| `func_8003E6FC` | asm | 357 instructions |
+| `func_8003E6FC` | parked | the HUD labels by mode and a highlight box: an init order, the packets' registers |
 | `func_8003EC6C` | matches | a slot's value |
 | `func_8003EC90` | matches | a handler stored by kind |
 | `func_8003F0F8` | matches | a handler read by kind |
