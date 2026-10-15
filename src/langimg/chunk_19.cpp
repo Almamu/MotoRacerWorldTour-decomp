@@ -54,14 +54,58 @@ struct Menu19 {
 };
 
 struct View19 {
-    u8 m_00[0x2E];
+    char *m_00; // its name
+    u8 m_04[0x28];
+    u8 m_2C[2]; // the word's bits 24-25: its mode
     s8 m_2E;
+    u8 m_2F;
+    u8 m_30[0x20];
+    u8 m_50[4]; // its sequences
+};
+
+// A named entry's handler: called with the scene, a reason and the entry
+struct Fn19 {
+    char *m_00;
+    void (*m_04)(void *g, int a, void *o);
+};
+struct Fns19 {
+    u8 m_00[8];
+    Fn19 *m_08;
+    int m_0C; // how many
+};
+// A slider: a value through a pointer, its step and its bounds
+struct Bar19 {
+    u8 m_00[0x28];
+    Slot19 *m_28;
+    u8 m_2C[0x10];
+    s8 m_3C;
+    u8 m_3D[0xB];
+    int *m_48;
+    int m_4C;        // the lowest
+    int m_50;        // the highest
+    int m_54;        // the step
+    s8 m_58[0x20];   // its sequence's suffix
+    char m_78[0x20]; // its name
+};
+// A named sequence entry (chunk_20's Elem20)
+struct Elem19 {
+    u8 m_00[0x28];
+    int m_28;
+    u8 m_2C[4];
+    struct Seq19 *m_30;
+};
+struct Seq19 {
+    u8 m_00[0x14];
+    int m_14; // its length
 };
 
 struct Game19 {
-    u8 m_00[0xA80];
+    u8 m_00[0x5C];
+    struct Fns19 *m_5C;
+    u8 m_60[0xA20];
     View19 *m_A80;
-    u8 m_A84[0xC];
+    View19 *m_A84;
+    u8 m_A88[8];
     int m_A90;
 };
 
@@ -90,7 +134,21 @@ void func_800383D8(Menu19 *m, int i, Game19 *g, Item19 *it);
 int func_800804B8(s8 c);
 void func_80038BBC(Tab19 *t, Game19 *g);
 void func_80038CE4(Tab19 *t, Game19 *g);
-void func_80038504(Menu19 *e, void *a);
+void func_80038E0C(Tab19 *t, void *g);
+void func_80038504(Bar19 *e, Game19 *g);
+int sprintf(char *s, const char *f, ...);
+extern char D_800C4D7C[];
+extern char D_800C4D80[];
+Elem19 *func_8003B3C4(View19 *v, const char *name);
+int func_80019D0C(void *set, Seq19 *s, int a, int back, int c);
+int func_8001983C(Seq19 *s);
+void func_80019B2C(Seq19 *s, int id);
+int func_8003781C(Menu19 *e, void *s, void *p, int a, int b);
+int func_8003899C(Tab19 *t, int flag);
+void func_800386B4(Bar19 *m, Game19 *g, int mode);
+void func_80038828(Bar19 *m, Game19 *g, int mode);
+int func_800A60AC(const char *a, const char *b); // strcmp
+void func_80038F44(Tab19 *t, void *g);
 int func_80037C80(Menu19 *m);
 int func_80037CF8(Menu19 *m);
 int func_80037D58(Menu19 *m, int v);
@@ -137,13 +195,11 @@ int func_80037CF8(Menu19 *m) {
     return r;
 }
 
-#ifdef NON_MATCHING
-// Registers: the result and the constant 3 swap ($a0, $a2)
 int func_80037D58(Menu19 *m, int v) {
+    Item19 *p = m->m_2C;
     int r = 0;
-    Item19 *p;
 
-    for (p = m->m_2C; p; p = p->m_08) {
+    for (; p; p = p->m_08) {
         if (p->m_04 == 0 && p->m_00 == 3) {
             if (p->m_31) {
                 p->m_2E = v;
@@ -156,9 +212,6 @@ int func_80037D58(Menu19 *m, int v) {
     }
     return r;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_19", func_80037D58);
-#endif
 
 u8 *func_80037DC8(Menu19 *m, void *v) {
     u8 *r = 0;
@@ -297,13 +350,183 @@ void func_800383D8(Menu19 *m, int i, Game19 *g, Item19 *it) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_19", func_80038504);
+// The scene's current view
+static inline View19 *View19Of(Game19 *g) {
+    View19 *v;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_19", func_800386B4);
+    if (g->m_A90 == 1 || g->m_A90 == 4) {
+        v = g->m_A84;
+    } else {
+        v = g->m_A80;
+    }
+    return v;
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_19", func_80038828);
+/* The slider's value written into its character's letters, and its
+ * view's sequence (its name and the slider's suffix) started at the
+ * value's place along it. */
+void func_80038504(Bar19 *e, Game19 *g) {
+    View19 *v;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_19", func_8003899C);
+    if (g->m_A90 == 1 || g->m_A90 == 4) {
+        v = g->m_A84;
+    } else {
+        v = g->m_A80;
+    }
+    if (g->m_A90) {
+        return;
+    }
+    if (e->m_28->m_04 & 0x40) {
+        Slot19 *s = e->m_28;
+        Char19 *c;
+
+        if ((int)(*(u32 *)v->m_2C << 6) >> 30) {
+            if (s->m_04 & 0x41) {
+                c = s->m_10;
+            }
+        } else {
+            c = s->m_58;
+        }
+        if (!(c->m_00 & 0x40000) && c->m_0C) {
+            sprintf(c->m_0C, D_800C4D7C, *e->m_48);
+        }
+    }
+    if (e->m_58[0]) {
+        char buf[0x100];
+        Elem19 *r;
+
+        v = View19Of(g);
+        sprintf(buf, D_800C4D80, v->m_00, (char *)e->m_58);
+        r = func_8003B3C4(v, buf);
+        if (r) {
+            Seq19 *q = r->m_30;
+
+            func_80019D0C(v->m_50, r->m_30, 1, r->m_28,
+                          q->m_14 * (*e->m_48 - e->m_4C) / (e->m_50 + 1 - e->m_4C));
+            func_8001983C(q);
+            func_80019B2C(q, -1);
+        }
+    }
+}
+
+// The handler named name, or none
+static inline void Find19(Fns19 *t, const char *name, Fn19 **f) {
+    int j;
+
+    for (j = 0; j < t->m_0C; j++) {
+        if (!func_800A60AC(t->m_08[j].m_00, name)) {
+            *f = &t->m_08[j];
+            break;
+        }
+    }
+}
+
+/* The slider stepped up: past its highest, back to its lowest (mode 0),
+ * stopped there (1, nothing else done) or held (2); then the sound and the
+ * entry's handler called with 3. */
+void func_800386B4(Bar19 *m, Game19 *g, int mode) {
+    int stop = 0;
+    int *v = m->m_48;
+
+    if (v) {
+        int x = *v + m->m_54;
+        int hi = m->m_50;
+
+        if (hi < x) {
+            switch (mode) {
+            case 0:
+                x = m->m_4C;
+                break;
+            case 1:
+                stop = 1;
+            case 2:
+                x = hi;
+                break;
+            }
+        }
+        *v = x;
+        if (!stop) {
+            Fn19 *f;
+
+            func_8003FC28(g, 0, m->m_3C);
+            f = 0;
+            Find19(g->m_5C, m->m_78, &f);
+            if (f && f->m_04) {
+                f->m_04(g, 3, m);
+            }
+        }
+    }
+}
+
+/* The slider stepped down, as func_800386B4. */
+void func_80038828(Bar19 *m, Game19 *g, int mode) {
+    int stop = 0;
+    int *v = m->m_48;
+
+    if (v) {
+        int x = *v - m->m_54;
+        int lo = m->m_4C;
+
+        if (x < lo) {
+            switch (mode) {
+            case 0:
+                x = m->m_50;
+                break;
+            case 1:
+                stop = 1;
+            case 2:
+                x = lo;
+                break;
+            }
+        }
+        *v = x;
+        if (!stop) {
+            Fn19 *f;
+
+            func_8003FC28(g, 0, m->m_3C);
+            f = 0;
+            Find19(g->m_5C, m->m_78, &f);
+            if (f && f->m_04) {
+                f->m_04(g, 3, m);
+            }
+        }
+    }
+}
+
+/* How many of the table's enabled entries are active: those
+ * func_8003781C says are, of kind 4, or letter entries (kind 5, only with
+ * flag) whose character has bit 22 and a value at 0x50. */
+int func_8003899C(Tab19 *t, int flag) {
+    int i;
+    int n = 0;
+
+    for (i = 0; i < t->m_08; i++) {
+        Menu19 *e = t->m_0C[i];
+
+        if (e->m_02 & 0xF && e->m_28->m_04 & 2) {
+            int ok = 1;
+            Char19 *c;
+
+            if (e->m_00 == 5) {
+                if (e->m_28->m_04 & 1) {
+                    c = e->m_28->m_10;
+                } else {
+                    c = e->m_28->m_58;
+                }
+                if (!flag) {
+                    ok = 0;
+                }
+            }
+            if (func_8003781C(e, 0, 0, 0, 1) || e->m_00 == 4 ||
+                (e->m_00 == 5 && c->m_00 & 0x400000 && e->m_50 != -1)) {
+                if (ok) {
+                    n++;
+                }
+            }
+        }
+    }
+    return n;
+}
 
 void func_80038B24(Tab19 *t, void *a) {
     int i;
@@ -312,13 +535,11 @@ void func_80038B24(Tab19 *t, void *a) {
         Menu19 *e = t->m_0C[i];
 
         if (e->m_00 == 4) {
-            func_80038504(e, a);
+            func_80038504((Bar19 *)e, (Game19 *)a);
         }
     }
 }
 
-#ifdef NON_MATCHING
-// The original hoists its three constants into saved registers and reads the slot's flags twice
 void func_80038BBC(Tab19 *t, Game19 *g) {
     int i;
 
@@ -334,18 +555,13 @@ void func_80038BBC(Tab19 *t, Game19 *g) {
             } else {
                 c = s->m_58;
             }
-            if (s->m_04 & 2 && c->m_00 & 0x400000 && e->m_50 != -1) {
+            if (e->m_28->m_04 & 2 && c->m_00 & 0x400000 && e->m_50 != -1) {
                 func_80038300(e, g);
             }
         }
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_19", func_80038BBC);
-#endif
 
-#ifdef NON_MATCHING
-// The original hoists its three constants into saved registers and reads the slot's flags twice
 void func_80038CE4(Tab19 *t, Game19 *g) {
     int i;
 
@@ -361,18 +577,60 @@ void func_80038CE4(Tab19 *t, Game19 *g) {
             } else {
                 c = s->m_58;
             }
-            if (s->m_04 & 2 && c->m_00 & 0x400000 && e->m_50 != -1) {
+            if (e->m_28->m_04 & 2 && c->m_00 & 0x400000 && e->m_50 != -1) {
                 func_80038370(e, g);
             }
         }
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_19", func_80038CE4);
-#endif
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_19", func_80038E0C);
+/* The table's letter entries (kind 5, flagged): each one's letter stepped
+ * up, then the sound func_8003FC28(g, -1, 8). */
+void func_80038E0C(Tab19 *t, void *g) {
+    int i;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_19", func_80038F44);
+    for (i = 0; i < t->m_08; i++) {
+        Menu19 *e = t->m_0C[i];
+
+        if (e->m_02 & 0xF && e->m_00 == 5) {
+            Slot19 *s = e->m_28;
+            Char19 *c;
+
+            if (s->m_04 & 1) {
+                c = s->m_10;
+            } else {
+                c = s->m_58;
+            }
+            if (e->m_28->m_04 & 2 && c->m_00 & 0x400000 && e->m_50 != -1) {
+                func_80038218((Own19 *)e);
+                func_8003FC28(g, -1, 8);
+            }
+        }
+    }
+}
+
+/* The same, stepped down. */
+void func_80038F44(Tab19 *t, void *g) {
+    int i;
+
+    for (i = 0; i < t->m_08; i++) {
+        Menu19 *e = t->m_0C[i];
+
+        if (e->m_02 & 0xF && e->m_00 == 5) {
+            Slot19 *s = e->m_28;
+            Char19 *c;
+
+            if (s->m_04 & 1) {
+                c = s->m_10;
+            } else {
+                c = s->m_58;
+            }
+            if (e->m_28->m_04 & 2 && c->m_00 & 0x400000 && e->m_50 != -1) {
+                func_8003828C((Own19 *)e);
+                func_8003FC28(g, -1, 8);
+            }
+        }
+    }
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_19", func_8003907C);

@@ -277,9 +277,6 @@ RaceEntry *func_8001CC14(RaceSort *t, RaceWorld *w) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_05", func_8001CC14);
 #endif
 
-#ifdef NON_MATCHING
-/* Equivalent; the original walks m_count and m_by with pointers of their
- * own (strength reduction) and uses $s0 */
 /* Sorts each kind's entries, furthest first, and gives them their places. */
 void func_8001CF34(RaceSort *t) {
     int k;
@@ -300,14 +297,11 @@ void func_8001CF34(RaceSort *t) {
                 }
             }
         }
-        for (i = 0; i < n; i++) {
-            t->m_by[k][i]->m_218 = i;
+        for (j = 0; j < n; j++) {
+            t->m_by[k][j]->m_218 = j;
         }
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_05", func_8001CF34);
-#endif
 
 /* How far b is ahead of a, within half a lap either way. */
 int func_8001D018(Track *t, RacePos *a, RacePos *b) {

@@ -175,8 +175,6 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_09", func_8002385C);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_09", func_80023A30);
 
-#ifdef NON_MATCHING
-/* The original hoists /1000's multiplier into $fp and spills dt and n to the stack; GCC here keeps n in $fp and recomputes the multiplier */
 /* The speed after each of n steps of dt from a standstill, full throttle
  * and shifting up at the upshift points: the motor's force less the drag
  * (the speed squared) and rolling resistance, over the mass. Returns the
@@ -184,7 +182,6 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_09", func_80023A30);
 int func_80023E48(Motor *m, int *out, int dt, int n) {
     int top = m->m_28;
     int i, g, rpm, v;
-    int *up;
 
     if (D_800D5FD4 & 4) {
         top += 0xE000;
@@ -193,7 +190,6 @@ int func_80023E48(Motor *m, int *out, int dt, int n) {
     g = 0;
     rpm = 0;
     v = 0;
-    up = m->m_upshift;
     for (; i < n; i++) {
         int f = func_8002357C(m, func_800235F8(m, rpm), g);
         int d = MULSHIFT(MULSHIFT(v, v, 12), m->m_160, 12) / 4096 + m->m_15A;
@@ -203,23 +199,21 @@ int func_80023E48(Motor *m, int *out, int dt, int n) {
             v = top;
         }
         rpm = func_800236F0(m, v, g);
-        if (rpm > 0x1000 || v >= *up) {
-            if (g < m->m_gears - 1) {
-                up++;
+        if (rpm > 0x1000 || v >= m->m_upshift[g]) {
+            if (g >= m->m_gears - 1) {
+                if (rpm > 0x1000) {
+                    rpm = 0x1000;
+                    v = func_80023788(m, 0x1000, g);
+                }
+            } else {
                 g++;
                 rpm = func_800236F0(m, v, g);
-            } else if (rpm > 0x1000) {
-                rpm = 0x1000;
-                v = func_80023788(m, 0x1000, g);
             }
         }
-        *out++ = v;
+        out[i] = v;
     }
     return v;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_09", func_80023E48);
-#endif
 
 Bike *func_80024064(Bike *b) {
     func_80062E40(b);
