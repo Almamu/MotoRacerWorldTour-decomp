@@ -113,7 +113,7 @@ struct Trk71 {
     int m_18;
 };
 struct Lvl71 {
-    u8 m_00[4];
+    int m_00; // how many tracks
     Trk71 *m_04;
 };
 // The cards' state
@@ -258,6 +258,21 @@ extern int D_800C9EDC, D_800C9EE0, D_800C9EE4, D_800C9EE8, D_800C9EEC, D_800C9EF
 extern int D_800C8D8C, D_800C6710;
 extern Lvl71 *D_800C6710_ asm("D_800C6710"); // also read here as a pointer
 Cell71 *func_800A09C0(Card71 *c);
+extern int *D_800C9EF0_ asm("D_800C9EF0"); // also read here as a pointer
+extern int D_800C8DC0, D_800D5FC8, D_800D5F6C, D_800CBF20;
+extern void *D_800CB478;
+extern u8 D_800CB480[], D_800D4898[], D_800CBC94[], D_800CABC0[];
+void *__builtin_new(unsigned int n);
+void func_8006C750(void);
+void func_8001687C(void);
+void *func_8006A8FC(void *p);
+void func_8006A914(void *c, int n);
+void func_8006A534(void *t, int n, short m);
+void func_800A13C0(void *c);
+void *func_80078FE8(void *r, int b);
+int func_80078F90(void *t, void *x);
+int func_80045168(void *a, int b, int c, int d, ...);
+int func_8009FE70(void);
 int func_800A5530(char *name, void **t, int n, int a, int b, int c, int d);
 
 void func_8009FB58(Menu71 *m);
@@ -607,7 +622,38 @@ void func_8009FDE8(Menu71 *m) {
     func_80087468(s->m_120, s->m_c[14], 1, s->m_134, s->m_138, s->m_d[14]);
 }
 
+/* The game's state set up once: counters, the cards, the tracks' laps. */
+#ifdef NON_MATCHING
+// The calls and stores in order; the original computes D_800CBC94's address again for the second call and keeps the result in $s0 throughout, GCC keeps the address in $s0 instead, and schedules the result's copy and the stores after the calls differently (21 off; 18 with unsplit addresses, which the rest of the chunk can't take).
+int func_8009FE70(void) {
+    int r;
+
+    func_8006C750();
+    func_8001687C();
+    D_800C8DC0 = 0;
+    D_800CB478 = func_8006A8FC(__builtin_new(0xC));
+    func_8006A914(D_800CB478, 0x40);
+    func_8006A534(D_800CB480, 0x10, 0x400);
+    r = func_800A048C();
+    func_800A13C0(D_800D4898);
+    if (r) {
+        if (D_800C6710_->m_00 == 0x12) {
+            int i;
+
+            for (i = 0; i < 0x12; i++) {
+                D_800C9EF0_[i] = D_800C6710_->m_04[i].m_18;
+            }
+        }
+        D_800CBF20 = func_80078F90(D_800CBC94, func_80078FE8(D_800CBC94, 0));
+        D_800D5FC8 = -1;
+        D_800D5F6C = 0;
+        r = func_80045168(D_800CABC0, 2, -1, 2, 0x11, 2, &D_800CBF20, 7) != 0;
+    }
+    return r;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_8009FE70);
+#endif
 
 /* A data file's name (Data\DB_D_n.sdf), made by its first user. */
 char *func_8009FFCC(void) {

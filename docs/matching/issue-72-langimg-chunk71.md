@@ -8,7 +8,7 @@ sound settings applied, groups of named entries, an LZ unpacker and the
 open of `\MR3.DAT`. One file, `src/langimg/chunk_71.cpp`,
 0x8009F180-0x800A1110.
 
-57 functions: 47 match, 3 are parked, 7 are still asm (`func_8009F180`
+57 functions: 47 match, 5 are parked, 5 are still asm (`func_8009F180`
 matched during chunk_70, #71, once `func_800A41BC` was declared `int`).
 
 ## The settings
@@ -44,7 +44,7 @@ small and they're declared as scalars. chunk_72's split loads (`lui $v1`,
 | `func_8009F760` | parked | seven words saved or restored: the copies' registers (49 off) |
 | `func_8009F82C` | asm | 161 instructions |
 | `func_8009FAB0` to `func_8009FDE8` | match | the sprites' frames |
-| `func_8009FE70` | asm | 87 instructions |
+| `func_8009FE70` | parked | the game set up once: two registers (third pass) |
 | `func_8009FFCC` to `func_800A0248` | match | the data file's name, names, entries, groups |
 | `func_800A029C` | asm | 97 instructions |
 | `func_800A0420` to `func_800A0558` | match | an entry offered a value, the data file looked for, a backward copy |
@@ -52,7 +52,8 @@ small and they're declared as scalars. chunk_72's split loads (`lui $v1`,
 | `func_800A0680` | matches | `\MR3.DAT` read |
 | `func_800A06AC` | asm | 88 instructions |
 | `func_800A080C` to `func_800A0884` | match | constructors, the sound settings applied |
-| `func_800A09C0`, `func_800A0AE8` | asm | 78 and 92 instructions |
+| `func_800A09C0` | parked | the current cell's name: a register (third pass) |
+| `func_800A0AE8` | asm | 92 instructions |
 | `func_800A0C58` to `func_800A0DC4` | match | the cards' state set up, reset, updated, a directory chosen |
 | `func_800A0E58` | asm | 174 instructions |
 
@@ -72,3 +73,17 @@ small and they're declared as scalars. chunk_72's split loads (`lui $v1`,
   where `r->m_28 + k * 32 - 32` didn't (`func_8009FC00`).
 - **A variable reused.** The LZ unpacker keeps its copy's length in the
   same variable as the packed word it came from.
+
+## Third pass
+
+- `func_800A09C0` written and parked (35 off): the card's current cell
+  name, from `m_36C[row][col]` or from `m_15C`, through a local `int t[3]
+  = {2, 1, 0}` (GCC copies its initializer from `.rodata`, as the
+  original's `D_800B7B14`). The tests came out right with a `goto` to a
+  shared `return 0`; the card stays in `$a3` where the original has
+  `$a2`, so the copy uses `$t0`-`$t2` rather than `$a3`-`$t1`.
+- `func_8009FE70` written and parked (21 off): the game's state set up
+  once (the cards' counter object built with `__builtin_new` and its
+  constructor `func_8006A8FC`, the tracks' laps copied to `D_800C9EF0`,
+  `func_80045168` started). The original computes `D_800CBC94`'s address
+  again for its second call; GCC keeps it in `$s0`.
