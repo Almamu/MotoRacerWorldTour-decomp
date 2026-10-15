@@ -15,7 +15,7 @@ Around them:
 
 One file, `src/langimg/chunk_29.cpp`, 0x8004B4B0-0x8004D560.
 
-31 functions: 22 match, 3 are parked, 6 are still asm.
+31 functions: 23 match, 3 are parked, 5 are still asm.
 
 ## The settings
 
@@ -47,6 +47,11 @@ small globals.
   a single `return r`, its blocks came out in the original's order. Its
   registers then matched with the last test inside a `do { } while (0)`
   (the permuter; a workaround, marked at the use).
+- **`func_8004C4E4` (fifth pass).** The view mode's clamp is written with
+  its default first, `if (c >= 0) { m = 5; if (c < 6) m = c; } else m = 0;`
+  (as an `if`/`else if` chain the compares came out in another order), the
+  player, the index and the run read in that order, and the modes as a
+  `switch` whose mode 1 falls into mode 0 and mode 0 into the default.
 
 ## The functions
 
@@ -65,7 +70,7 @@ small globals.
 | `func_8004C38C` | matches | both players set up |
 | `func_8004C3FC`, `func_8004C420` | match | a player's values set |
 | `func_8004C430` | matches | a player's choice stepped back, unless their bike is busy |
-| `func_8004C4E4` | asm | 160 instructions |
+| `func_8004C4E4` | matches | a player's view mode set |
 | `func_8004C764` | matches | a player set up from tables |
 | `func_8004C7EC` | matches | a flag cleared on both players |
 | `func_8004C870` | matches | a player's state from their bike |
