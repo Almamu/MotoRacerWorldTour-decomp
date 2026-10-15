@@ -44,7 +44,7 @@ struct Particles {
     short m_live; // 0x4B0C
     short m_4B0E;
 };
-extern int D_800D6100; // the frame's time
+extern int D_800D6100;                        // the frame's time
 Vector3 *func_80099574(Vector3 *v, int drag); // returns v
 void func_8001DFD8(Racer *r, int dist);
 void func_8001F67C(Particles *p);
