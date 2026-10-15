@@ -1018,9 +1018,11 @@ SndDef *func_8006C85C(int a, int b, int c) {
 }
 #undef SND45
 
-#ifdef NON_MATCHING
-/* A call's arguments set in the other order (as func_8006C7CC), and the music table's fields addressed from one base (as func_8006C85C) */
-/* A scene's sounds and its music. */
+extern int D_800D13D8_a[] __asm__("D_800D13D8");
+extern int D_800C79F8_la __asm__("D_800C79F8");
+extern int D_800C7F5C_la __asm__("D_800C7F5C");
+#define MUS45 ((Music45 *)&D_800C7F5C_la)
+
 void func_8006C8EC(int a, int b, int c) {
     char buf[256];
     SndDef *d = func_8006C85C(a, b, c);
@@ -1030,16 +1032,16 @@ void func_8006C8EC(int a, int b, int c) {
         sprintf(buf, D_800C7F48, d->m_00);
         if (func_80014724(D_800D11D0, buf)) {
             func_80013DE0(D_800D11D0, d->m_07, d->m_08);
-            func_80013DE0(D_800D11D0, 0x5E, D_800C79F8);
+            func_80013DE0(D_800D11D0, 0x5E, (SndName *)&D_800C79F8_la);
         }
     }
     func_8006FAF8(0, 0);
-    D_800D13D8 = 2;
+    D_800D13D8_a[0] = 2;
     D_800C7F2E = 0;
     for (i = 0; i < 10; i++) {
-        if (D_800C7F5C[i].m_02 == c || D_800C7F5C[i].m_01 == a) {
-            D_800C7F2E = D_800C7F5C[i].m_00;
-            func_80011DA8(D_800C7F5C[i].m_03, D_800C7F5C[i].m_04);
+        if (c == MUS45[i].m_02 || a == MUS45[i].m_01) {
+            D_800C7F2E = MUS45[i].m_00;
+            func_80011DA8(MUS45[i].m_03, MUS45[i].m_04);
             break;
         }
     }
@@ -1048,9 +1050,7 @@ void func_8006C8EC(int a, int b, int c) {
     D_800CB5D4 = c;
     D_800C7F2C = (u32)(c - 14) < 2;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006C8EC);
-#endif
+#undef MUS45
 
 void func_8006CA50(void) {
     D_800C7F28 = 0;
