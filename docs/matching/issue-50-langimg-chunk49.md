@@ -13,7 +13,7 @@ destructor, and globals saved from the game's timers.
 
 One file, `src/langimg/chunk_49.cpp`, 0x8007345C-0x80075440.
 
-26 functions: 14 match, 7 are parked, 5 are still asm.
+26 functions: 14 match, 8 are parked, 4 are still asm.
 
 ## The settings
 
@@ -85,7 +85,7 @@ globals.
 | `func_80074AC8` | parked | an object stepped along its links: registers |
 | `func_80074D20`, `func_80074D28` | match | empty |
 | `func_80074D30`, `func_80074D78` | match | a constructor and a destructor |
-| `func_80074DA0` | asm | 174 instructions |
+| `func_80074DA0` | parked | an object along keys: registers |
 | `func_80075058` | asm | 250 instructions |
 
 ## Third pass
@@ -105,3 +105,16 @@ globals.
   (`(*(int (*)[][11])&D_800C860C)[s][j]`, the row's byte offset added
   before the table's), the first point by bytes as chunk_48 does; the
   section and the list pointer are in other registers than the original's.
+
+## Group B follow-up
+
+- `func_80074DA0` written and parked (45 off): a derived object's update
+  (`Obj49k`): a virtual function by its fourth argument, the base update
+  `func_800746B0`, then the current key's angles eased into 0x74 (chunk_50's
+  `func_80076504`), its flag bits 8-9 and 10-11 set from a distance test
+  and an angle comparison, then chunk_50's `func_800758F4` and
+  `func_80075A1C`. The vtable call loads its offset and function in each
+  branch into two locals and makes one call; the angle comparison is an
+  inline function returning a flag through a pointer. Left: the object
+  and the second argument in swapped saved registers, and the call's two
+  registers.
