@@ -555,6 +555,20 @@ globals), a script that tries every order is quicker than guessing:
 
 ### Temporaries and folding
 
+- **A constant multiply spelled so GCC expands it the original's way.**
+  `(x << 13) + (x << 12)` in the original is `x * 0x3000`, but GCC
+  expands `x * 0x3000` as `(x * 3) << 12` and the two written shifts pick
+  other registers. `(x << 12) * 3` gives the original's code (chunk_02b's
+  `func_80016A8C`, 20 off to 0): the `* 3` expanded as a shift and an add
+  of the shifted value.
+- **One variable for two values in turn.** When the original keeps a
+  call's result where it was computed and puts the next sum in another
+  temporary, the source may reuse one variable for two values one after the
+  other (chunk_15's `func_8003031C`: `l = f() >> 3; if (l + 0x80 < a) { l =
+  g(); ...`); with two variables the sum reused the first value's register.
+- **A flag as a conditional expression.** chunk_13's `func_8002CED4`
+  matched with `big = l ? (f || l > len + 0x2000) : 0;` where `l && (...)`
+  and `if`s gave the length and the flag each other's temporaries.
 - **Packed fields read in the original's order.** When the original
   extracts bitfields of one word in an order other than the one it stores
   them in (chunk_62's coordinates: y, z, then x, stored x, y, z), read them
@@ -1289,6 +1303,25 @@ two (or two merged into one).
   extract with shifts (`(int)(w << 10) >> 25`); as bitfields of one struct
   GCC merged the two branches' identical tails (chunk_61's `func_8008C500`,
   from 44 off to 0 with a shared `none:` exit for its two `return 0`s).
+- **Per-function aliases of a global.** When only one function wants a
+  global accessed the other way, alias the symbol for that function with
+  `__asm__` instead of changing the chunk's declaration:
+  `extern int D_800CB498_la __asm__("D_800CB498");` (used as `(Unit4C
+  *)&D_800CB498_la`) makes it small for that use, one `la` each time;
+  `extern int D_800D13D8_a[] __asm__("D_800D13D8");` makes a 4-byte global
+  that isn't one of the chunk's small globals a split `lui`/`sw %lo`, not
+  maspsx's `$at` form. chunk_45's `func_8006BABC`, `func_8006C7CC`,
+  `func_8006C85C` and `func_8006C8EC` matched with them.
+- **The base of an indexed address through an accessor.** When the
+  original adds the index to the array's address (`addiu $v1, $s2, 0x470;
+  addu $a2, $v1, $s4`) and GCC adds the field's offset to the index first,
+  return the array from an inline accessor: `Picks29(g) + i` (chunk_29's
+  `func_8004C1BC`).
+- **A call's arguments read into locals in order.** `func_80079848`
+  (chunk_52) matched once the four fields passed to a call were read into
+  locals first; read in the call's argument list, GCC loaded the stack
+  argument first, and hoisted a global's `%hi` out of the loop into a saved
+  register.
 - **A bit test as an empty `if`.** When the original tests a flag with
   `andi`, then `bnez` past the work, and GCC gives `xori`/`andi`/`beqz`
   for `if (!((f >> 1) & 1)) {...}`, write the test the other way with an

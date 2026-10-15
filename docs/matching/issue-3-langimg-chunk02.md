@@ -11,7 +11,7 @@ cut in three:
 | `src/langimg/chunk_02a.cpp` | C++: `CName`, `CNamed`, `Cobjet`'s constructor, destructor, `Init` | 0x80015EAC-0x80016144 | the game's (2.95.2, `-G8`) |
 | `src/langimg/chunk_02b.cpp` | the objects' helpers, the scene tree's draw | 0x80016144-0x800177E8 | GCC 2.91.66, `-G8`, divisions without checks, `--small-externs` (`langimg.chunk_02b_*`) |
 
-3 + 9 + 22 functions: 26 match, 8 are parked.
+3 + 9 + 22 functions: 27 match, 7 are parked.
 
 **Revised in #4** ([issue-4-langimg-chunk03.md](issue-4-langimg-chunk03.md)):
 the 2.91.66 code isn't C. It allocates with `new[]` and calls `Cobjet`'s
@@ -86,7 +86,7 @@ twice, and GCC drops the first pair.
 | `func_800168A8` | parked | the cache's address as `la` + `addu` |
 | `func_80016998` ... `func_800169B0` | match | empty |
 | `func_800169B8`, `func_80016A38` | match | |
-| `func_80016A8C` | parked | draw at a level of detail; registers only (20 off) |
+| `func_80016A8C` | matches | draw at a level of detail |
 | `func_80016C3C` | parked | a point projected with the GTE; registers (42 off) |
 | `func_80016E34` | parked | the scene tree's draw; stack addresses |
 | `func_80017574`, `func_80017730` | match | |
@@ -103,7 +103,7 @@ twice, and GCC drops the first pair.
   the original's only one.
 - **`func_80017730`.** Two `do`/`while (--n)` loops over the list, each
   element read into one shared `Cobjet *o`.
-- **`func_80016A8C`** (20 off, registers only). The distance is an inline
+- **`func_80016A8C`** (was 20 off; it matches since the near-misses pass, below). The distance is an inline
   (`CameraLod`), and that made the global PRE (egcs's GCSE) move `m_3C`'s
   load the way the original has it: one `lbu` before the branch, reloaded
   in the branch with the call. Then: `m = x; if (m < y) m = y;` for the
@@ -193,3 +193,11 @@ didn't when the copy too was inside the inline function.
 its blocks' locals at other offsets (the products' matrix and the camera's
 vectors at 0x10 and 0x20, the saved child matrix at 0x30). Its parent matrix copied into a
 local takes it from 425 to 389 off, not kept.
+
+## Near-misses pass
+
+- **`func_80016A8C` matches** (20 off before): the level of detail's
+  divisor is the lens value times 0x3000, and the original's
+  `(x << 13) + (x << 12)` comes from `(l->m_14 << 12) * 3` (GCC expands the
+  `* 3`). Written as the two shifts the registers around it differed;
+  as `* 0x3000` GCC expands it as `(x * 3) << 12`.

@@ -13,7 +13,7 @@ from 0x2E8). It covers:
 
 One file, `src/langimg/chunk_31.cpp`, 0x8004F6C8-0x800514F4.
 
-32 functions: 24 match, 4 are parked, 4 are still asm.
+32 functions: 25 match, 3 are parked, 4 are still asm.
 
 ## The settings
 
@@ -76,7 +76,7 @@ globals.
 | Function | State | Notes |
 |---|---|---|
 | `func_8004F6C8` | matches | a matrix from an object's rotation and position |
-| `func_8004F76C` | parked | the matrices of two entries: the counter and a pointer swap registers (9 off) |
+| `func_8004F76C` | matches | the matrices of two entries |
 | `func_8004F828` | matches | a value set, plus 0x40 |
 | `func_8004F83C` | matches | a position moved, and pushed back along the normal when it hit |
 | `func_8004F908` | asm | 332 instructions |
@@ -105,3 +105,11 @@ globals.
 
 - `func_800507B0` matches: the bikes of kind 1 counted through an inline function taking the kind (`Count31(r, 1)`), which sets the constant first as the original.
 - Built with `-fmove-all-movables` (the Makefile's CFLAGS for the chunk, group A's finding in the techniques): every matched function still matches, and the parked ones it touches come closer. `func_80050A4C` went from 141 to 6 off.
+
+## Group B near-misses
+
+- `func_8004F76C` matched (from 9 off) with #298's rule for saved
+  registers: the counter and the flags' pointer have the same priority, and
+  the tie goes to the value born later. The original's flags pointer is in
+  `$s0`, so it is assigned last (`int i = 0;` first, then the other two
+  pointers, then `f = o->m_488`).
