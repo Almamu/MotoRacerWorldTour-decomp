@@ -12,7 +12,7 @@ What's here:
 
 One file, `src/langimg/chunk_61.cpp`, 0x8008B208-0x8008D168.
 
-23 functions: 13 match, 1 is parked, 9 are still asm.
+23 functions: 13 match, 2 are parked, 8 are still asm.
 
 ## The settings
 
@@ -55,7 +55,7 @@ globals.
 | `func_8008B208`, `func_8008B364`, `func_8008B500`, `func_8008B65C`, `func_8008B7F8` | asm | 88 to 105 instructions |
 | `func_8008B998` | parked | a point against a zone's planes: the last tests' branches |
 | `func_8008BA50` | asm | 152 instructions |
-| `func_8008BCB0` | asm | 532 instructions |
+| `func_8008BCB0` | parked | the camera along its path: a layout shift |
 | `func_8008C500` | asm | 94 instructions |
 | `func_8008C678` | matches | the nearest zone |
 | `func_8008C78C` | matches | seven counters stepped |
@@ -66,3 +66,33 @@ globals.
 | `func_8008D05C`, `func_8008D0A4` | match | a rectangle constructed and set |
 | `func_8008D0CC`, `func_8008D0FC` | match | pairs copied and cleared |
 | `func_8008D120`, `func_8008D148` | match | words copied and cleared |
+
+## Group C large functions, continued
+
+`func_8008BCB0` (532 instructions), a camera following its path: where it
+looks from (eased in from a curve over the first frames), the lens eased
+towards its limit, then the matrix by the camera's mode (a look-at built
+from cross products, or turns about y and z read from the sine table), and
+the two lens calls. It is written in the original's shape, frame and
+stack slots, and parked (368 off; 119 with stack offsets and branch
+targets left out): the lens's two stores and jumps are laid out in another
+order, which shifts the middle by one instruction, the struct copies use
+`$t5`-`$t7` for `$t4`-`$t6`, and the angle sits in `$a2` for `$a1`.
+
+What got it there:
+- **Vectors kept as three small words.** The camera's vectors
+  (`D_800CBE48` and the others) are read and written through `$gp` word by
+  word, so they're declared as three `int`s each, with `(Vec61 *)&` where
+  an address is passed; declared as `Vec61` globals, their fields came out
+  as `lui`/`addiu` addresses.
+- **An `int *` store makes GCC reload them.** The original reads
+  `D_800CBE48` again after copying it into the camera; with the copy's
+  destination a `Vec61 *` (a struct field) GCC reused the loaded words,
+  through an `int *` it reloads them (451 off to 368).
+- **The blocks' order sets the stack slots.** The original's slots show
+  case 0 of the mode's switch first (its vectors at 0x48-0x68, case 2's
+  matrices reusing them), so it comes first in the source.
+- **Inline helpers for the turns** (`RotX61`, `RotY61`, `RotZ61`) and one
+  for the product (`Apply61`, its matrix a local): the product's
+  translation address is recomputed for each call, as in the original
+  (#289's finding), and the frame came down to the original's 0xC0.

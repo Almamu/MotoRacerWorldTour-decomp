@@ -1,4 +1,5 @@
 #include "common.h"
+#include "psyq.h"
 
 struct Vec61 {
     int x;
@@ -45,10 +46,32 @@ struct Plane61 {
     int m_48;
     u8 m_4C[8];
     struct Plane61 *m_54; // the next
-    u8 m_58[4];
-    int m_5C; // who it doesn't apply to
-    u8 m_60[0x16];
+    int m_58;             // flags: 1 easing in, 4 the bike's flag
+    int m_5C;             // who it doesn't apply to
+    short m_60;           // the camera's mode
+    short m_62;           // how long it eases in
+    short m_64;
+    short m_66;
+    short m_68; // the angle it got to
+    short m_6A, m_6C;
+    short m_6E; // the lens's limit
+    short m_70;
+    short m_72, m_74;
     short m_76; // either plane will do
+};
+// A camera: its matrix and where it looks from (chunk_29's Ply29)
+struct Cam61 {
+    MATRIX m_00;
+    u8 m_20[0xD8];
+    Vec61 m_F8;
+};
+struct Bk61 {
+    u8 m_00[0x325];
+    u8 m_325;
+};
+struct Game61 {
+    u8 m_00[0x49C];
+    u8 m_49C[4];
 };
 
 struct List61 {
@@ -84,7 +107,38 @@ extern int D_800CBDEC;
 extern int D_800CBDF0;
 extern int D_800CBDF4;
 
+extern short D_800CBDC8; // the lens's start
+extern short D_800CBDCA; // the lens
+extern int D_800CBDD0;   // frames since the camera changed
+// Vectors kept as three small words each (read through $gp one by one)
+extern int D_800CBDD8, D_800CBDDC, D_800CBDE0; // last frame's
+extern int D_800CBDF8, D_800CBDFC, D_800CBE00; // its move
+extern int D_800CBE08, D_800CBE0C, D_800CBE10;
+extern int D_800CBE18, D_800CBE1C, D_800CBE20;
+extern int D_800CBE28, D_800CBE2C, D_800CBE30;
+extern int D_800CBE38, D_800CBE3C, D_800CBE40;
+extern int D_800CBE48, D_800CBE4C, D_800CBE50; // where the camera looks from
+#define VEC61(a) ((Vec61 *)&a)
+extern short D_800BF3A0[][2];
+extern char D_800CA7D8[];
+extern int D_800CA940;
+extern Game61 *D_800C5E14;
+
 extern "C" {
+int ratan2(long y, long x);
+Vec61 *func_8009964C(Vec61 *v, int k);
+Vec61 *func_80099718(Vec61 *d, Vec61 *s, int k);
+Vec61 *func_80099834(Vec61 *v, Vec61 *a);
+Vec61 *func_80099908(Vec61 *d, Vec61 *a, Vec61 *b);
+void func_80098F94(Vec61 *v, int shift);
+Vec61 *func_80099D48(Vec61 *v, int shift);
+void func_80098E9C(Vec61 *v);
+int func_80097AC8(int x);
+void func_800980F4(MATRIX *m);
+MATRIX *func_80098674(MATRIX *a, MATRIX *b, MATRIX *out);
+void func_8009887C(long *in, long *out);
+void func_8001D23C(void *r, int a, int b, int c, int d);
+void func_8008BCB0(Plane61 *o, Cam61 *c, void *m, Bk61 *b, Vec61 *v, Game61 *g);
 int func_80099B88(Vec61 *a, Vec61 *b);
 int func_8008B998(Plane61 *o, Vec61 *v);
 Vec61 *func_800998D0(Vec61 *d, Vec61 *a, Vec61 *b);
@@ -139,7 +193,243 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_61", func_8008B998);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_61", func_8008BA50);
 
+static inline void VecCopyL61(Vec61 *d, Vec61 *s) {
+    int x = s->x;
+    int y = s->y;
+    int z = s->z;
+
+    d->x = x;
+    d->y = y;
+    d->z = z;
+}
+
+static inline void SetVec61(Vec61 *v, int x, int y, int z) {
+    v->x = x;
+    v->y = y;
+    v->z = z;
+}
+
+// Where the camera looks from, set
+static inline void SetLook61(Vec61 *s) {
+    int x = s->x;
+    int y = s->y;
+    int z = s->z;
+
+    D_800CBE48 = x;
+    D_800CBE4C = y;
+    D_800CBE50 = z;
+}
+
+// And read
+static inline void GetLook61(int *d) {
+    int x = D_800CBE48;
+    int y = D_800CBE4C;
+    int z = D_800CBE50;
+
+    d[0] = x;
+    d[1] = y;
+    d[2] = z;
+}
+
+static inline void RotX61(MATRIX *m, int c, int s) {
+    m->m[0][0] = 0x1000;
+    m->m[1][0] = 0;
+    m->m[0][1] = 0;
+    m->m[2][0] = 0;
+    m->m[0][2] = 0;
+    m->m[2][2] = c;
+    m->m[1][1] = c;
+    m->m[1][2] = -s;
+    m->m[2][1] = s;
+}
+
+static inline void RotY61(MATRIX *m, int a) {
+    int cs = D_800BF3A0[a & 0xFFF][1];
+    int sn = D_800BF3A0[a & 0xFFF][0];
+
+    m->m[0][2] = sn;
+    m->m[1][1] = 0x1000;
+    m->m[1][0] = 0;
+    m->m[0][1] = 0;
+    m->m[2][1] = 0;
+    m->m[1][2] = 0;
+    m->m[2][2] = cs;
+    m->m[0][0] = cs;
+    m->m[2][0] = -sn;
+}
+
+static inline void RotZ61(MATRIX *m, int a) {
+    int cs = D_800BF3A0[a & 0xFFF][1];
+    int sn = D_800BF3A0[a & 0xFFF][0];
+
+    m->m[2][2] = 0x1000;
+    m->m[2][0] = 0;
+    m->m[0][2] = 0;
+    m->m[2][1] = 0;
+    m->m[1][2] = 0;
+    m->m[1][1] = cs;
+    m->m[0][0] = cs;
+    m->m[0][1] = -sn;
+    m->m[1][0] = sn;
+}
+
+// The camera turned by r: its matrix and translation
+static inline void Apply61(Cam61 *c, MATRIX *r) {
+    MATRIX t;
+
+    func_80098674(r, &c->m_00, &t);
+    func_8009887C(c->m_00.t, t.t);
+    func_800997D0((Vec61 *)t.t, (Vec61 *)r->t);
+    c->m_00 = t;
+}
+
+#ifdef NON_MATCHING
+// In the original's shape (its frame and stack slots too): the lens's two stores and their jumps laid out in another order (a one-instruction shift through the middle), the struct copies' temporaries one register up ($t5-$t7 for $t4-$t6) and the angle in $a2 for $a1 (368 off, 119 with the stack offsets and branch targets left out).
+void func_8008BCB0(Plane61 *o, Cam61 *c, void *m, Bk61 *b, Vec61 *v, Game61 *g) {
+    Vec61 old = *VEC61(D_800CBE48);
+    int f;
+
+    SetLook61(&o->m_0C);
+    if (o->m_58 & 1) {
+        if (D_800CBDD0 < o->m_62) {
+            Vec61 a, t;
+            int n2 = D_800CBDD0 * D_800CBDD0;
+
+            a.x = D_800CBE08;
+            a.z = D_800CBE10;
+            a.y = D_800CBE0C;
+            func_8009964C(&a, n2 * D_800CBDD0 >> 8);
+            func_80099718(&t, VEC61(D_800CBE18), n2);
+            func_800997D0(&a, &t);
+            func_80099718(&t, VEC61(D_800CBE28), D_800CBDD0);
+            func_800997D0(&a, &t);
+            func_800997D0(&a, VEC61(D_800CBE38));
+            D_800CBE48 = a.x;
+            D_800CBE4C = a.y;
+            D_800CBE50 = a.z;
+        } else {
+            o->m_58 &= ~0x20;
+        }
+    }
+    GetLook61((int *)&c->m_F8);
+    D_800CBDF8 = D_800CBE48;
+    D_800CBDFC = D_800CBE4C;
+    D_800CBE00 = D_800CBE50;
+    func_80099834(VEC61(D_800CBDF8), VEC61(D_800CBDD8));
+    D_800CBDD8 = D_800CBE48;
+    D_800CBDDC = D_800CBE4C;
+    D_800CBDE0 = D_800CBE50;
+    if (o->m_60 == 0 || o->m_60 == 4) {
+        Vec61 d = *v;
+        int ang;
+
+        func_80099834(&d, VEC61(D_800CBE48));
+        ang = ratan2(0x5000, func_8009923C(&d));
+        if (o->m_58 & 1) {
+            if (D_800CBDD0 < o->m_62) {
+                ang = (ang * D_800CBDD0 + D_800CBDCA * (o->m_62 - D_800CBDD0)) / o->m_62;
+            } else {
+                ang = D_800CBDCA;
+            }
+        } else if (o->m_60 == 4) {
+            ang = D_800CBDCA + (ang - D_800CBDCA) / o->m_66;
+        }
+        if (o->m_6E < ang) {
+            D_800CBDCA = o->m_6E;
+        } else {
+            D_800CBDCA = ang;
+        }
+    } else if (o->m_58 & 1) {
+        if (o->m_6E < D_800CBDCA || o->m_62 < D_800CBDD0) {
+            D_800CBDCA = o->m_6E;
+        } else {
+            D_800CBDCA = (o->m_6E * D_800CBDD0 + D_800CBDC8 * (o->m_62 - D_800CBDD0)) / o->m_62;
+        }
+    } else {
+        D_800CBDCA = o->m_6E;
+    }
+    if (D_800CBDCA < 100) {
+        D_800CBDCA = 100;
+    }
+    switch (o->m_60) {
+    case 0:
+    case 1:
+    case 4: {
+        Vec61 d = *v;
+        Vec61 x, up, one;
+
+        d.y += 0x1000;
+        func_80099834(&d, &c->m_F8);
+        SetVec61(&up, 0, 0x1000, 0);
+        func_80099908(&x, &up, &d);
+        func_80099908(&up, &d, &x);
+        func_80098F94(&x, 13);
+        func_80098F94(&up, 13);
+        func_80098F94(&d, 13);
+        SetVec61(&one, 1, 1, 1);
+        func_800997D0(&x, &one);
+        SetVec61(&one, 1, 1, 1);
+        func_800997D0(&up, &one);
+        SetVec61(&one, 1, 1, 1);
+        func_800997D0(&d, &one);
+        func_80099D48(&x, 1);
+        func_80099D48(&up, 1);
+        func_80099D48(&d, 1);
+        c->m_00.m[0][0] = x.x;
+        c->m_00.m[1][0] = x.y;
+        c->m_00.m[2][0] = x.z;
+        c->m_00.m[0][1] = up.x;
+        c->m_00.m[1][1] = up.y;
+        c->m_00.m[2][1] = up.z;
+        c->m_00.m[0][2] = d.x;
+        c->m_00.m[1][2] = d.y;
+        c->m_00.m[2][2] = d.z;
+        func_800980F4(&c->m_00);
+        break;
+    }
+    case 2: {
+        Vec61 d = *v;
+        MATRIX r;
+        int span, len;
+
+        d.y += 0x1000;
+        func_80099834(&d, &c->m_F8);
+        func_80098E9C(&d);
+        span = o->m_6A - o->m_6C;
+        len = func_80097AC8(d.x * d.x + d.z * d.z);
+        if (len) {
+            int ang, y;
+
+            ang = o->m_6C + (span * (D_800BF3A0[(D_800CBDD0 * o->m_64) & 0xFFF][0] + 0x1000) >> 13);
+            RotX61(&r, len, d.y);
+            o->m_68 = ang & 0xFFF;
+            RotY61(&c->m_00, ang & 0xFFF);
+            Apply61(c, &r);
+            if (!span) {
+                y = o->m_74;
+            } else {
+                y = (o->m_74 - o->m_72) * (ang - o->m_6C) / span + o->m_72;
+            }
+            RotZ61(&r, y);
+            Apply61(c, &r);
+        }
+        break;
+    }
+    }
+    c->m_00.t[0] = c->m_00.t[1] = c->m_00.t[2] = 0;
+    f = D_800CA940 + D_800CA940 / 2;
+    func_8001D23C(D_800CA7D8, f, D_800CBDCA, 0x800, 0);
+    func_8001D23C(D_800C5E14->m_49C, f, D_800CBDCA, 0x800, 0);
+    D_800CBDD0++;
+    if (o->m_58 & 4) {
+        b->m_325 = 1;
+    } else {
+        b->m_325 = 0;
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_61", func_8008BCB0);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_61", func_8008C500);
 

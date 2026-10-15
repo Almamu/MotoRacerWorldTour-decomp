@@ -860,6 +860,14 @@ globals), a script that tries every order is quicker than guessing:
   statement: `reorg` copies it into the backward jump's delay slot and
   retargets the jump after it. As a `for (;;)` GCC hoisted addresses out
   of the loop instead (chunk_38's `func_8005EE48`, `top: pa = &a;`).
+- **A store that makes GCC read a global again.** GCC 2.91.66 doesn't
+  think a store to a struct field can change a plain scalar global, so it
+  reuses a global's loaded value across such stores; after stores through
+  a plain `int *` it reads the global again. When the original reloads a global
+  right after copying it somewhere, write the copy's destination as an
+  `int *`: chunk_61's `func_8008BCB0` copies the camera's position
+  (three small words) into the camera through `int *` and then reloads
+  them as the original does.
 - **Unused locals.** A frame bigger than its variables need means the
   original had locals the optimiser dropped: `int unused[6];` gives
   `func_8001184C`'s 0x30-byte frame.
