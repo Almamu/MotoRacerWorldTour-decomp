@@ -69,3 +69,4 @@ issue it worked on, and add it below.
 | [issue-38-langimg-chunk37.md](issue-38-langimg-chunk37.md) | The game's chunk_37: a race's bikes and cameras; the tables declared small, the counts through an inline function, a loop counter of its own |
 | [issue-21-langimg-chunk20.md](issue-21-langimg-chunk20.md) | The game's chunk_20: a scene's groups of items and their objects; nested `if`s for the result, the `else` placed last, constants hoisted as locals |
 | [issue-39-langimg-chunk38.md](issue-39-langimg-chunk38.md) | The game's chunk_38: a race's bikes and their controls; the callees' real prototypes, loops entered at their body, the found path through the common return |
+| [issue-33-langimg-chunk32.md](issue-33-langimg-chunk32.md) | The game's chunk_32: a race's sequence of steps, its bikes' paths and its display; the result set after the early return, a loop entered at its test, flags cleared one by one |
