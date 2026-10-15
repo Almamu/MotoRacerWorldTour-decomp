@@ -10,10 +10,14 @@
 #   to keep building and linking. The progress goes in the run summary.
 # - Sony's libraries: `make sdk`, the build with Sony's own PsyQ objects in
 #   place of the library asm they match (docs/decomp.md, "Libraries"). It
-#   also draws the progress badges (tools/chunks.py badges), which need to
-#   know which library functions Sony's objects cover.
+#   also draws the progress badges (tools/chunks.py badges) and writes the
+#   progress report (tools/chunks.py progress), which need to know which
+#   library functions Sony's objects cover.
 # - Badges: on main, once everything passed, the badges replace the single
-#   commit of the `badges` branch, which the README shows.
+#   commit of the `badges` branch, which the README shows, and the report
+#   goes to decompilati.onl. It needs the DECOMPILATION_PROGRESS_TOKEN
+#   secret; without it (forks) that step does nothing, and a failed report
+#   doesn't fail the run.
 on:
   push:
     branches: [ main ]
@@ -156,6 +160,14 @@ jobs:
         name: badges
         path: build/badges
 
+    - name: Write the progress report
+      run: python3 tools/chunks.py progress build/progress.json
+
+    - uses: actions/upload-artifact@v7
+      with:
+        name: progress
+        path: build/progress.json
+
   badges:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: [ check, build, sdk ]
@@ -180,3 +192,22 @@ jobs:
         git -c user.name=github-actions -c user.email=41898282+github-actions[bot]@users.noreply.github.com \
           commit -q -m "Progress badges for $GITHUB_SHA"
         git push -f "https://x-access-token:$GH_TOKEN@github.com/$GITHUB_REPOSITORY" badges
+
+    - uses: actions/download-artifact@v8
+      with:
+        name: progress
+        path: progress
+
+    - name: Report the progress to decompilati.onl
+      continue-on-error: true
+      env:
+        TOKEN: ${{ secrets.DECOMPILATION_PROGRESS_TOKEN }}
+      run: |
+        if [ -z "$TOKEN" ]; then
+          echo "No DECOMPILATION_PROGRESS_TOKEN secret: not reporting"
+          exit 0
+        fi
+        curl --fail-with-body -sS -X POST https://decompilati.onl/api/v1/progress \
+          -H "Authorization: Bearer $TOKEN" \
+          -H "Content-Type: application/json" \
+          --data @progress/progress.json

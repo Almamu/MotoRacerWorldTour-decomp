@@ -13,6 +13,8 @@ The function list comes from build/<target>.elf, so build first (make).
   tools/chunks.py status [--all]          progress per chunk (--all: every chunk)
   tools/chunks.py badges DIR              the README's progress badges, as SVG (CI publishes
                                           them to the badges branch)
+  tools/chunks.py progress FILE           the progress report for decompilati.onl, as JSON
+                                          (CI sends it from main)
   tools/chunks.py issues DIR              write each chunk's issue (title + body) to DIR
   tools/chunks.py issues DIR --create     ...and open them on GitHub (gh)
   tools/chunks.py sync [--dry-run]        tick done functions in the open chunk issues
@@ -240,6 +242,62 @@ def cmd_badges(args):
         pct = 100 * done / total
         (out / f"{name}.svg").write_text(badge(label, f"{pct:.2f}%", pct))
         print(f"{label}: {pct:.2f}% ({done:,}/{total:,} bytes)")
+
+
+def progress_code(funcs):
+    """decompilati.onl's code counts, in bytes: matching as for the badges,
+    non-matching the parked functions alone (their C isn't byte for byte)."""
+    return {
+        "total": sum(f["size"] for f in funcs),
+        "matching": sum(f["size"] for f in funcs if f["state"] in DONE),
+        "non_matching": sum(f["size"] for f in funcs if f["state"] == "parked"),
+    }
+
+
+def cmd_progress(args):
+    """The progress report for decompilati.onl (docs/decomp.md, "Progress";
+    the format is https://decompilati.onl/docs): both executables, each
+    split into the game's chunks and the libraries, as areas of a treemap
+    weighted by their code."""
+    areas = []
+    for target, info in TARGETS.items():
+        rows = survey(target)
+        children = []
+        for lib, label, desc in ((False, "Game", info["game"]), (True, "Libraries", "PsyQ library code")):
+            group = [c for c in rows if c["lib"] == lib]
+            if not group:
+                continue
+            children.append({
+                "name": label,
+                "description": desc,
+                "code": progress_code([f for c in group for f in c["funcs"]]),
+                "children": [
+                    {"name": c["name"], "description": f"{c['src']}, {c['lo']:08X}-{c['hi']:08X}",
+                     "code": progress_code(c["funcs"])}
+                    for c in group if c["funcs"]
+                ],
+            })
+        areas.append({
+            "name": target,
+            "description": re.sub(r"`", "", info["what"]),
+            "code": progress_code([f for c in rows for f in c["funcs"]]),
+            "children": children,
+        })
+    report = {
+        "unit": "bytes",
+        "code": progress_code([f for t in TARGETS for c in survey(t) for f in c["funcs"]]),
+        "layout": "treemap",
+        "areas": areas,
+    }
+    try:
+        commit = subprocess.run(["git", "log", "-1", "--format=%H%n%s"], cwd=ROOT,
+                                capture_output=True, text=True, check=True).stdout.split("\n", 1)
+        report["commit"], report["message"] = commit[0], commit[1].strip()
+    except (OSError, subprocess.CalledProcessError, IndexError):
+        pass
+    Path(args.file).write_text(json.dumps(report, indent=1) + "\n")
+    c = report["code"]
+    print(f"{c['matching']:,} matching and {c['non_matching']:,} non-matching of {c['total']:,} bytes")
 
 
 def issue_title(c):
@@ -511,6 +569,8 @@ def main():
     sub.add_parser("check")
     p = sub.add_parser("badges")
     p.add_argument("dir")
+    p = sub.add_parser("progress")
+    p.add_argument("file")
     p = sub.add_parser("stamp")
     p.add_argument("target", choices=sorted(TARGETS))
     p = sub.add_parser("relink")
@@ -521,7 +581,7 @@ def main():
     p.add_argument("--headers", type=int, required=True, help="the headers issue")
     p.add_argument("--create", action="store_true")
     args = ap.parse_args()
-    {"status": cmd_status, "badges": cmd_badges, "issues": cmd_issues, "sync": cmd_sync, "check": cmd_check,
+    {"status": cmd_status, "badges": cmd_badges, "progress": cmd_progress, "issues": cmd_issues, "sync": cmd_sync, "check": cmd_check,
      "stamp": cmd_stamp, "relink": cmd_relink,
      "cleanup-issues": cmd_cleanup_issues}[args.cmd](args)
 
