@@ -330,7 +330,7 @@ int func_8004845C(Obj27 *o) {
 }
 
 #ifdef NON_MATCHING
-// The demo index's clamp: the original stores the clamped value to D_800D5F64 before the two tables' loads; GCC moves the store after them, which keeps the value in another register (27 off). The clamp itself is an if (v >= 0) around the upper bound, the stage read through a local.
+// The demo index's clamp, stored to D_800D5F64 before the two tables are read into locals (as the original), is an if (v >= 0) around the upper bound, the stage read through a local; left (20 off): the tables' two addresses built in the other order, and global loads after the calls in $v0 where the original uses $v1.
 int func_80048494(Obj27 *o) {
     int s;
 
@@ -364,8 +364,13 @@ int func_80048494(Obj27 *o) {
                 r = 0;
             }
             D_800D5F64 = r;
-            D_800D5F68 = D_800C57F8[r];
-            func_8004AC78(D_800C57EC[r]);
+            {
+                int b = D_800C57F8[r];
+                int c = D_800C57EC[r];
+
+                D_800D5F68 = b;
+                func_8004AC78(c);
+            }
         }
         if (++D_800D5F64 >= 3) {
             D_800D5F64 = 0;
