@@ -61,9 +61,13 @@ struct Obj41 {
     struct Bk41 *m_1B4; // the next bike on the track
     struct Bk41 *m_1B8; // the one before
     u8 m_1BC[0x38];
-    int m_1F4;
-    int m_1F8;
-    u8 m_1FC[0x24];
+    int m_1F4; // the section
+    int m_1F8; // and the point
+    int m_1FC; // the next section
+    int m_200; // and point
+    u8 m_204[0xC];
+    int m_210; // the lane
+    u8 m_214[0xC];
     St41 *m_220;
     St41 *m_224;
     St41 *m_228;
@@ -134,12 +138,22 @@ int func_8001D018(Trk41 *t, void *a, void *b);
 void func_80063C60(Obj41 *o, int *p, u8 *q, int a, int k, Obj41 *other, int d);
 void func_80063A68(Obj41 *o, Game41 *g);
 struct Cell41 {
-    u8 m_00[0xE];
+    u8 m_00[7];
+    s8 m_07; // the lane's side
+    u8 m_08[6];
     u8 m_0E;
     u8 m_0F[0x11];
 };
+// A point of a section (20 bytes): where, and its heading
+struct Pt41 {
+    Vec41 m_00;
+    short m_0C[2];
+    short m_10;
+    short m_12;
+};
 struct Row41 {
-    u8 m_00[8];
+    u8 m_00[4];
+    Pt41 *m_04;
     Cell41 **m_08;
     u8 m_0C[8];
 };
@@ -153,6 +167,13 @@ Obj41 *func_80062E40(Obj41 *o); // the base's constructor, returning this
 void func_800643E4(Obj41 *o);
 void func_8006348C(Obj41 *o, int *a, int *b);
 void func_80064310(void *o, short *v);
+extern short D_800BF3A0[][2]; // sines and cosines by angle (4.12)
+extern int D_800CB448;
+void func_8009964C(Vec41 *v, int k);
+void func_80099D48(Vec41 *v, int shift);
+void func_800998D0(Vec41 *out, Vec41 *a, Vec41 *b);
+int func_8009923C(Vec41 *v);
+void func_800650F8(Obj41 *o, int *out, Tab41 *t);
 void func_800642D0(Obj41 *o);
 Obj41 *func_80064340(Obj41 *o);
 int func_80065044(Obj41 *o, int i, int j, int k, int s, int max, Tab41 *t);
@@ -450,4 +471,43 @@ int func_80065044(Obj41 *o, int i, int j, int k, int s, int max, Tab41 *t) {
     return r;
 }
 
+// A point of a section moved sideways to its lane
+static inline void LanePt41(Row41 *r, int i, int k, Vec41 *out, Vec41 *d) {
+    VecCopyL41(out, &r->m_04[i].m_00);
+    d->x = D_800BF3A0[(r->m_04[i].m_10 - 0x400) & 0xFFF][1];
+    d->y = 0;
+    d->z = D_800BF3A0[(r->m_04[i].m_10 - 0x400) & 0xFFF][0];
+    func_8009964C(d, r->m_08[k][i].m_07 << 9);
+    func_80099D48(d, 12);
+    func_800997D0(out, d);
+}
+
+#ifdef NON_MATCHING
+// Two sections' lane points and their height difference over the distance: only the two rows' addresses are built with their operands the other way round (the section's offset first) and the second row's index and table loaded into swapped registers (6 off).
+void func_800650F8(Obj41 *o, int *out, Tab41 *t) {
+    if (out) {
+        Row41 *a = &t->m_28[o->m_1F4];
+        int i = o->m_1F8;
+        int h0 = a->m_08[o->m_210][i].m_0E << 11;
+        int h1 = t->m_28[o->m_1FC].m_08[o->m_210][o->m_200].m_0E << 11;
+        Vec41 p, q, d;
+        int k;
+
+        if (h0 == h1) {
+            *out = 0;
+            return;
+        }
+        LanePt41(a, i, o->m_210, &p, &d);
+        LanePt41(&t->m_28[o->m_1FC], o->m_200, o->m_210, &q, &d);
+        k = (h1 - h0) * ((h0 + h1) >> 1);
+        func_800998D0(&d, &q, &p);
+        k /= func_8009923C(&d);
+        *out = k;
+        if (D_800CB448 < k) {
+            *out = D_800CB448;
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_41", func_800650F8);
+#endif
