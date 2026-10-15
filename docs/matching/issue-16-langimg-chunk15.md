@@ -28,7 +28,7 @@ One file, `src/langimg/chunk_15.cpp`, 0x8002F4E4-0x80031500. The
 fields it reads are now named in `bike.h` and `motor.h` (by offset;
 `AnimChan` got its four values).
 
-14 functions: 8 match, 4 are parked, 2 are still asm.
+14 functions: 8 match, 5 are parked, 1 is still asm.
 
 ## The settings
 
@@ -83,9 +83,17 @@ globals.
     state is tested through its copy at 0x48D (`b->m_48D = b->m_48C;`
     then `b->m_48D` in the tests), which gave the `lbu` and the later
     sign extension.
-- **Still asm.** `func_8002F4E4` (474 instructions, with `MULSHIFT`s)
-  and `func_80030644` (307), which writes into a second object's model
-  (offsets 0xA94 and 0xB28 of the pointer at its 0x330).
+- **Still asm.** `func_8002F4E4` (474 instructions, with `MULSHIFT`s).
+- **Fifth pass.** `func_80030644` is written and parked, far off (231 of
+  283, mostly shifted): three of the motion's and the bike's values clamped by the motor's and
+  converted from radians to the game's angles (`(x << 12) / 0x6488`),
+  written into the rider's model at the second argument's 0x330 (the
+  body's offset at 0xB28 and four parts' angles at 0x94, 0xA94, 0xB94 and
+  0xC14) when the third argument is set, and two rates at 0xD8 and 0xE0
+  integrated into 0xD4 and 0xDC. The clamps keep their bounds and results
+  in other registers, and the original copies the motor pointer between
+  two of them. Its fields are now named in `bike.h` (0xD4-0xE0) and
+  `motor.h` (0x64, 0x68, 0xAC, 0xB4, 0xB8, 0xD4-0xDC, 0x100).
 
 ## The functions
 
@@ -97,7 +105,7 @@ globals.
 | `func_8002FF3C` | parked | the angle and its rate integrated: a test's layout |
 | `func_8003031C` | parked | the motion pulled back: registers |
 | `func_80030458` | matches | the flags from the kind of ground |
-| `func_80030644` | asm | 307 instructions |
+| `func_80030644` | parked | the rider's model posed: far off (registers) |
 | `func_80030AB0` | parked | the bike placed: registers |
 | `func_80030C98` | matches | the speed's fractions |
 | `func_80030CF0` | matches | whether the flag at 0x14F is set |

@@ -26,15 +26,26 @@ struct Motor {
     int m_50; // 0x50: on the rear wheel
     u8 m_54[0xE];
     short m_62;
-    u8 m_64[8];
+    int m_64;
+    int m_68;
     int m_ratio[6];   // 0x6C: the gears' ratios
     int m_upshift[6]; // 0x84: the engine speed to shift up at, per gear
     u8 m_9C[4];
     int m_A0;
     int m_A4, m_A8;
-    u8 m_AC[0x48];
+    int m_AC;
+    u8 m_B0[4];
+    int m_B4;
+    int m_B8;
+    u8 m_BC[0x18];
+    int m_D4;
+    int m_D8;
+    int m_DC;
+    u8 m_E0[0x14];
     int m_F4;
-    u8 m_F8[0x1C];
+    u8 m_F8[8];
+    int m_100;
+    u8 m_104[0x10];
     int m_114;
     int m_118;
     int m_11C;

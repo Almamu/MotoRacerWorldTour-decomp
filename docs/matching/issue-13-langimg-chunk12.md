@@ -4,7 +4,7 @@ Bike methods (chunk_09): running into the back of another bike, a push
 sideways, the motion's two limits from the motor, and larger ones. One
 file, `src/langimg/chunk_12.cpp`, 0x800297B4-0x8002B800.
 
-11 functions: 3 match, 5 are parked, 3 are still asm.
+11 functions: 4 match, 4 are parked, 3 are still asm.
 
 ## The settings
 
@@ -20,7 +20,7 @@ checks, no small globals (`langimg.chunk_12_*`).
 | `func_8002A260` | matches | empty |
 | `func_8002A268` | parked | a push sideways, scaled by `m_3AC`: `MULSHIFT`'s temporary register, one instruction more |
 | `func_8002A394` | matches | one of two setups by the motor's flags, then a third call |
-| `func_8002A3F0` | parked | the speed's vector scaled and passed to the motions: one copy's registers swapped (4 off) |
+| `func_8002A3F0` | matches | the speed's vector scaled and passed to the motions |
 | `func_8002A7A0` | parked | the lean from the steering, wrapped within the motor's limit: two registers swapped in one branch (13 off) |
 | `func_8002AF8C`, `func_8002B40C` | asm | 288 and 254 instructions |
 | `func_8002ABE8` | parked | the slope's pull: a first draft |
@@ -37,3 +37,12 @@ temporary laid out with its `else` first, and the two wrap loops written as
 `while (limit < x && i < 100)` and `while (x < -limit && i < 200)`. The
 header gained the bike's 0x3A4, 0x40D, 0x411 and 0x43D and the motor's
 `short` at 0x14C and `int` at 0x15C.
+
+Fifth pass: `func_8002A3F0` matches, found by the permuter: it calls
+chunk_68's `func_800998D0` (a - b) through a declaration returning nothing.
+The definition returns its first argument, and declared so (as in
+`cobjet.h`) the last copy's registers came out swapped. The call goes
+through `func_800998D0_void`, a `void` declaration of the same symbol
+(`__asm__("func_800998D0")`), so the header and the definition stay as
+they are. The same for `func_80022D20`, which only this file calls,
+declared `void` here: `func_8002A268` went from 31 off to 24.

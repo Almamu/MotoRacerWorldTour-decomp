@@ -38,6 +38,50 @@ int func_80030CF0(Bike *b);
 void func_80030CFC(Bike *b);
 }
 
+// The rider's model: its parts' angles and the body's offset
+struct Model15 {
+    u8 m_00[0x94];
+    SVECTOR m_94;
+    u8 m_9C[0x9F8];
+    SVECTOR m_A94;
+    u8 m_A9C[0x8C];
+    Vector3 m_B28;
+    u8 m_B34[0x60];
+    SVECTOR m_B94;
+    u8 m_B9C[0x78];
+    SVECTOR m_C14;
+};
+struct Rider15 {
+    u8 m_00[0x330];
+    Model15 *m_330;
+};
+
+extern "C" {
+void func_80030644(Bike *b, Rider15 *r, int draw);
+int func_8002E684(Bike *b, Motion *m);
+}
+
+// Radians in 4.12 to the game's angle units
+#define ANG15(x) (((x) << 12) / 0x6488)
+
+static inline void SetVec15(Vector3 *v, int x, int y, int z) {
+    v->vx = x;
+    v->vy = y;
+    v->vz = z;
+}
+
+static inline void SetSV15(SVECTOR *v, int x, int y, int z) {
+    v->vx = x;
+    v->vy = y;
+    v->vz = z;
+}
+
+static inline void VecCopy15(Vector3 *d, Vector3 *s) {
+    d->vx = s->vx;
+    d->vy = s->vy;
+    d->vz = s->vz;
+}
+
 // A matrix's translation set, all three loads first
 static inline void SetTrans(MATRIX *m, Vector3 *v) {
     int x = v->vx;
@@ -338,7 +382,104 @@ void func_80030458(Bike *b) {
     }
 }
 
+#ifdef NON_MATCHING
+// Far off (231 of 283, mostly shifted): the clamps keep the bounds and results in other registers, the original copies the motor pointer between two of them, and the vector copy into 0xB28 reloads its x from the stack. The rider's model (0x330) gets the body's offset at 0xB28 and four parts' angles (0x94, 0xA94, 0xB94, 0xC14).
+void func_80030644(Bike *b, Rider15 *r, int draw) {
+    Motion *m = b->m_5D0;
+    Motor *mo;
+    int f = m->m_1C;
+    int a, e, g;
+
+    if (b->m_58 == 2) {
+        int lim = b->m_motor->m_AC - 0x7AE1;
+
+        if (lim < f) {
+            f = lim;
+        }
+        if (f < 0xA3D) {
+            f = 0xA3D;
+        }
+    }
+    mo = b->m_motor;
+    f -= mo->m_B4;
+    a = f < -mo->m_B4 ? -mo->m_B4 : mo->m_B4 < f ? mo->m_B4 : f;
+    e = (a - mo->m_D8) >> 9;
+    if (draw) {
+        Vector3 v;
+
+        SetVec15(&v, 0, 0, e);
+        {
+            Vector3 *d = &r->m_330->m_B28;
+
+            d->vx = v.vx;
+            d->vy = 0;
+            d->vz = e;
+        }
+        m = b->m_5D0;
+        mo = b->m_motor;
+    }
+    g = m->m_20 - mo->m_B8;
+    g = g < -mo->m_B8 ? -mo->m_B8 : mo->m_B8 < g ? mo->m_B8 : g;
+    if ((u8)b->m_58) {
+        int h = mo->m_B8 / 2;
+
+        if (h < g) {
+            g = h;
+        }
+    }
+    a = ANG15((mo->m_D4 - g) * mo->m_DC / 4096 >> 5);
+    if (draw) {
+        SVECTOR s;
+
+        SetSV15(&s, a, 0, 0);
+        r->m_330->m_A94 = s;
+        mo = b->m_motor;
+    }
+    a = -b->m_3FC;
+    a = a < -mo->m_100 ? -mo->m_100 : mo->m_100 < a ? mo->m_100 : a;
+    a = ANG15(a);
+    if (draw) {
+        SVECTOR s;
+
+        SetSV15(&s, 0, 0, a);
+        r->m_330->m_94 = s;
+    }
+    if (b->m_5D0->m_18) {
+        b->m_E0 = (b->m_E4 << 8) / (b->m_motor->m_68 >> 4);
+    } else if (b->m_5CC->m_00 & 2) {
+        b->m_E0 = 0;
+    }
+    b->m_DC += b->m_E0 * b->m_290 / 4096;
+    if (draw) {
+        SVECTOR s;
+
+        SetSV15(&s, ANG15(b->m_DC), 0, 0);
+        r->m_330->m_B94 = s;
+    }
+    if (b->m_5D0->m_14) {
+        b->m_D8 = (func_8002E684(b, 0) << 8) / (b->m_motor->m_64 >> 4);
+    } else if (b->m_D8 > 0) {
+        b->m_D8 -= b->m_290;
+        if (b->m_D8 < 0) {
+            b->m_D8 = 0;
+        }
+    } else if (b->m_D8 < 0) {
+        b->m_D8 += b->m_290;
+        if (b->m_D8 > 0) {
+            b->m_D8 = 0;
+        }
+    }
+    b->m_D4 += b->m_D8 * b->m_290 / 4096;
+    if (draw) {
+        SVECTOR s;
+
+        SetSV15(&s, ANG15(b->m_D4), 0, 0);
+        r->m_330->m_C14 = s;
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_15", func_80030644);
+#endif
 
 #ifdef NON_MATCHING
 // Registers: the position and the second vector's address in swapped saved registers (11 off).

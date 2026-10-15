@@ -787,7 +787,12 @@ globals), a script that tries every order is quicker than guessing:
   `int` (it returns `$s2` in `$v0`), and chunk_42's `func_80067230` only
   with `func_80099898` declared `void`, as `include/langimg/cobjet.h` has
   it, not returning a pointer (the permuter's find). Check the callee's
-  last instructions before trusting either.
+  last instructions before trusting either. The original's callers didn't
+  always see the definition's type: chunk_12's `func_8002A3F0` matched only
+  calling `func_800998D0` (which returns its first argument) as `void`.
+  When the shared header or the definition can't change, declare a `void`
+  alias of the same symbol for that file, `void func_800998D0_void(...)
+  __asm__("func_800998D0");`, and call that.
 - **Declare what a callee takes.** As with return types, a prototype
   with the wrong number of arguments changes the caller: chunk_25 passed
   `k` to `func_8001687C`, which takes nothing (chunk_02b's definition),
