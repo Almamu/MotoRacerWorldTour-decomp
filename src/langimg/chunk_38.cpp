@@ -240,7 +240,7 @@ extern int D_800CAE80;
 extern int D_800C5E14;
 extern int D_800D5F6C, D_800D5F38, D_800D5F44, D_800D5EC0, D_800D5EC4;
 extern int D_800C873C, D_800C4938, D_800C8C68, D_800CBE90, D_800CBE94;
-extern int D_800CAE90[], D_800CB0A0[];
+extern int D_800CAE90, D_800CB0A0; // tables, each addressed as one la
 extern int D_800D5E70[];
 extern u8 D_800D5394[][0x98], D_800D53E0[][0x98];
 extern int D_800D4974[];
@@ -378,7 +378,7 @@ static inline Bike38 *Bike38At(Run38 *r, int k) {
 }
 
 #ifdef NON_MATCHING
-// Written in full (609 instructions against 614): the original rebuilds the tables' addresses (D_800CAE90, D_800CB0A0) for each call where GCC keeps them in saved registers, keeps the cameras' copy loop in temporaries, and the race and its argument are in other saved registers (529 off).
+// Written in full: with the tables (D_800CAE90, D_800CB0A0) declared as small objects their addresses are one `la` each, rebuilt for each call as the original's, and the size is the original's (614 instructions); left: the race and its argument in other saved registers from the start ($s4/$s1 against $s2/$s0) and the cameras' copy loop kept in other registers (504 off, from 529).
 int func_8005D15C(Own38 *o, Arg38 *c) {
     int r = 1;
     int i, n;
@@ -445,10 +445,10 @@ int func_8005D15C(Own38 *o, Arg38 *c) {
     }
     o->m_304 = 0;
     if (o->m_378->m_00 & 0x102) {
-        func_8006FCF8(D_800CAE90);
-        func_8006FE5C(D_800CAE90);
-        func_8006FCF8(D_800CB0A0);
-        func_8006FF0C(D_800CB0A0);
+        func_8006FCF8(&D_800CAE90);
+        func_8006FE5C(&D_800CAE90);
+        func_8006FCF8(&D_800CB0A0);
+        func_8006FF0C(&D_800CB0A0);
     }
     func_800505BC(o->m_378, c);
     if (!func_8001B76C(o->m_3EC)) {
