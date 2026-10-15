@@ -981,7 +981,77 @@ Cell71 *func_800A09C0(Card71 *c) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_800A09C0);
 #endif
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_800A0AE8);
+/* The settings' defaults: words of the block from 0 to 0x150 (past Three71's own fields), the three blocks of five reset between them. */
+void func_800A0AE8(Three71 *t) {
+    int *w = (int *)t;
+    unsigned int i;
+
+    w[0] = 0;
+    w[1] = 2;
+    w[2] = 0;
+    w[3] = 7;
+    w[4] = 7;
+    w[5] = 0;
+    w[6] = 0;
+    w[7] = 16;
+    w[9] = 14;
+    w[8] = 11;
+    w[10] = 0;
+    w[12] = 0;
+    w[11] = 0;
+    w[13] = 0;
+    w[14] = 0;
+    for (i = 0; i < 3; i++) {
+        func_800A0834(t->m_3C[i]);
+    }
+    w[31] = 0;
+    w[30] = 0;
+    w[32] = 0;
+    w[33] = 1;
+    w[34] = 1;
+    w[35] = 0;
+    w[36] = 0;
+    w[37] = 1;
+    w[38] = 1;
+    w[39] = 0;
+    w[40] = 0;
+    w[41] = 0;
+    w[42] = 0;
+    w[43] = 0;
+    w[44] = 0;
+    w[45] = 0;
+    w[46] = 0;
+    w[47] = 0;
+    w[48] = 0;
+    w[49] = 0;
+    w[50] = 0;
+    w[51] = 0;
+    w[52] = 0;
+    w[53] = 0;
+    w[54] = 0;
+    w[55] = 0;
+    w[56] = 1;
+    w[57] = 100;
+    w[58] = 60;
+    w[59] = 100;
+    w[60] = 100;
+    w[61] = 100;
+    w[62] = 100;
+    w[63] = 0;
+    w[64] = 14;
+    w[65] = 1;
+    w[66] = 0;
+    w[67] = 1;
+    w[68] = 1;
+    w[69] = -1;
+    w[70] = -1;
+    w[71] = -1;
+    w[72] = -1;
+    w[73] = 0;
+    w[74] = 0;
+    w[83] = -1;
+    w[84] = 0;
+}
 
 Three71 *func_800A0C58(Three71 *t) {
     int i;
