@@ -198,7 +198,10 @@ langimg.chunk_26_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=D_
 langimg.chunk_21_GCC  := 2.91.66-psx
 langimg.chunk_21_CFLAGS :=
 langimg.chunk_21_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=D_800C4D88,D_800C4D98,D_800C4D9C
-CHUNK_SETTINGS := langimg.chunk_01 langimg.chunk_02 langimg.chunk_02b langimg.chunk_03 langimg.chunk_04 langimg.chunk_05 langimg.chunk_06 langimg.chunk_07 langimg.chunk_08 langimg.chunk_09 langimg.chunk_10 langimg.chunk_11 langimg.chunk_12 langimg.chunk_23 langimg.chunk_45 langimg.chunk_66 langimg.chunk_72 langimg.chunk_71 langimg.chunk_60 langimg.chunk_51 langimg.chunk_44 langimg.chunk_68 langimg.chunk_70 langimg.chunk_74 langimg.chunk_47 langimg.chunk_46 langimg.chunk_25 langimg.chunk_56 langimg.chunk_31 langimg.chunk_39 langimg.chunk_29 langimg.chunk_52 langimg.chunk_41 langimg.chunk_67 langimg.chunk_49 langimg.chunk_40 langimg.chunk_73 langimg.chunk_58 langimg.chunk_69 langimg.chunk_61 langimg.chunk_55 langimg.chunk_22 langimg.chunk_57 langimg.chunk_50 langimg.chunk_28 langimg.chunk_19 langimg.chunk_59 langimg.chunk_27 langimg.chunk_26 langimg.chunk_21
+langimg.chunk_17_GCC  := 2.91.66-psx
+langimg.chunk_17_CFLAGS :=
+langimg.chunk_17_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=D_800C4D78
+CHUNK_SETTINGS := langimg.chunk_01 langimg.chunk_02 langimg.chunk_02b langimg.chunk_03 langimg.chunk_04 langimg.chunk_05 langimg.chunk_06 langimg.chunk_07 langimg.chunk_08 langimg.chunk_09 langimg.chunk_10 langimg.chunk_11 langimg.chunk_12 langimg.chunk_23 langimg.chunk_45 langimg.chunk_66 langimg.chunk_72 langimg.chunk_71 langimg.chunk_60 langimg.chunk_51 langimg.chunk_44 langimg.chunk_68 langimg.chunk_70 langimg.chunk_74 langimg.chunk_47 langimg.chunk_46 langimg.chunk_25 langimg.chunk_56 langimg.chunk_31 langimg.chunk_39 langimg.chunk_29 langimg.chunk_52 langimg.chunk_41 langimg.chunk_67 langimg.chunk_49 langimg.chunk_40 langimg.chunk_73 langimg.chunk_58 langimg.chunk_69 langimg.chunk_61 langimg.chunk_55 langimg.chunk_22 langimg.chunk_57 langimg.chunk_50 langimg.chunk_28 langimg.chunk_19 langimg.chunk_59 langimg.chunk_27 langimg.chunk_26 langimg.chunk_21 langimg.chunk_17
 
 # -O2; the C++ has no exceptions and no RTTI.
 CC1FLAGS    := -O2 -quiet
