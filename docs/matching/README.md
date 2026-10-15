@@ -67,3 +67,4 @@ issue it worked on, and add it below.
 | [issue-65-langimg-chunk64.md](issue-65-langimg-chunk64.md) | The game's chunk_64: animation tables and tracks; two default returns kept apart, inline functions with pointer parameters, an index in a variable |
 | [issue-34-langimg-chunk33.md](issue-34-langimg-chunk33.md) | The game's chunk_33: the race and its bikes; the racer declared small, a bike's flags as shifts, a count and an end per loop |
 | [issue-38-langimg-chunk37.md](issue-38-langimg-chunk37.md) | The game's chunk_37: a race's bikes and cameras; the tables declared small, the counts through an inline function, a loop counter of its own |
+| [issue-21-langimg-chunk20.md](issue-21-langimg-chunk20.md) | The game's chunk_20: a scene's groups of items and their objects; nested `if`s for the result, the `else` placed last, constants hoisted as locals |
