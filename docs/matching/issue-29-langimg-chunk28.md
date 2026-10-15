@@ -53,7 +53,7 @@ small globals.
 | `func_800499B8` | matches | a call |
 | `func_800499DC` | matches | a name formatted |
 | `func_80049A24`, `func_80049AE8` | match | the static objects destroyed and constructed |
-| `func_80049B9C` | parked | a name formatted with a suffix: registers |
+| `func_80049B9C` | parked | a name formatted with a suffix: registers (6 off) |
 | `func_80049C14` | asm | 728 instructions |
 | `func_8004A774` | asm | 214 instructions |
 | `func_8004AACC` | matches | a buffer freed |
@@ -83,3 +83,11 @@ small globals.
   calls, where the original loads the fields from one base and each
   table's address afresh (the size rule above suggests declaring its
   parts as separate small objects; not tried).
+
+## Group B near-misses, continued
+
+`func_80049B9C` went from 23 off to 6 with `sprintf`'s arguments read into
+locals in order (the format, the name's address, the word, the suffix)
+before the call. Left: the name's address in `$t0` where the original
+reuses `$v1`, and the word's high half in `$v0` where the original loads it
+into `$a3` itself.

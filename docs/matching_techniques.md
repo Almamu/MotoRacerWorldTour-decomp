@@ -561,6 +561,12 @@ globals), a script that tries every order is quicker than guessing:
   other registers. `(x << 12) * 3` gives the original's code (chunk_02b's
   `func_80016A8C`, 20 off to 0): the `* 3` expanded as a shift and an add
   of the shifted value.
+- **A constant loaded twice: the store last.** When the original loads the
+  same constant twice, once for a field and once for the result
+  (`addiu $v1, 1` for `t->m_08 = 1`, then `addiu $v0, 1` to return 1), the
+  field's store is the function's last statement: stored earlier, GCC
+  shares one register between them. chunk_45's `func_8006C094` (22 off to
+  0, with the other stores in the original's order too).
 - **One variable for two values in turn.** When the original keeps a
   call's result where it was computed and puts the next sum in another
   temporary, the source may reuse one variable for two values one after the
