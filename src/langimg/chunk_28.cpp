@@ -106,6 +106,10 @@ extern char D_800D4798;
 extern char D_800CB1C0;
 extern Disp28 *D_800C886C;
 extern int D_800C873C;
+extern int D_800D5F6C;
+extern int D_800CB2C0; // small
+extern int D_800CB2D8;
+extern int D_800CABC0;
 extern int D_800CA7D8;
 extern int D_800C4938;
 extern int D_800C8C68;
@@ -150,6 +154,8 @@ void func_800963BC(void);
 void func_800A67E8(int a);
 void func_8004970C(Game28 *g);
 void func_800497AC(Game28 *g);
+int func_8004AC78(int k);
+int func_80045168(void *a, int b, int c, int d, ...);
 void func_800544A0(Game28 *g);
 void func_8001D99C(void *p);
 void func_8006FD40(void *p);
@@ -341,7 +347,24 @@ int func_8004AB7C(Save28 *s) {
     return r;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_28", func_8004AC78);
+/* A demo set up for k: the settings reset, then three of chunk_25's items. */
+int func_8004AC78(int k) {
+    D_800D5F38 = k;
+    D_800D5F6C = 2;
+    D_800D5F44 = 1;
+    D_800D5F34 = 0;
+    D_800D5F40 = 7;
+    D_800D5F3C = 0;
+    D_800D5F30 = 0;
+    D_800D5F4C = 0;
+    D_800D5F50 = 0;
+    D_800D5F58 = 0;
+    D_800CB2C0 = 0;
+    func_80045168(&D_800CABC0, 1, -1, 8, &D_800CB2D8, 0x10, 0x12, 0);
+    func_80045168(&D_800CABC0, 2, -1, 2, 0x10, 2, &D_800CB2C0, 7);
+    func_80045168(&D_800CABC0, 2, -1, 2, 0x12, 1, &D_800CB2C0, 0);
+    return 1;
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_28", func_8004ADB0);
 
