@@ -34,7 +34,8 @@ void func_80098F94(Vector3 *v, int shift); // normalized
 void func_800998D0_void(Vector3 *d, Vector3 *a, Vector3 *b) __asm__("func_800998D0");
 int func_80099C20(Vector3 *a, Vector3 *b, int shift); // a dot product
 int func_8009923C(Vector3 *v);
-Vector3 *func_80022D20(Vector3 *out, Vector3 *in);
+void func_80022D20(Vector3 *out,
+                   Vector3 *in); // returns out (chunk_08), declared void as this file saw it
 void func_80023140(Vector3 *v, int len, int shift);
 }
 
@@ -105,7 +106,7 @@ void func_8002A260(void) {
 
 #ifdef NON_MATCHING
 /* MULSHIFT's temporary in $v1, the original's in $v0, and one
- * instruction more */
+ * instruction more (24 off, from 31 with func_80022D20 declared void) */
 void func_8002A268(Bike *b, Vector3 *v) {
     int ok = b->m_58 != 1;
 
