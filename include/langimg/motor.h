@@ -52,7 +52,10 @@ struct Motor {
     int m_118;
     int m_11C;
     int m_120;
-    u8 m_124[0x24];
+    u8 m_124[0x16];
+    short m_13A; // the engine pitch's low end
+    short m_13C; // and its high end
+    u8 m_13E[0xA];
     short m_148;
     short m_14A;
     short m_14C;
