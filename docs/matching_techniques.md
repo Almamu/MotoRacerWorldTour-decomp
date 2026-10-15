@@ -1154,6 +1154,18 @@ What's left once the instructions are right is usually register choice.
   class's; it matched once the base's was declared returning the object
   (`Obj41 *func_80062E40(Obj41 *o);`), as C++ constructors do (the
   permuter).
+- **One address unsplit: declare the symbol small.** When one address is
+  an `la` the scheduler leaves alone (its `lui` not moved into a branch's
+  delay slot) while the chunk's other addresses are split, declare that
+  symbol as an object of 8 bytes or less (`extern int D_800C9364;`, passed
+  as `(char *)&D_800C9364`): GCC accesses it `$gp`-relative, and maspsx,
+  the symbol not being one of the chunk's small globals, expands that
+  into one `la` (chunk_69's `func_8009CF14`, from 86 off to 0 with two
+  other changes).
+- **A jump table from 0.** A switch whose table's first entry is the
+  default's target and whose range test is `sltiu 7` (not `addiu -1`,
+  `sltiu 6`) has a `case 0:`: spell it out on the default's body (chunk_57's
+  `func_80083B08`).
 - **A narrowed load and an inline.** A short set from an int field
   (`b.x = -o->m_298`) loads it with `lhu`; passed through an inline
   taking `int`s, it's the original's `lw` (chunk_41's `func_800643E4`).
