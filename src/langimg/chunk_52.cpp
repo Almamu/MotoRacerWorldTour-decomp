@@ -210,11 +210,13 @@ void func_80079400(void) {
 }
 
 #ifdef NON_MATCHING
-// Registers: the original keeps the result in $v1 (not live across the first call) and reads the global after the prologue
+// The result set to 0 after the first call (29 off to 4); left: the argument's temporaries (the original loads m_24 into $a1 and m_28 into $v0)
 int func_80079438(Gfx52 *g) {
-    int r = 0;
+    int r;
+    int ok = func_800895A0(g->m_28 + D_800B8868[0] * g->m_24);
 
-    if (func_800895A0(g->m_28 + g->m_24 * D_800B8868[0])) {
+    r = 0;
+    if (ok) {
         r = func_80088F34((u8 *)g + 0x30) != 0;
     }
     return r;
