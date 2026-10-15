@@ -13,7 +13,7 @@
 #   also draws the progress badges (tools/chunks.py badges) and writes the
 #   progress report (tools/chunks.py report, objdiff's report.json), which
 #   need to know which library functions Sony's objects cover. The report
-#   is uploaded as the `report` artifact, which progress sites read from
+#   is uploaded as the `eu_report` artifact, which progress sites read from
 #   the successful runs on main (decompilati.onl through its GitHub App).
 # - Badges: on main, once everything passed, the badges replace the single
 #   commit of the `badges` branch, which the README shows.
@@ -162,10 +162,11 @@ jobs:
     - name: Write the progress report
       run: python3 tools/chunks.py report build/report/report.json
 
-    # Named `report` (objdiff's report for the one, unnamed, version).
+    # Named `eu_report`: objdiff's `<version>_report`, for the European
+    # version (SCES-03037).
     - uses: actions/upload-artifact@v7
       with:
-        name: report
+        name: eu_report
         path: build/report/report.json
 
   badges:
