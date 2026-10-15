@@ -298,7 +298,7 @@ def cmd_report(args):
             kind = "lib" if c["lib"] else "game"
             ids = [target, f"{target}_{kind}"]
             for i, name in zip(ids, (re.sub(r"`", "", info["what"]),
-                                     f"{target}: {'PsyQ libraries' if c['lib'] else 'the game'}")):
+                                     f"{target}: {'PsyQ libraries' if c['lib'] else 'own code'}")):
                 cats.setdefault(i, {"name": name, "units": []})["units"].append((c["funcs"], done))
             size = sum(f["size"] for f in c["funcs"])
             units.append(nonzero({
