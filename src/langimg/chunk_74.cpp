@@ -210,9 +210,6 @@ void func_800A594C(Obj74 *o) {
     o->m_04 = 0;
 }
 
-#ifdef NON_MATCHING
-// Registers: the walking pointer and the counter swap $a1 and $a2 (8 off)
-/* The timer each frame: the frame's length, the last four's average. */
 void func_800A59D4(Obj74 *o) {
     int e;
     int r;
@@ -247,13 +244,13 @@ void func_800A59D4(Obj74 *o) {
         o->m_0C = 0;
     }
     q = o->m_28;
-    q[o->m_38] = o->m_40;
+    *(int *)((u8 *)q + (o->m_38 << 2)) = o->m_40;
     if (++o->m_38 >= 4) {
         o->m_38 = 0;
     }
     o->m_24 = 0;
     for (i = 0; i < 4; i++) {
-        o->m_24 += *q++;
+        o->m_24 += q[i];
     }
     if (o->m_24) {
         o->m_24 = 0xFA00000 / o->m_24;
@@ -263,9 +260,6 @@ void func_800A59D4(Obj74 *o) {
     o->m_58 = 0;
     o->m_20 = 0x3E80000 / o->m_40;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_74", func_800A59D4);
-#endif
 
 /* The frame's time: its length (20 to 66, or n), and the running total. */
 void func_800A5BB8(Obj74 *o, int n) {

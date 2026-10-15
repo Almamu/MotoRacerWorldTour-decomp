@@ -140,7 +140,7 @@ struct Card71 {
     u8 m_15B0[0x28];
     Group71 m_15D8;
     u8 m_1624[4];
-    int m_1628;
+    u32 m_1628; // flags
     int m_162C;
     int *m_1630[27];
     int m_169C;
@@ -268,7 +268,9 @@ Cell71 *func_800A09C0(Card71 *c);
 extern int *D_800C9EF0_ asm("D_800C9EF0"); // also read here as a pointer
 extern int D_800C8DC0, D_800D5FC8, D_800D5F6C, D_800CBF20;
 extern void *D_800CB478;
-extern u8 D_800CB480[], D_800D4898[], D_800CBC94[], D_800CABC0[];
+extern u8 D_800CB480[], D_800CABC0[];
+extern int D_800D4898; // declared small, as D_800CBC94
+extern int D_800CBC94; // declared small: its address is one `la` at each use
 void *__builtin_new(unsigned int n);
 void func_8006C750(void);
 void func_8001687C(void);
@@ -642,7 +644,7 @@ void func_8009FDE8(Menu71 *m) {
 
 /* The game's state set up once: counters, the cards, the tracks' laps. */
 #ifdef NON_MATCHING
-// The calls and stores in order; the original computes D_800CBC94's address again for the second call and keeps the result in $s0 throughout, GCC keeps the address in $s0 instead, and schedules the result's copy and the stores after the calls differently (21 off; 18 with unsplit addresses, which the rest of the chunk can't take).
+// The calls and stores in order, D_800CBC94 and D_800D4898 declared small so their addresses are one `la` at each use as the original's; left: the last call's stack arguments stored in another order (12 off).
 int func_8009FE70(void) {
     int r;
 
@@ -653,7 +655,7 @@ int func_8009FE70(void) {
     func_8006A914(D_800CB478, 0x40);
     func_8006A534(D_800CB480, 0x10, 0x400);
     r = func_800A048C();
-    func_800A13C0(D_800D4898);
+    func_800A13C0(&D_800D4898);
     if (r) {
         if (D_800C6710_->m_00 == 0x12) {
             int i;
@@ -662,7 +664,7 @@ int func_8009FE70(void) {
                 D_800C9EF0_[i] = D_800C6710_->m_04[i].m_18;
             }
         }
-        D_800CBF20 = func_80078F90(D_800CBC94, func_80078FE8(D_800CBC94, 0));
+        D_800CBF20 = func_80078F90(&D_800CBC94, func_80078FE8(&D_800CBC94, 0));
         D_800D5FC8 = -1;
         D_800D5F6C = 0;
         r = func_80045168(D_800CABC0, 2, -1, 2, 0x11, 2, &D_800CBF20, 7) != 0;
@@ -1123,11 +1125,9 @@ int func_800A0DC4(Card71 *c, int a, int b) {
     return r;
 }
 
-#ifdef NON_MATCHING
-// The card pointer's area ($s4) and the saved slot ($s5) in swapped saved registers, and the found flag's test as xori where the original has andi then bnez (14 off). The directory read once into a local and D_800D5F10 declared unsized gave the rest.
 int func_800A0E58(Card71 *c) {
-    int fd;
     Three71 *t = &c->m_04;
+    int fd;
 
     c->m_154 = 2;
     if (c->m_150 != -1) {
@@ -1171,10 +1171,9 @@ int func_800A0E58(Card71 *c) {
                 c->m_1628 |= 2;
                 func_800A0DC4(c, t->m_78, k);
             }
-            if (!((c->m_1628 >> 1) & 1)) {
-                if (k < 2) {
-                    func_800A0DC4(c, t->m_78, k + 1);
-                }
+            if ((c->m_1628 >> 1) & 1) {
+            } else if (k < 2) {
+                func_800A0DC4(c, t->m_78, k + 1);
             }
         } else {
             p->m_04++;
@@ -1188,6 +1187,3 @@ int func_800A0E58(Card71 *c) {
     }
     return 0;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_800A0E58);
-#endif

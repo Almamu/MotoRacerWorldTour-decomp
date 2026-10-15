@@ -8,7 +8,7 @@ sound settings applied, groups of named entries, an LZ unpacker and the
 open of `\MR3.DAT`. One file, `src/langimg/chunk_71.cpp`,
 0x8009F180-0x800A1110.
 
-57 functions: 49 match, 6 are parked, 2 are still asm (`func_8009F180`
+57 functions: 50 match, 5 are parked, 2 are still asm (`func_8009F180`
 matched during chunk_70, #71, once `func_800A41BC` was declared `int`).
 
 ## The settings
@@ -54,7 +54,7 @@ small and they're declared as scalars. chunk_72's split loads (`lui $v1`,
 | `func_8009F760` | parked | seven words saved or restored: the copies' registers (49 off) |
 | `func_8009F82C` | asm | 161 instructions |
 | `func_8009FAB0` to `func_8009FDE8` | match | the sprites' frames |
-| `func_8009FE70` | parked | the game set up once: two registers (third pass) |
+| `func_8009FE70` | parked | the game set up once: the last call's stack arguments (12 off) |
 | `func_8009FFCC` to `func_800A0248` | match | the data file's name, names, entries, groups |
 | `func_800A029C` | asm | 97 instructions |
 | `func_800A0420` to `func_800A0558` | match | an entry offered a value, the data file looked for, a backward copy |
@@ -65,7 +65,7 @@ small and they're declared as scalars. chunk_72's split loads (`lui $v1`,
 | `func_800A09C0` | parked | the current cell's name: a register (third pass) |
 | `func_800A0AE8` | matches | the settings' defaults |
 | `func_800A0C58` to `func_800A0DC4` | match | the cards' state set up, reset, updated, a directory chosen |
-| `func_800A0E58` | parked | a file loaded from the card: 14 off |
+| `func_800A0E58` | matches | a file loaded from the card |
 
 - **Locals read first.** The four volume handlers matched with the menu
   and the key's code read into locals before anything else.
@@ -111,3 +111,15 @@ small and they're declared as scalars. chunk_72's split loads (`lui $v1`,
   through an `int *` (the block reaches past `Three71`'s fields into the
   card's), the three blocks of five reset between them. The stores are in
   address order except three pairs, and the loop's counter is `unsigned`.
+
+## Inline helpers and small symbols
+
+- `func_800A0E58` (a file loaded from the card) matches. The test of the
+  flags' bit 1 is an empty `if` with the work in its `else` (`if ((f >> 1) &
+  1) {} else if (k < 2) ...`), which gives the original's `andi`, `bnez`
+  and both saved registers; written `if (!(...))`, GCC used `xori` and
+  swapped the card's area and the saved slot. The flags word at 0x1628 is a
+  `u32`, for the `srl`.
+- `func_8009FE70` (the game set up once): 21 off to 12, with `D_800CBC94`
+  and `D_800D4898` declared small so each address is one `la` at its use.
+  Left: the last call's stack arguments stored in another order.

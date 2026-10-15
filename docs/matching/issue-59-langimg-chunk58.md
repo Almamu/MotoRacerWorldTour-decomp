@@ -16,7 +16,7 @@ Also:
 
 One file, `src/langimg/chunk_58.cpp`, 0x80085258-0x80087468.
 
-19 functions: 10 match, 5 are parked, 4 are still asm.
+19 functions: 11 match, 4 are parked, 4 are still asm.
 
 ## The settings
 
@@ -58,7 +58,7 @@ small globals.
 
 | Function | State | Notes |
 |---|---|---|
-| `func_80085258` | parked | five entries' flags set: the table's address register |
+| `func_80085258` | matches | five entries' flags set (the table declared small) |
 | `func_80085284` | asm | 386 instructions |
 | `func_80085888` | parked | a settings block filled: the stores' order |
 | `func_80085900` | parked | the start's lights: 65 off |
@@ -99,3 +99,17 @@ offsets and branch targets left out):
 
 `ui.h` is included for `ADD_PRIM`, so the chunk's own `memset`, `malloc`
 and `free` declarations went (`psyq.h` has them).
+
+## Inline helpers and small symbols
+
+- `func_80085258` (five entries' flags set) matches. The original builds
+  the table's address as one unsplit `la`; declared as an `int` (8 bytes or
+  less, `extern int D_800CBD68;` used as `(Ent58 *)&D_800CBD68`), GCC
+  addresses it `$gp`-relative and maspsx, the symbol not being one of the
+  chunk's small globals, expands that into the `la` ("One address unsplit:
+  declare the symbol small" in the techniques). The chunk stays split.
+- `func_80085C28`'s packet pointer: the original copies the pointer for the
+  first link and the step past it (`addu` from the loaded value), and reloads
+  it after later packets; linking the global, a second byte pointer read
+  next to `p`, `(u_long)`/`(u8 *)` casts on the link's operand and `+=` on
+  the global didn't give either. Still parked (424 off).

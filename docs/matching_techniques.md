@@ -1189,6 +1189,23 @@ What's left once the instructions are right is usually register choice.
   the symbol not being one of the chunk's small globals, expands that
   into one `la` (chunk_69's `func_8009CF14`, from 86 off to 0 with two
   other changes).
+  The same declaration is the fix when a global's address (or a pointer
+  global's `lui`) is kept in a saved register across calls or hoisted out
+  of a loop where the original builds it again at each use: each use is
+  then its own `la` (or `lui`/`lw` for a read), which CSE and loop
+  optimisation leave alone. chunk_58's `func_80085258` (2 off to 0),
+  chunk_72's `func_800A1B54` (32 to 0: the sounds' data pointer read with
+  its own `lui` in the loop), chunk_71's `func_8009FE70` (21 to 12) and
+  chunk_57's `func_80084B1C` (142 to 99, the frame back to 0x28). Moving the
+  calls into inline helpers doesn't help for a global's address: it is a
+  constant to CSE, whatever the call's origin (#289's finding is about
+  stack addresses).
+- **A bit test as an empty `if`.** When the original tests a flag with
+  `andi`, then `bnez` past the work, and GCC gives `xori`/`andi`/`beqz`
+  for `if (!((f >> 1) & 1)) {...}`, write the test the other way with an
+  empty body: `if ((f >> 1) & 1) {} else if (k < 2) {...}`. In chunk_71's
+  `func_800A0E58` that also gave the original's two saved registers (14
+  off to 0, with the flags word a `u32` for the `srl`).
 - **Case labels inside a fall-through chain.** When a jump table sends
   cases to different points of one run of tests (`if (r == 7) ...; if (r
   == 8) ...`), each case has its own label before its test and falls

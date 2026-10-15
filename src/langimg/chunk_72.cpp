@@ -135,7 +135,8 @@ struct Ent66 {
 Ent66 *func_80096240(int id);
 extern int *D_800C9F30;
 extern char *D_800CC030[];
-extern char *D_800CBE84[]; // not one of this file's small globals
+extern char *
+    D_800CBE84; // declared small: maspsx loads it with its own lui at each use (not one of this file's small globals)
 
 void func_800A29E0(void);
 void func_800A2A40(void);
@@ -609,28 +610,22 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A195C);
 void func_800A1B4C(void) {
 }
 
-#ifdef NON_MATCHING
-/* GCC hoists the data pointer's lui out of the loop, which the original reloads, and allocates the counters the other way (32 off) */
-/* The 163 sounds' data found by their ids. */
 void func_800A1B54(void) {
-    int i;
-    int *ids = D_800C9F30;
+    int i = 0;
     char **out = D_800CC030;
+    int *ids = D_800C9F30;
 
-    for (i = 0; i < 163; i++) {
+    for (; i < 163; i++) {
         Ent66 *e = func_80096240(*ids);
         char *p = 0;
 
         if (e) {
-            p = D_800CBE84[0] + e->m_00;
+            p = D_800CBE84 + e->m_00;
         }
         *out++ = p;
         ids++;
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A1B54);
-#endif
 
 void func_800A1BD0(void) {
     D_800B887C[0] = 1;
