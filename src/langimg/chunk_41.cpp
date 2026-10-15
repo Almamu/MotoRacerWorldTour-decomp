@@ -429,10 +429,8 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_41", func_80064608);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_41", func_80064AA0);
 
-#ifdef NON_MATCHING
-// The cell's address: the original adds j * 32 to the row's pointer, ours the other way round (2 off)
 int func_80065044(Obj41 *o, int i, int j, int k, int s, int max, Tab41 *t) {
-    int v = t->m_28[i].m_08[k][j].m_0E << 11;
+    int v = ((Cell41 *)((j << 5) + (u8 *)t->m_28[i].m_08[k]))->m_0E << 11;
     int b = o->m_468;
     int r;
 
@@ -451,8 +449,5 @@ int func_80065044(Obj41 *o, int i, int j, int k, int s, int max, Tab41 *t) {
     }
     return r;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_41", func_80065044);
-#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_41", func_800650F8);

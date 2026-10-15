@@ -65,10 +65,19 @@ struct B51 {
 };
 
 // An object with an animation channel at 0x160
+struct Vec51 {
+    int x, y, z;
+};
 struct C51 {
-    u8 m_00[0x140];
+    MATRIX m_00;
+    u8 m_20[0xC0];
+    Vec51 m_E0, m_EC, m_F8, m_104, m_110;
+    u8 m_11C[0xC];
+    Vec51 m_128;
+    int m_134, m_138, m_13C;
     int m_140;
-    u8 m_144[0xC];
+    int m_144;
+    int m_148, m_14C;
     int m_150, m_154, m_158, m_15C;
     u8 m_160[0x1C];
     int m_17C, m_180, m_184, m_188, m_18C, m_190;
@@ -122,7 +131,33 @@ void *func_800774B8(void *p);
 void func_80074510(void *p);
 void *func_80074534(void *p);
 void func_8006BB70(void *p);
+// A model point (8 bytes)
+struct Pt51 {
+    short m_00[4];
+};
+struct Shape51 {
+    u8 m_00[0x18];
+    Pt51 *m_18;
+};
+struct Mdl51 {
+    u8 m_00[4];
+    Shape51 *m_04;
+};
+// A mesh: its model, its points' indices, the points placed and their offsets
+struct Mesh51 {
+    u8 m_00[0x38];
+    int m_38;
+    int m_3C;
+    int *m_40;
+    SVECTOR *m_44;
+    Pt51 *m_48;
+};
+void func_80099EF4(SVECTOR *out, Pt51 *a, Pt51 *b);
+void func_80077844(Mesh51 *o);
 void func_80078280(C51 *o);
+void func_80078458(C51 *o, Vector3 *at);
+void func_80098E9C(Vector3 *v);
+int func_80097AC8(int x);
 void func_8006BB9C(void *c, int a);
 int func_80074AC8(U51 *o);
 int func_80076E20(U51 *o, int a, int *t);
@@ -248,7 +283,37 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_51", func_8007759C);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_51", func_800776F0);
 
+/* A mesh's points placed: each, from the last, its model point (by its index) moved by its
+ * offset through func_80099EF4 into the mesh's short vectors. */
+#ifdef NON_MATCHING
+// The output's field pointers: the original walks the entries' vy and vz with two pointers ($s0 at +0xA, $s2 at +0xC); GCC picks vx and vz (5 off).
+void func_80077844(Mesh51 *o) {
+    SVECTOR r;
+    SVECTOR *pr = &r;
+    int i = o->m_3C - 1;
+    int *idx = &o->m_40[i];
+    SVECTOR *out = &o->m_44[i] + 1;
+    Pt51 *pts = ((Mdl51 *)D_800C8C68->m_items[o->m_38])->m_04->m_18;
+
+    do {
+        int k = *idx--;
+
+        out--;
+        func_80099EF4(&r, &pts[k], &o->m_48[k]);
+        {
+            short x = r.vx;
+            short y = pr->vy;
+            short z = pr->vz;
+
+            out->vx = x;
+            out->vy = y;
+            out->vz = z;
+        }
+    } while (--i >= 0);
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_51", func_80077844);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_51", func_8007792C);
 
@@ -277,7 +342,57 @@ C51 *func_80078244(C51 *o) {
     return o;
 }
 
+// The identity, rows from the diagonal out (chunk_48's)
+static inline void IdentMat51(MATRIX *m) {
+    m->m[0][0] = 0x1000;
+    m->m[1][1] = 0x1000;
+    m->m[2][2] = 0x1000;
+    m->m[0][1] = m->m[0][2] = m->t[0] = 0;
+    m->m[1][0] = m->m[1][2] = m->t[1] = 0;
+    m->m[2][0] = m->m[2][1] = m->t[2] = 0;
+}
+
+static inline void ZeroVec51(Vec51 *v) {
+    v->x = v->y = v->z = 0;
+}
+
+static inline void SetVec51(Vec51 *v, int x, int y, int z) {
+    v->x = x;
+    v->y = y;
+    v->z = z;
+}
+
+/* An object's defaults: its matrix the identity, its vectors cleared, its settings set and
+ * its channel at 0x160 reset. */
+#ifdef NON_MATCHING
+// The stores of 0x32 and 3 at 0x184 and 0x188: the original stores 0x184's first and loads 2 into $v1; GCC's scheduler swaps them, whatever the statements' order (6 off; the matrix and vectors through chunk_48's inline functions match).
+void func_80078280(C51 *o) {
+    IdentMat51(&o->m_00);
+    ZeroVec51(&o->m_F8);
+    ZeroVec51(&o->m_E0);
+    ZeroVec51(&o->m_EC);
+    ZeroVec51(&o->m_104);
+    ZeroVec51(&o->m_110);
+    ZeroVec51(&o->m_128);
+    SetVec51((Vec51 *)&o->m_148, 0, 0, 0x7000);
+    o->m_134 = 0x1000;
+    o->m_138 = 0x1000;
+    o->m_17C = 0x2000;
+    o->m_184 = 0x32;
+    o->m_188 = 3;
+    o->m_180 = 0x28000;
+    o->m_140 = 0;
+    o->m_144 = 0;
+    o->m_18C = 2;
+    o->m_190 = 0x1800;
+    o->m_158 = 0;
+    o->m_15C = 0;
+    func_8006BB9C(o->m_160, 0);
+    o->m_13C = 0;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_51", func_80078280);
+#endif
 
 #ifdef NON_MATCHING
 /* The original copies each field as it loads it; GCC moves the stack argument's load earlier (26 off) */
@@ -301,7 +416,32 @@ void func_800783A8(C51 *o, int *src, int *t1, int *t2, int i) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_51", func_800783A8);
 #endif
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_51", func_80078458);
+/* The object's matrix turned to face a point: the direction from its position at 0xF8,
+ * normalised, gives the turn about y (from x and z) and the tilt (y); the translation cleared. */
+void func_80078458(C51 *o, Vector3 *at) {
+    Vector3 d;
+    int l;
+
+    func_800998D0(&d, at, (Vector3 *)&o->m_F8);
+    func_80098E9C(&d);
+    l = func_80097AC8(d.vx * d.vx + d.vz * d.vz);
+    if (l) {
+        int a = (-d.vx << 12) / l;
+        int c = (d.vz << 12) / l;
+        int y = d.vy;
+
+        o->m_00.m[0][0] = c;
+        o->m_00.m[1][0] = y * a / 4096;
+        o->m_00.m[2][0] = -(l * a) / 4096;
+        o->m_00.m[0][1] = 0;
+        o->m_00.m[1][1] = l;
+        o->m_00.m[2][1] = y;
+        o->m_00.m[0][2] = a;
+        o->m_00.m[1][2] = -(y * c) / 4096;
+        o->m_00.m[2][2] = l * c / 4096;
+        o->m_00.t[0] = o->m_00.t[1] = o->m_00.t[2] = 0;
+    }
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_51", func_8007857C);
 

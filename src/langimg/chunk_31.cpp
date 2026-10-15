@@ -462,26 +462,29 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_31", func_8005044C);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_31", func_800505BC);
 
-#ifdef NON_MATCHING
-// The constant 1 for the mode's test: the original sets it before the count's other values (4 off)
+// How many bikes of the kind are in the race
+static inline int Count31(Run31 *r, int kind) {
+    int n = 0;
+    Bike31 *end = &r->m_2E8[0];
+    Bike31 *p = &r->m_2E8[4];
+
+    do {
+        if (((u32)p->m_00 >> 6) & 1) {
+            if (((p->m_00 << 26) >> 27) == kind) {
+                n++;
+            }
+        }
+    } while (p-- != end);
+    return n;
+}
+
 /* Each bike's slot: the first two from a table when that many bikes are in mode 1. */
 void func_800507B0(Run31 *r) {
     int i;
 
     for (i = 4; i >= 0; i--) {
         if (i < 2) {
-            int n = 0;
-            Bike31 *end = &r->m_2E8[0];
-            Bike31 *p = &r->m_2E8[4];
-
-            do {
-                if (((u32)p->m_00 >> 6) & 1) {
-                    if (((p->m_00 << 26) >> 27) == 1) {
-                        n++;
-                    }
-                }
-            } while (p-- != end);
-            if (i < n) {
+            if (i < Count31(r, 1)) {
                 (&D_800D5E69)[i - 4].m_00 = (&D_800D5F68)[i - 4];
                 goto done;
             }
@@ -491,9 +494,6 @@ void func_800507B0(Run31 *r) {
         r->m_2E8[i].m_0A = i;
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_31", func_800507B0);
-#endif
 
 /* The bikes' values at 0x0C saved to, or loaded from, a table. */
 void func_80050850(Run31 *r, int load) {

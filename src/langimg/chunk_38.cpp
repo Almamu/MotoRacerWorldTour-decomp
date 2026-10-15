@@ -252,8 +252,11 @@ int func_8005DD70(Own38 *o, int k) {
 }
 
 #ifdef NON_MATCHING
-// The original loads the run's word at 0x1E08 before the last call and doesn't use it; GCC drops the load unless it's volatile
-void func_8005DE2C(Own38 *o, int *f, Bike38 *b) {
+// The original loads the run's word at 0x1E08 before the last call and doesn't use it; GCC drops the load unless it's volatile, and keeps the race in $a3 rather than a saved register (39 off; the parameters copied into locals took it from 83)
+void func_8005DE2C(Own38 *o_p, int *f_p, Bike38 *b_p) {
+    Own38 *o = o_p;
+    int *f = f_p;
+    Bike38 *b = b_p;
     Ctl38 *c = b->m_28;
 
     *f = (short)(c->m_02 | c->m_00);

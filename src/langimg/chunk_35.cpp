@@ -552,9 +552,9 @@ int func_80058FCC(Own35 *o) {
     return 1;
 }
 
-#ifdef NON_MATCHING
-// Registers only: the race and the flag in swapped saved registers (27 off; the declaration order and the flag's form tried).
-void func_800591D4(Own35 *o) {
+/* The places after a step, and the text when the player's changes. */
+void func_800591D4(Own35 *race) {
+    Own35 *o = race;
     int k = -1;
     int place = -1;
     int on = 0;
@@ -601,6 +601,3 @@ void func_800591D4(Own35 *o) {
         }
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_35", func_800591D4);
-#endif
