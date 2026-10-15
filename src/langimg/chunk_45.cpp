@@ -999,24 +999,24 @@ void func_8006C82C(void) {
     ((u8 *)D_800D11D0)[3] = 0;
 }
 
-#ifdef NON_MATCHING
-/* The original builds each field's address from the symbol; here they're offsets from one base (27 off) */
+// The sound table declared small: each address built from it is one la
+extern int D_800C7E94_la __asm__("D_800C7E94");
+#define SND45 ((SndDef *)&D_800C7E94_la)
+
 SndDef *func_8006C85C(int a, int b, int c) {
     SndDef *r = 0;
     u32 i;
 
     for (i = 0; i < 11; i++) {
-        if (D_800C7E94[i].m_04 == a && D_800C7E94[i].m_05 == b &&
-            (D_800C7E94[i].m_06 == -1 || D_800C7E94[i].m_06 == c)) {
-            r = &D_800C7E94[i];
+        if (SND45[i].m_04 == a && SND45[i].m_05 == b &&
+            (SND45[i].m_06 == -1 || SND45[i].m_06 == c)) {
+            r = &SND45[i];
             break;
         }
     }
     return r;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006C85C);
-#endif
+#undef SND45
 
 #ifdef NON_MATCHING
 /* A call's arguments set in the other order (as func_8006C7CC), and the music table's fields addressed from one base (as func_8006C85C) */
