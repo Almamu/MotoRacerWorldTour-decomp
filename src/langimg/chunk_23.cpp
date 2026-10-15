@@ -202,7 +202,7 @@ struct Stage {
 struct Seven {
     int m_00[7];
 };
-extern Seven D_800D497C;
+extern int D_800D497C; // a Seven, declared small so its address is one la
 
 // The race's settings
 struct Config {
@@ -644,7 +644,7 @@ int func_800406A4(Named *o) {
 }
 
 #ifdef NON_MATCHING
-/* Temporaries' registers and the prologue's order (20 off) */
+/* Temporaries' registers and the prologue's order (13 off; D_800D497C declared small for its one la, from 20) */
 /* The stage set up: virtual call 25, its numbers and sounds, its two
  * tables (21 and 9 entries). */
 int func_800406E0(Named *o, int a) {
@@ -659,7 +659,7 @@ int func_800406E0(Named *o, int a) {
     o->m_138 = 0;
     o->m_A4 = 0;
     o->m_134 = o;
-    *(Seven *)(p + 0x40) = D_800D497C;
+    *(Seven *)(p + 0x40) = *(Seven *)&D_800D497C;
     ((Stage *)o->m_A0)->m_DC = 9;
     ((Stage *)o->m_A0)->m_15C = new int[21];
     ((Stage *)o->m_A0)->m_15C[1] = 0;
