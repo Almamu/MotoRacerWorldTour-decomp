@@ -552,6 +552,12 @@ globals), a script that tries every order is quicker than guessing:
 
 ### Temporaries and folding
 
+- **Packed fields read in the original's order.** When the original
+  extracts bitfields of one word in an order other than the one it stores
+  them in (chunk_62's coordinates: y, z, then x, stored x, y, z), read them
+  into locals in that order first (`y = q.m_y; z = q.m_z; x = q.m_x;`),
+  then store; written as three `d->vx = q.m_x << 2` statements GCC
+  extracts them in store order.
 - **Which factor carries the shift.** chunk_65's `func_80093C80`
   multiplies `t` by `a` doubled, the shift on `a` (`sll $a1, $a1, 1;
   mult $a2, $a1`): `t * (a << 1)` gave it; GCC moved the `* 2` of `t *
@@ -859,6 +865,13 @@ A struct whose members are all shorts and bytes is 2-aligned, and GCC
 copies it with `lwl`/`lwr` pairs; the original's `lw`/`sw` copy means an
 `int` member that aligns it (`RangeDef`, `func_80019F0C`).
 
+A block copy into a global whose destination address the original takes
+first (its `lui` in the test's delay slot, the destination in the lower
+register of the copy loop) goes through a pointer to the destination taken
+before the copy: `Set38 *d = &D_800C71C4; *d = pick->m_08;` (chunk_38's
+`func_8005F0D4`). Assigned directly, GCC took the source's address first and
+the loop's two pointers came out swapped.
+
 A struct assignment (`*d = *s`) copies a 12-byte vector with GCC's block
 move: the source's address in a register, the words through other
 registers than the original's. The sound engine's copies load the three
@@ -1138,6 +1151,18 @@ What's left once the instructions are right is usually register choice.
   class's; it matched once the base's was declared returning the object
   (`Obj41 *func_80062E40(Obj41 *o);`), as C++ constructors do (the
   permuter).
+- **One address unsplit: declare the symbol small.** When one address is
+  an `la` the scheduler leaves alone (its `lui` not moved into a branch's
+  delay slot) while the chunk's other addresses are split, declare that
+  symbol as an object of 8 bytes or less (`extern int D_800C9364;`, passed
+  as `(char *)&D_800C9364`): GCC accesses it `$gp`-relative, and maspsx,
+  the symbol not being one of the chunk's small globals, expands that
+  into one `la` (chunk_69's `func_8009CF14`, from 86 off to 0 with two
+  other changes).
+- **A jump table from 0.** A switch whose table's first entry is the
+  default's target and whose range test is `sltiu 7` (not `addiu -1`,
+  `sltiu 6`) has a `case 0:`: spell it out on the default's body (chunk_57's
+  `func_80083B08`).
 - **A narrowed load and an inline.** A short set from an int field
   (`b.x = -o->m_298`) loads it with `lhu`; passed through an inline
   taking `int`s, it's the original's `lw` (chunk_41's `func_800643E4`).

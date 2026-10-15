@@ -1,4 +1,5 @@
 #include "common.h"
+#include "psyq.h"
 
 /* Classes on Cobjet and CName, their globals (docs/matching/issue-30-langimg-chunk29.md) */
 
@@ -49,10 +50,23 @@ void func_8004C14C(Named29 *o, int f);
 void func_8004C184(Named29 *o, int f);
 void func_8004C3FC(Tab29 *t, int i, int a, int b, int c);
 void func_8004C420(Tab29 *t, int i, int v);
+struct Vec29 {
+    long vx, vy, vz;
+};
 // A player's state
 struct Ply29 {
-    u8 m_00[0x154];
+    MATRIX m_00; // its view
+    u8 m_20[0xD8];
+    Vec29 m_F8; // where it looks from
+    u8 m_104[0x18];
+    Vec29 m_11C;
+    u8 m_128[0x1C];
+    int m_144;
+    u8 m_148[8];
+    int m_150;
     int m_154; // a choice, 0 to 5
+    u8 m_158[0x38];
+    int m_190;
 };
 struct Lp29 {
     u8 m_00[0xC];
@@ -64,13 +78,31 @@ struct Bk29 {
     Lp29 *m_28;
     u8 m_2C[4];
     int m_30;
-    u8 m_34[0x154];
-    u16 m_188;
-    u8 m_18A[0x196];
+    int m_34;
+    int m_38;
+    u8 m_3C[7];
+    s8 m_43; // its player, or -1
+    u8 m_44[0x144];
+    union {
+        u16 m_188;
+        struct {
+            u8 m_188b;
+            s8 m_189;
+        } m_188s;
+    };
+    u8 m_18A[0x192];
+    int *m_31C;
     s8 m_320;
     u8 m_321;
     s8 m_322;
-    u8 m_323[0x245];
+    u8 m_323;
+    u8 m_324[0x3C];
+    int m_360;
+    u8 m_364[0x79];
+    s8 m_3DD;
+    u8 m_3DE[0x14E];
+    int m_52C; // the race's state
+    u8 m_530[0x38];
 };
 struct Rc29 {
     int m_00; // the race's kind of game
@@ -80,10 +112,26 @@ struct Rc29 {
     struct Bk29 m_2E8[5];
     u8 m_1DF0[0x18];
     int m_1E08;
+    u8 m_1E0C[8];
+    int m_1E14[2];
+    int m_1E1C[2];
+    u8 m_1E24[0x1C];
+    u8 m_1E40[0x10A];
+    s8 m_1F4A;
 };
 struct Cur29 {
     u8 m_00[4];
     int m_04;
+    u8 m_08[0x2C];
+    MATRIX *m_34;
+    u8 m_38[0x24];
+    int m_5C; // its target, or -1
+    u8 m_60[0x1C0];
+    int m_220;
+};
+// The scene's objects
+struct Objs29 {
+    void **m_00;
 };
 // The game: the players' views
 struct Game29 {
@@ -91,7 +139,11 @@ struct Game29 {
     int m_10;
     u8 m_14[4];
     int m_18;
-    u8 m_1C[0x2E8];
+    u8 m_1C[0x58];
+    Objs29 *m_74;
+    u8 m_78[0x44];
+    int m_BC[2];
+    u8 m_C4[0x240];
     int m_304;
     u8 m_308[4];
     int m_30C;
@@ -101,9 +153,12 @@ struct Game29 {
     int m_430[2];
     u8 m_438[4];
     Ply29 *m_43C[2];
-    u8 m_444[0x20];
+    u8 m_444[0x14];
+    void *m_458;
+    void *m_45C; // the camera's target
+    u8 m_460[4];
     Cur29 **m_464;
-    u8 m_468[8];
+    int m_468[2];
     s8 m_470[2];
     u8 m_472[2];
     int m_474[2];
@@ -120,7 +175,36 @@ extern char D_800D4798;
 extern int D_800CBC94;
 extern int D_800CB2C0;
 char *strcat(char *d, const char *s);
-int func_80078FC4(void *a, int b);
+// A slot of D_800CBC94's (chunk_51's): its list at 0x30
+struct Ref29 {
+    u8 m_00[0x30];
+    u8 m_30[4];
+};
+struct Ent29 {
+    u8 m_00[0x48];
+    int m_48;
+    int m_4C;
+};
+Ref29 *func_80078FC4(void *a, int b);
+Ent29 *func_800891E8(void *l, int i);
+void func_80054744(Game29 *g, char *s, int t, int i, int a, int c, int d);
+int func_8004C1BC(Game29 *g, int i, int k);
+// A bike's model: its matrix at 0x34
+struct Body29 {
+    u8 m_00[0x34];
+    MATRIX *m_34;
+    u8 m_38[0x21];
+    s8 m_59;
+    u8 m_5A[0x3BD];
+    u8 m_417;
+};
+extern int *D_800CB2F4;
+void func_8003491C(int *a, Bk29 *b);
+extern int D_800D60EC;
+void *func_8008C500(void *a, Game29 *g, int b, Bk29 *k, void *e);
+void *func_8008C678(void *a, Game29 *g, Vec29 *v, int n);
+void func_8008BCB0(void *c, Ply29 *p, Body29 *m, Bk29 *b, Vec29 *v, Game29 *g);
+int func_8004CB5C(Game29 *g, int i);
 void func_8004F0C4(Game29 *g, int i);
 void func_80078280(Ply29 *p);
 void func_8004C4E4(Game29 *g, int i, int c);
@@ -129,6 +213,11 @@ void func_8004C38C(Game29 *g);
 void func_8004C7EC(Game29 *g);
 char *func_8004B96C(int k);
 void func_8004C430(Game29 *g, int i);
+void func_8004CD5C(Game29 *g, int i);
+void func_800167B8(void *o, Vec29 *out);
+void func_80078458(Ply29 *p, Vec29 *at);
+extern int D_800CB2F0;
+void func_8004FE38(void *a, Ply29 *p, int c);
 int func_8004B844(int a, int b);
 // A scale's four weights for each of its kinds, and its sizes
 struct Sc29 {
@@ -279,7 +368,54 @@ void func_8004C184(Named29 *o, int f) {
     CNameDtor29(o, f);
 }
 
+#ifdef NON_MATCHING
+// The player's bike index's address: the original adds the index to g+0x470; GCC adds 0x470 to the index first (2 off; with the base in a local first the order comes right but -1 and the pointer swap registers, 8 off).
+int func_8004C1BC(Game29 *g, int i, int k) {
+    Ref29 *r = func_80078FC4(&D_800CBC94, g->m_18);
+    s8 *pk = &g->m_470[i];
+    Bk29 *b;
+
+    if (*pk != (s8)-1) {
+        b = &g->m_378->m_2E8[*pk];
+        b->m_43 = -1;
+        b->m_38 = 0x110;
+    }
+    *pk = k;
+    g->m_468[i] = -1;
+    if (k >= 0) {
+        Ent29 *e;
+
+        b = &g->m_378->m_2E8[k];
+        e = func_800891E8(r->m_30, g->m_BC[i]);
+        if (e && e->m_48) {
+            b->m_43 = i;
+            b->m_38 = e->m_4C;
+        } else {
+            b->m_38 = 0x110;
+        }
+    } else {
+        b = 0;
+    }
+    if (b) {
+        if (b->m_34 != -1) {
+            g->m_378->m_1E14[i] = 0;
+        } else {
+            g->m_378->m_1E14[i] = b->m_34;
+        }
+        g->m_378->m_1E1C[i] = -1;
+        if (g->m_378->m_00 & 0xA8) {
+            char buf[2];
+
+            buf[0] = k + '1';
+            buf[1] = 0;
+            func_80054744(g, buf, 3000, i, 4, 0xFFFF, 4);
+        }
+    }
+    return 1;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_29", func_8004C1BC);
+#endif
 
 void func_8004C38C(Game29 *g) {
     int i;
@@ -324,7 +460,76 @@ void func_8004C430(Game29 *g, int i) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_29", func_8004C4E4);
+void func_8004C4E4(Game29 *g, int i, int c) {
+    Ply29 *p = g->m_43C[i];
+    int k = g->m_470[i];
+    Rc29 *r = g->m_378;
+    Bk29 *b = 0;
+    int m;
+
+    if (k >= 0) {
+        b = &r->m_2E8[k];
+    }
+    if (c >= 0) {
+        m = 5;
+        if (c < 6) {
+            m = c;
+        }
+    } else {
+        m = 0;
+    }
+    p->m_154 = m;
+    switch (m) {
+    case 1:
+        p->m_190 = 0x1AE1;
+        b->m_320 = m;
+        b->m_322 = 0;
+        if (b->m_31C && *b->m_31C && g->m_378->m_10->m_52C != 5 && g->m_378->m_10->m_52C != 6) {
+            func_8003491C(b->m_31C, b);
+            break;
+        }
+        p->m_154 = 0;
+    case 0:
+        p->m_190 = 0x1AE1;
+        b->m_322 = 1;
+        b->m_320 = 0;
+        if ((u32)(g->m_378->m_10->m_52C - 5) >= 2) {
+            break;
+        }
+        p->m_154 = 5;
+    default:
+        func_8004C420((Tab29 *)g, i, D_800CB2F8[p->m_154]);
+        p->m_190 = D_800CB2F4[p->m_154];
+        b->m_320 = 0;
+        b->m_322 = 0;
+        break;
+    case 2:
+        func_8004C420((Tab29 *)g, i, D_800CB2F8[2]);
+        p->m_190 = D_800CB2F4[2];
+        b->m_320 = 0;
+        b->m_322 = 0;
+        break;
+    }
+    {
+        Body29 *m2 = (Body29 *)b->m_30;
+
+        if (m2->m_59) {
+            m2->m_417 = 0;
+        }
+    }
+    p->m_144 = ((Tab29 *)g)->m_408[i] * 652;
+    p->m_150 = -((Tab29 *)g)->m_3F8[i];
+    g->m_438[i] = 1;
+    if (b->m_188s.m_189) {
+        u8 a = b->m_320;
+        u8 d = b->m_322;
+
+        b->m_320 = 0;
+        b->m_322 = 0;
+        b->m_321 = a;
+        b->m_323 = d;
+    }
+}
 
 void func_8004C764(Game29 *g, int i) {
     Ply29 *p = g->m_43C[i];
@@ -403,9 +608,126 @@ int func_8004C9D0(Game29 *g, int i) {
     return r;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_29", func_8004CB5C);
+// The identity, rows from the diagonal out (chunk_48's IdentMat48)
+static inline void IdentMat29(MATRIX *m) {
+    m->m[0][0] = 0x1000;
+    m->m[1][1] = 0x1000;
+    m->m[2][2] = 0x1000;
+    m->m[0][1] = m->m[0][2] = m->t[0] = 0;
+    m->m[1][0] = m->m[1][2] = m->t[1] = 0;
+    m->m[2][0] = m->m[2][1] = m->t[2] = 0;
+}
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_29", func_8004CD5C);
+static inline void ZeroVec29(Vec29 *v) {
+    v->vx = v->vy = v->vz = 0;
+}
+
+int func_8004CB5C(Game29 *g, int i) {
+    int r = 0;
+    int k = g->m_470[i];
+    Rc29 *rc = g->m_378;
+    Bk29 *b = 0;
+
+    if (k >= 0) {
+        b = &rc->m_2E8[k];
+    }
+    if (b) {
+        Body29 *m = (Body29 *)b->m_30;
+
+        if (m) {
+            Ply29 *p = g->m_43C[i];
+            void *c;
+            Vec29 v;
+
+            if (rc->m_1F4A) {
+                c = func_8008C500(g->m_458, g, D_800D60EC, b, rc->m_1E40);
+            } else {
+                int n = 0;
+
+                v = *(Vec29 *)m->m_34->t;
+                if (b->m_360 && b->m_3DD >= 26) {
+                    n = b->m_3DD - 25;
+                }
+                c = func_8008C678(g->m_458, g, &v, n);
+            }
+            if (c) {
+                v = *(Vec29 *)m->m_34->t;
+                func_8008BCB0(c, p, m, b, &v, g);
+                r = 1;
+            }
+            if (g->m_45C != c) {
+                g->m_438[i] = 1;
+            }
+            g->m_45C = c;
+            if (!r) {
+                IdentMat29(&p->m_00);
+                ZeroVec29(&p->m_F8);
+                func_8004C870(g, i, b);
+            }
+        }
+    }
+    return r;
+}
+
+static inline void VecCopyL29(Vec29 *d, Vec29 *s) {
+    int x = s->vx;
+    int y = s->vy;
+    int z = s->vz;
+
+    d->vx = x;
+    d->vy = y;
+    d->vz = z;
+}
+
+void func_8004CD5C(Game29 *g, int i) {
+    Cur29 *c = g->m_464[i];
+    Ply29 *p = g->m_43C[i];
+    MATRIX *m = c->m_34;
+    Cur29 *a = 0;
+    Vec29 v;
+
+    if (c->m_04 & 0x8000) {
+        a = c;
+    }
+    if (a && a->m_5C != -1) {
+        int k = a->m_5C;
+        Objs29 *objs = g->m_74;
+        void *o = 0;
+
+        if (k >= 0) {
+            o = objs->m_00[k];
+        }
+        {
+            int x = m->t[0];
+            int y = m->t[1];
+            int z = m->t[2];
+
+            v.vx = x;
+            v.vy = y;
+            v.vz = z;
+        }
+        VecCopyL29(&p->m_F8, &v);
+        func_800167B8(o, &v);
+        VecCopyL29(&p->m_11C, &v);
+        func_80078458(p, &v);
+    } else {
+        p->m_00 = *m;
+        p->m_00.t[0] = p->m_00.t[1] = p->m_00.t[2] = 0;
+        {
+            int x = m->t[0];
+            int y = m->t[1];
+            int z = m->t[2];
+
+            v.vx = x;
+            v.vy = y;
+            v.vz = z;
+        }
+        VecCopyL29(&p->m_F8, &v);
+        if (c->m_04 & 0x1000000) {
+            func_8004FE38(&D_800CB2F0, p, c->m_220);
+        }
+    }
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_29", func_8004CEFC);
 

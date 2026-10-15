@@ -18,7 +18,7 @@ Also the four lists sorted with `qsort`, the first time only.
 
 One file, `src/langimg/chunk_40.cpp`, 0x80061484-0x80063428.
 
-23 functions: 15 match, 3 are parked, 5 are still asm.
+23 functions: 16 match, 3 are parked, 4 are still asm.
 
 ## The settings
 
@@ -54,6 +54,9 @@ globals.
 - **A bug kept.** `func_800627E4` looks for the first waiting bit but
   tests bit 0 each time round, so it returns 0 or -1 (and GCC moves the
   test out of the loop). The game's own code.
+- **`func_800615C4` (fifth pass)** matched as written: each flag's three
+  vectors copied with `VecCopyL40` at byte offsets of the model (re-read
+  for each copy), then the two node functions per flag.
 
 ## The functions
 
@@ -61,7 +64,7 @@ globals.
 |---|---|---|
 | `func_80061484` | matches | two animations' frames |
 | `func_800614C0`, `func_80061510`, `func_80061540` | match | a bike's object's parts set from a list |
-| `func_800615C4` | asm | 190 instructions |
+| `func_800615C4` | matches | the parts' positions kept, their nodes updated |
 | `func_800618BC` | asm | 503 instructions |
 | `func_80062098` | asm | 209 instructions |
 | `func_800623DC` | matches | a bike reset |

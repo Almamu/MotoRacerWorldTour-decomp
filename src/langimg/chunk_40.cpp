@@ -160,6 +160,15 @@ extern Cobjet *CobjetCtor40(Cobjet *o) asm("__6Cobjet");
 extern void CobjetDtor40(Cobjet *o, int f) asm("_._6Cobjet");
 
 extern "C" {
+// What func_800615C4 is given: the model at 8
+struct Holder40 {
+    u8 m_00[8];
+    void *m_08;
+};
+extern int D_800CB420;
+void func_8008D2DC(void *n, int k);
+void func_8008D880(void *n, int k);
+void func_800615C4(void *x, struct Holder40 *o, int f);
 void func_8001A63C(void *p, int f);
 void func_8001D07C(void *p);
 void qsort(void *base, int n, int size, int (*cmp)(int *, int *));
@@ -245,7 +254,65 @@ void func_80061540(Cobjet *o, int n, int *parts) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_40", func_800615C4);
+// A vector of the model m at byte offset off
+#define MVEC40(m, off) ((Vec40 *)((u8 *)(m) + (off)))
+
+/* The wheels' and parts' positions for the flags (1, 2, 4, 8) kept for the
+ * next frame, then the parts' nodes updated. */
+void func_800615C4(void *x, Holder40 *o, int f) {
+    int f1 = f & 1;
+    int f2, f4, f8;
+
+    if (f1) {
+        VecCopyL40(MVEC40(o->m_08, 0x5D4), MVEC40(o->m_08, 0x59C));
+        VecCopyL40(MVEC40(o->m_08, 0x654), MVEC40(o->m_08, 0x61C));
+        VecCopyL40(MVEC40(o->m_08, 0xDD4), MVEC40(o->m_08, 0x89C));
+    }
+    f2 = f & 2;
+    if (f2) {
+        VecCopyL40(MVEC40(o->m_08, 0x6D4), MVEC40(o->m_08, 0x69C));
+        VecCopyL40(MVEC40(o->m_08, 0x754), MVEC40(o->m_08, 0x71C));
+        VecCopyL40(MVEC40(o->m_08, 0xE54), MVEC40(o->m_08, 0x91C));
+    }
+    f4 = f & 4;
+    if (f4) {
+        VecCopyL40(MVEC40(o->m_08, 0x254), MVEC40(o->m_08, 0x21C));
+        VecCopyL40(MVEC40(o->m_08, 0x2D4), MVEC40(o->m_08, 0x29C));
+        VecCopyL40(MVEC40(o->m_08, 0xED4), MVEC40(o->m_08, 0x99C));
+    }
+    f8 = f & 8;
+    if (f8) {
+        VecCopyL40(MVEC40(o->m_08, 0x354), MVEC40(o->m_08, 0x31C));
+        VecCopyL40(MVEC40(o->m_08, 0x3D4), MVEC40(o->m_08, 0x39C));
+        VecCopyL40(MVEC40(o->m_08, 0xF54), MVEC40(o->m_08, 0xA1C));
+    }
+    D_800CB420 = 1;
+    if (f1) {
+        func_8008D2DC((u8 *)o->m_08 + 0x580, 8);
+    }
+    if (f2) {
+        func_8008D2DC((u8 *)o->m_08 + 0x680, 8);
+    }
+    if (f4) {
+        func_8008D2DC((u8 *)o->m_08 + 0x200, 8);
+    }
+    if (f8) {
+        func_8008D2DC((u8 *)o->m_08 + 0x300, 8);
+    }
+    if (f1) {
+        func_8008D880((u8 *)o->m_08 + 0x580, 8);
+    }
+    if (f2) {
+        func_8008D880((u8 *)o->m_08 + 0x680, 8);
+    }
+    if (f4) {
+        func_8008D880((u8 *)o->m_08 + 0x200, 8);
+    }
+    if (f8) {
+        func_8008D880((u8 *)o->m_08 + 0x300, 8);
+    }
+    D_800CB420 = 2;
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_40", func_800618BC);
 

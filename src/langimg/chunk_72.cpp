@@ -172,6 +172,35 @@ u32 func_800A645C(void *p, int n, int a);
 void func_800A6448(void);
 void *func_800A1CF8(int mode, CdlLOC *loc, int size, void *buf);
 void *malloc(unsigned int n);
+// A work buffer (chunk_58's Buf58)
+struct Buf72 {
+    void *m_00;
+    int m_04;
+    int m_08;
+};
+extern char D_800C9F1C[]; // the default picture's name
+Buf72 *func_80086E68(Buf72 *b);
+void func_80086E7C(Buf72 *b, int f);
+void func_80086F14(Buf72 *b, void *p, int n);
+int func_80087468(Buf72 *b, void *img, int c, int d, int e, int f);
+void *func_800A06AC(char *name, void *buf, int *size);
+void func_80015678(void (*f)(void));
+void func_800A1654(void);
+void func_800A17EC(int x, char *name);
+// A three-point Gouraud line (LINE_G3) as words
+struct Line72 {
+    u32 m_tag;
+    u32 m_c0;
+    u32 m_xy0;
+    u32 m_c1;
+    u32 m_xy1;
+    u32 m_c2;
+    u32 m_xy2;
+};
+extern int D_800C9F14;        // the spinner's size, 0 to 5
+extern int D_800C9F18;        // its step
+extern short D_800BF3A0[][2]; // sines and cosines by angle (4.12)
+void DrawPrim(void *p);
 void *func_800B5730(void *p, int size);
 extern void (**D_800D6000)(void *p); // a hook on what's read
 
@@ -187,6 +216,33 @@ void func_800A25D4(void);
 void func_800A2618(void);
 void func_800A265C(void);
 void func_800A26A0(void);
+void func_800A26DC(void);
+// The display (chunk_51's A51): its sizes at 0xC and 0x10
+struct Disp72 {
+    u8 m_00[0xC];
+    int m_0C, m_10;
+};
+// chunk_51's G51
+struct Gfx72 {
+    u8 m_00[4];
+    Disp72 *m_04;
+};
+void *__builtin_new(unsigned int n);
+void func_8009793C(void);
+void func_800A0CC4(Card72 *c);
+void func_800AEBF0(int a, int b);
+void func_800AFB8C(int a);
+void func_800B0258(int a);
+void func_800450C0(char *s, int a);
+Gfx72 *func_80078DA8(Gfx72 *g, int a, int b, int c, int d, int e);
+int func_80078F5C(int *t, Gfx72 *g);
+void func_80078C78(Disp72 *o, int a, int b, int c, int e, int f, int g, int h, int i, ...);
+void func_800A0680(void);
+extern s8 D_800C9D3C;
+extern char D_800CABC0[];
+extern int D_800CBC94[];
+extern Disp72 *D_800C886C;
+int func_800A195C(void);
 
 void func_800A1228(Card72 *c);
 void func_800A1248(Card72 *c);
@@ -438,11 +494,117 @@ void func_800A164C(int *p) {
     *p = 0;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A1654);
+/* The loading spinner: 32 lines out from (460, 425), their length
+ * swinging between 11 and 16. */
+void func_800A1654(void) {
+    Line72 p;
+    Line72 *l = &p;
+    int a, r;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A17EC);
+    p.m_tag = 0x06000000;
+    l->m_c0 = 0x30007F7F;
+    l->m_c1 = 0x7F;
+    l->m_c2 = 0x7F;
+    l->m_xy0 = 0x01A901CC;
+    r = 16 - D_800C9F14;
+    for (a = 0; a < 0x1000;) {
+        int n;
 
+        l->m_xy1 = (u16)(r * D_800BF3A0[a & 0xFFF][0] / 4096 + 0x1CC) |
+                   ((r * D_800BF3A0[a & 0xFFF][1] / 4096 + 0x1A9) << 16);
+        n = a + 0x80;
+        l->m_xy2 = (u16)(r * D_800BF3A0[n & 0xFFF][0] / 4096 + 0x1CC) |
+                   ((r * D_800BF3A0[n & 0xFFF][1] / 4096 + 0x1A9) << 16);
+        DrawPrim(l);
+        a = n;
+    }
+    D_800C9F14 += D_800C9F18;
+    if (D_800C9F18 > 0) {
+        if (D_800C9F14 >= 5) {
+            D_800C9F18 = -1;
+        }
+    } else if (D_800C9F14 <= 0) {
+        D_800C9F18 = 1;
+    }
+}
+
+/* A picture shown full screen: the named one, or the default one. */
+void func_800A17EC(int x, char *name) {
+    Buf72 b;
+    RECT r;
+    void *work;
+
+    func_80086E68(&b);
+    DrawSync(0);
+    VSync(0);
+    work = malloc(0x7000);
+    if (work) {
+        u8 *img;
+
+        if (name) {
+            img = (u8 *)func_800A06AC(name, 0, 0);
+        } else {
+            img = 0;
+        }
+        if (!img) {
+            img = (u8 *)func_800A06AC(D_800C9F1C, 0, 0);
+        }
+        r.w = 512;
+        r.h = 512;
+        r.x = 0;
+        r.y = 0;
+        ClearImage(&r, 0, 0, 0);
+        DrawSync(0);
+        SetDispMask(0);
+        func_80086F14(&b, work, 0x7000);
+        func_80087468(&b, img + 4, 1, 0, 0, 0);
+        DrawSync(0);
+        func_80087468(&b, img + 4, 1, 0, 0x100, 0);
+        DrawSync(0);
+        SetDispMask(1);
+        if (img) {
+            free(img);
+        }
+        func_80015678(func_800A1654);
+        if (work) {
+            free(work);
+        }
+    }
+    func_80086E7C(&b, 2);
+}
+
+/* The game started: the cards, the GTE, the sound, the loading spinner, the
+ * display and its primitives' layout. */
+#ifdef NON_MATCHING
+// One instruction: the original sets the 1 it keeps in $s0 in the delay slot of func_800A0CC4's call and leaves ResetCallback's slot empty; GCC sets it after that call, in ResetCallback's slot, which shifts the rest by one (118 off, the code otherwise the original's).
+int func_800A195C(void) {
+    Gfx72 *g;
+    int on = 1;
+
+    func_8009793C();
+    func_800A0CC4(&D_800D4898);
+    ResetCallback();
+    InitGeom();
+    func_800AEBF0(0, 2);
+    func_800AFB8C(0x16);
+    func_800B0258(1);
+    func_800A1C10(0);
+    func_80015678(func_800A1654);
+    D_800C9D3C = on;
+    func_800450C0(D_800CABC0, 1);
+    g = func_80078DA8((Gfx72 *)__builtin_new(0x20), -1, -1, 0x200, 0x100, 6);
+    func_80078F5C(D_800CBC94, g);
+    func_80078C78(g->m_04, 0xE, 2, 8, 4, g->m_04->m_0C, g->m_04->m_10, on, 0x44, 2, 0, 2, 0, 7, on,
+                  2, on, 2, on, 2, on, 2, on, 2, on, 2, on, 7, on, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2,
+                  0, 2, 0, 7, on, 2, 0, 2, 0, 2, 0, 0x800, 0xC0);
+    D_800C886C = g->m_04;
+    SetGeomScreen(0x100);
+    func_800A0680();
+    return 1;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A195C);
+#endif
 
 void func_800A1B4C(void) {
 }
@@ -882,7 +1044,27 @@ void func_800A26A0(void) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A26DC);
+/* The card's events opened (their handlers above), then enabled. */
+void func_800A26DC(void) {
+    EnterCriticalSection();
+    D_800D6080[0] = OpenEvent(0xF4000001, 4, 0x1000, func_800A2490);
+    D_800D60B8[0] = OpenEvent(0xF4000001, 0x8000, 0x1000, func_800A24CC);
+    D_800D6078[0] = OpenEvent(0xF4000001, 0x100, 0x1000, func_800A2510);
+    D_800D6088[0] = OpenEvent(0xF4000001, 0x2000, 0x1000, func_800A2554);
+    D_800D607C[0] = OpenEvent(0xF0000011, 4, 0x1000, func_800A2598);
+    D_800D60B0[0] = OpenEvent(0xF0000011, 0x8000, 0x1000, func_800A25D4);
+    D_800D6074[0] = OpenEvent(0xF0000011, 0x100, 0x1000, func_800A2618);
+    D_800D6084[0] = OpenEvent(0xF0000011, 0x2000, 0x1000, func_800A265C);
+    ExitCriticalSection();
+    EnableEvent(D_800D6080[0]);
+    EnableEvent(D_800D60B8[0]);
+    EnableEvent(D_800D6078[0]);
+    EnableEvent(D_800D6088[0]);
+    EnableEvent(D_800D607C[0]);
+    EnableEvent(D_800D60B0[0]);
+    EnableEvent(D_800D6074[0]);
+    EnableEvent(D_800D6084[0]);
+}
 
 /* The card's events closed. */
 void func_800A28B8(void) {

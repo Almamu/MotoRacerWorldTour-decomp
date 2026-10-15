@@ -5,20 +5,27 @@
 extern "C" {
 // An entry, 0xCC bytes
 struct Ent49 {
-    u8 m_00[8];
+    int m_00;
+    int m_04;         // its kind
     u8 m_08[0xC];     // its position
     short m_14[0x10]; // its matrix
     int m_34;
     int m_38; // where it is along the track
-    u8 m_3C[0x44];
+    u8 m_3C[4];
+    int m_40;
+    u8 m_44[0x3C];
     int m_80; // bit 0: in use
     u8 m_84[0x18];
     int m_9C; // its speed
     u8 m_A0[0x2C];
 };
+struct Who49;
 struct Pool49 {
-    u8 m_00[0x30];
-    int m_30; // how many
+    u8 m_00[0xC];
+    int m_0C; // how many racers
+    u8 m_10[4];
+    struct Who49 *m_14[7]; // the racers
+    int m_30;              // how many
     Ent49 *m_34;
 };
 struct Rng49 {
@@ -95,6 +102,13 @@ struct Time49 {
 };
 extern Time49 D_800D6124;
 extern int D_800C87B4, D_800C8744; // vtables
+// The track's tables by kind and section (indexed by bytes, as chunk_48's)
+extern int D_800C845C; // how many sections per kind
+extern int D_800C849C; // the sections per kind, 4 each
+extern int D_800C84EC; // each section's first point
+extern int D_800C8504; // each point's next, 11 per section
+extern int D_800C860C; // each point's distance, 11 per section
+void func_80073AA0(void *g, int k, int *lo, int *hi);
 Ent49 *func_8007345C(Pool49 *p, Rng49 *r);
 int func_8007351C(Pool49 *p);
 Ent49 *func_800741D8(Pool49 *p, int *best, Who49 *w, Trk49 *t);
@@ -111,6 +125,7 @@ void func_80074D78(Obj49 *o, int f);
 int func_80098D1C(int i);
 Lnk49 *func_80074924(Obj49 *o);
 void func_800747A8(Obj49 *o, int dir, int *t, int n);
+int func_80074AC8(Obj49 *o);
 void func_800746B0(Obj49 *o, int dflt, int dir, int e, int sub);
 struct Vec49 {
     int x;
@@ -121,6 +136,8 @@ Vec49 *func_8009964C(Vec49 *v, int k); // v * k, returns v
 void func_80099D48(Vec49 *v, int s);
 void func_80063C60(Pos49 *o, u8 *p, Vec49 *v, int a, int k, int b, int d);
 void func_8007356C(Pool49 *p, Pos49 *w, Trk49 *t);
+int func_80073C2C(Pool49 *p, int lo, int hi, Trk49 *t, int m, int racers, Ent49 *skip, int skipv,
+                  int kind);
 }
 void CobjetLinkDtor49(Node49 *l, int f) asm("_._10CobjetLink");
 
@@ -207,9 +224,103 @@ void func_8007356C(Pool49 *p, Pos49 *w, Trk49 *t) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_49", func_800736BC);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_49", func_80073AA0);
+#define TAB49(t, i) (*(int *)((u8 *)&(t) + ((i) << 2)))
 
+#ifdef NON_MATCHING
+// Registers: the sections' list pointer, the section and the first point in other registers than the original's, and the count reread each time round the outer loop (49 off).
+void func_80073AA0(void *g, int k, int *lo, int *hi) {
+    int *ids = (int *)((u8 *)&D_800C849C + (k << 4));
+    int s = ids[0];
+    int base;
+    int i;
+
+    *lo = 0x7FFFFFFF;
+    i = TAB49(D_800C84EC, s);
+    base = TAB49(D_800C860C, s * 11 + i);
+    *hi = 0x80000000;
+    if (*hi < base) {
+        *hi = base;
+    }
+    if (base < *lo) {
+        *lo = base;
+    }
+    for (i = 1; i < TAB49(D_800C845C, k); i++) {
+        int j, nx, w;
+
+        s = ids[i];
+        j = TAB49(D_800C84EC, s);
+        nx = (*(int (*)[][11]) & D_800C8504)[s][j];
+        do {
+            w = base + (*(int (*)[][11]) & D_800C860C)[s][j];
+            if (*hi < w) {
+                *hi = w;
+            }
+            if (w < *lo) {
+                *lo = w;
+            }
+            j = nx;
+            nx = (*(int (*)[][11]) & D_800C8504)[s][j];
+        } while (j != nx);
+        w += 0x19000;
+        if (*hi < w) {
+            *hi = w;
+        }
+    }
+}
+#else
+INCLUDE_ASM("asm/langimg/nonmatchings/chunk_49", func_80073AA0);
+#endif
+
+// A distance along the track brought within half its length
+static inline int Wrap49(int d, int half, int len) {
+    if (half < d) {
+        d -= len;
+    }
+    if (d < -half) {
+        d += len;
+    }
+    return d;
+}
+
+// Whether the stretch from lo - m to hi + m is free of the pool's entries
+// (but skip, those with skipv at 0x40 and, unless kind is -1, of other kinds)
+// and, with racers, of the racers within 0x32000
+#ifdef NON_MATCHING
+// GCC hoists lo - m out of the first loop into a saved register where the original recomputes it in each pass and keeps the entries' count there instead; the registers differ from there on (73 off).
+int func_80073C2C(Pool49 *p, int lo, int hi, Trk49 *t, int m, int racers, Ent49 *skip, int skipv,
+                  int kind) {
+    int len = t->m_2C;
+    int half = len >> 1;
+    int i;
+
+    for (i = 0; i < p->m_30; i++) {
+        Ent49 *e = &p->m_34[i];
+
+        if (e != skip && e->m_40 != skipv && (kind == -1 || e->m_04 == kind) && (e->m_80 & 1)) {
+            int a = Wrap49(lo - m - e->m_38, half, len);
+            int b = Wrap49(hi + m - e->m_38, half, len);
+
+            if (a < 0 && b > 0) {
+                return 0;
+            }
+        }
+    }
+    if (racers) {
+        for (i = 0; i < p->m_0C; i++) {
+            int pos = p->m_14[i]->m_30->m_208;
+            int a = Wrap49(lo - pos - 0x32000, half, len);
+            int b = Wrap49(hi - pos + 0x32000, half, len);
+
+            if (b > 0 && a < 0) {
+                return 0;
+            }
+        }
+    }
+    return 1;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_49", func_80073C2C);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_49", func_80073E54);
 
@@ -468,7 +579,82 @@ void CobjetLinkDtor49(Node49 *l, int f) {
     }
 }
 
+// A GCC 2 vtable entry: the this adjustment and the function
+struct VtEntry49 {
+    short m_delta;
+    short m_index;
+    void *m_func;
+};
+
+/* An object stepped along its links by the time: when the current step's
+ * time is over, on to the next link (its first and last calls through the
+ * vtable), the progress at 0x10 in 16.16; again while it's past the end. */
+#ifdef NON_MATCHING
+// With the chunk's -fmove-all-movables the constants 2 and 1 stay in saved registers as in the original, but the next link and the direction land in other registers and the compare with 1 for 0x08 uses the hoisted one where the original loads 1 again (105 off).
+int func_80074AC8(Obj49 *o) {
+    int now = (&D_800CB880)[o->m_0Cf.m_b];
+    int called = 0;
+    int again;
+    int r;
+
+    do {
+        r = 0;
+        again = 0;
+        o->m_30 = 0;
+        if (o->m_28 && o->m_2C) {
+            Lnk49 *n = o->m_2C;
+            int dir = o->m_0Cf.m_a;
+            int f = 0;
+            int el;
+
+            if ((dir > 0 && n->m_08) || (dir < 0 && n->m_04->m_08)) {
+                f = 1;
+            }
+            el = now - o->m_24;
+            if (el >= o->m_14 || o->m_14 <= 0) {
+                int rest = el - o->m_14;
+
+                o->m_28 = o->m_2C;
+                if (f && o->m_08 == 1) {
+                    VtEntry49 *v;
+
+                    func_800747A8(o, 0, &rest, 0);
+                    v = &((VtEntry49 *)o->m_34)[4];
+                    ((void (*)(void *))v->m_func)((u8 *)o + v->m_delta);
+                }
+                if (o->m_04 == 2 || (o->m_04 == 1 && !f)) {
+                    VtEntry49 *v = &((VtEntry49 *)o->m_34)[6];
+
+                    ((void (*)(void *, int, int, int, int))v->m_func)((u8 *)o + v->m_delta, o->m_14,
+                                                                      0, called, rest);
+                } else {
+                    o->m_30 = (int)o->m_2C;
+                    o->m_2C = 0;
+                }
+                if (o->m_14 <= 0) {
+                    goto done;
+                }
+            }
+            o->m_10 = ((now - o->m_24) << 16) / o->m_14;
+        done:
+            o->m_18 = now;
+            r = o->m_2C || o->m_30;
+            if (o->m_10 > 0x10000) {
+                if (o->m_2C) {
+                    again = 1;
+                } else if (o->m_30) {
+                    again = 0;
+                    o->m_10 = 0x10000;
+                }
+            }
+        }
+        called = 1;
+    } while (again);
+    return r;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_49", func_80074AC8);
+#endif
 
 void func_80074D20(void) {
 }

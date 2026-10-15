@@ -13,7 +13,7 @@ destructor, and globals saved from the game's timers.
 
 One file, `src/langimg/chunk_49.cpp`, 0x8007345C-0x80075440.
 
-26 functions: 14 match, 4 are parked, 8 are still asm.
+26 functions: 14 match, 7 are parked, 5 are still asm.
 
 ## The settings
 
@@ -51,6 +51,14 @@ globals.
   sets the direction bitfield right after `m_20`, before the other
   fields; written last with the other bitfields, GCC merged it into one
   store of the word. The permuter found the order.
+- **`-fmove-all-movables` (fifth pass).** The chunk is now built with it:
+  `func_80074AC8` keeps 2 and 1 in saved registers as the original does
+  (139 off to 105), and every matched function still matches.
+- **Parked (fifth pass).** `func_80074AC8` (an object stepped along its
+  links by the time, two virtual calls): the next link and the direction
+  in other registers (105 off). `func_80073C2C` (whether a stretch of track
+  is free of the pool's objects and the racers): GCC hoists `lo - m` out of
+  the first loop where the original recomputes it (73 off).
 
 ## The functions
 
@@ -60,8 +68,9 @@ globals.
 | `func_8007351C` | matches | how many entries are free |
 | `func_8007356C` | matches | the entries ahead passed on, with their heading |
 | `func_800736BC` | asm | 249 instructions |
-| `func_80073AA0` | asm | 99 instructions |
-| `func_80073C2C`, `func_80073E54` | asm | 138 and 225 instructions |
+| `func_80073AA0` | parked | a kind's range along the track: registers |
+| `func_80073E54` | asm | 225 instructions |
+| `func_80073C2C` | parked | whether a stretch of track is free: an invariant hoisted |
 | `func_800741D8` | parked | the entry nearest ahead: registers |
 | `func_80074270` | asm | 168 instructions |
 | `func_80074510` | matches | a base's fields set |
@@ -73,7 +82,7 @@ globals.
 | `func_800747A8` | parked | the current link set and stepped by time: registers |
 | `func_80074924` | parked | a link `n` steps along: the mode's tests and the loads' order |
 | `_._10CobjetLink` | matches | `CobjetLink`'s destructor |
-| `func_80074AC8` | asm | 150 instructions |
+| `func_80074AC8` | parked | an object stepped along its links: registers |
 | `func_80074D20`, `func_80074D28` | match | empty |
 | `func_80074D30`, `func_80074D78` | match | a constructor and a destructor |
 | `func_80074DA0` | asm | 174 instructions |
@@ -87,3 +96,12 @@ globals.
   time. The original walks the backward count and the result in one
   register, copies n for the forward walk and lays the time loop's test
   at its top.
+
+## Fourth pass
+
+- `func_80073AA0` (the lowest and highest distance along the sections of
+  a kind, from chunk_48's tables) is parked 49 off: its loop over a
+  section's points matches in shape with the rows indexed as 2-D arrays
+  (`(*(int (*)[][11])&D_800C860C)[s][j]`, the row's byte offset added
+  before the table's), the first point by bytes as chunk_48 does; the
+  section and the list pointer are in other registers than the original's.
