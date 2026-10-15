@@ -92,7 +92,7 @@ settings
 | `src/langimg` chunk_23 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=D_800CABB7` |
 | `src/langimg` chunk_45 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (eleven) |
 | `src/langimg` chunk_66 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (five) |
-| `src/langimg` chunk_13, chunk_14, chunk_15, chunk_16, chunk_17, chunk_18, chunk_19, chunk_20, chunk_21, chunk_22, chunk_24, chunk_25, chunk_26, chunk_27, chunk_28, chunk_29, chunk_31, chunk_32, chunk_33, chunk_34, chunk_35, chunk_36, chunk_37, chunk_38, chunk_39, chunk_40, chunk_41, chunk_43, chunk_44, chunk_46, chunk_47, chunk_48, chunk_49, chunk_50, chunk_51, chunk_52, chunk_55, chunk_56, chunk_57, chunk_58, chunk_59, chunk_60, chunk_61, chunk_62, chunk_63, chunk_64, chunk_65, chunk_67, chunk_68, chunk_69, chunk_70, chunk_71, chunk_72, chunk_73, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
+| `src/langimg` chunk_13, chunk_14, chunk_15, chunk_16, chunk_17, chunk_18, chunk_19, chunk_20, chunk_21, chunk_22, chunk_24, chunk_25, chunk_26, chunk_27, chunk_28, chunk_29, chunk_31, chunk_32, chunk_33, chunk_34, chunk_35, chunk_36, chunk_37, chunk_38, chunk_39, chunk_40, chunk_41, chunk_42, chunk_43, chunk_44, chunk_46, chunk_47, chunk_48, chunk_49, chunk_50, chunk_51, chunk_52, chunk_53, chunk_55, chunk_56, chunk_57, chunk_58, chunk_59, chunk_60, chunk_61, chunk_62, chunk_63, chunk_64, chunk_65, chunk_67, chunk_68, chunk_69, chunk_70, chunk_71, chunk_72, chunk_73, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_06 to chunk_12 (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_02b (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `SCES_030.37` (`src/sces`) | GCC 2.91.66 | 0 | `-fsigned-char` | `--expand-div` |
@@ -756,10 +756,12 @@ globals), a script that tries every order is quicker than guessing:
   it with one `int r` and nested `if`s, not early returns (chunk_34's
   `func_80056CD4`).
 - **Declare what a callee returns.** A call whose result is unused still
-  changes the code around it when the callee is declared `void` but
-  returns a value: chunk_18's `func_80036850` matched only with
-  `func_8001B350` declared `int` (it returns `$s2` in `$v0`). Check the
-  callee's last instructions before trusting a `void`.
+  changes the code around it with the callee's declared return type:
+  chunk_18's `func_80036850` matched only with `func_8001B350` declared
+  `int` (it returns `$s2` in `$v0`), and chunk_42's `func_80067230` only
+  with `func_80099898` declared `void`, as `include/langimg/cobjet.h` has
+  it, not returning a pointer (the permuter's find). Check the callee's
+  last instructions before trusting either.
 - **Unused locals.** A frame bigger than its variables need means the
   original had locals the optimiser dropped: `int unused[6];` gives
   `func_8001184C`'s 0x30-byte frame.
@@ -1096,6 +1098,11 @@ What's left once the instructions are right is usually register choice.
 - **Single moves** (`GTE_CTC2`, `GTE_MTC2`, `GTE_MFC2`, `GTE_CFC2`): one
   instruction per `asm` statement, with registers GCC chooses, as the
   original's are.
+- **Outputs listed in reverse for the saved registers.** chunk_53's
+  `func_8007C428` saves the Z scale factors (`cfc2` from 29 and 30) in
+  `$s2` and `$s3` across a call; two `GTE_CFC2`s, or one statement with
+  its outputs in order, swapped them. `GTE_GET_ZSF(a, b)` reads both in
+  one statement with `b`'s output listed first, which gave the original's.
 - **Fixed sequences** where the original's registers never change:
   `GTE_SET_ROT` loads the matrix through `$a1` and `$a2` in pairs;
   `GTE_SET_TRANS` and `GTE_SET_ZSF` move several values in one statement.
