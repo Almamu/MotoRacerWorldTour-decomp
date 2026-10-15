@@ -252,7 +252,7 @@ void func_80080678(void) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_55", func_800806D4);
 
 #ifdef NON_MATCHING
-// The switch: the original tests the empty case 0x1000 too; GCC drops it
+// The result's register: $t0 in the original, $a0 here (3 off). The compare tree (0x1000 first, then below 0x1001, then 0) came with the switch on an unsigned value and a third empty case, which keeps GCC from dropping the empty case 0x1000
 int func_80080F30(void) {
     int r;
 
@@ -261,11 +261,13 @@ int func_80080F30(void) {
     D_800CBCD8 = 0;
     D_800CBCDA = 0;
     r = 0;
-    switch (D_800C89D0 & 0xF000) {
+    switch ((u32)(D_800C89D0 & 0xF000)) {
     case 0:
         r = func_8007F948();
         break;
     case 0x1000:
+        break;
+    case 0x2000:
         break;
     }
     return r;
@@ -275,7 +277,7 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_55", func_80080F30);
 #endif
 
 #ifdef NON_MATCHING
-// Registers: the original keeps the flags and the switch's value in $a1
+// The colour's three shifted copies: the original ors (f << 8) | 0x66000000 into f << 16, GCC (f << 16) | 0x66000000 first (5 off; the switch on f &= 3 kept in f's register as the original)
 /* The colour from the mode's flags. */
 void func_80080F8C(void) {
     u8 f = D_800C89D4;
@@ -287,7 +289,8 @@ void func_80080F8C(void) {
         f = D_800C89D5;
         c = (f << 16) | ((f << 8) | 0x66000000) | f;
     } else {
-        switch (f & 3) {
+        f &= 3;
+        switch (f) {
         case 0:
             c = (D_800C89D5 << 16) | (D_800C89D5 << 8) | D_800C89D5;
             break;

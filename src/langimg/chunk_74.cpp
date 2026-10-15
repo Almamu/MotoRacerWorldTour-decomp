@@ -118,6 +118,7 @@ s8 *func_800A638C(s8 *s);
 void func_800A63D4(void);
 void func_800A63DC(void);
 u16 func_800A63E4(u16 x);
+void func_800A63FC(void);
 void func_800A6448(void);
 void func_800A67E8(int a);
 int func_800A6818(void);
@@ -629,7 +630,22 @@ u16 func_800A63E4(u16 x) {
     return (x >> 8) | (x << 8);
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_74", func_800A63FC);
+/* The CRC table copied to the scratchpad (0x1F800000), which D_800BCE3C then
+ * points at, unless the stack (a local's address) is at 0x1800xxxx. */
+void func_800A63FC(void) {
+    int here;
+
+    if (((int)&here >> 16) != 0x1800) {
+        u32 *s = (u32 *)D_800BCA3C;
+        u32 *d = (u32 *)0x1F800000;
+        int i;
+
+        D_800BCE3C[0] = d;
+        for (i = 255; i != -1; i--) {
+            *d++ = *s++;
+        }
+    }
+}
 
 void func_800A6448(void) {
     D_800BCE3C[0] = (u32 *)D_800BCA3C;

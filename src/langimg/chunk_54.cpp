@@ -75,8 +75,6 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_54", func_8007E9E4);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_54", func_8007ED28);
 
-#ifdef NON_MATCHING
-// Scheduling of the first copy (the camera's position): the original loads the camera pointer before taking the copy's address and loads D_800CBCA8's address after the three loads (6 off).
 void func_8007F000(Spr54 *o) {
     Tex54 *t = D_800CBCA4;
 
@@ -145,9 +143,6 @@ void func_8007F000(Spr54 *o) {
         }
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_54", func_8007F000);
-#endif
 
 #ifdef NON_MATCHING
 // Registers: the original copies the primitive pointer to $a2 and builds the colour in $a0 (the pointer's argument register); here the colour goes to the colour argument's $a1 (7 off).

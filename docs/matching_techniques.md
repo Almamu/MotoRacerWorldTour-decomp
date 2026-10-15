@@ -766,6 +766,18 @@ globals), a script that tries every order is quicker than guessing:
   value of one type over a slot it just used for another (a vector, then
   a short vector read back), declare the two as a union, before the
   locals that come after them in the frame (chunk_30's `func_8004EE10`).
+- **Unsized symbols for block copies.** A short string or struct copied
+  from the data through a register (`lui`/`addiu` into `$t3`, then
+  `lwl`/`lh`/`lb` from it) is a symbol declared without a size: with one
+  (`extern short D[2];`), GCC loads straight from the symbol instead.
+  chunk_56's `func_80082904`, `func_80082A8C` and `func_80082DE4` matched
+  with `extern short D_800C8AC0[];`.
+- **A chunk without split addresses.** When a function's addresses are
+  `la`s the scheduler never moves (`lui` and `addiu` together, never in a
+  delay slot), try `--cflags=-mno-split-addresses` in `tools/try_func.py`;
+  if every matched function of the chunk survives it, set it in the
+  chunk's `_CFLAGS` (chunk_54). Where one function needs split addresses
+  (a `lui` in a delay slot), the chunk can't take it (chunk_58, 71, 72).
 - **Unused locals.** A frame bigger than its variables need means the
   original had locals the optimiser dropped: `int unused[6];` gives
   `func_8001184C`'s 0x30-byte frame.

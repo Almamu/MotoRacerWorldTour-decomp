@@ -268,7 +268,7 @@ langimg.chunk_30_GCC  := 2.91.66-psx
 langimg.chunk_30_CFLAGS :=
 langimg.chunk_30_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=
 langimg.chunk_54_GCC  := 2.91.66-psx
-langimg.chunk_54_CFLAGS :=
+langimg.chunk_54_CFLAGS := -mno-split-addresses
 langimg.chunk_54_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=D_800C88FC,D_800CBCA4
 langimg.chunk_13_GCC  := 2.91.66-psx
 langimg.chunk_13_CFLAGS :=
