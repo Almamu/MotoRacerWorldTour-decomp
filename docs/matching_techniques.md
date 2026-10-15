@@ -552,6 +552,12 @@ globals), a script that tries every order is quicker than guessing:
 
 ### Temporaries and folding
 
+- **Packed fields read in the original's order.** When the original
+  extracts bitfields of one word in an order other than the one it stores
+  them in (chunk_62's coordinates: y, z, then x, stored x, y, z), read them
+  into locals in that order first (`y = q.m_y; z = q.m_z; x = q.m_x;`),
+  then store; written as three `d->vx = q.m_x << 2` statements GCC
+  extracts them in store order.
 - **Which factor carries the shift.** chunk_65's `func_80093C80`
   multiplies `t` by `a` doubled, the shift on `a` (`sll $a1, $a1, 1;
   mult $a2, $a1`): `t * (a << 1)` gave it; GCC moved the `* 2` of `t *
