@@ -92,7 +92,7 @@ settings
 | `src/langimg` chunk_23 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=D_800CABB7` |
 | `src/langimg` chunk_45 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (eleven) |
 | `src/langimg` chunk_66 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (five) |
-| `src/langimg` chunk_19, chunk_21, chunk_22, chunk_25, chunk_26, chunk_27, chunk_28, chunk_29, chunk_31, chunk_39, chunk_40, chunk_41, chunk_44, chunk_46, chunk_47, chunk_49, chunk_50, chunk_51, chunk_52, chunk_55, chunk_56, chunk_57, chunk_58, chunk_59, chunk_60, chunk_61, chunk_67, chunk_68, chunk_69, chunk_70, chunk_71, chunk_72, chunk_73, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
+| `src/langimg` chunk_17, chunk_19, chunk_21, chunk_22, chunk_25, chunk_26, chunk_27, chunk_28, chunk_29, chunk_31, chunk_39, chunk_40, chunk_41, chunk_44, chunk_46, chunk_47, chunk_49, chunk_50, chunk_51, chunk_52, chunk_55, chunk_56, chunk_57, chunk_58, chunk_59, chunk_60, chunk_61, chunk_67, chunk_68, chunk_69, chunk_70, chunk_71, chunk_72, chunk_73, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_06 to chunk_12 (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_02b (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `SCES_030.37` (`src/sces`) | GCC 2.91.66 | 0 | `-fsigned-char` | `--expand-div` |
@@ -826,6 +826,12 @@ What's left once the instructions are right is usually register choice.
   `(x >> b) & 1`; with the mask computed into a local first, it's an
   `and` with the mask. In chunk_61's loop the local had to be declared
   inside the loop's body (GCC still computes it once, before the loop).
+- **A constant stored twice from one register.** chunk_17's
+  `func_8003491C` stores 0x1000 at the start and again in a branch from
+  the same register; `one = 0x1000;` used for both matched, with the
+  branch's test also in a local (`z = !b->m_149;`). The scratchpad's
+  address works the same way: `u8 *cells = (u8 *)0x1F800004;` kept in a
+  saved register, `cells[-4]` for the byte before (`func_80034A38`).
 - **The order of statements shows in relocations.** Two increments of gp
   globals the other way round give the same instructions with swapped
   `%gp_rel` relocations: `try_func` passes, `make` fails. Map the

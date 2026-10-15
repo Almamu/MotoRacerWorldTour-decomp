@@ -63,3 +63,4 @@ issue it worked on, and add it below.
 | [issue-28-langimg-chunk27.md](issue-28-langimg-chunk27.md) | The game's chunk_27: a race on chunk_23's named objects; a comparison as a value, a global that keeps its place |
 | [issue-27-langimg-chunk26.md](issue-27-langimg-chunk26.md) | The game's chunk_26: a list of named objects; which test of a loop stays at the top, two addresses with two calls, the zero case first |
 | [issue-22-langimg-chunk21.md](issue-22-langimg-chunk21.md) | The game's chunk_21: a scene's items and history; two loads before two stores, an early `return` for a flag test |
+| [issue-18-langimg-chunk17.md](issue-18-langimg-chunk17.md) | The game's chunk_17: a rider's view and the maps; the scratchpad's address in a local, a constant and a test in locals |
