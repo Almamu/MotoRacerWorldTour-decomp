@@ -16,7 +16,7 @@ one). Through its two views (`m_A80`, `m_A84`, chosen by the mode at
 
 One file, `src/langimg/chunk_69.cpp`, 0x8009B17C-0x8009D0E4.
 
-23 functions: 17 match, 3 are parked, 3 are still asm.
+23 functions: 18 match, 3 are parked, 2 are still asm.
 
 ## The settings
 
@@ -67,7 +67,7 @@ global.
 | `func_8009B8BC` | matches | a call when there's a screen |
 | `func_8009B8F8` | matches | a part moved by a fraction |
 | `func_8009B9B4` | asm | 257 instructions |
-| `func_8009BDB8` | asm | 385 instructions |
+| `func_8009BDB8` | matches | a run's measures computed and shown (group C large functions) |
 | `func_8009C3BC` | matches | the view's four items shown or hidden |
 | `func_8009C534` | matches | the screen's requests handled |
 | `func_8009C694` | matches | the view's record picked and named |
@@ -107,3 +107,17 @@ list, its effect, then a flash) matches:
 - the flash's colours go through two locals (`lo`, `hi`), and the call is
   the two-argument `func_8006CA84(6, 127)` after the stores through a
   pointer to the flash.
+
+## Group C large functions
+
+- `func_8009BDB8` (the run's measures: chunk_09's `func_80023E48` and
+  `func_80023A30` fill a record of 0x3C bytes per track and units at the
+  screen's 0x1FF8, its times in tenths, then eleven lines printed into the
+  texts at 0x2180) matches. The times go through an inline function that
+  reads the text's pointer inside each branch (`Time69(s, k, v)`, not the
+  pointer passed in). Two of the lines pass `func_800A6850`'s and
+  `func_80086A38`'s results straight as `sprintf`'s arguments, which put
+  the results in the original's saved registers (written into locals, the
+  last two came out swapped; the permuter found the first). The screen's
+  0x14 is read as a word here and as a `short` by `func_8009CD78`: a
+  union (`m_14`, `m_14w`).

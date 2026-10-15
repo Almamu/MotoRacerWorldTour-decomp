@@ -7,7 +7,7 @@ object of settings with a "placed" flag; planes stored as a normal and a
 31-bit distance. One file, `src/langimg/chunk_66.cpp`,
 0x800950B0-0x80097128.
 
-59 functions: 51 match, 5 are parked, 3 are still asm.
+59 functions: 51 match, 6 are parked, 2 are still asm.
 
 ## The settings
 
@@ -33,7 +33,8 @@ with `lui`/`addiu`), divisions without checks, five small globals
 
 | Function | State | Notes |
 |---|---|---|
-| `func_800950B0`, `func_800953A4`, `func_8009593C` | asm | 141, 137 and 402 instructions |
+| `func_800950B0`, `func_800953A4` | asm | 141 and 137 instructions |
+| `func_8009593C` | parked | the layout against the neighbours: branch tails (334 off) |
 | `func_800952E0` | parked | a track point into the camera's frame: the loads' order (43 off) |
 | `func_800955C4` to `func_800958E0` | match | a lookup by name, the constructor, setters, the placement |
 | `func_80095F84` | matches | a view's projection set (third pass) |
@@ -92,3 +93,17 @@ with `lui`/`addiu`), divisions without checks, five small globals
   in `.sdata`. Declared `extern` before the function and defined after
   it, the copy reads `D_800B7940` (`*(Root66 *)D_800D4705 = *(Root66
   *)D_800B7940`).
+
+## Group C large functions
+
+- `func_8009593C` (an object laid out against its neighbours at 0x54 to
+  0x60, or by its sizes, then its edges and centre) is written and parked,
+  334 off. Its branches are the original's: a size above 1.0 (16.16) is
+  absolute, else a fraction of the whole read inside that branch (an
+  inline function taking the whole by pointer, so the `lw` stays in the
+  branch, and returning an `int`, so the shift stays `sra`); the result is
+  set before the clamp's call (`r = 1; func_800958A0(&rc);`), which keeps
+  it in `$s1` as the original. What differs is the tails: GCC merges the
+  branches' final `+ 1` into one block where the original repeats it in
+  each branch's delay slot, which shifts the rest. Obj66's 0x18 to 0x34
+  are now named (the inner edges, centre and size).

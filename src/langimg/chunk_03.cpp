@@ -732,9 +732,11 @@ int func_800188CC(int *item) {
 
 #ifdef NON_MATCHING
 /* Equivalent; the original recomputes &rot for each use where GCC keeps it
- * in a saved register (docs/matching_techniques.md, "Open problems") */
+ * in a saved register; the body as an inline function (docs/
+ * matching_techniques.md, "Stack addresses kept or recomputed") took it from
+ * 118 to 111 off */
 /* Where an object's position is on screen, seen through view. */
-void func_80018954(MATRIX *view, Cobjet *o, long *sxy) {
+static inline void ScreenPos03(MATRIX *view, Cobjet *o, long *sxy) {
     Vector3 pos;
     MATRIX rot;
     MATRIX m;
@@ -786,6 +788,10 @@ void func_80018954(MATRIX *view, Cobjet *o, long *sxy) {
     GTE_RTPS();
     GTE_MFC2(r, 14);
     *sxy = r;
+}
+
+void func_80018954(MATRIX *view, Cobjet *o, long *sxy) {
+    ScreenPos03(view, o, sxy);
 }
 #else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_03", func_80018954);
