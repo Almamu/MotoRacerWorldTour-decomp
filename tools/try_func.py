@@ -92,10 +92,16 @@ def cross(tool):
     return prefix + tool
 
 
+def readelf(*args):
+    """readelf's output in the C locale: its headings ("Relocation section")
+    are translated in others, and parsed here."""
+    return subprocess.run([cross("readelf"), *args], capture_output=True, text=True, check=True,
+                          env={**os.environ, "LC_ALL": "C"}).stdout
+
+
 def object_words(obj, name):
     """(word, relocated) for each instruction of name in an object file."""
-    syms = subprocess.run([cross("readelf"), "-sW", str(obj)], capture_output=True, text=True,
-                          check=True).stdout
+    syms = readelf("-sW", str(obj))
     sym = None
     for l in syms.splitlines():
         p = l.split()
@@ -104,8 +110,7 @@ def object_words(obj, name):
     if sym is None:
         sys.exit(f"{name}: not defined in the compiled source (still an INCLUDE_ASM? try -D NON_MATCHING)")
     value, size, shndx = sym
-    secs = subprocess.run([cross("readelf"), "-SW", str(obj)], capture_output=True, text=True,
-                          check=True).stdout
+    secs = readelf("-SW", str(obj))
     secname = None
     for l in secs.splitlines():
         m = re.match(r"\s*\[\s*(\d+)\]\s+(\S+)", l)
@@ -115,8 +120,7 @@ def object_words(obj, name):
         subprocess.run([cross("objcopy"), "-O", "binary", "-j", secname, str(obj), t.name], check=True)
         data = Path(t.name).read_bytes()[value:value + size]
     relocs = set()
-    rel = subprocess.run([cross("readelf"), "-rW", str(obj)], capture_output=True, text=True,
-                         check=True).stdout
+    rel = readelf("-rW", str(obj))
     cur = None
     for l in rel.splitlines():
         m = re.match(r"Relocation section '\.rel\.?(\S+)'", l)

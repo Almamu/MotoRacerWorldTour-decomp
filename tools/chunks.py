@@ -107,7 +107,7 @@ def functions(target):
         sys.exit(f"{elf} is missing: run make first")
     res = subprocess.run(
         [cross("readelf"), "-sW", str(elf)],
-        capture_output=True, text=True, check=True,
+        capture_output=True, text=True, check=True, env={**os.environ, "LC_ALL": "C"},
     ).stdout
     funcs = {}
     for line in res.splitlines():
