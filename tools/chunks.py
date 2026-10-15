@@ -14,7 +14,7 @@ The function list comes from build/<target>.elf, so build first (make).
   tools/chunks.py badges DIR              the README's progress badges, as SVG (CI publishes
                                           them to the badges branch)
   tools/chunks.py report FILE             the progress report, in objdiff's report.json format
-                                          (CI uploads it as the `report` artifact)
+                                          (CI uploads it as the `eu_report` artifact)
   tools/chunks.py issues DIR              write each chunk's issue (title + body) to DIR
   tools/chunks.py issues DIR --create     ...and open them on GitHub (gh)
   tools/chunks.py sync [--dry-run]        tick done functions in the open chunk issues
@@ -347,7 +347,7 @@ def cmd_report(args):
     "Progress"). One unit per chunk with its functions, in the categories
     <target> and <target>_game or <target>_lib, the parked functions at their
     measured similarity (measure_parked). CI uploads it as the
-    `report` artifact, where progress sites (decompilati.onl) read it."""
+    `eu_report` artifact, where progress sites (decompilati.onl) read it."""
     units, cats = [], {}
     surveys = {t: survey(t) for t in TARGETS}
     for target, info in TARGETS.items():

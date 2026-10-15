@@ -191,12 +191,13 @@ in common over the longer side, and the report's fuzzy match weighs those
 scores by size. It sits between the matching badge and the non-matching
 one, which counts the parked functions whole.
 
-CI writes the report on every run and uploads it as the `report`
-artifact (objdiff's name for a project with one version). The sites read
-it from the successful runs on `main`:
+CI writes the report on every run and uploads it as the `eu_report`
+artifact (objdiff's `<version>_report`, for the European version). The
+sites read it from the successful runs on `main`:
 [decompilati.onl](https://decompilati.onl) through its GitHub App
 (https://github.com/apps/decompilati-onl), and any other site that reads
-decomp.dev-style `report` artifacts the same way. No secret is needed.
+decomp.dev-style `<version>_report` artifacts the same way. No secret is
+needed.
 
 ## Decompiling a function
 
