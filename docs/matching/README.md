@@ -74,3 +74,4 @@ issue it worked on, and add it below.
 | [issue-16-langimg-chunk15.md](issue-16-langimg-chunk15.md) | The game's chunk_15: more of the bike; `MULSHIFT`'s `mult` after a `mfhi`, a stored field read back, an empty case that shapes the switch |
 | [issue-63-langimg-chunk62.md](issue-63-langimg-chunk62.md) | The game's chunk_62: a tree of nodes, animation channels and a solver; GTE functions with macros, add into the locals then store, a vector set through an inline function |
 | [issue-25-langimg-chunk24.md](issue-25-langimg-chunk24.md) | The game's chunk_24: chunk_23's named objects filling in screens; arguments passed through, a pointer to the field tested, an 11-bit field's bit |
+| [issue-49-langimg-chunk48.md](issue-49-langimg-chunk48.md) | The game's chunk_48: a track's sections and the objects groups place on it; a goto into the other branch, the loop's end in a local, chained assignments store the last first |
