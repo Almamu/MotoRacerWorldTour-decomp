@@ -232,8 +232,8 @@ globals), a script that tries every order is quicker than guessing:
 - **The block laid out first is the `if`'s.** chunk_26's `func_80046B78`
   sets a flag to 0 or 1 after a chain of tests; the original has the 0
   block first, so its source is one condition for 0: `if (a || (b &&
-  ...)) x = 0; else x = 1;`. Written as nested `if`s ending in 1, GCC
-  laid out the 1s first.
+  ...)) x = 0; else x = 1;`. Written as nested `if`/`else`s, each
+  assignment came out right after its own test.
 - **Two addresses, two calls.** `f(c ? a : b)` with two big objects
   loads the first before the test; chunk_26's `func_80046870` builds each
   in its branch (the `lui` in a delay slot): `if (c) f(a); else f(b);`.
