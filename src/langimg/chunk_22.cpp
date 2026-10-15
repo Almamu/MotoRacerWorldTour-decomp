@@ -502,10 +502,9 @@ void func_8003DE84(int *p, int x, Arg22 *c) {
     func_8003E5B0(g);
 }
 
-#ifdef NON_MATCHING
-// Registers only: the script context and the view in swapped saved registers ($s3/$s4, 12 off).
 void func_8003DF7C(int *p, int x, Arg22 *c) {
-    Game22 *g = c->m_04;
+    Arg22 *cc = c;
+    Game22 *g = cc->m_04;
     View22 *v;
     int f;
     int k;
@@ -527,11 +526,11 @@ void func_8003DF7C(int *p, int x, Arg22 *c) {
     }
     mode = g->m_A90;
     if (mode == 5) {
-        o = func_8003B038(v, 1, c->m_00);
+        o = func_8003B038(v, 1, cc->m_00);
         if (o) {
             int go;
 
-            if (!(o->m_20.m_mask & c->m_00)) {
+            if (!(o->m_20.m_mask & cc->m_00)) {
                 return;
             }
             go = 0;
@@ -575,11 +574,11 @@ void func_8003DF7C(int *p, int x, Arg22 *c) {
     if (mode != 0) {
         return;
     }
-    o = func_8003B038(v, 1, c->m_00);
+    o = func_8003B038(v, 1, cc->m_00);
     if (o) {
         int n;
 
-        if (!(o->m_20.m_mask & c->m_00)) {
+        if (!(o->m_20.m_mask & cc->m_00)) {
             return;
         }
         n = o->m_20.m_n;
@@ -592,14 +591,10 @@ void func_8003DF7C(int *p, int x, Arg22 *c) {
     }
     func_8003E5B0(g);
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_22", func_8003DF7C);
-#endif
 
-#ifdef NON_MATCHING
-// Registers only, as func_8003DF7C (the same code with other callees): the script context and the view in swapped saved registers ($s3/$s4, 12 off).
 void func_8003E194(int *p, int x, Arg22 *c) {
-    Game22 *g = c->m_04;
+    Arg22 *cc = c;
+    Game22 *g = cc->m_04;
     View22 *v;
     int f;
     int k;
@@ -621,11 +616,11 @@ void func_8003E194(int *p, int x, Arg22 *c) {
     }
     mode = g->m_A90;
     if (mode == 5) {
-        o = func_8003B038(v, 1, c->m_00);
+        o = func_8003B038(v, 1, cc->m_00);
         if (o) {
             int go;
 
-            if (!(o->m_20.m_mask & c->m_00)) {
+            if (!(o->m_20.m_mask & cc->m_00)) {
                 return;
             }
             go = 0;
@@ -669,11 +664,11 @@ void func_8003E194(int *p, int x, Arg22 *c) {
     if (mode != 0) {
         return;
     }
-    o = func_8003B038(v, 1, c->m_00);
+    o = func_8003B038(v, 1, cc->m_00);
     if (o) {
         int n;
 
-        if (!(o->m_20.m_mask & c->m_00)) {
+        if (!(o->m_20.m_mask & cc->m_00)) {
             return;
         }
         n = o->m_20.m_n;
@@ -686,9 +681,6 @@ void func_8003E194(int *p, int x, Arg22 *c) {
     }
     func_8003E5B0(g);
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_22", func_8003E194);
-#endif
 
 void func_8003E3AC(Game22 *g) {
     func_8003EC90(g, 0, 0, 0);
