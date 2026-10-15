@@ -85,4 +85,6 @@ issue it worked on, and add it below.
 | [issue-19-langimg-chunk18.md](issue-19-langimg-chunk18.md) | The game's chunk_18: shapes, a bike's sound and a menu cursor; declare what a callee returns, a switch's range check |
 | [issue-54-langimg-chunk53.md](issue-54-langimg-chunk53.md) | The game's chunk_53: drawing models through the GTE; a vector copied field by field, the Z scale factors read in one statement |
 | [issue-43-langimg-chunk42.md](issue-43-langimg-chunk42.md) | The game's chunk_42: more of a bike's model; a callee's return type |
+| [issue-31-langimg-chunk30.md](issue-31-langimg-chunk30.md) | The game's chunk_30: the race's cameras; two locals in one stack slot (a union), the index read before the run |
+| [issue-55-langimg-chunk54.md](issue-55-langimg-chunk54.md) | The game's chunk_54: GTE drawing, a sprite facing the camera; a callee that returns its output, GTE loads and stores from memory |
 | [issue-14-langimg-chunk13.md](issue-14-langimg-chunk13.md) | The game's chunk_13: more of the bike; one exit for a result in a saved register, if/else laid out by the delay slots |
