@@ -1,4 +1,6 @@
 #include "common.h"
+#include "psyq.h"
+#include "langimg/ui.h"
 
 // Four shorts (2-byte aligned: copied with lwl/lwr)
 struct SVec58 {
@@ -45,11 +47,11 @@ struct Set58 {
     short m_04, m_06;
     short m_08;
     short m_0A;
-    int m_0C;
+    int m_0C; // the images: off, then the lamps' (indexed by their kinds)
     int m_10;
     int m_14;
-    u8 m_18[6];
-    u8 m_1E[6];
+    s8 m_18[6]; // the lamps' kinds
+    u8 m_1E[6]; // and levels
     short m_24;
     u8 m_26[2];
     int m_28;
@@ -113,9 +115,6 @@ extern Ent58 D_800CBD68; // five
 extern int D_800D60EC;
 
 extern "C" {
-void *memset(void *p, int c, size_t n);
-void *malloc(unsigned int n);
-void free(void *p);
 void func_80019F0C(void *r, void *def);
 void func_80085258(void);
 void func_80085888(Set58 *c, int b);
@@ -270,7 +269,164 @@ extern "C" void func_80085900(Set58 *c, int now) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_58", func_80085900);
 #endif
 
+extern s8 D_800B8868;    // the buffer drawn into
+extern u8 D_800C885C;    // the image's mode
+extern u8 D_800C885D;    // and level
+extern u32 D_800C8BC4[]; // colours
+struct Opts58 {
+    u8 m_00[0x16A0];
+    int m_16A0;
+};
+extern Opts58 *D_800BC884;
+extern "C" {
+void func_8009574C(UiScreen *s, RECT *r);
+void func_80077BE4(int img, int a, int x, int y);
+void func_80085C28(Set58 *o);
+}
+
+// A draw area packet for a rectangle, in the buffer being drawn
+#define SET_AREA58(p, x, y, w, h) \
+    do { \
+        int bank; \
+\
+        (p)[0] = 0x02000000; \
+        bank = D_800B8868 << 8; \
+        (p)[1] = 0xE3000000 | ((x) & 0x3FF) | ((((y) + bank) & 0x3FF) << 10); \
+        (p)[2] = 0xE4000000 | (((x) + (w)) & 0x3FF) | ((((y) + (h) + bank) & 0x3FF) << 10); \
+    } while (0)
+
+#ifdef NON_MATCHING
+// The start lights' packets and sprites in the original's order and shape, the constants in its saved registers; left: the original reloads the packet pointer before each link (GCC keeps it in a register, not treating the packets' stores as aliasing it), the draw areas' two words or'ed in another order, and the images' base and 5 in swapped saved registers (424 off, 196 with stack offsets and branch targets left out).
+void func_80085C28(Set58 *o) {
+    if (o->m_24 != 11) {
+        RECT r;
+        u_long *p;
+        int *img;
+
+        func_8009574C(D_800C8D90, &r);
+        r.h--;
+        r.w--;
+        p = (u_long *)D_800C8C70;
+        SET_AREA58(p, r.x, r.y, r.w, r.h);
+        ADD_PRIM(D_800CBDC0 + 1, p);
+        D_800C8C70 = (u8 *)(p + 3);
+        D_800C885C = 5;
+        img = &o->m_0C;
+        D_800C885D = o->m_1E[3];
+        func_80077BE4(img[o->m_18[3]], 0x10, o->m_00 - 0x20, o->m_02 - 1);
+        D_800C885C = 5;
+        D_800C885D = o->m_1E[4];
+        func_80077BE4(img[o->m_18[4]], 0x10, o->m_00, o->m_02 - 1);
+        D_800C885C = 5;
+        D_800C885D = o->m_1E[5];
+        func_80077BE4(img[o->m_18[5]], 0x10, o->m_00 + 0x20, o->m_02 - 1);
+        D_800C885C = 0;
+        D_800C885D = 0xFF - o->m_1E[3];
+        func_80077BE4(o->m_0C, 0x10, o->m_00 - 0x20, o->m_02 - 1);
+        D_800C885C = 0;
+        D_800C885D = 0xFF - o->m_1E[4];
+        func_80077BE4(o->m_0C, 0x10, o->m_00, o->m_02 - 1);
+        D_800C885C = 0;
+        D_800C885D = 0xFF - o->m_1E[5];
+        func_80077BE4(o->m_0C, 0x10, o->m_00 + 0x20, o->m_02 - 1);
+        D_800C885C = 5;
+        D_800C885D = o->m_1E[0];
+        func_80077BE4(img[o->m_18[0]], 0x210, o->m_00 - 0x20, o->m_02 + 1);
+        D_800C885C = 5;
+        D_800C885D = o->m_1E[1];
+        func_80077BE4(img[o->m_18[1]], 0x210, o->m_00, o->m_02 + 1);
+        D_800C885C = 5;
+        D_800C885D = o->m_1E[2];
+        func_80077BE4(img[o->m_18[2]], 0x210, o->m_00 + 0x20, o->m_02 + 1);
+        D_800C885C = 0;
+        D_800C885D = 0xFF - o->m_1E[0];
+        func_80077BE4(o->m_0C, 0x210, o->m_00 - 0x20, o->m_02 + 1);
+        D_800C885C = 0;
+        D_800C885D = 0xFF - o->m_1E[1];
+        func_80077BE4(o->m_0C, 0x210, o->m_00, o->m_02 + 1);
+        D_800C885C = 0;
+        D_800C885D = 0xFF - o->m_1E[2];
+        func_80077BE4(o->m_0C, 0x210, o->m_00 + 0x20, o->m_02 + 1);
+
+        // A grey bar over the lights
+        {
+            int x = o->m_04;
+            int w = o->m_08;
+            int y = o->m_02;
+            u_long a, b, c, d;
+
+            a = ((x + 1) & 0xFFFF) | ((y - 20) << 16);
+            b = ((x + w - 1) & 0xFFFF) | ((y - 20) << 16);
+            c = ((x + 1) & 0xFFFF) | ((y - 16) << 16);
+            d = ((x + w - 1) & 0xFFFF) | ((y - 16) << 16);
+            p = (u_long *)D_800C8C70;
+            p[0] = 0x05000000;
+            p[1] = 0x28404040;
+            p[2] = a;
+            p[3] = b;
+            p[4] = c;
+            p[5] = d;
+        }
+        ADD_PRIM(D_800CBDC0 + 1, D_800C8C70);
+
+        // The box's outline: three sides as a polyline, then the fourth
+        {
+            u_long *q;
+
+            p = (u_long *)D_800C8C70;
+            q = p + 6;
+            D_800C8C70 = (u8 *)q;
+            p[6] = 0x06000000;
+            q[6] = 0x55555555;
+            q[1] = 0x4CFFFFFF;
+            q[2] = (u16)o->m_04 | (o->m_06 << 16);
+            q[3] = ((o->m_04 + o->m_08) & 0xFFFF) | (o->m_06 << 16);
+            q[4] = ((o->m_04 + o->m_08) & 0xFFFF) | ((o->m_06 + o->m_0A) << 16);
+            q[5] = (u16)o->m_04 | ((o->m_06 + o->m_0A) << 16);
+        }
+        ADD_PRIM(D_800CBDC0 + 1, D_800C8C70);
+        {
+            u_long *q;
+
+            p = (u_long *)D_800C8C70;
+            q = p + 7;
+            D_800C8C70 = (u8 *)q;
+            p[7] = 0x03000000;
+            q[1] = 0x40FFFFFF;
+            q[2] = (u16)o->m_04 | ((o->m_06 + o->m_0A) << 16);
+            q[3] = (u16)o->m_04 | (o->m_06 << 16);
+        }
+        ADD_PRIM(D_800CBDC0 + 1, D_800C8C70);
+
+        // The box, in the player's colour
+        p = (u_long *)D_800C8C70;
+        p[4] = 0x05000000;
+        p += 4;
+        D_800C8C70 = (u8 *)p;
+        p[1] = D_800C8BC4[D_800BC884->m_16A0] | 0x28000000;
+        p[2] = (u16)o->m_04 | (o->m_06 << 16);
+        p[3] = ((o->m_04 + o->m_08) & 0xFFFF) | (o->m_06 << 16);
+        p[4] = (u16)o->m_04 | ((o->m_06 + o->m_0A) << 16);
+        p[5] = ((o->m_04 + o->m_08) & 0xFFFF) | ((o->m_06 + o->m_0A) << 16);
+        ADD_PRIM(D_800CBDC0 + 1, D_800C8C70);
+
+        // Drawing kept to the box
+        {
+            u_long *q;
+
+            p = (u_long *)D_800C8C70;
+            q = p + 6;
+            p[6] = 0x02000000;
+            D_800C8C70 = (u8 *)q;
+            SET_AREA58(q, o->m_04, o->m_06, o->m_08, o->m_0A);
+            ADD_PRIM(D_800CBDC0 + 1, q);
+            D_800C8C70 = (u8 *)(q + 3);
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_58", func_80085C28);
+#endif
 
 void func_80086350(Cam58 *c, SVec58 *v) {
     c->m_40 = *v;
