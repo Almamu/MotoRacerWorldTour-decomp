@@ -92,7 +92,7 @@ settings
 | `src/langimg` chunk_23 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=D_800CABB7` |
 | `src/langimg` chunk_45 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (eleven) |
 | `src/langimg` chunk_66 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (five) |
-| `src/langimg` chunk_19, chunk_22, chunk_25, chunk_28, chunk_29, chunk_31, chunk_39, chunk_40, chunk_41, chunk_44, chunk_46, chunk_47, chunk_49, chunk_50, chunk_51, chunk_52, chunk_55, chunk_56, chunk_57, chunk_58, chunk_60, chunk_61, chunk_67, chunk_68, chunk_69, chunk_70, chunk_71, chunk_72, chunk_73, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
+| `src/langimg` chunk_19, chunk_22, chunk_25, chunk_28, chunk_29, chunk_31, chunk_39, chunk_40, chunk_41, chunk_44, chunk_46, chunk_47, chunk_49, chunk_50, chunk_51, chunk_52, chunk_55, chunk_56, chunk_57, chunk_58, chunk_59, chunk_60, chunk_61, chunk_67, chunk_68, chunk_69, chunk_70, chunk_71, chunk_72, chunk_73, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_06 to chunk_12 (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_02b (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `SCES_030.37` (`src/sces`) | GCC 2.91.66 | 0 | `-fsigned-char` | `--expand-div` |
@@ -204,6 +204,8 @@ globals), a script that tries every order is quicker than guessing:
 - **A chained assignment.** chunk_23's constructor stores three zeros
   before two -1s; written apart, GCC loaded -1 first. The permuter found
   `o->m_04 = o->m_10 = *(int *)o = 0;` (`func_8003FC94`).
+  A chained assignment stores right to left: chunk_59's `func_80088BBC`
+  stores 0x2AA at 0x34 and then at 0x10, `m_10 = m_34 = 0x2AA;`.
 
 - **A counter set after the first call.** chunk_68's `func_80099F2C`
   sets its loop counter in the delay slot of its second call: `i = 0;`
@@ -618,6 +620,11 @@ mean a `short` field.
   low 30 bits and then sets bit 30, storing after each: `w &= 0xC0000000;
   ...; w |= 0x40000000;` (GCC 2.x keeps the dead first store). The same
   two writes as bitfields became one constant store.
+- **A bitfield word stored twice.** chunk_59's `func_8008784C` stores
+  its bitfield word after setting a 12-bit field and again after clearing
+  the next two. Written together, GCC merged them into one store; with
+  the 12-bit field set first and three other fields stored between, the
+  two stores stayed apart.
 - **Two masks applied one after the other: bitfields.** chunk_70's
   `func_8009D0E4` sets a word with `and 0xFFF0FFFF; and 0xFFCFFFFF; or
   0x100000`. Written with masks, GCC folds the two `and`s; as bitfields
@@ -715,6 +722,15 @@ mean a `short` field.
   (chunk_60's `func_80089B6C`, `T36() {}`). With a constructor that does
   something, the loop calls it on each element: `i = n - 1; if (i >= 0)
   do { ctor(p++); } while (--i != -1);` (chunk_44's `func_8006A534`).
+- **Inline constructors and destructors for calls by placeholder
+  name.** chunk_59 calls `func_800893C8` before each `__builtin_delete`
+  of a tile, and runs a loop from the end of an array of tiles (the count
+  from the cookie at -8) before `__builtin_vec_delete`. A `Tile59` with
+  `~Tile59() { func_800893C8(this); }` and a constructor calling
+  `func_80095684(this)`, both inline, gives plain `delete`, `delete[]`
+  and `new Tile59` exactly; a member with an inline constructor of its
+  own runs first, as the original's field stores do (`func_80088AA8`,
+  `func_80088BBC`).
 - **`operator new` for a `new` without a constructor call.** chunk_56's
   `func_800816F8` calls `__builtin_new` and passes the result to the
   constructor (`func_8008142C`, a `memset`): `func_8008142C(operator
