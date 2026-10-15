@@ -50,7 +50,8 @@ struct Item22b {
 struct Slot22 {
     int m_00;
     int m_04;
-    u8 m_08[0x90];
+    int m_08, m_0C, m_10, m_14, m_18, m_1C, m_20, m_24, m_28, m_2C, m_30, m_34, m_38, m_3C;
+    u8 m_40[0x58];
 };
 
 // The game object (chunk_69's Game69)
@@ -113,6 +114,7 @@ void func_8003DF7C(int *p, int x, Arg22 *c);
 void func_8003E194(int *p, int x, Arg22 *c);
 void func_8003EC90(Game22 *g, int i, int set, void (*f)(int *p, int x, Arg22 *c));
 void func_8003E3AC(Game22 *g);
+int func_8003F0F8(Game22 *g, int kind, int set);
 void func_80038E0C(Obj22 *o, Game22 *g);
 void func_80038F44(Obj22 *o, Game22 *g);
 extern int D_800D6128; // the frame's time
@@ -746,6 +748,49 @@ void func_8003EC6C(Game22 *g, int i, int v) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_22", func_8003EC90);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_22", func_8003F0F8);
+int func_8003F0F8(Game22 *g, int kind, int set) {
+    int r = 0;
+
+    switch (kind) {
+    case 1:
+        r = g->m_ABC[set].m_08;
+        break;
+    case 2:
+        r = g->m_ABC[set].m_0C;
+        break;
+    case 3:
+        r = g->m_ABC[set].m_14;
+        break;
+    case 4:
+        r = g->m_ABC[set].m_10;
+        break;
+    case 5:
+        r = g->m_ABC[set].m_1C;
+        break;
+    case 6:
+        r = g->m_ABC[set].m_18;
+        break;
+    case 7:
+        r = g->m_ABC[set].m_20;
+        break;
+    case 8:
+        r = g->m_ABC[set].m_24;
+        break;
+    case 10:
+        r = g->m_ABC[set].m_28;
+        break;
+    case 11:
+        r = g->m_ABC[set].m_30;
+        break;
+    case 12:
+        r = g->m_ABC[set].m_38;
+        break;
+    case 9:
+    case 13:
+        r = g->m_ABC[set].m_3C;
+        break;
+    }
+    return r;
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_22", func_8003F314);
