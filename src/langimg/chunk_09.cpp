@@ -30,6 +30,9 @@ void func_80033280(Bike *b);
 void func_80033D1C(MATRIX *m, SVECTOR *rot); // a rotation matrix
 Vector3 *func_800997A4(Vector3 *a, Vector3 *b);
 Vector3 *func_80099B60(Vector3 *out, Vector3 *a, Vector3 *b, int shift); // a cross product
+// The same, declared void where func_8002434C calls it (as its caller saw it)
+void func_80022D20_void(Vector3 *out, Vector3 *in) __asm__("func_80022D20");
+void func_80099B60_void(Vector3 *out, Vector3 *a, Vector3 *b, int shift) __asm__("func_80099B60");
 Vector3 *func_80022D20(Vector3 *out, Vector3 *in);
 // A run's measures: times to two speeds, the time between two speeds, times
 // to two distances, the top speed (0x3C bytes)
@@ -405,7 +408,11 @@ void func_800242A4(Bike *b, int flags) {
 }
 
 #ifdef NON_MATCHING
-/* The matrix as an inline function (its locals recomputed), the angles through int parameters, the transform through an inline taking &w and the copies all loads first: 17 off (from 151), $v0 and $v1 swapped in three places */
+/* The matrix as an inline function (its locals recomputed), the angles
+ * through int parameters, the transform through an inline taking &w, the
+ * copies all loads first, func_80099B60 and func_80022D20 called through
+ * void declarations (as this caller saw them): 2 off (from 151), only
+ * 0x4000000 built in $v0 where the original uses $v1 */
 /* The bike's matrix from its three angles (y, then x, then z) and its
  * position: its heading the matrix's z (4.26), its side and up from it. */
 // A matrix's translation
@@ -484,9 +491,9 @@ void func_8002434C(Bike *b) {
         VecCopy(&b->m_330, &w);
         VecCopy(&b->m_33C, &b->m_330);
         VecCopy(&b->m_360, &b->m_33C);
-        func_80022D20(&u, &b->m_33C);
+        func_80022D20_void(&u, &b->m_33C);
         func_800997A4(&w, &u);
-        func_80099B60(&u, &w, &b->m_33C, 26);
+        func_80099B60_void(&u, &w, &b->m_33C, 26);
         VecCopy(&b->m_348, &u);
         func_800990E8(&b->m_348, 26);
         VecCopy(&b->m_354, &b->m_330);
