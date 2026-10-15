@@ -140,7 +140,7 @@ struct Card71 {
     u8 m_15B0[0x28];
     Group71 m_15D8;
     u8 m_1624[4];
-    int m_1628;
+    u32 m_1628; // flags
     int m_162C;
     int *m_1630[27];
     int m_169C;
@@ -1123,11 +1123,9 @@ int func_800A0DC4(Card71 *c, int a, int b) {
     return r;
 }
 
-#ifdef NON_MATCHING
-// The card pointer's area ($s4) and the saved slot ($s5) in swapped saved registers, and the found flag's test as xori where the original has andi then bnez (14 off). The directory read once into a local and D_800D5F10 declared unsized gave the rest.
 int func_800A0E58(Card71 *c) {
-    int fd;
     Three71 *t = &c->m_04;
+    int fd;
 
     c->m_154 = 2;
     if (c->m_150 != -1) {
@@ -1171,10 +1169,9 @@ int func_800A0E58(Card71 *c) {
                 c->m_1628 |= 2;
                 func_800A0DC4(c, t->m_78, k);
             }
-            if (!((c->m_1628 >> 1) & 1)) {
-                if (k < 2) {
-                    func_800A0DC4(c, t->m_78, k + 1);
-                }
+            if ((c->m_1628 >> 1) & 1) {
+            } else if (k < 2) {
+                func_800A0DC4(c, t->m_78, k + 1);
             }
         } else {
             p->m_04++;
@@ -1188,6 +1185,3 @@ int func_800A0E58(Card71 *c) {
     }
     return 0;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_800A0E58);
-#endif
