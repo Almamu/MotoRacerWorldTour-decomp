@@ -56,3 +56,13 @@ globals.
 | `func_8004E99C` | asm | 285 instructions |
 | `func_8004EE10` | parked | a camera along the path: a saved register |
 | `func_8004F0C4` | asm | 396 instructions |
+
+## Group B large-functions pass
+
+- `func_8004EE10` (parked) went from 149 to 5 off with #289's finding: the
+  product's two calls (`func_8009887C`, `func_800997D0`), the turn about y
+  (`RotY30`) and the one about z (`RotZ30`) through inline functions, which
+  recompute the stack matrices' addresses as the original does, and the
+  angle set through an inline function and read back from the stack. Left:
+  the fog clamp, which the original loads into `$s0` and then sets to 100
+  after a branch; written as a `?:` here, GCC tests a copy.
