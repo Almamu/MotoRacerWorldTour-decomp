@@ -32,8 +32,9 @@ struct F51 {
     u8 m_0C[0x10];
     int m_1C;
     u8 m_20[0x48];
-    VtEntry *m_vt; // 0x68
-    u8 m_6C[0xE0];
+    VtEntry *m_vt;     // 0x68
+    DRAWENV m_draw[2]; // 0x6C
+    DISPENV m_disp[2]; // 0x124
     int m_14C, m_150, m_154, m_158, m_15C, m_160, m_164, m_168;
     u8 m_16C, m_16D, m_16E;
     u8 m_16F[5];
@@ -208,6 +209,9 @@ int func_80078C28(A51 *o);
 int func_80078B10(A51 *o);
 void func_800790DC(A51 *o, int flags);
 void func_80079124(F51 *o);
+int func_80079174(F51 *o, int a, int w, int h, int e);
+void func_800792DC(F51 *o);
+void func_800793C0(F51 *o); // a method: its object unused
 void func_80078C78(A51 *o, int a, int b, int c, int e, int f, int g, int h, int i, ...);
 void func_80077544(B51 *o, int flags);
 G51 *func_80078DA8(G51 *g, int a, int b, int c, int d, int e);
@@ -718,12 +722,17 @@ void func_800790DC(A51 *o, int flags) {
     func_80078A34(o, flags);
 }
 
-#ifdef NON_MATCHING
-/* The constants' registers: the original loads each into $v0 just before its store (6 off) */
+/* The settings' defaults. The constants go through one variable: the
+ * original loads each just before its store, in the same register. */
 void func_80079124(F51 *o) {
-    o->m_08 = 6;
-    o->m_164 = 14;
-    o->m_17C = 1;
+    int v;
+
+    v = 6;
+    o->m_08 = v;
+    v = 14;
+    o->m_164 = v;
+    v = 1;
+    o->m_17C = v;
     o->m_15C = 0;
     o->m_160 = 0;
     o->m_16C = 0;
@@ -734,13 +743,41 @@ void func_80079124(F51 *o) {
     o->m_150 = 0;
     o->m_154 = 0;
     o->m_158 = 0;
-    o->m_14C = 2;
+    v = 2;
+    o->m_14C = v;
     o->m_180 = 0;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_51", func_80079124);
-#endif
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_51", func_80079174);
+/* The display set up for w by h: two drawing and two display buffers, one
+ * above the other up to 256 lines high, in the same place above that
+ * (interlaced, 0x15C set). */
+int func_80079174(F51 *o, int a, int w, int h, int e) {
+    int r = func_80078A90((A51 *)o, a, w, h, e);
+
+    ResetGraph(3);
+    SetGraphDebug(0);
+    func_800793C0(o);
+    if (h <= 256) {
+        SetDefDrawEnv(&o->m_draw[0], 0, 0, w, h);
+        SetDefDrawEnv(&o->m_draw[1], 0, 256, w, h);
+        SetDefDispEnv(&o->m_disp[0], 0, 256, w, h);
+        SetDefDispEnv(&o->m_disp[1], 0, 0, w, h);
+        o->m_15C = 0;
+    } else {
+        SetDefDrawEnv(&o->m_draw[0], 0, 0, w, h);
+        SetDefDrawEnv(&o->m_draw[1], 0, 0, w, h);
+        SetDefDispEnv(&o->m_disp[0], 0, 0, w, h);
+        SetDefDispEnv(&o->m_disp[1], 0, 0, w, h);
+        o->m_15C = 1;
+    }
+    SetVideoMode(1);
+    o->m_disp[1].screen.w = 256;
+    o->m_disp[0].screen.w = 256;
+    o->m_disp[1].screen.h = 256;
+    o->m_disp[0].screen.h = 256;
+    func_800792DC(o);
+    o->m_1C = r;
+    return r;
+}
 
 INCLUDE_RODATA("asm/langimg/nonmatchings/chunk_51", D_800B77E0);

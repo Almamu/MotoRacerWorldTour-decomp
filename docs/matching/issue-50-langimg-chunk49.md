@@ -13,7 +13,7 @@ destructor, and globals saved from the game's timers.
 
 One file, `src/langimg/chunk_49.cpp`, 0x8007345C-0x80075440.
 
-26 functions: 14 match, 3 are parked, 9 are still asm.
+26 functions: 14 match, 4 are parked, 8 are still asm.
 
 ## The settings
 
@@ -70,7 +70,7 @@ globals.
 | `func_80074650`, `func_80074688` | match | timers saved |
 | `func_800746A8` | matches | returns 0 |
 | `func_800746B0` | matches | a time, a direction and a link set |
-| `func_800747A8` | asm | 95 instructions |
+| `func_800747A8` | parked | the current link set and stepped by time: registers |
 | `func_80074924` | parked | a link `n` steps along: the mode's tests and the loads' order |
 | `_._10CobjetLink` | matches | `CobjetLink`'s destructor |
 | `func_80074AC8` | asm | 150 instructions |
@@ -78,3 +78,12 @@ globals.
 | `func_80074D30`, `func_80074D78` | match | a constructor and a destructor |
 | `func_80074DA0` | asm | 174 instructions |
 | `func_80075058` | asm | 250 instructions |
+
+## Third pass
+
+- `func_800747A8` is written and parked (62 off): the current link set n
+  links in, forwards from the start or backwards from the end of the
+  first run of links, then stepped while the time covers each link's
+  time. The original walks the backward count and the result in one
+  register, copies n for the forward walk and lays the time loop's test
+  at its top.
