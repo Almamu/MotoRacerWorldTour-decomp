@@ -172,6 +172,21 @@ u32 func_800A645C(void *p, int n, int a);
 void func_800A6448(void);
 void *func_800A1CF8(int mode, CdlLOC *loc, int size, void *buf);
 void *malloc(unsigned int n);
+// A work buffer (chunk_58's Buf58)
+struct Buf72 {
+    void *m_00;
+    int m_04;
+    int m_08;
+};
+extern char D_800C9F1C[]; // the default picture's name
+Buf72 *func_80086E68(Buf72 *b);
+void func_80086E7C(Buf72 *b, int f);
+void func_80086F14(Buf72 *b, void *p, int n);
+int func_80087468(Buf72 *b, void *img, int c, int d, int e, int f);
+void *func_800A06AC(char *name, void *buf, int *size);
+void func_80015678(void (*f)(void));
+void func_800A1654(void);
+void func_800A17EC(int x, char *name);
 void *func_800B5730(void *p, int size);
 extern void (**D_800D6000)(void *p); // a hook on what's read
 
@@ -440,7 +455,50 @@ void func_800A164C(int *p) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A1654);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A17EC);
+/* A picture shown full screen: the named one, or the default one. */
+void func_800A17EC(int x, char *name) {
+    Buf72 b;
+    RECT r;
+    void *work;
+
+    func_80086E68(&b);
+    DrawSync(0);
+    VSync(0);
+    work = malloc(0x7000);
+    if (work) {
+        u8 *img;
+
+        if (name) {
+            img = (u8 *)func_800A06AC(name, 0, 0);
+        } else {
+            img = 0;
+        }
+        if (!img) {
+            img = (u8 *)func_800A06AC(D_800C9F1C, 0, 0);
+        }
+        r.w = 512;
+        r.h = 512;
+        r.x = 0;
+        r.y = 0;
+        ClearImage(&r, 0, 0, 0);
+        DrawSync(0);
+        SetDispMask(0);
+        func_80086F14(&b, work, 0x7000);
+        func_80087468(&b, img + 4, 1, 0, 0, 0);
+        DrawSync(0);
+        func_80087468(&b, img + 4, 1, 0, 0x100, 0);
+        DrawSync(0);
+        SetDispMask(1);
+        if (img) {
+            free(img);
+        }
+        func_80015678(func_800A1654);
+        if (work) {
+            free(work);
+        }
+    }
+    func_80086E7C(&b, 2);
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A195C);
 
