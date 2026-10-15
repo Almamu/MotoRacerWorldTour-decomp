@@ -1247,6 +1247,25 @@ two (or two merged into one).
   calls into inline helpers doesn't help for a global's address: it is a
   constant to CSE, whatever the call's origin (#289's finding is about
   stack addresses).
+- **Per-function aliases of a global.** When only one function wants a
+  global accessed the other way, alias the symbol for that function with
+  `__asm__` instead of changing the chunk's declaration:
+  `extern int D_800CB498_la __asm__("D_800CB498");` (used as `(Unit4C
+  *)&D_800CB498_la`) makes it small for that use, one `la` each time;
+  `extern int D_800D13D8_a[] __asm__("D_800D13D8");` makes a 4-byte global
+  that isn't one of the chunk's small globals a split `lui`/`sw %lo`, not
+  maspsx's `$at` form. chunk_45's `func_8006BABC`, `func_8006C7CC`,
+  `func_8006C85C` and `func_8006C8EC` matched with them.
+- **The base of an indexed address through an accessor.** When the
+  original adds the index to the array's address (`addiu $v1, $s2, 0x470;
+  addu $a2, $v1, $s4`) and GCC adds the field's offset to the index first,
+  return the array from an inline accessor: `Picks29(g) + i` (chunk_29's
+  `func_8004C1BC`).
+- **A call's arguments read into locals in order.** `func_80079848`
+  (chunk_52) matched once the four fields passed to a call were read into
+  locals first; read in the call's argument list, GCC loaded the stack
+  argument first, and hoisted a global's `%hi` out of the loop into a saved
+  register.
 - **A bit test as an empty `if`.** When the original tests a flag with
   `andi`, then `bnez` past the work, and GCC gives `xori`/`andi`/`beqz`
   for `if (!((f >> 1) & 1)) {...}`, write the test the other way with an
