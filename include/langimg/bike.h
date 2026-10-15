@@ -29,12 +29,17 @@ struct Frame {
 
 // An animation channel (0x1C bytes)
 struct AnimChan {
-    u8 m_00[0x1C];
+    int m_00; // the value
+    int m_04; // the target
+    int m_08;
+    int m_0C;
+    u8 m_10[0xC];
 };
 
 // What owns the bike (its m_54)
 struct BikeOwner {
-    u8 m_pad0[0x188];
+    u8 m_pad0[0x187];
+    s8 m_187;
     u8 m_188;
     s8 m_189;
     u8 m_pad18A[0x17A];
@@ -70,7 +75,9 @@ struct Bike {
     Vector3 m_9C;
     u8 m_padA8[0xC];
     Vector3 m_B4;
-    u8 m_padC0[0x24];
+    u8 m_padC0[0xC];
+    int m_CC;
+    u8 m_padD0[0x14];
     int m_E4; // the engine speed asked for
     int m_E8;
     int m_EC;
@@ -97,7 +104,9 @@ struct Bike {
     s8 m_14C;
     u8 m_pad14D[0x2];
     s8 m_14F;
-    u8 m_pad150[0xDC];
+    u8 m_pad150[0x4];
+    int m_154;
+    u8 m_pad158[0xD4];
     Frame *m_22C;
     Frame *m_230;
     Vector3 m_234;
@@ -110,7 +119,7 @@ struct Bike {
     short m_28C;
     short m_28E;
     int m_290;
-    u8 m_pad294[0x4];
+    int m_294;
     short m_298;
     u8 m_pad29A[0x2];
     int m_29C; // its speed
@@ -127,11 +136,11 @@ struct Bike {
     int m_2D4;
     u8 m_pad2D8[0x4];
     u8 m_2DC;
-    u8 m_2DD;
+    s8 m_2DD;
     u8 m_2DE;
     s8 m_2DF;
     s8 m_2E0;
-    u8 m_2E1;
+    s8 m_2E1;
     u8 m_pad2E2[0x2];
     int m_2E4;
     int m_2E8;
@@ -149,7 +158,7 @@ struct Bike {
     Vector3 m_348;
     Vector3 m_354;
     Vector3 m_360;
-    u8 m_pad36C[0xC];
+    Vector3 m_36C;
     AnimChan m_378;
     int m_394; // its angle
     int m_398;
@@ -170,7 +179,9 @@ struct Bike {
     u8 m_3F7;
     u8 m_pad3F8[0x2];
     short m_gear; // the gear
-    u8 m_pad3FC[0x10];
+    int m_3FC;
+    int m_400;
+    u8 m_pad404[0x8];
     s8 m_40C;
     u8 m_pad40D[0x2];
     s8 m_40F;
@@ -186,26 +197,47 @@ struct Bike {
     int m_41C;
     u8 m_pad420[0xC];
     int m_42C;
-    u8 m_pad430[0xE];
+    u8 m_pad430[0x4];
+    int m_434;
+    u8 m_pad438[0x6];
     short m_43E;
-    u8 m_pad440[0x1C];
+    u8 m_pad440[0x14];
+    int m_454;
+    u8 m_pad458[0x4];
     Vector3 m_45C;
     int m_468;
     int m_46C;
     int m_470;
-    u8 m_pad474[0x28];
+    int m_474;
+    int m_478;
+    int m_47C;
+    int m_480;
+    int m_484;
+    int m_488;
+    u8 m_48C;    // a state
+    s8 m_48D;    // the last one
+    short m_48E; // the frames in it
+    int m_490;
+    int m_494;
+    int m_498;
     AnimChan m_49C;
     AnimChan m_4B8;
     u8 m_pad4D4[0x4];
     u8 m_4D8;
-    u8 m_4D9;
+    s8 m_4D9;
     u8 m_4DA;
     u8 m_pad4DB[0x5];
     AnimChan m_4E0;
-    u8 m_pad4FC[0x2F];
+    int m_4FC;
+    u8 m_pad500[0x10];
+    int m_510;
+    u8 m_pad514[0x14];
+    s8 m_528;
+    s8 m_529;
+    s8 m_52A;
     s8 m_52B;
     u8 m_52C[4];
-    u8 m_pad530[0x4];
+    int m_530;
     AnimChan m_534;
     u8 m_pad550[0x4];
     int m_554;
