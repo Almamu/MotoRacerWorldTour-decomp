@@ -26,11 +26,12 @@ struct Txt57 {
     u8 m_02[2];
     short m_04[2]; // from
     short m_08[2]; // to
-    u8 m_0C[4];
+    short m_0C[2];
     short m_10[2]; // now
-    u8 m_14[4];
+    short m_14[2];
     char m_18[2][0x20];
     short m_58[2]; // the countdown
+    u8 *m_5C[2];   // the textures
 };
 
 // A word stored anywhere
@@ -99,6 +100,23 @@ extern char D_800D4798;
 extern char D_800C8B50[];
 extern Disp57 *D_800C886C;
 extern Win57 *D_800C8D90;
+extern u8 *D_800CC030[]; // the textures, by id
+extern u8 *D_800CBD5C;
+extern int D_800CBD58; // the font
+extern char D_800C8B44[];
+
+// A box on screen
+struct Box57 {
+    int m_00;
+    int m_04;
+    int m_08;
+    int m_0C;
+    u8 m_10[8];
+    int m_18, m_1C, m_20, m_24, m_28, m_2C;
+    u8 m_30[0x14];
+    int m_44, m_48;
+    int m_4C; // flags
+};
 
 extern "C" {
 int sprintf(char *buf, const char *fmt, ...);
@@ -120,9 +138,66 @@ int func_800A5CD0(u32 ms, int *m, int *sec, int *cs);
 char *func_800A6000(char *p, int v, int n, int pad);
 void func_80083380(Txt57 *t, int i, int v, int c);
 void func_8008350C(Txt57 *t, int i);
+void func_8008388C(Hud57 *h, int i, int k, Box57 *w, int flags, int c);
+void func_800831BC(Txt57 *t, int i, int k, Box57 *w, int flags);
+short func_800803C4(int a, char *b);
 }
 
+// A short set from an int (its loads stay words)
+static inline void Put57(short *d, int v) {
+    *d = v;
+}
+
+/* Text i placed in box w: after texture k (or none, -1), by the flags'
+ * alignment. */
+#ifdef NON_MATCHING
+// Registers: the width and the texture's width swapped ($a3/$t0), and the row's address added the other way round (t + 2i where GCC has 2i + t) for the stores through Put57; direct stores narrow the box's loads to lhu (15 off).
+void func_800831BC(Txt57 *t, int i, int k, Box57 *w, int flags) {
+    if (w->m_44 && w->m_48) {
+        u8 *tex = 0;
+        int width, tw, th, fh, a;
+        int m;
+
+        if (k != -1) {
+            tex = D_800CC030[k];
+        }
+        width = func_800803C4(D_800CBD58, D_800C8B44);
+        tw = 0;
+        th = 0;
+        fh = *D_800CBD5C;
+        if (tex) {
+            tw = tex[4] - tex[0] + 1;
+            th = tex[5] - tex[1] + 1;
+            t->m_14[i] = (tw - width) >> 1;
+        } else {
+            t->m_14[i] = 0;
+        }
+        m = w->m_4C;
+        if (width < tw) {
+            width = tw;
+        }
+        if ((m & 0x30) != 0x20) {
+            Put57(&t->m_04[i], w->m_00 - width - 1);
+            Put57(&t->m_08[i], w->m_18);
+        } else {
+            Put57(&t->m_04[i], w->m_00 + w->m_08 + 1);
+            Put57(&t->m_08[i], w->m_1C - width);
+        }
+        t->m_02[i] = 1;
+        a = flags & 0x300;
+        if (!a) {
+            Put57(&t->m_0C[i], w->m_20);
+        } else if (a == 0x200) {
+            Put57(&t->m_0C[i], w->m_24 - fh - th);
+        } else if (a == 0x100) {
+            Put57(&t->m_0C[i], w->m_2C);
+        }
+        t->m_5C[i] = tex;
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_57", func_800831BC);
+#endif
 
 /* A time written into text i: a colour code, minutes, seconds and
  * hundredths (and a symbol when under a minute). */
@@ -204,7 +279,53 @@ void func_8008386C(Txt57 *t, int i) {
     t->m_58[i] = -1;
 }
 
+/* Message i set to texture k and placed in box w by the flags' alignment,
+ * or under it for the second kind. */
+#ifdef NON_MATCHING
+// The stores go through an inline taking an int (so the box's words load with lw, not a narrowed lhu); left: the row's address (h + 2i) copied into more registers in the original and the loads' order, 73 off.
+void func_8008388C(Hud57 *h, int i, int k, Box57 *w, int flags, int c) {
+    u8 *f = D_800CC030[29];
+    u8 *d = D_800CBD5C;
+    u8 *t;
+    int fh, tw, th, y;
+
+    tw = 0;
+    th = 0;
+    h->m_84[i] = (int)D_800CC030[k];
+    h->m_00[i] = 1;
+    h->m_02[i] = c;
+    fh = f[4] - f[0] + 2;
+    t = (u8 *)h->m_84[i];
+    if (t) {
+        tw = t[4] - t[0] + 1;
+        th = t[9] - t[1] + 1;
+    }
+    y = th + (*d + 3);
+    if (c) {
+        Put57(&h->m_08[i], w->m_24 - y - 10);
+        Put57(&h->m_04[i], w->m_0C + 1);
+        Put57(&h->m_10[i], w->m_28 - (tw >> 1));
+        Put57(&h->m_18[i], w->m_28 - (fh * 5 >> 1));
+        Put57(&h->m_1C[i], w->m_20 + 32);
+    } else {
+        int a = flags & 0x300;
+
+        if (!a) {
+            Put57(&h->m_0C[i], w->m_20);
+        } else if (a == 0x200) {
+            Put57(&h->m_0C[i], w->m_24 - y);
+        } else if (a == 0x100) {
+            Put57(&h->m_0C[i], w->m_2C - (y >> 1));
+        }
+        Put57(&h->m_08[i], w->m_18);
+        Put57(&h->m_04[i], w->m_00 - tw);
+        Put57(&h->m_18[i], w->m_1C - fh * 5);
+        Put57(&h->m_1C[i], w->m_20);
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_57", func_8008388C);
+#endif
 
 /* Player i's HUD cleared. */
 void func_80083A44(Hud57 *h, int i) {
