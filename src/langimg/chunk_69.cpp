@@ -11,10 +11,14 @@ struct Name69 {
     char c[11];
 };
 
+// A record (0x198 bytes)
 struct Draw69 {
-    u8 m_00[0x17C];
+    u8 m_00[0x170];
+    int m_170;
+    u8 m_174[8];
     Name69 m_17C; // the name before
     Name69 m_187; // the name
+    u8 m_192[6];
 };
 
 // An item with flags at 4 (chunk_23's NamedEntry)
@@ -200,6 +204,9 @@ extern void *D_800BC884;
 extern Tab69 D_800C933C[];
 extern Lvl69 *D_800C6710;
 extern short *D_800D5F34;
+extern int D_800D5F34_ asm("D_800D5F34"); // also read here as a number
+extern int D_800D5F50;
+extern Tab69 D_800C9330;
 extern int D_800D5F38;
 extern Gfx69 *D_800C886C;
 extern int D_800D4898;
@@ -235,6 +242,7 @@ void func_800A6788(int a, int b);
 void func_8009C84C(Game69 *o, int f);
 int func_800A60AC(const char *a, const char *b);
 void func_8009BDB8(Game69 *o);
+void func_8009C694(Game69 *o);
 void func_8003E5B0(Game69 *o);
 List69 *func_800A14CC(void);
 Pos69 *func_800A1504(void);
@@ -370,7 +378,35 @@ void func_8009C534(Game69 *o) {
     sc->m_21DC = 0;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_69", func_8009C694);
+/* The view's record picked by the mode, the track's laps and the
+ * player, its name the saved one; then the view's items hidden. */
+void func_8009C694(Game69 *o) {
+    View69 *v = o->m_A80;
+    Rec69 *q = &o->m_A9C->m_08;
+    Scr69 *s = v->m_60;
+    Tab69 t = D_800C9330;
+
+    if (!s->m_04) {
+        Draw69 *d = *(Draw69 **)s->m_00;
+        int k = t.m_00[D_800C6710->m_04[D_800D5F38].m_18 - 1];
+
+        *(int *)&s->m_14 = k;
+        d += D_800D5F50 + D_800D5F34_ * 8 + k * 16;
+        s->m_04 = d;
+        d->m_187 = *func_800A09C0(&D_800D4898);
+        q->m_44 = (u8)s->m_04->m_187.c[9];
+        q->m_48 = (u8)s->m_04->m_187.c[10];
+        func_800A6788(3, 1);
+        d->m_170 = 1;
+        *(int *)&s->m_21D0 = v->m_4C->m_14->m_08;
+    }
+    s->m_21D4 = 0;
+    s->m_21D8 = 0;
+    s->m_21DC = 0;
+    s->m_21E0 = 0;
+    func_8009C3BC(v, 0);
+    func_8009BDB8(o);
+}
 
 void func_8009C84C(Game69 *o, int f) {
     View69 *v;
