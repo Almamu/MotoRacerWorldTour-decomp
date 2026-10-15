@@ -823,6 +823,16 @@ globals), a script that tries every order is quicker than guessing:
   if every matched function of the chunk survives it, set it in the
   chunk's `_CFLAGS` (chunk_54). Where one function needs split addresses
   (a `lui` in a delay slot), the chunk can't take it (chunk_58, 71, 72).
+- **One variable for a run of constant stores.** When the original loads
+  each constant into the same register just before its store (`li $v0, 6;
+  sw; li $v0, 14; sw; ...`), and GCC loads the next one early into another,
+  store them through one variable reassigned each time (`v = 6; o->a = v;
+  v = 14; o->b = v;`): its reassignments keep the scheduler from hoisting
+  the next load (chunk_51's `func_80079124`).
+- **`delete[]`, not `__builtin_vec_delete`.** Freeing arrays one after
+  another, chunk_28's `func_800497AC` matched with `delete[] (u8 *)p`;
+  calling `__builtin_vec_delete(p)` directly put the reloaded pointer
+  after each call in `$v1` instead of `$v0`.
 - **Unused locals.** A frame bigger than its variables need means the
   original had locals the optimiser dropped: `int unused[6];` gives
   `func_8001184C`'s 0x30-byte frame.

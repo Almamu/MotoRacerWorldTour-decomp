@@ -13,7 +13,7 @@ What's here:
 
 One file, `src/langimg/chunk_28.cpp`, 0x8004970C-0x8004B4B0.
 
-19 functions: 12 match, 1 is parked, 6 are still asm.
+19 functions: 14 match, 1 is parked, 4 are still asm.
 
 ## The settings
 
@@ -48,7 +48,7 @@ small globals.
 | Function | State | Notes |
 |---|---|---|
 | `func_8004970C` | matches | a game object's teardown |
-| `func_800497AC` | asm | 78 instructions |
+| `func_800497AC` | matches | the game ended: tables freed, globals put back |
 | `func_800498E4` | matches | arrays freed, values saved |
 | `func_800499B8` | matches | a call |
 | `func_800499DC` | matches | a name formatted |
@@ -57,9 +57,10 @@ small globals.
 | `func_80049C14` | asm | 728 instructions |
 | `func_8004A774` | asm | 214 instructions |
 | `func_8004AACC` | matches | a buffer freed |
-| `func_8004AB0C` | parked | the static pair stopped, a virtual call: the call's registers |
+| `func_8004AB0C` | matches | the static pair stopped, a virtual call |
 | `func_8004AB7C` | matches | a save's settings copied out |
-| `func_8004AC78`, `func_8004ADB0` | asm | 75 and 78 instructions |
+| `func_8004AC78` | matches | a demo set up: the settings, three items |
+| `func_8004ADB0` | asm | 75 instructions |
 | `func_8004AEDC`, `func_8004B480` | match | call chains |
 | `func_8004AF0C` | matches | the state from a key |
 | `func_8004AFBC` | asm | 316 instructions |
@@ -67,3 +68,18 @@ small globals.
 ## Second pass
 
 - `func_8004AB0C` matches: the virtual function it calls returns a value (`int (*m_6C)(void *)`), which put the function and its delta in the original's registers.
+
+## Third pass
+
+- `func_800497AC` matches: the game's end, its three tables freed with
+  `delete[]` on byte pointers. Written as `__builtin_vec_delete(p)`, the
+  table's pointer after each call came out in `$v1` instead of `$v0` (6
+  off).
+- `func_8004AC78` matches as written: the settings reset and three of
+  chunk_25's `func_80045168` items, its repeated constants in saved
+  registers.
+- `func_8004ADB0` (the cards' settings copied out) is still asm: through a
+  struct for `D_800D4898` GCC keeps one base for every field and the
+  calls, where the original loads the fields from one base and each
+  table's address afresh (the size rule above suggests declaring its
+  parts as separate small objects; not tried).

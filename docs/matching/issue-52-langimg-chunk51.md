@@ -7,7 +7,7 @@ at 0x30 (its vtable at 0x68, `D_800C8884`), a subclass of it
 its users, and stubs. One file, `src/langimg/chunk_51.cpp`,
 0x800773E8-0x800792DC.
 
-51 functions: 38 match, 4 are parked, 9 are still asm.
+51 functions: 39 match, 3 are parked, 9 are still asm.
 
 ## The settings
 
@@ -46,3 +46,18 @@ stack argument's load scheduled earlier, 26 off).
 
 - `func_80078458` (an object's matrix turned to face a point) matches.
 - `func_80078280` (an object's defaults, through chunk_48's matrix and vector inline functions) is parked at 6 off (two constant stores swapped by the scheduler), `func_80077844` (a mesh's points placed) at 5 (the field pointers the loop walks).
+
+## Third pass
+
+- `func_80079124` (the settings' defaults) matches: its constants go through
+  one variable reused for each (`v = 6; o->m_08 = v; v = 14; ...`). With
+  separate constants the scheduler loaded the second before the first's
+  store; one variable's reassignments keep each load just before its
+  store, in the same register, as the original's.
+- `func_80079174` (the display set up for w by h: two drawing and two
+  display buffers, interlaced above 256 lines) matches as written, the
+  object's 0x6C to 0x14C now `DRAWENV m_draw[2]` and `DISPENV m_disp[2]`.
+  It calls chunk_52's `func_800793C0` with the object, which that function
+  doesn't use.
+- `func_8007759C` (still asm) contains the same loop as the parked
+  `func_80077844` (the mesh's points), with the same pointers walked.
