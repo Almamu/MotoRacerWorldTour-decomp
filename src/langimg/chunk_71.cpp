@@ -1,5 +1,6 @@
 #include "common.h"
 #include "psyq.h"
+#include "langimg/ui.h"
 
 /* The memory card menus (docs/matching/issue-72-langimg-chunk71.md) */
 
@@ -42,9 +43,12 @@ struct Spr71 {
     int m_140; // the frame to draw
 };
 
-// Something with a sprite at 0x60
+// Something with a sprite at 0x60: a scene, its name first, its objects at 0x38
 struct Snd71 {
-    u8 m_00[0x60];
+    char *m_00;
+    u8 m_04[0x34];
+    void *m_38;
+    u8 m_3C[0x24];
     Spr71 *m_60;
 };
 
@@ -308,6 +312,35 @@ struct Res71 {
     int m_30;
 };
 extern char D_800C9D1C[], D_800C9D28[];
+// An object of a scene's list
+struct Look71 {
+    u8 m_00[8];
+    u16 m_08;
+};
+struct Node71 {
+    u8 m_00[0x28];
+    struct Node71 *m_28;
+    u8 m_2C[0x2C];
+    Look71 *m_58;
+};
+// What's picked on a scene's page
+struct Pick71 {
+    u8 m_00[0xA];
+    short m_0A;
+    Node71 **m_0C;
+};
+struct Cam71 {
+    u8 m_00[0x60];
+    u8 m_60[4];
+};
+extern Cam71 *D_800C8864;
+extern char D_800C9CF0[], D_800C9CF8[], D_800C9D00[], D_800C9D08[], D_800C9D14[];
+int func_800A6100(char *a, char *b, int n);
+Node71 *func_80017E10(void *l, char *name, int n);
+Pick71 *func_8003B038(Snd71 *n, int a, int b);
+void func_8003A760(Snd71 *n, Node71 *o, int c);
+void func_80018954(void *cam, Node71 *o, short *out);
+void func_8009F82C(Menu71 *m);
 Res71 *func_8003AA90(Snd71 *n, char *name);
 Res71 *func_8003B3C4(Snd71 *n, Item32 *a);
 void func_80019578(int a, int b, int c, int d);
@@ -549,7 +582,69 @@ void func_8009F760(Menu71 *m, int b) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_8009F760);
 #endif
 
+// A point on the screen
+struct Pt71 {
+    short x;
+    short y;
+};
+
+/* The pointer on the card screen: the line from the selected slot's object
+ * to the cursor's, and the cursor's colour by whether the slot is used. */
+#ifdef NON_MATCHING
+// Registers only, in the link: ui.h's ADD_PRIM puts the link word in $a0 and the shifted pointer in $v1 where the original has $a1 and $a0, and the stepped pointer in $a1 where it has $v1 (7 off). With the macro's two outputs listed (_p, _l) it is 5 off, but that order breaks other matched packets.
+void func_8009F82C(Menu71 *m) {
+    Snd71 *n;
+
+    if (m->m_A90 == 1 || m->m_A90 == 4) {
+        n = m->m_A84;
+    } else {
+        n = m->m_A80;
+    }
+    if (!func_800A6100(n->m_00, D_800C9CF0, 5)) {
+        Spr71 *s = n->m_60;
+        Node71 *from = func_80017E10(n->m_38, D_800C9CF8, 6);
+        Node71 *to = func_80017E10(n->m_38, D_800C9D00, 4);
+        Res71 *r = func_8003AA90(n, D_800C9D08);
+        Node71 *cur = func_80017E10(n->m_38, D_800C9D14, 6);
+        Pick71 *k = func_8003B038(n, 1, 0);
+        Node71 *at;
+        Pt71 pt[2];
+        u_long *p;
+        u_long *ot;
+
+        if (s) {
+            s->m_140 = k->m_0A;
+        }
+        at = k->m_0C[k->m_0A]->m_28;
+        to->m_58->m_08 = at->m_58->m_08;
+        if (((int *)r->m_28)[k->m_0A]) {
+            func_8003A760(n, cur, 0x442FD9B);
+        } else {
+            func_8003A760(n, cur, 0x2F6FAE58);
+        }
+        {
+            Pt71 *pa = &pt[0];
+            Pt71 *pb;
+
+            func_80018954(D_800C8864->m_60, from, (short *)pa);
+            pb = &pt[1];
+            func_80018954(D_800C8864->m_60, at, (short *)pb);
+            p = (u_long *)D_800C8C70;
+            p[0] = 0x06000000;
+            p[6] = 0x55555555;
+            p[1] = 0x4CFFFFFF;
+            p[2] = ((pt[1].x - 2) & 0xFFFF) | ((pb->y - 1) << 16);
+            p[3] = ((pb->y - 1) << 16) | 0x118;
+            p[4] = (pa->y << 16) | 0x118;
+            p[5] = ((pt[0].x + 12) & 0xFFFF) | (pa->y << 16);
+        }
+        ADD_PRIM(D_800CBDC0 + 1, D_800C8C70);
+        D_800C8C70 += 0x1C;
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_8009F82C);
+#endif
 
 /* The sprite's frame drawn, if it changed. */
 void func_8009FAB0(Menu71 *m) {
