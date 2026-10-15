@@ -55,15 +55,29 @@ struct Obj48 {
     u8 m_94[0x38];
 };
 // A bike, 0x568 bytes (chunk_38's Bike38)
+struct Def48;
 struct Bike48 {
-    u32 m_00; // flags: bit 6, in the race
-    u8 m_04[0x564];
+    union {
+        u32 m_00; // flags: bit 6, in the race
+        u8 m_00b[4];
+    };
+    u8 m_04[0x2C];
+    struct Def48 *m_30;
+    u8 m_34[0x534];
 };
 // The run (chunk_38's Run38)
 struct Run48 {
     u8 m_00[0x2E8];
     Bike48 m_2E8[5];
+    u8 m_1DF0[0x18];
+    int m_1E08; // the race's state
 };
+struct Game48 {
+    u8 m_00[0x378];
+    Run48 *m_378;
+};
+extern Game48 *D_800C5E14;
+extern int D_800D6100; // the frame's time
 // What an object is set up from
 struct Src48 {
     u8 m_00[0x3C];
@@ -74,7 +88,8 @@ struct Src48 {
 struct Def48 {
     u8 m_00[0x10C];
     int m_10C;
-    u8 m_110[0xE8];
+    u8 m_110[0xE4];
+    int m_1F4;
     int m_1F8;
     u8 m_1FC[0xC];
     int m_208;
@@ -127,6 +142,9 @@ Obj48 *func_8007345C(Group48 *g, Group48 *h);
 int func_800731EC(Group48 *g, int k, Def48 *t, int c, int side);
 int func_80071994(void *o, int deep, Ent48 **pe, int *pi, Vec48 *x, int *pr, int *pflag);
 void func_80072D00(Obj48 *o);
+void func_80071ED8(Obj48 *o, Group48 *g, int c);
+int func_80074270(Group48 *g, Bike48 *b, int c);
+void func_80072ED4(Group48 *g, int c);
 void func_80072D80(Obj48 *o);
 void func_80072DA0(Group48 *g, Run48 *r);
 }
@@ -343,7 +361,49 @@ void func_80072DA0(Group48 *g, Run48 *r) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_48", func_80072ED4);
+/* A group each frame: its objects marked, one of its bikes picked at random
+ * and objects spawned for it, the objects moved, those done reset. */
+void func_80072ED4(Group48 *g, int c) {
+    if (g->m_2C && D_800C5E14->m_378->m_1E08 != 2) {
+        int i, k, keep;
+        Def48 *d;
+
+        g->m_00 = (D_800D6100 << 12) / 1000;
+        for (i = 0; i < g->m_30; i++) {
+            g->m_34[i].m_80 |= 2;
+        }
+        g->m_04 = g->m_04 * 214013 + 2531011;
+        k = ((g->m_04 >> 16) & 0x7FFF) % g->m_0C;
+        d = g->m_14[k]->m_30;
+        keep = 0;
+        if (d->m_10C <= D_800C872C || (g->m_14[k]->m_00b[0] >> 7)) {
+            keep = 1;
+        }
+        for (i = 0; i < g->m_0C; i++) {
+            if (func_80074270(g, g->m_14[i], c) && k == i) {
+                keep = 0;
+            }
+        }
+        if (!d->m_1F4) {
+            if (g->m_10 == 6) {
+                g->m_04 = g->m_04 * 214013 + 2531011;
+                g->m_10 = ((g->m_04 >> 16) & 0x7FFF) % 5;
+            }
+            if (func_800731EC(g, g->m_10, d, c, keep)) {
+                g->m_10 = 6;
+            }
+        }
+        for (i = 0; i < g->m_30; i++) {
+            func_80071ED8(&g->m_34[i], g, c);
+        }
+        for (i = 0; i < g->m_30; i++) {
+            if ((g->m_34[i].m_80 & 3) == 3) {
+                g->m_34[i].m_80 &= ~3;
+                func_80072D00(&g->m_34[i]);
+            }
+        }
+    }
+}
 
 #ifdef NON_MATCHING
 // The group and the result in swapped saved registers, and the span's computation (57 off).
