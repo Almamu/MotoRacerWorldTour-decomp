@@ -20,7 +20,8 @@ struct Motor {
     int m_34;
     u8 m_38[4];
     int m_3C;
-    u8 m_40[0xC];
+    u8 m_40[8];
+    int m_48;
     int m_4C; // 0x4C: the grip's force on the ground
     int m_50; // 0x50: on the rear wheel
     u8 m_54[0xE];
@@ -40,7 +41,8 @@ struct Motor {
     int m_120;
     u8 m_124[0x24];
     short m_148;
-    u8 m_14A[4];
+    short m_14A;
+    u8 m_14C[2];
     short m_14E;
     int m_150;
     int m_154;

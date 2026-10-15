@@ -52,7 +52,9 @@ struct BikeOwner {
 struct Bike {
     u8 m_pad0[0x34];
     MATRIX *m_34; // its model's matrix
-    u8 m_pad38[0x18];
+    u8 m_pad38[0xB];
+    s8 m_43; // its index in the race
+    u8 m_pad44[0xC];
     void *m_vtable;
     BikeOwner *m_54;
     s8 m_58; // the motor's kind
@@ -151,7 +153,7 @@ struct Bike {
     Vector3 m_30C;
     Vector3 m_318;
     int m_324;
-    u8 m_pad328[0x4];
+    int m_328;
     int m_32C;
     Vector3 m_330; // its heading
     Vector3 m_33C;
@@ -176,7 +178,7 @@ struct Bike {
     u8 m_3F4;
     u8 m_3F5;
     s8 m_3F6;
-    u8 m_3F7;
+    s8 m_3F7;
     u8 m_pad3F8[0x2];
     short m_gear; // the gear
     int m_3FC;
@@ -267,7 +269,11 @@ struct RaceHolder {
     RaceState *m_10;
 };
 struct Game {
-    u8 m_00[0x378];
+    u8 m_00[0xC4];
+    int m_C4[8];
+    u8 m_E4[0x220];
+    int m_304;
+    u8 m_308[0x70];
     RaceHolder *m_378;
 };
 extern Game *D_800C5E14;

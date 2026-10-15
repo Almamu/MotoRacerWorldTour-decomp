@@ -76,3 +76,4 @@ issue it worked on, and add it below.
 | [issue-25-langimg-chunk24.md](issue-25-langimg-chunk24.md) | The game's chunk_24: chunk_23's named objects filling in screens; arguments passed through, a pointer to the field tested, an 11-bit field's bit |
 | [issue-49-langimg-chunk48.md](issue-49-langimg-chunk48.md) | The game's chunk_48: a track's sections and the objects groups place on it; a goto into the other branch, the loop's end in a local, chained assignments store the last first |
 | [issue-37-langimg-chunk36.md](issue-37-langimg-chunk36.md) | The game's chunk_36: the race's checks between frames; one store order of 720, the run re-read in the loop, a dot product through an inline function |
+| [issue-15-langimg-chunk14.md](issue-15-langimg-chunk14.md) | The game's chunk_14: more of the bike; a nested `?:` for a dead zone, two names for one buffer, an assignment and its result in one statement |
