@@ -360,7 +360,7 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_57", func_8008350C);
 #endif
 
 #ifdef NON_MATCHING
-// The packets match the original's shape (a POLY_F4, then a draw mode set just past it with the pointer stepped in place: see "GPU packets" in the techniques); left: the label's x and y in swapped saved registers and the measured width reloaded from the stack where the original keeps it in a register (91 off).
+// The packets match the original's shape (a POLY_F4, then a draw mode set just past it with the pointer stepped in place: see "GPU packets" in the techniques); the box's top and bottom computed once gives x and y the original's saved registers ("Saved register order"); left: the text call's arguments in another order and the measured width reloaded from the stack where the original keeps it in a register (80 off).
 void func_80083618(Label57 *l, int i) {
     if (l->m_58[i] >= 0) {
         int x = l->m_10[i];
@@ -396,10 +396,15 @@ void func_80083618(Label57 *l, int i) {
         p = (u32 *)D_800C8C70;
         p[0] = 0x05000000;
         p[1] = 0x2A808080;
-        p[2] = XY57(left, y);
-        p[3] = XY57(left + w, y);
-        p[4] = XY57(left, y + r[3] + 6);
-        p[5] = XY57(left + w, y + r[3] + 6);
+        {
+            int top = y;
+            int bot = y + r[3] + 6;
+
+            p[2] = XY57(left, top);
+            p[3] = XY57(left + w, top);
+            p[4] = XY57(left, bot);
+            p[5] = XY57(left + w, bot);
+        }
         ADD_PRIM57(D_800CBDC0 + 1, D_800C8C70);
         p = (u32 *)D_800C8C70;
         SetDM57(p + 6, 0xE1000240);

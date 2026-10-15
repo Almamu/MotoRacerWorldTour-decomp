@@ -90,6 +90,37 @@ struct Rect61 {
     int m_18;
 };
 
+// A section's point (20 bytes): at 0x10 the ids of its two textures, 7 signed
+// bits each, read as shifts: bits 15-21 for even laps, 22-28 for odd ones
+// (0x3F: none)
+struct Pt61 {
+    u8 m_00[0x10];
+    u32 m_10;
+};
+// A track's section (0x68 bytes, chunk_48's Ent48): its points
+struct Sec61 {
+    u8 m_00[0xC];
+    Pt61 *m_0C;
+    u8 m_10[0x58];
+};
+struct Track61 {
+    Sec61 *m_00;
+};
+// A bike as func_8008C500 reads it (chunk_29's Bk29)
+struct Rider61 {
+    u8 m_00[0x20];
+    short m_20; // its section, or -1
+    short m_22; // its point
+    u8 m_24[0x1C];
+    u8 m_40; // its lap
+};
+// The textures loaded: the current one at 8, the table at 0xC
+struct Tex61 {
+    u8 m_00[8];
+    void *m_08;
+    void **m_0C;
+};
+
 // Six bytes in eight
 struct Six61 {
     int m_00;
@@ -126,6 +157,8 @@ extern Game61 *D_800C5E14;
 
 extern "C" {
 int ratan2(long y, long x);
+void func_8008BA50(void *tex);
+void *func_8008C500(Tex61 *o, int a, int b, Rider61 *r, Track61 *t);
 Vec61 *func_8009964C(Vec61 *v, int k);
 Vec61 *func_80099718(Vec61 *d, Vec61 *s, int k);
 Vec61 *func_80099834(Vec61 *v, Vec61 *a);
@@ -431,7 +464,39 @@ void func_8008BCB0(Plane61 *o, Cam61 *c, void *m, Bk61 *b, Vec61 *v, Game61 *g) 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_61", func_8008BCB0);
 #endif
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_61", func_8008C500);
+void *func_8008C500(Tex61 *o, int a, int b, Rider61 *r, Track61 *t) {
+    int lap, odd, k;
+
+    if (r->m_20 == -1) {
+        goto none;
+    }
+    lap = (s8)r->m_40;
+    odd = lap >= 0 ? lap % 2 : 0;
+    if (!odd) {
+        u32 w = t->m_00[r->m_20].m_0C[r->m_22].m_10;
+
+        k = (int)(w << 10) >> 25;
+    } else {
+        u32 w = t->m_00[r->m_20].m_0C[r->m_22].m_10;
+
+        k = (int)(w << 3) >> 25;
+        if ((k & 0x3F) != 0x3F) {
+            goto found;
+        }
+        k = (int)(w << 10) >> 25;
+    }
+    if ((k & 0x3F) == 0x3F) {
+        goto none;
+    }
+found:
+    if (o->m_08 != o->m_0C[k]) {
+        func_8008BA50(o->m_0C[k]);
+    }
+    o->m_08 = o->m_0C[k];
+    return o->m_0C[k];
+none:
+    return 0;
+}
 
 /* The nearest zone around v that applies to b, else the nearest. */
 Plane61 *func_8008C678(List61 *l, int a, Vec61 *v, int b) {

@@ -54,7 +54,7 @@ globals from `D_800CBD24` on.
 | `func_800831BC` | parked | a text placed in its box: registers |
 | `func_80083380` | parked | a time written: registers |
 | `func_8008350C` | parked | a value slid: an unused 16-byte frame, the countdown read twice |
-| `func_80083618` | parked | a label and its box: the text measuring's registers (91 off) |
+| `func_80083618` | parked | a label and its box: the text call's arguments (80 off) |
 | `func_8008386C` | matches | a text cleared |
 | `func_8008388C` | parked | a message placed: registers |
 | `func_80083A44` | matches | a player's HUD cleared |
@@ -107,3 +107,12 @@ original keeps it in a register.
   helpers alone changed nothing: a constant address is CSE'd whatever the
   call's origin. Left: the arguments and the race in other saved registers,
   and the warning flags' compares (`sltiu` in the original, `xori` here).
+
+## Group C: more functions
+
+- `func_80083618` (a label and its box), 91 off to 80: the box's top and
+  bottom computed once (`int top = y; int bot = y + r[3] + 6;`) leave the
+  label's x with more uses than its y, so x gets `$s1` and y `$s2` as in
+  the original (#298's "Saved register order"). Left: the text call's
+  arguments in another order and the measured width reloaded from the
+  stack.

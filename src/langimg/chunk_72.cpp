@@ -203,7 +203,8 @@ extern int D_800C9F18;        // its step
 extern short D_800BF3A0[][2]; // sines and cosines by angle (4.12)
 void DrawPrim(void *p);
 void *func_800B5730(void *p, int size);
-extern void (**D_800D6000)(void *p); // a hook on what's read
+typedef void (*Hook72)(void *p);
+extern Hook72 *D_800D6000[]; // a hook on what's read (unsized: GCC builds its address)
 
 void func_800A28B8(void);
 int func_800A2380(int ch);
@@ -677,8 +678,6 @@ CdlFILE *func_800A1C74(CdlFILE *fp, char *name) {
     return r;
 }
 
-#ifdef NON_MATCHING
-/* With -fmove-all-movables (the chunk's flag): only the hook's address: its high half in $v0 where the original uses $v1 (2 off) */
 /* size bytes read from loc into buf (allocated if none is given), the sector
  * read again twice on an error. Mode 2 reads a pack: its first sector gives
  * its size. */
@@ -739,8 +738,8 @@ retry:
         }
     }
     CdControlB(9, 0, 0);
-    if (D_800D6000) {
-        (*D_800D6000)(buf);
+    if (D_800D6000[0]) {
+        (*D_800D6000[0])(buf);
     }
     if (ours) {
         buf = func_800B5730(buf, size);
@@ -750,9 +749,6 @@ out:
     VSync(0);
     return buf;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A1CF8);
-#endif
 
 #ifdef NON_MATCHING
 /* The layout matches up to the binary search; registers and the search's scheduling differ (74 off) */
