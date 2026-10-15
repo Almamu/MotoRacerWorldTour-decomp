@@ -23,7 +23,7 @@ One file, `src/langimg/chunk_16.cpp`, 0x80031500-0x80033720. New fields in
 `bike.h` (0x61, the link at 0x1B4, 0x500 and 0x504) and `motor.h` (0x16C,
 0x170 and the 11-byte entries at 0x185).
 
-6 functions: 4 match, 2 are still asm.
+6 functions: 4 match, 1 is parked, 1 is still asm.
 
 ## The settings
 
@@ -50,15 +50,27 @@ globals.
   alternating, its two vectors with all three loads first (`VecCopyL`);
   as struct assignments the vectors used `$t0`-`$t2` at fixed offsets.
   chunk_43's `func_80067650` copies the same link.
-- **Still asm.** `func_80031500` (1350 instructions, marked hand-written)
-  and `func_80032A14` (539), not tried.
+- **Still asm.** `func_80031500` (1350 instructions, marked hand-written),
+  not tried (`func_80032A14` is now parked, below).
+
+## Large functions pass
+
+- `func_80032A14` (539 instructions, the engine sound channel at 0x4B8:
+  its range from the speed and the motor's values at 0x13A and 0x13C, now
+  named in `motor.h`, its target by the bike's state, and the wheelie and
+  slide flags at 0x4D8-0x4DA) is written and parked, 157 off. The speed
+  ratio is clamped into a copy and the state byte read once, as the
+  original's loads; the bytes at 0x4D8 are read as a word and a half
+  through casts. Left: the original keeps the motor in a second register
+  for its high end, clamps the power differently, and has two
+  instructions more, which shifts the rest.
 
 ## The functions
 
 | Function | State | Notes |
 |---|---|---|
 | `func_80031500` | asm | 1350 instructions |
-| `func_80032A14` | asm | 539 instructions |
+| `func_80032A14` | parked | the engine sound's range and the wheelie flags: a copy, a clamp |
 | `func_80033280` | matches | the value at 0x500 from the distance |
 | `func_800333F8` | matches | the bike placed and reset |
 | `func_800334B0` | matches | whether it's past the upshift point |

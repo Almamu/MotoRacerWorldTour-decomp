@@ -6,7 +6,7 @@ a sequence of objects and their linked entries, and the 2D drawing that
 `func_80016E34` and the item lists use. One file, `src/langimg/chunk_03.cpp`,
 0x800177E8-0x8001983C.
 
-33 functions: 30 match, 2 are parked, 1 is still asm.
+33 functions: 30 match, 3 are parked.
 text drawer).
 
 ## The settings
@@ -52,6 +52,17 @@ case-folded `strncmp` that uses `$a2` as its length. So `Equals` is
 
 - `func_80019578`: chunk_03 built with `-fmove-all-movables` (the constants -0xF01 and 2 hoisted, as the original's), and the linked entries' loop as the original has it: only the list's first entry tested, then the rest walked (its branch goes back to the `m_next` load).
 
+## Large functions pass
+
+- `func_80018AEC` (401 instructions, a prim's text drawn by its kind:
+  plain, shadowed, boxed, blinking, or typed out through chunk_55's
+  `func_800806D4`) is written and parked, 53 off: `func_80019114`'s text
+  sibling, with the same box. The prim word's fields are shifted as
+  unsigned (`srl`); the box's corners are computed into locals first and
+  its second packet's pointer stored before its tag. Left: registers, the
+  second link reusing the stored pointer where the original reads the
+  global again, and the draw state's call with its two registers swapped.
+
 ## The functions
 
 | Function | State | Notes |
@@ -71,7 +82,7 @@ case-folded `strncmp` that uses `$a2` as its length. So `Equals` is
 | `func_80018814` | matches | a wait: `i = 10; while (i--);` |
 | `func_8001889C`, `func_800188CC` | match | a rotation; the alignment table (split addresses) |
 | `func_80018954` | parked | a position on screen; stack addresses (111 off, the body as an inline function) |
-| `func_80018AEC` | asm | the text drawer, 401 instructions; not written yet |
+| `func_80018AEC` | parked | the text drawer: registers, a reload |
 | `func_80019114` | parked | a prim's 2D item: scheduling of two global stores and branch layout |
 | `func_800194E4` | matches | a 2D object's draw: the page tested twice, the prim read again |
 | `func_80019578` | matches | a sequence started |
