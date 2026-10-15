@@ -452,8 +452,6 @@ void func_8009B8F8(Game69 *o, int a, Run69 *r) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_69", func_8009B9B4);
 
-/* The run's measures, sampled from its speeds, in tenths, then shown. */
-#ifdef NON_MATCHING
 // A time in hundredths as seconds and hundredths, or none
 static inline void Time69(Scr69 *s, int k, int v) {
     if (v) {
@@ -463,13 +461,13 @@ static inline void Time69(Scr69 *s, int k, int v) {
     }
 }
 
-// Registers only: the run's record in $s0 and the format's high half in $s1 where the original has them the other way round (38 off, every instruction otherwise the original's).
+/* The run's measures, sampled from its speeds, in tenths, then shown. */
 void func_8009BDB8(Game69 *o) {
     Scr69 *s = o->m_A80->m_60;
     Draw69 *d = s->m_04;
     Stats69 *r;
     int n;
-    char *a, *b;
+    char *a;
 
     func_8006976C(&d->m_174, d->m_170, d);
     func_80023E48(d, s->m_B8, 16, 2000);
@@ -498,8 +496,8 @@ void func_8009BDB8(Game69 *o) {
     sprintf(s->m_2180[10]->m_0C, D_800C92F4, r->m_10, r->m_14,
             func_80086A38(D_800C8C0C, s->m_21AC[!D_800D49A8]));
     Time69(s, 4, r->m_18);
-    n = func_800A6850(r->m_34);
-    sprintf(s->m_2180[5]->m_0C, D_800C9300, n, func_80086A38(D_800C8C0C, s->m_21AC[!D_800D49A8]));
+    sprintf(s->m_2180[5]->m_0C, D_800C9300, func_800A6850(r->m_34),
+            func_80086A38(D_800C8C0C, s->m_21AC[!D_800D49A8]));
     if (r->m_38) {
         a = func_80086A38(D_800C8C0C, s->m_21B4);
         sprintf(s->m_2180[6]->m_0C, D_800C9308, a, r->m_38 / 100, r->m_38 % 100);
@@ -507,13 +505,9 @@ void func_8009BDB8(Game69 *o) {
         sprintf(s->m_2180[6]->m_0C, D_800C9314, func_80086A38(D_800C8C0C, s->m_21B4));
     }
     n = func_800A6850(r->m_24);
-    a = func_80086A38(D_800C8C0C, s->m_21BC);
-    b = func_80086A38(D_800C8C0C, s->m_21AC[!D_800D49A8]);
-    sprintf(s->m_2180[7]->m_0C, D_800C931C, a, n, b);
+    sprintf(s->m_2180[7]->m_0C, D_800C931C, func_80086A38(D_800C8C0C, s->m_21BC), n,
+            func_80086A38(D_800C8C0C, s->m_21AC[!D_800D49A8]));
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_69", func_8009BDB8);
-#endif
 
 /* The view's four items shown (flag 2) or hidden, and its layout's two
  * values set to match. */
