@@ -182,49 +182,44 @@ void func_80016434(Cobjet *o, SVECTOR *rot, Vector3 *pos) {
     }
 }
 
-#ifdef NON_MATCHING
-/* As func_80016268, but the original keeps mx's address (its first local,
- * the frame's own register here) in $s0 and clears its translation through
- * it: 101 off (from 111) */
-/* Sets the object's rotation (in the order z, y, x) and, if given, its
- * position. */
-static inline void SetRotZYX02b(Cobjet *o, SVECTOR *rot, Vector3 *pos) {
-    MATRIX mx;
+// The rotation, z then y then x, into the caller's mx: a parameter, so its
+// address stays in a saved register as the original's
+static inline void RotZYX02b(Cobjet *o, SVECTOR *rot, MATRIX *mx) {
     SVECTOR a;
     MATRIX my;
     MATRIX mz;
     MATRIX res;
     MATRIX tmp;
+    MATRIX *m;
+
+    RotX02b(mx, &a, rot->vx);
+    RotY02b(&my, &a, rot->vy);
+    RotZ02b(&mz, &a, rot->vz);
+    m = o->m_matp;
+    func_80098674(&my, &mz, &tmp);
+    func_8009887C(mz.t, tmp.t);
+    func_800997D0(MatTrans02b(&tmp), my.t);
+    func_80098674(&tmp, mx, &res);
+    func_8009887C(mx->t, res.t);
+    func_800997D0(res.t, MatTrans02b(&tmp));
+    *m = res;
+}
+
+/* Sets the object's rotation (in the order z, y, x) and, if given, its
+ * position. */
+void func_80016600(Cobjet *o, SVECTOR *rot, Vector3 *pos) {
+    MATRIX mx;
 
     if (!o->m_matp) {
         func_80016798(o);
     }
     if (rot) {
-        MATRIX *m;
-
-        RotX02b(&mx, &a, rot->vx);
-        RotY02b(&my, &a, rot->vy);
-        RotZ02b(&mz, &a, rot->vz);
-        m = o->m_matp;
-        func_80098674(&my, &mz, &tmp);
-        func_8009887C(mz.t, tmp.t);
-        func_800997D0(MatTrans02b(&tmp), my.t);
-        func_80098674(&tmp, &mx, &res);
-        func_8009887C(mx.t, res.t);
-        func_800997D0(res.t, MatTrans02b(&tmp));
-        *m = res;
+        RotZYX02b(o, rot, &mx);
     }
     if (pos) {
         SetTrans02b(o->m_matp, pos);
     }
 }
-
-void func_80016600(Cobjet *o, SVECTOR *rot, Vector3 *pos) {
-    SetRotZYX02b(o, rot, pos);
-}
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02b", func_80016600);
-#endif
 
 /* Points the object at its own matrix. */
 void func_80016798(Cobjet *o) {
