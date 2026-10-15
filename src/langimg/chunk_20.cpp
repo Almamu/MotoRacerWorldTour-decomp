@@ -443,16 +443,13 @@ Obj20 *func_8003A86C(Scene20 *s, const char *name) {
     return r;
 }
 
-#ifdef NON_MATCHING
-// Registers: the result in $s0 and the object in $s1 in the original, swapped here
 int func_8003A9F4(Scene20 *s, const char *name, int a, int b) {
-    int v = 0;
+    int r = 0;
     Obj20 *p = func_8003A86C(s, name);
 
-    if (p) {
-        if (p->m_00 != 5) {
-            return v;
-        }
+    if (p && p->m_00 == 5) {
+        int v = 0;
+
         if (!a) {
             v = -1;
         }
@@ -460,13 +457,10 @@ int func_8003A9F4(Scene20 *s, const char *name, int a, int b) {
         if (b) {
             p->m_54 = v;
         }
-        v = 1;
+        r = 1;
     }
-    return v;
+    return r;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_20", func_8003A9F4);
-#endif
 
 Link20 *func_8003AA90(Scene20 *s, const char *name) {
     Link20 *r = 0;
