@@ -1158,6 +1158,14 @@ compiled with the chunks' own cc1plus flags:
   register for two values whose lives don't overlap, look for two
   variables in the source, not one.
 
+- **A value through an inline accessor is born again.** chunk_15's
+  `func_80030AB0` kept its argument and a stack vector's address in
+  swapped saved registers until the bike's speed was read through an
+  inline function (`int old = Speed15(b);`): the inline's result is a new
+  value copied into `old`, which changes the order the values are born
+  in and so the ties, without changing a single instruction otherwise.
+  Worth trying when the counts look equal and nothing else moves them.
+
 When two saved registers are swapped, count each value's references and
 compare their live ranges: the fix is a change that moves one of them, an
 extra or a missing use (a field read again through its owner instead of a
