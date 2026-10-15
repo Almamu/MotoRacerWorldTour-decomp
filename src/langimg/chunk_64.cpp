@@ -53,28 +53,34 @@ struct Anim64 {
     Chan64 *m_08;
 };
 
-// A key (0x20 bytes): its time at 0x1C
-struct Key64 {
+// A pose (0x1C bytes)
+struct Pose64 {
     u8 m_00[0x1C];
+};
+
+// A key (0x20 bytes): a pose and its time
+struct Key64 {
+    Pose64 m_00;
     unsigned int m_1C;
 };
 
 // A track: its keys
 struct Track64 {
     int m_00;
-    int m_04; // how many keys
-    u8 m_08[8];
+    int m_04;          // how many keys
+    unsigned int m_08; // how long
+    u8 m_0C[4];
     Key64 *m_10;
 };
 
 // What plays a track
 struct Play64 {
     int m_00; // on
-    int m_04;
+    int m_04; // when it started
     Track64 *m_08;
-    int m_0C;
-    u8 m_10[0x1C];
-    u8 m_2C[4]; // chunk_64's at func_80091544
+    int m_0C;    // the current key
+    Pose64 m_10; // the pose
+    Pose64 m_2C; // the pose it started from
 };
 
 struct Vec64 {
@@ -89,7 +95,6 @@ struct Obj64 {
     u8 m_24[0x14];
     Track64 m_38;
     Play64 m_4C;
-    u8 m_7C[0x18];
     struct Obj64 *m_94;
     Vec64 m_98;
     SVECTOR m_A4;
@@ -105,8 +110,9 @@ extern Ent64 D_800CBE60;           // the default 8-byte entry
 extern Pack64 D_800CBE68;          // the default 4-byte entry
 extern int D_800CBE58, D_800CBE5C; // how many times each was set up
 void func_80097E4C(void *a, int x, int y, int z);
-void func_80091544(void *a, int b);
-void func_80092480(Play64 *p, int a);
+void func_80091544(Pose64 *d, void *s);
+void func_80091FB4(Pose64 *d, unsigned int f, void *a, void *b);
+int func_80092480(Play64 *p, unsigned int now);
 void func_8008E0C4(Obj64 *o, void *a);
 
 void func_800913C0(Anim64 *a);
@@ -201,13 +207,44 @@ void func_8009243C(Play64 *p, Track64 *t, int a, int b) {
     if (!b) {
         b = t->m_10;
     }
-    func_80091544(p->m_2C, b);
+    func_80091544(&p->m_2C, (void *)b);
 }
 #else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_64", func_8009243C);
 #endif
 
+/* A track played to a time: the pose between its two keys, blended in
+ * from where it started over the first 100; at its end, its last key. */
+#ifdef NON_MATCHING
+// The keys' addresses: the original computes k << 5 before (k + 1) << 5 and adds the base last
+int func_80092480(Play64 *p, unsigned int now) {
+    Pose64 *pose = &p->m_10;
+    unsigned int t = now - p->m_04;
+    int k = func_800923F0(p->m_08, p->m_0C, t);
+
+    if (t < p->m_08->m_08) {
+        int j = k + 1;
+        Key64 *keys = p->m_08->m_10;
+        Key64 *a = &keys[k];
+        Key64 *b = &keys[j];
+        unsigned int f = ((t - a->m_1C) << 12) / (b->m_1C - a->m_1C);
+
+        if (t < 100) {
+            func_80091FB4(pose, f, a, b);
+            func_80091FB4(pose, (t << 12) / 100, &p->m_2C, pose);
+        } else {
+            func_80091FB4(pose, f, a, b);
+        }
+    } else {
+        func_80091544(pose, &p->m_08->m_10[p->m_08->m_04 - 1]);
+        p->m_00 = 0;
+    }
+    p->m_0C = k;
+    return p->m_00;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_64", func_80092480);
+#endif
 
 static inline void func_800925A8_cpy(Vec64 *d, Vec64 *s) {
     long x = s->m_00;
@@ -229,7 +266,7 @@ void func_800925A8(List64 *l, int a) {
             } else if (o->m_AC) {
                 func_8009243C(&o->m_4C, &o->m_38, a, 0);
             }
-            func_8008E0C4(o, o->m_4C.m_10);
+            func_8008E0C4(o, &o->m_4C.m_10);
             func_800925A8_cpy(&o->m_10, &o->m_98);
             o->m_1C = o->m_A4;
         }
