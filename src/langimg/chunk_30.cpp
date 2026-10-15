@@ -66,7 +66,7 @@ void func_80098768(MATRIX *m, Vec30 *v, Vec30 *out);
 Vec30 *func_800997D0(Vec30 *v, Vec30 *a);
 
 extern short D_800BF3A0[][2]; // sines and cosines by angle (4.12)
-extern char D_800CA7D8[];
+extern int D_800CA7D8;        // a racer object, addressed as one la
 extern int D_800CA934;
 MATRIX *func_80098674(MATRIX *a, MATRIX *b, MATRIX *out); // a product
 void func_8009887C(long *in, long *out);
@@ -142,8 +142,6 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_30", func_8004D734);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_30", func_8004E99C);
 
-#ifdef NON_MATCHING
-// With the product's two calls and both turns in inline functions (the original's addresses recomputed) only the fog clamp is left: the original loads the value into $s0 and sets 100 after a branch; written as a ?: here, GCC tests a copy (5 off).
 // A turn about z by an angle (4.12), from the sine table
 static inline void RotZ30(MATRIX *m, int a) {
     int c = D_800BF3A0[a & 0xFFF][1];
@@ -222,14 +220,14 @@ void func_8004EE10(Own30 *o, int i) {
             func_80098674(&r, &c->m_00, &out);
             Move30(c, &out, &r);
             c->m_00 = out;
-            f = p->m_6E < 100 ? 100 : p->m_6E;
-            func_8001D23C(D_800CA7D8, D_800CA934, f, 0x800, 0);
+            f = p->m_6E;
+            if (f < 100) {
+                f = 100;
+            }
+            func_8001D23C(&D_800CA7D8, D_800CA934, f, 0x800, 0);
             func_8001D23C(o->m_49C, D_800CA934, f, 0x800, 0);
         }
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_30", func_8004EE10);
-#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_30", func_8004F0C4);
