@@ -42,7 +42,7 @@ struct Motor {
     u8 m_124[0x24];
     short m_148;
     short m_14A;
-    u8 m_14C[2];
+    short m_14C;
     short m_14E;
     int m_150;
     int m_154;

@@ -12,6 +12,12 @@ extern "C" {
 void func_800297B4(Bike *b, Bike *o, int again);
 void func_8002A260(void);
 void func_8002A268(Bike *b, Vector3 *v);
+void func_8002A3F0(Bike *b);
+Vector3 *func_80099D74(Vector3 *v, int shift); // v << shift
+Vector3 *func_80099D48(Vector3 *v, int shift); // v >> shift
+Vector3 *func_800995C4(Vector3 *v, int len);
+void func_800990E8(Vector3 *v, int sh);
+void func_80026648(Bike *b, Motion *m);
 void func_8002A394(Bike *b);
 void func_8002AF3C(Bike *b);
 void func_8002ABE8(Bike *b);
@@ -135,7 +141,56 @@ void func_8002A394(Bike *b) {
     func_80031500(b);
 }
 
+#ifdef NON_MATCHING
+// Registers only: the last copy into 0x240 loads the vector's x and y into $v1 and $v0 where the original has $v0 and $v1 (4 off; struct assignment, a field copy and a pointer to 0x240 tried).
+void func_8002A3F0(Bike *b) {
+    Vector3 v, w, u;
+
+    v = b->m_2A0;
+    if (b->m_470 != 0x1000) {
+        func_800995C4(&v, b->m_470);
+    }
+    func_80099D74(&v, 3);
+    v.vx = v.vx / 10 * b->m_298 / 100;
+    v.vy = v.vy / 10 * b->m_298 / 100;
+    v.vz = v.vz / 10 * b->m_298 / 100;
+    if (!b->m_40D) {
+        func_8002A268(b, &v);
+    }
+    if (b->m_29C > 0x2000) {
+        VecCopyL(&b->m_360, &v);
+        func_800990E8(&b->m_360, 20);
+    } else {
+        VecCopyL(&b->m_360, &v);
+        func_80098F94(&b->m_360, 20);
+    }
+    func_80099D74(&b->m_360, 6);
+    VecCopyL(&b->m_36C, &v);
+    func_80099D48(&v, 3);
+    func_80099898(&w, &b->m_5CC->m_04, &v);
+    VecCopyL(&b->m_5D0->m_04, &w);
+    VecCopyL(&b->m_3C4, &b->m_3DC);
+    VecCopyL(&b->m_3D0, &b->m_3E8);
+    if (b->m_58) {
+        w = b->m_330;
+        func_80099D48(&w, 9);
+        func_800995C4(&w, b->m_motor->m_14E);
+        func_80099898(&u, &b->m_5D0->m_04, &w);
+        VecCopyL(&b->m_234, &u);
+        VecCopyL(&w, &b->m_330);
+        func_80099D48(&w, 9);
+        func_800995C4(&w, b->m_motor->m_14C);
+        func_800998D0(&u, &b->m_234, &w);
+        VecCopyL(&b->m_240, &u);
+    } else {
+        func_80026648(b, b->m_5D0);
+    }
+    VecCopyL(&b->m_3DC, &b->m_234);
+    VecCopyL(&b->m_3E8, &b->m_240);
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_12", func_8002A3F0);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_12", func_8002A7A0);
 

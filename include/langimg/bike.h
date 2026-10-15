@@ -198,7 +198,8 @@ struct Bike {
     int m_400;
     u8 m_pad404[0x8];
     s8 m_40C;
-    u8 m_pad40D[0x2];
+    s8 m_40D;
+    u8 m_pad40E[0x1];
     s8 m_40F;
     s8 m_410;
     u8 m_pad411[0x1];
