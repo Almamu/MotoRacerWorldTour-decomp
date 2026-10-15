@@ -16,7 +16,7 @@ one). Through its two views (`m_A80`, `m_A84`, chosen by the mode at
 
 One file, `src/langimg/chunk_69.cpp`, 0x8009B17C-0x8009D0E4.
 
-23 functions: 17 match, 2 are parked, 4 are still asm.
+23 functions: 17 match, 3 are parked, 3 are still asm.
 
 ## The settings
 
@@ -48,12 +48,21 @@ global.
   differing bytes, mapped to an address (`0x80011800 + offset - 0x10`),
   pointed at it.
 
+## Group C, continued
+
+- `func_8009B5E8` (the settings screen filled from the record: the
+  fields hidden or shown by the record's mode, eight values set through
+  `func_8009B8F8`, the name copied) is written and parked, 10 off, in
+  registers only. The entries' counter incremented in a statement of its
+  own (`k++;` after the call, not `s->m_5C[k++]` in it) took it from 153
+  to 10. `Scr69` now names its fields at 0x30 to 0xA4.
+
 ## The functions
 
 | Function | State | Notes |
 |---|---|---|
 | `func_8009B17C` | asm | 283 instructions |
-| `func_8009B5E8` | asm | 148 instructions |
+| `func_8009B5E8` | parked | the settings screen filled: 10 off |
 | `func_8009B838` | matches | the name copied to the drawing |
 | `func_8009B8BC` | matches | a call when there's a screen |
 | `func_8009B8F8` | matches | a part moved by a fraction |

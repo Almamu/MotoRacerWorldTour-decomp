@@ -16,7 +16,7 @@ Also:
 
 One file, `src/langimg/chunk_58.cpp`, 0x80085258-0x80087468.
 
-19 functions: 10 match, 3 are parked, 6 are still asm.
+19 functions: 10 match, 4 are parked, 5 are still asm.
 
 ## The settings
 
@@ -44,6 +44,16 @@ small globals.
   address with an `la` (chunk_28 has the rule). An earlier try, a second
   unsized declaration of the symbol, left two registers swapped.
 
+## Group C, continued
+
+- `func_80085900` (the start's lights: the step's progress clamped to
+  0..0x1000, the lamps lit one by one, the go, and the lights' size) is
+  written and parked, 65 off. `Set58` is now the lights' state (centre,
+  corner, size, the lamps' kinds and levels, the step and its timing).
+  Its switch's jump table and bodies are the original's; GCC merges the
+  first branch's size store into the second branch's tail, and the clamp
+  and the bike's lookup come out in another order.
+
 ## The functions
 
 | Function | State | Notes |
@@ -51,7 +61,7 @@ small globals.
 | `func_80085258` | parked | five entries' flags set: the table's address register |
 | `func_80085284` | asm | 386 instructions |
 | `func_80085888` | parked | a settings block filled: the stores' order |
-| `func_80085900` | asm | 214 instructions |
+| `func_80085900` | parked | the start's lights: 65 off |
 | `func_80085C28` | asm | 458 instructions |
 | `func_80086350` | matches | the camera set at a point |
 | `func_800863CC` | matches | the camera moved to a point over a time |
