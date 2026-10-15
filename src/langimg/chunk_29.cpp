@@ -513,11 +513,13 @@ void func_8004C184(Named29 *o, int f) {
     CNameDtor29(o, f);
 }
 
-#ifdef NON_MATCHING
-// The player's bike index's address: the original adds the index to g+0x470; GCC adds 0x470 to the index first (2 off; with the base in a local first the order comes right but -1 and the pointer swap registers, 8 off).
+static inline s8 *Picks29(Game29 *g) {
+    return g->m_470;
+}
+
 int func_8004C1BC(Game29 *g, int i, int k) {
     Ref29 *r = func_80078FC4(&D_800CBC94, g->m_18);
-    s8 *pk = &g->m_470[i];
+    s8 *pk = Picks29(g) + i;
     Bk29 *b;
 
     if (*pk != (s8)-1) {
@@ -558,9 +560,6 @@ int func_8004C1BC(Game29 *g, int i, int k) {
     }
     return 1;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_29", func_8004C1BC);
-#endif
 
 void func_8004C38C(Game29 *g) {
     int i;

@@ -14,7 +14,7 @@ The display's object (`Gfx52`) and the graphics system around it:
 
 One file, `src/langimg/chunk_52.cpp`, 0x800792DC-0x8007B3C0.
 
-27 functions: 13 match, 5 are parked, 9 are still asm.
+27 functions: 14 match, 4 are parked, 9 are still asm.
 
 ## The settings
 
@@ -54,7 +54,7 @@ globals.
 | `func_800795A0`, `func_800795FC` | match | the buffer allocated and freed |
 | `func_80079648` | parked | the user's callback set: two `%hi` registers swap (4 off) |
 | `func_8007968C` | parked | the frame swapped: two loads' order |
-| `func_80079848` | parked | the entries drawn: the system pointer's `%hi` kept in a register |
+| `func_80079848` | matches | the entries drawn |
 | `func_800798FC` | parked | the drawing area: addresses |
 | `func_80079AE4` | parked | the GTE's matrix: two saved registers swap (9 off) |
 | `func_80079C50` | asm | a GTE primitive (93 instructions) |
@@ -78,3 +78,12 @@ globals.
   the ordering table's last entry, offset by the buffer unless 0x15C is
   set) is parked 127 off: the original builds each global's high half
   once and keeps it (`$a3`, `$t0`, `$t1`), GCC builds it at each use.
+
+## Group B near-misses
+
+- `func_80079848` matched (from 51 off): the entry's four fields are read
+  into locals in order before the call that takes them
+  (`int a0 = e->m_00, a1 = e->m_04, a2 = e->m_08, a3 = e->m_0C;`). With
+  that the system pointer's `%hi` is no longer hoisted out of the loop into
+  `$s3`, the frame is the original's 0x28, and the loads come in the
+  original's order.

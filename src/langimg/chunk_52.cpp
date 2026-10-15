@@ -335,8 +335,6 @@ int func_8007968C(Disp52 *d) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_52", func_8007968C);
 #endif
 
-#ifdef NON_MATCHING
-// The system pointer's %hi: the original loads it each time round, ours keeps it in $s3
 void func_80079848(Gfx52 *g) {
     int i;
 
@@ -347,13 +345,14 @@ void func_80079848(Gfx52 *g) {
             Sys52 *y = D_800C886C[0];
 
             y->m_68[14].m_func((char *)y + y->m_68[14].m_delta, i);
-            func_800798FC(g, e->m_00, e->m_04, e->m_08, e->m_0C);
+            {
+                int a0 = e->m_00, a1 = e->m_04, a2 = e->m_08, a3 = e->m_0C;
+
+                func_800798FC(g, a0, a1, a2, a3);
+            }
         }
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_52", func_80079848);
-#endif
 
 // Links packet p in at ordering table entry ot (ui.h's ADD_PRIM)
 #define ADD_PRIM52(ot, p) \
