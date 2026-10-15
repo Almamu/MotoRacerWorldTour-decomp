@@ -7,7 +7,7 @@ a pack's header and blocks found by a hash of their names, a CRC check.
 Also a glyph lookup for text and a fast fill. One file,
 `src/langimg/chunk_72.cpp`, 0x800A1110-0x800A32A0.
 
-59 functions: 50 match, 7 are parked, 2 are still asm.
+59 functions: 51 match, 6 are parked, 2 are still asm.
 
 ## The settings
 
@@ -42,7 +42,7 @@ macro.
 | `func_800A1654`, `func_800A17EC` | match | the loading spinner; a picture shown |
 | `func_800A195C` | parked | the game started: one instruction placed |
 | `func_800A1B4C` | matches | |
-| `func_800A1B54` | parked | the sounds' data by id: a hoisted `lui` (32 off) |
+| `func_800A1B54` | matches | the sounds' data by id (the data pointer declared small) |
 | `func_800A1BD0` to `func_800A1C74` | match | the CD's start, a file searched for twice |
 | `func_800A1CF8`, `func_800A1EFC` | parked | the CD reader (87 off); a block by its name's hash (74 off) |
 | `func_800A207C` | matches | a file's header, its entries' positions |
@@ -95,3 +95,15 @@ macro.
   instruction off: the original sets the 1 it keeps in `$s0` in the delay
   slot of `func_800A0CC4`'s call; GCC puts it in `ResetCallback`'s, which
   shifts the rest.
+
+## Inline helpers and small symbols
+
+- `func_800A1B54` (the 163 sounds' data found by their ids) matches. The
+  data pointer `D_800CBE84` is read with its own `lui` inside the loop in
+  the original; declared as a plain pointer (`extern char *D_800CBE84;`,
+  small by size, not one of the chunk's small globals) GCC addresses it
+  `$gp`-relative and maspsx expands each read into `lui`/`lw`, which loop
+  optimisation can't hoist. The counter first, then the output pointer,
+  then the ids gave the original's saved registers.
+- `func_800A1CF8` stays 2 off (the hook's address's high half in `$v1`);
+  not tried with these changes.

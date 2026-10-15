@@ -55,7 +55,7 @@ globals `D_800CBE58`, `D_800CBE5C` and `D_800CBE68`.
 
 | Function | State | Notes |
 |---|---|---|
-| `func_800910EC` | parked | the channels posed under a root matrix: registers |
+| `func_800910EC` | parked | the channels posed under a root matrix: 6 off |
 | `func_800912AC` | matches | each channel's position |
 | `func_800913C0` | matches | channels refreshed |
 | `func_80091414`, `func_800914AC` | match | an entry by id, or the default |
@@ -96,3 +96,15 @@ globals `D_800CBE58`, `D_800CBE5C` and `D_800CBE68`.
   computes it at each use, and the order list and the root are in swapped
   saved registers. `Anim64` gained its model at 4, position at 0x10 and
   angles at 0x1C.
+
+## Inline helpers and small symbols
+
+- `func_800910EC` (the channels posed under a root matrix): 82 off to 6.
+  The rotation's call goes through an inline function (`Rot64(&t, c)`), so
+  the scratch matrix's address is computed for the call and for `out` as
+  the original's instead of being hoisted into a saved register (#289's
+  finding); the coordinates declared `long z, y, x` gave the original's
+  registers for the translation's sums. Left: inside `Rot64`, the part
+  pointer is loaded before the first angle and the other two angles are in
+  swapped registers; four other forms of the helper and a 15-minute
+  permuter run didn't change it.

@@ -6,7 +6,7 @@ table, `strupr` and `strlwr`, number and time formatting, a small
 overlay loader, cheat-code sequences, and hand-written decoders. One
 file, `src/langimg/chunk_74.cpp`, 0x800A54F0-0x800A7084.
 
-43 functions: 30 match, 6 are hand-written (they stay asm), 6 are
+43 functions: 31 match, 6 are hand-written (they stay asm), 5 are
 parked, 1 is still asm.
 
 ## The settings
@@ -60,7 +60,7 @@ instructions GCC doesn't emit (`neg`, `add`, `addi`) or handles `$sp` and
 | `func_800A57E4`, `func_800A5888` | match | the timer object's constructor and deleting destructor |
 | `func_800A58B0` | matches | a counter advanced by `m_150 * 64 / 1000` of the game object, and returned |
 | `func_800A5908`, `func_800A594C` | match | the timer's reset and start |
-| `func_800A59D4` | parked | the timer each frame: two registers swapped (8 off) |
+| `func_800A59D4` | matches | the timer each frame |
 | `func_800A5BB8`, `func_800A5CBC` | match | the frame's length, a pause flag |
 | `func_800A5CD0` | parked | milliseconds as minutes, seconds, hundredths: the divisions' registers |
 | `func_800A5D2C`, `func_800A5D68` | match | the global timer's reference count |
@@ -86,3 +86,11 @@ instructions GCC doesn't emit (`neg`, `add`, `addi`) or handles `$sp` and
 - `func_800A63FC` is C after all (it is off `config/langimg/handwritten.txt`):
   the 8-byte frame is a local whose address is the stack's (`if (((int)&here
   >> 16) != 0x1800)`), and the copy a `for (i = 255; i != -1; i--)` loop.
+
+## Inline helpers and small symbols
+
+- `func_800A59D4` (the timer each frame) matches: the four frames' lengths
+  summed by index (`o->m_24 += q[i]`) instead of a walking pointer, which
+  gave the original's two registers, and the frame's slot stored through
+  its byte offset (`*(int *)((u8 *)q + (o->m_38 << 2))`), which adds the
+  base first as the original does.
