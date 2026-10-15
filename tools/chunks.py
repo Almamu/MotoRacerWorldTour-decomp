@@ -107,7 +107,7 @@ def functions(target):
         sys.exit(f"{elf} is missing: run make first")
     res = subprocess.run(
         [cross("readelf"), "-sW", str(elf)],
-        capture_output=True, text=True, check=True,
+        capture_output=True, text=True, check=True, env={**os.environ, "LC_ALL": "C"},
     ).stdout
     funcs = {}
     for line in res.splitlines():
@@ -258,10 +258,68 @@ def nonzero(d):
     return {k: v for k, v in d.items() if v not in (0, 0.0, "0", None, [], {})}
 
 
+def similarity(have, want):
+    """How much of a function's compiled code is the original's, in percent:
+    the instructions in common once the two are aligned (difflib), over the
+    longer of the two, so an extra or missing instruction costs one, not
+    everything after it. Where a side has a relocation, only the opcode and
+    registers count, as in tools/try_func.py."""
+    import difflib
+
+    import rabbitizer
+
+    def key(word, reloc):
+        if not reloc:
+            return word
+        return word & (0xFC000000 if rabbitizer.Instruction(word).isJType() else 0xFFFF0000)
+
+    a = [key(w, r) for w, r in have]
+    b = [key(w, r) for w, r, _ in want]
+    if not a or not b:
+        return 0.0
+    common = sum(m.size for m in difflib.SequenceMatcher(None, a, b, autojunk=False).get_matching_blocks())
+    return 100 * common / max(len(a), len(b))
+
+
+def measure_parked(rows):
+    """{name: similarity} of the parked functions of a target's chunks: each
+    chunk with any is compiled with -DNON_MATCHING into a scratch object (the
+    Makefile's own command, as tools/try_func.py does) and each parked
+    function compared with its .s file. One that doesn't build counts 0."""
+    import tempfile
+
+    import try_func
+
+    out = {}
+    for c in rows:
+        parked = [f for f in c["funcs"] if f["state"] == "parked"]
+        if not parked:
+            continue
+        with tempfile.TemporaryDirectory() as d:
+            obj = Path(d) / "out.o"
+            cmd = try_func.compile_cmd(c["target"], ROOT / c["src"], obj, ["NON_MATCHING"])
+            r = subprocess.run(["bash", "-o", "pipefail", "-c", cmd], cwd=ROOT, capture_output=True, text=True)
+            for f in parked:
+                asm = ROOT / "asm" / c["target"] / "nonmatchings" / c["name"] / f"{f['name']}.s"
+                try:
+                    have = try_func.object_words(obj, f["name"]) if r.returncode == 0 and obj.exists() else []
+                except SystemExit:
+                    have = []
+                out[f["name"]] = similarity(have, try_func.target_words(asm)) if asm.exists() else 0.0
+    return out
+
+
+def fuzzy(f):
+    """A function's match percent: 100 matched, its measured similarity
+    parked (cmd_report sets f["fuzzy"]), 0 still asm."""
+    return 100.0 if f["state"] in DONE else f.get("fuzzy", 0.0)
+
+
 def report_measures(units):
     """objdiff's Measures for [(funcs, complete)]: matched as for the badges
-    (C that matches, Sony's objects, hand-written asm). A unit is complete
-    when all its functions are."""
+    (C that matches, Sony's objects, hand-written asm), the fuzzy match
+    weighted by size with the parked functions at their similarity. A unit is
+    complete when all its functions are."""
     funcs = [f for fs, _ in units for f in fs]
     total = sum(f["size"] for f in funcs)
     matched = sum(f["size"] for f in funcs if f["state"] in DONE)
@@ -270,7 +328,7 @@ def report_measures(units):
     complete = sum(f["size"] for fs, done in units if done for f in fs)
     ncomplete = sum(1 for _, done in units if done)
     return nonzero({
-        "fuzzy_match_percent": pct(matched, total),
+        "fuzzy_match_percent": pct(sum(f["size"] * fuzzy(f) / 100 for f in funcs), total),
         "total_code": str(total),
         "matched_code": str(matched),
         "matched_code_percent": pct(matched, total),
@@ -287,11 +345,19 @@ def report_measures(units):
 def cmd_report(args):
     """The progress report, in objdiff's report.json format (docs/decomp.md,
     "Progress"). One unit per chunk with its functions, in the categories
-    <target> and <target>_game or <target>_lib. CI uploads it as the
+    <target> and <target>_game or <target>_lib, the parked functions at their
+    measured similarity (measure_parked). CI uploads it as the
     `report` artifact, where progress sites (decompilati.onl) read it."""
     units, cats = [], {}
+    surveys = {t: survey(t) for t in TARGETS}
     for target, info in TARGETS.items():
-        for c in survey(target):
+        scores = measure_parked(surveys[target])
+        for c in surveys[target]:
+            for f in c["funcs"]:
+                if f["name"] in scores:
+                    f["fuzzy"] = scores[f["name"]]
+    for target, info in TARGETS.items():
+        for c in surveys[target]:
             if not c["funcs"]:
                 continue
             done = all(f["state"] in DONE for f in c["funcs"])
@@ -307,13 +373,13 @@ def cmd_report(args):
                 "sections": [nonzero({
                     "name": ".text",
                     "size": str(size),
-                    "fuzzy_match_percent": pct(sum(f["size"] for f in c["funcs"] if f["state"] in DONE), size),
+                    "fuzzy_match_percent": pct(sum(f["size"] * fuzzy(f) / 100 for f in c["funcs"]), size),
                     "metadata": {"virtual_address": hex(c["lo"])},
                 })],
                 "functions": [nonzero({
                     "name": f["name"],
                     "size": str(f["size"]),
-                    "fuzzy_match_percent": 100.0 if f["state"] in DONE else 0.0,
+                    "fuzzy_match_percent": fuzzy(f),
                     "address": hex(f["addr"] - c["lo"]),
                     "metadata": {"virtual_address": hex(f["addr"])},
                 }) for f in c["funcs"]],
@@ -325,7 +391,7 @@ def cmd_report(args):
                 }),
             }))
     all_units = [(c["funcs"], all(f["state"] in DONE for f in c["funcs"]))
-                 for t in TARGETS for c in survey(t) if c["funcs"]]
+                 for t in TARGETS for c in surveys[t] if c["funcs"]]
     report = {
         "measures": report_measures(all_units),
         "units": units,
@@ -338,7 +404,8 @@ def cmd_report(args):
     out.write_text(json.dumps(report, indent=1) + "\n")
     m = report["measures"]
     print(f"{int(m['matched_code']):,}/{int(m['total_code']):,} bytes "
-          f"({m['matched_code_percent']:.2f}%), {m['matched_functions']}/{m['total_functions']} functions, "
+          f"({m['matched_code_percent']:.2f}%, fuzzy {m['fuzzy_match_percent']:.2f}%), "
+          f"{m['matched_functions']}/{m['total_functions']} functions, "
           f"{m.get('complete_units', 0)}/{m['total_units']} chunks complete")
 
 
