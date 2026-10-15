@@ -216,6 +216,46 @@ int func_80096B74(Bits66 *b, int n);
 int func_80096D84(Bits66 *b, int n, ...);
 
 int func_800963BC(void);
+// A camera's projection (chunk_65's Proj65)
+struct Proj66 {
+    int m_00;
+    int m_04;
+    int m_08;
+    int m_0C;
+    int m_10;
+    int m_14;
+    int m_18;
+    int m_1C;
+    int m_20;
+    int m_24;
+    int m_28;
+    int m_2C;
+    int m_30;
+    int m_34;
+    int m_38;
+    int m_3C;
+    int m_40;
+    int m_44;
+    int m_48;
+    int m_4C;
+};
+struct Owner66 {
+    u8 m_00[0x13C];
+    struct Proj66 *m_13C;
+};
+// A view: its position and its projection
+struct View66 {
+    u8 m_00[8];
+    int m_08;
+    int m_0C;
+    u8 m_10[0x8C];
+    Owner66 *m_9C;
+    Proj66 m_A0;
+    int m_F0;
+};
+extern short D_800BA884[];
+long ratan2(long y, long x);
+void func_80095F84(View66 *o);
 int func_80096884(Bits66 *b);
 int func_800968D4(Bits66 *b);
 int func_80096508(void);
@@ -464,7 +504,39 @@ int func_800958E0(Obj66 *o) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_66", func_8009593C);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_66", func_80095F84);
+// The projection's derived values (chunk_65's func_80093C80, chunk_60's func_800893E8)
+static inline void Proj66Set(Proj66 *p) {
+    int a = p->m_20 * p->m_44 / p->m_24;
+    int t;
+
+    p->m_14 = p->m_00;
+    p->m_18 = p->m_04;
+    p->m_28 = p->m_08;
+    p->m_30 = p->m_10;
+    p->m_2C = p->m_0C;
+    p->m_40 = a;
+    t = (p->m_08 << 12) / (D_800BA884[(p->m_10 / 2) & 0xFFF] * 2);
+    p->m_3C = t;
+    p->m_38 = ratan2(p->m_0C << 12, t * (a << 1)) * 2;
+    p->m_4C = (p->m_40 * p->m_40) >> 16;
+    p->m_48 = (D_800BA884[(p->m_30 / 2) & 0xFFF] << 8) / D_800BA884[(p->m_34 / 2) & 0xFFF];
+}
+
+/* The view's projection given its size, then passed to its owner. */
+void func_80095F84(View66 *o) {
+    Proj66 *p = &o->m_A0;
+
+    int x = o->m_08;
+    int y = o->m_0C;
+
+    p->m_08 = x;
+    p->m_0C = y;
+    Proj66Set(p);
+    o->m_F0 = p->m_3C << 12;
+    if (o->m_9C) {
+        o->m_9C->m_13C = p;
+    }
+}
 
 #ifdef NON_MATCHING
 /* The scale's two branches and the saved registers in another order (42 off) */

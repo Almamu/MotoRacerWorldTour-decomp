@@ -103,11 +103,27 @@ struct Three71 {
     int m_78; // the current one
 };
 
+// A name, 11 bytes (chunk_38's Name38)
+struct Cell71 {
+    s8 m_00[11];
+};
+// A track (chunk_69's)
+struct Trk71 {
+    u8 m_00[0x18];
+    int m_18;
+};
+struct Lvl71 {
+    u8 m_00[4];
+    Trk71 *m_04;
+};
 // The cards' state
 struct Card71 {
     int m_00;
     Three71 m_04;
-    u8 m_80[0xD8];
+    u8 m_80[0x94];
+    int m_114;
+    u8 m_118[0x3C];
+    int m_154;
     u32 m_b0 : 1;
     u32 m_b1 : 1;
     u32 m_b2 : 1;
@@ -115,15 +131,22 @@ struct Card71 {
     u32 m_b4 : 1;
     u32 m_b5 : 26;
     u32 m_b31 : 1; // 0x158
-    u8 m_15C[0x1450];
+    Cell71 m_15C[48];
+    Cell71 m_36C[11][16];
+    u8 m_AFC[0xAB0];
     int m_15AC;
     u8 m_15B0[0x28];
     Group71 m_15D8;
     u8 m_1624[4];
     int m_1628;
-    u8 m_162C[0x7C];
+    u8 m_162C[0x70];
+    int m_169C;
+    int m_16A0;
+    int m_16A4;
     int m_16A8;
-    u8 m_16AC[0x20];
+    u8 m_16AC[0xC];
+    int m_16B8;
+    u8 m_16BC[0x10];
     int m_16CC;
     u8 m_16D0[4];
     int m_16D4;
@@ -233,6 +256,8 @@ extern u8 D_800D489C[];
 extern int D_800C9EDC, D_800C9EE0, D_800C9EE4, D_800C9EE8, D_800C9EEC, D_800C9EF0, D_800C9EF4,
     D_800C9EF8, D_800C9EFC;
 extern int D_800C8D8C, D_800C6710;
+extern Lvl71 *D_800C6710_ asm("D_800C6710"); // also read here as a pointer
+Cell71 *func_800A09C0(Card71 *c);
 int func_800A5530(char *name, void **t, int n, int a, int b, int c, int d);
 
 void func_8009FB58(Menu71 *m);
@@ -831,7 +856,36 @@ void func_800A0884(u8 *p) {
     func_8006FA30(6, v[6] * 63 / 100);
 }
 
+/* The name in the current cell, or 0 (when racing, or past the 11th row). */
+#ifdef NON_MATCHING
+// The tests and both lookups as the original; the card is kept in $a3 where the original has $a2, so the copy of the local {2, 1, 0} uses $t0-$t2 rather than $a3-$t1 (35 off).
+Cell71 *func_800A09C0(Card71 *c) {
+    Cell71 *r;
+    int k;
+
+    if (c->m_16A4 == 1) {
+        goto none;
+    }
+    k = c->m_16A0;
+    if (k >= 11) {
+        return 0;
+    }
+    if (!c->m_154 || c->m_16A8 == 4) {
+    none:
+        return 0;
+    }
+    if (c->m_114) {
+        r = &c->m_36C[k][c->m_16B8 + c->m_169C * 8];
+    } else {
+        int t[3] = {2, 1, 0};
+
+        r = &c->m_15C[c->m_16B8 + c->m_169C * 8 + t[D_800C6710_->m_04[k].m_18 - 1] * 16];
+    }
+    return r;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_800A09C0);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_800A0AE8);
 
