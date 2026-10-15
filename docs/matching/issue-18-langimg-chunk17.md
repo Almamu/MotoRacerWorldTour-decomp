@@ -20,7 +20,7 @@ calls in a row.
 
 One file, `src/langimg/chunk_17.cpp`, 0x80033720-0x80035518.
 
-18 functions: 13 match, 2 are parked, 3 are still asm.
+18 functions: 14 match, 1 is parked, 3 are still asm.
 
 ## The settings
 
@@ -65,7 +65,7 @@ global (`D_800C4D78`).
 | `func_80033D4C` | matches | the view reset |
 | `func_80033E4C` | parked | the view each frame: the digits' loop and a flag's `sltiu` (183 off, 205 of 209 instructions built) |
 | `func_80034190` | matches | a vector halved, clamped and smoothed |
-| `func_8003425C` | parked | a camera from the view: the stack matrices' addresses kept in saved registers (118 off, as chunk_30's cameras) |
+| `func_8003425C` | matches | a camera from the view (inline helpers, see below) |
 | `func_8003442C` | asm | 316 instructions |
 | `func_8003491C` | matches | what the view looks at |
 | `func_800349C0` | matches | what it looks at changed |
@@ -77,3 +77,17 @@ global (`D_800C4D78`).
 | `func_80034D14` | matches | four calls |
 | `func_80034D60` | asm | 476 instructions |
 | `func_800354D0` | matches | eight words copied out |
+
+## Stack-address pass
+
+- `func_8003425C` matches. The original recomputes the addresses of some
+  stack matrices at each call and keeps others in saved registers: the
+  recomputed ones are an inline function's (code inlined from an
+  `inline` function computes each argument straight into its register).
+  Written with two inline helpers, `func_8003425C_turn` (its own
+  `SVECTOR` and matrix, the caller's matrix `m2` in a block passed in)
+  and `func_8003425C_offset` (its own two vectors), the angle passed as
+  an `int` (the original's `lw`), and the translation passed through an
+  inline accessor `MatTrans17(&out)`, which keeps `out.t` in `$s3` as
+  the original does (the permuter's find). docs/matching_techniques.md,
+  "Stack addresses kept or recomputed: inline functions".

@@ -70,7 +70,7 @@ case-folded `strncmp` that uses `$a2` as its length. So `Equals` is
 | `func_8001865C` | matches | textures resolved; its body inside `do { } while (0)` (the permuter) |
 | `func_80018814` | matches | a wait: `i = 10; while (i--);` |
 | `func_8001889C`, `func_800188CC` | match | a rotation; the alignment table (split addresses) |
-| `func_80018954` | parked | a position on screen; stack addresses (open problem) |
+| `func_80018954` | parked | a position on screen; stack addresses (111 off, the body as an inline function) |
 | `func_80018AEC` | asm | the text drawer, 401 instructions; not written yet |
 | `func_80019114` | parked | a prim's 2D item: scheduling of two global stores and branch layout |
 | `func_800194E4` | matches | a 2D object's draw: the page tested twice, the prim read again |
