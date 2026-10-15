@@ -27,7 +27,11 @@ Vector3 *func_800994F0(Vector3 *v, int a, int shift); // v * a >> shift
 void func_80031078(Bike *b);
 void func_80031138(Bike *b);
 void func_80031500(Bike *b);
-void func_80098F94(Vector3 *v, int shift);            // normalized
+void func_80098F94(Vector3 *v, int shift); // normalized
+// func_800998D0 (a - b) as this file's original saw it: returning nothing.
+// The definition (chunk_68) returns d; declared so, func_8002A3F0's last
+// copy gets its registers swapped.
+void func_800998D0_void(Vector3 *d, Vector3 *a, Vector3 *b) __asm__("func_800998D0");
 int func_80099C20(Vector3 *a, Vector3 *b, int shift); // a dot product
 int func_8009923C(Vector3 *v);
 Vector3 *func_80022D20(Vector3 *out, Vector3 *in);
@@ -143,8 +147,6 @@ void func_8002A394(Bike *b) {
     func_80031500(b);
 }
 
-#ifdef NON_MATCHING
-// Registers only: the last copy into 0x240 loads the vector's x and y into $v1 and $v0 where the original has $v0 and $v1 (4 off; struct assignment, a field copy and a pointer to 0x240 tried).
 void func_8002A3F0(Bike *b) {
     Vector3 v, w, u;
 
@@ -182,7 +184,7 @@ void func_8002A3F0(Bike *b) {
         VecCopyL(&w, &b->m_330);
         func_80099D48(&w, 9);
         func_800995C4(&w, b->m_motor->m_14C);
-        func_800998D0(&u, &b->m_234, &w);
+        func_800998D0_void(&u, &b->m_234, &w);
         VecCopyL(&b->m_240, &u);
     } else {
         func_80026648(b, b->m_5D0);
@@ -190,9 +192,6 @@ void func_8002A3F0(Bike *b) {
     VecCopyL(&b->m_3DC, &b->m_234);
     VecCopyL(&b->m_3E8, &b->m_240);
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_12", func_8002A3F0);
-#endif
 
 #ifdef NON_MATCHING
 // Registers only, in the steering branch for state 6: the input's magnitude and the angle at 0x3B0 in swapped registers ($v1/$a0 against $a0/$v1), 13 off. The rest (the dead-zone, the clamp into a temporary, the two bounded wrap loops) as the original.
