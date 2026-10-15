@@ -342,7 +342,7 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_35", func_800574EC);
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_35", func_80057814);
 
 #ifdef NON_MATCHING
-// The original keeps -1 in a saved register for the bikes' laps and walks the bikes with two pointers (the bike and its lap); GCC loads -1 in the loop, which takes a saved register less and shifts the rest (116 off).
+// The original keeps -1 in a saved register for the bikes' laps and walks the bikes with two pointers (the bike and its lap); with -fmove-all-movables (the chunk's flag) it went from 116 to 38 off, the rest registers.
 int func_80057B18(Own35 *o) {
     int i, j;
     Bike35 *b = o->m_378->m_2E8;
@@ -417,7 +417,7 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_35", func_80057FC4);
 #endif
 
 #ifdef NON_MATCHING
-// The constant 3 for the kinds' tests: the original loads it in $t0 in the outer loop and hoists it to $fp for the inner loop only; GCC hoists it out of the outer loop, one instruction earlier, which shifts the rest (119 off, registers otherwise right).
+// The constant 3 for the kinds' tests: the original hoists it to $fp for the inner loop only; with -fmove-all-movables (the chunk's flag) it went from 119 to 33 off.
 void func_80058070(Own35 *o) {
     int i, k;
     Bike35 *b, *a;

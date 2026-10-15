@@ -427,7 +427,7 @@ void func_80048DD0(Obj27 *o, int f) {
 
 /* Each racer given its tile's slot: the players', the race's, then the others'. */
 #ifdef NON_MATCHING
-// The original keeps the players' count on the stack and the tile's call in other registers
+// The original keeps the players' count on the stack and the tile's call in other registers (75 off with -fmove-all-movables)
 int func_80048EC4(Obj27 *o) {
     Peer27 *p = func_80078FC4(D_800CBC94, o->m_state);
     int r = VCALL1(o, 20, 1);

@@ -558,7 +558,7 @@ Def31 *func_800508B4(void *a, const char *name, int kind) {
 }
 
 #ifdef NON_MATCHING
-// Registers: the original keeps 2 for the last mode's test in $fp and walks the bikes' second byte array by pointer
+// Registers: the original keeps 2 for the last mode's test in $fp and walks the bikes' second byte array by pointer (6 off with -fmove-all-movables)
 /* The bikes' objects made and named, each listed by its mode; "Moto X" too. */
 void func_80050A4C(Run31 *r) {
     char name[32];
