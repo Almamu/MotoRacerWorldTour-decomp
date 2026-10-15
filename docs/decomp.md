@@ -31,7 +31,7 @@ What git holds and what it doesn't:
 | Code                          | Compiler                           | Language |
 |-------------------------------|------------------------------------|----------|
 | `LANGIMG.DAT` (`src/langimg`) | GCC 2.95.2, PlayStation build      | C++      |
-| `LANGIMG.DAT`'s functions between the classes (`src/langimg` chunk_02 to chunk_12, chunk_17, chunk_19, chunk_21, chunk_22, chunk_23, chunk_25, chunk_26, chunk_27, chunk_28, chunk_29, chunk_31, chunk_33, chunk_39, chunk_40, chunk_41, chunk_44, chunk_45, chunk_46, chunk_47, chunk_49, chunk_50, chunk_51, chunk_52, chunk_55, chunk_56, chunk_57, chunk_58, chunk_59, chunk_60, chunk_61, chunk_64, chunk_66, chunk_67, chunk_68, chunk_69, chunk_70, chunk_71, chunk_72, chunk_73, chunk_74) | GCC 2.91.66, PlayStation build | C++ |
+| `LANGIMG.DAT`'s functions between the classes (`src/langimg` chunk_02 to chunk_12, chunk_17, chunk_19, chunk_21, chunk_22, chunk_23, chunk_25, chunk_26, chunk_27, chunk_28, chunk_29, chunk_31, chunk_33, chunk_37, chunk_39, chunk_40, chunk_41, chunk_44, chunk_45, chunk_46, chunk_47, chunk_49, chunk_50, chunk_51, chunk_52, chunk_55, chunk_56, chunk_57, chunk_58, chunk_59, chunk_60, chunk_61, chunk_64, chunk_66, chunk_67, chunk_68, chunk_69, chunk_70, chunk_71, chunk_72, chunk_73, chunk_74) | GCC 2.91.66, PlayStation build | C++ |
 | `LANGIMG.DAT`'s sound engine (`lib/sound`) | GCC 2.91.66, PlayStation build | C++ (or C) |
 | `SCES_030.37` (`src/sces`)    | GCC 2.91.66 (egcs 1.1.2), PlayStation build | C++      |
 | Sony's libraries in both (`lib/psyq`) | not identified yet ([libraries.md](libraries.md)) | C |
