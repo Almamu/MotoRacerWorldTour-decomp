@@ -92,7 +92,7 @@ settings
 | `src/langimg` chunk_23 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=D_800CABB7` |
 | `src/langimg` chunk_45 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (eleven) |
 | `src/langimg` chunk_66 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (five) |
-| `src/langimg` chunk_17, chunk_19, chunk_21, chunk_22, chunk_25, chunk_26, chunk_27, chunk_28, chunk_29, chunk_31, chunk_39, chunk_40, chunk_41, chunk_44, chunk_46, chunk_47, chunk_49, chunk_50, chunk_51, chunk_52, chunk_55, chunk_56, chunk_57, chunk_58, chunk_59, chunk_60, chunk_61, chunk_67, chunk_68, chunk_69, chunk_70, chunk_71, chunk_72, chunk_73, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
+| `src/langimg` chunk_17, chunk_19, chunk_21, chunk_22, chunk_25, chunk_26, chunk_27, chunk_28, chunk_29, chunk_31, chunk_39, chunk_40, chunk_41, chunk_44, chunk_46, chunk_47, chunk_49, chunk_50, chunk_51, chunk_52, chunk_55, chunk_56, chunk_57, chunk_58, chunk_59, chunk_60, chunk_61, chunk_64, chunk_67, chunk_68, chunk_69, chunk_70, chunk_71, chunk_72, chunk_73, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_06 to chunk_12 (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_02b (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `SCES_030.37` (`src/sces`) | GCC 2.91.66 | 0 | `-fsigned-char` | `--expand-div` |
@@ -207,6 +207,12 @@ globals), a script that tries every order is quicker than guessing:
   had them in locals: the 2D items' `x0`, `y0`, `x1`, `y1` before the
   packet's stores (`func_80015798`).
 
+- **Copies through pointers: an inline function.** When the original
+  computes both structs' addresses into registers and copies through them
+  (`addiu $v1, $s0, 0x98; lw $a0, 0x98($s0); lw $a1, 4($v1)`), the copy
+  was an inline function taking pointers; chunk_64's `func_800925A8` and
+  `func_80092824` matched so, the copy loading into locals before
+  storing.
 - **Two loads, then two stores.** chunk_21's `func_8003BD5C` copies
   pairs of words loading both before storing either; field by field, GCC
   interleaved them. Fresh locals in their own block, `{ int x = p->m_08;
@@ -237,6 +243,9 @@ globals), a script that tries every order is quicker than guessing:
 - **`andi`/`bnez` or `xori`/`andi`.** `if (!(f & 1)) { ... }` can come
   out as `xori f, 1; andi 1; beqz`; chunk_21's `func_8003CD88` tests
   `andi f, 1; bnez`, which `if (f & 1) return;` gave.
+- **Two identical returns kept apart.** GCC merges two `return &X;`;
+  chunk_64's `func_80091414` has the default's address built twice, which
+  `return found ? &t[i] : &X;` at the end gave.
 - **The block laid out first is the `if`'s.** chunk_26's `func_80046B78`
   sets a flag to 0 or 1 after a chain of tests; the original has the 0
   block first, so its source is one condition for 0: `if (a || (b &&
@@ -304,6 +313,11 @@ globals), a script that tries every order is quicker than guessing:
   3; if (y > 224) return 3;`); `||` put the return's block elsewhere.
 
 ### Loops
+
+- **The element and the next one's address.** chunk_64's `func_800913C0`
+  keeps the element and its successor (computed early, in a delay slot):
+  `Chan64 *c = p++;` at the top of the loop. Stepping `c++` at the bottom
+  gave pointers to the fields instead.
 
 - **A found case's return out of line.** chunk_31's `func_8005102C`
   returns the index from the end of the function, the loop's pointer
