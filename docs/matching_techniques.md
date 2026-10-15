@@ -1351,7 +1351,50 @@ What's left once the instructions are right is usually register choice.
 `lwl`, `sll`, `swl`, `swl` on the 24-bit links. PsyQ's `addPrim`
 (`P_TAG` bitfields) compiles to masks and merges with every compiler
 here, so the original's was hand-written: one `asm` statement with GCC's
-registers (`func_80015798`).
+registers (`func_80015798`). The `P_TAG` forms tried again (24-bit
+bitfields, packed bitfields, a 3-byte struct copied) give `lw`/`and`/`or`
+or byte loads and stores, never the `lwl`/`swl` pair, so the `asm`
+statement stays.
+
+**GPU packets: a draw mode just past a primitive.** Many HUD functions
+(chunk_57, chunk_70 and others) add a primitive, then a draw mode packet
+right after it. The original's draw mode block, for a primitive of N
+words, is
+
+```
+addu   $v0, $t2, $zero        # the packet pointer, read again for the link
+sw     $t4, 4*N($v0)          # the draw mode's tag, through the old pointer
+addiu  $v0, $v0, 4*N          # the pointer stepped in place
+sw     $t0, 0x4($v0)          # the mode word
+lw     $v1, D_800CBDC0        # the ordering table
+sw     $v0, D_800C8C70        # the pointer stored before the link
+...ADD_PRIM(ot, $v0)...
+addiu  $v0, $v0, 8
+sw     $v0, D_800C8C70
+```
+
+and it comes from setting the draw mode through a helper on `p + N`,
+then stepping `p`, the link reading the global:
+
+```c
+p = (u_long *)D_800C8C70;
+SetDM(p + N, mode);          /* p[N] = 0x01000000; p[N + 1] = mode; */
+p += N;
+ot = D_800CBDC0 + 1;
+D_800C8C70 = (u8 *)p;
+ADD_PRIM(ot, D_800C8C70);
+p += 2;
+D_800C8C70 = (u8 *)p;
+```
+
+Linking `p` instead of the global drops the store before the link (GCC
+sees nothing read it); `p = (u_long *)(D_800C8C70 + 4 * N)`, or
+`D_800C8C70 += 8` after the store, gives the stepped pointer its own
+register and computes the last store as the old pointer plus `4 * N + 8`. Checked in a test file, and in
+chunk_57's `func_80083618`, whose packets come out as the original's
+(the function is parked for its text measuring). When another primitive
+follows the draw mode (chunk_70's `func_8009E3C0`), GCC still gives the
+stepped pointer its own register; that part isn't solved.
 
 ### Hand-written assembly
 

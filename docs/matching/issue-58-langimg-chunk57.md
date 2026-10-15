@@ -13,7 +13,7 @@ globals set or cleared together.
 
 One file, `src/langimg/chunk_57.cpp`, 0x800831BC-0x80085258.
 
-22 functions: 11 match, 6 are parked, 5 are still asm.
+22 functions: 11 match, 7 are parked, 4 are still asm.
 
 ## The settings
 
@@ -54,7 +54,7 @@ globals from `D_800CBD24` on.
 | `func_800831BC` | parked | a text placed in its box: registers |
 | `func_80083380` | parked | a time written: registers |
 | `func_8008350C` | parked | a value slid: an unused 16-byte frame, the countdown read twice |
-| `func_80083618` | asm | 149 instructions |
+| `func_80083618` | parked | a label and its box: the text measuring's registers (91 off) |
 | `func_8008386C` | matches | a text cleared |
 | `func_8008388C` | parked | a message placed: registers |
 | `func_80083A44` | matches | a player's HUD cleared |
@@ -87,3 +87,13 @@ globals from `D_800CBD24` on.
 - `func_80084B1C` (the dashboard) is parked: the original builds the
   dashboard's address for each of its five calls, GCC keeps it in a saved
   register (140 off).
+
+## GPU packets
+
+`func_80083618` (a label: its image, its text, a box behind it and a
+draw mode) is written and parked, 91 off. Its packets come out as the
+original's with the draw mode set through a helper on `p + 6` and the
+pointer stepped after it ("GPU packets" in the techniques); what's left is
+the text measuring before them: the label's x and y in swapped saved
+registers and the measured width read back from the stack where the
+original keeps it in a register.
