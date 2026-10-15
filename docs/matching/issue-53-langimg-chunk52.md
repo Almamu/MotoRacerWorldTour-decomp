@@ -14,7 +14,7 @@ The display's object (`Gfx52`) and the graphics system around it:
 
 One file, `src/langimg/chunk_52.cpp`, 0x800792DC-0x8007B3C0.
 
-27 functions: 13 match, 3 are parked, 11 are still asm.
+27 functions: 13 match, 5 are parked, 9 are still asm.
 
 ## The settings
 
@@ -53,9 +53,9 @@ globals.
 | `func_800794E8` | matches | the screen cleared (and the line at 510 moved to 511) |
 | `func_800795A0`, `func_800795FC` | match | the buffer allocated and freed |
 | `func_80079648` | parked | the user's callback set: two `%hi` registers swap (4 off) |
-| `func_8007968C` | asm | 111 instructions |
+| `func_8007968C` | parked | the frame swapped: two loads' order |
 | `func_80079848` | parked | the entries drawn: the system pointer's `%hi` kept in a register |
-| `func_800798FC` | asm | 122 instructions |
+| `func_800798FC` | parked | the drawing area: addresses |
 | `func_80079AE4` | parked | the GTE's matrix: two saved registers swap (9 off) |
 | `func_80079C50` | asm | a GTE primitive (93 instructions) |
 | `func_80079DC0` | asm | 247 instructions |
@@ -65,3 +65,16 @@ globals.
 ## Second pass
 
 - `func_80079648` matches: `EnterCriticalSection` returns a value (the syscall's), so `lib/psyq/include/psyq.h` now declares it `int`.
+
+## Fourth pass
+
+- `func_8007968C` (the frame: `DrawSync`, `VSync` by the mode at 0x14C,
+  the frame's length in 312ths, the buffer's environments put, a callback,
+  the primitives' size kept, `DrawOTag`, the buffer flipped) is parked 32
+  off: the first 75 instructions match with `ok = 1` set after `DrawSync`
+  and compared with as the `1` of the mode's test; the original then loads
+  the primitives' end (`D_800C8C70`) before their start, GCC the start.
+- `func_800798FC` (the drawing area's two packets, 0xE3 and 0xE4, linked at
+  the ordering table's last entry, offset by the buffer unless 0x15C is
+  set) is parked 127 off: the original builds each global's high half
+  once and keeps it (`$a3`, `$t0`, `$t1`), GCC builds it at each use.
