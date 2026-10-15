@@ -1215,6 +1215,22 @@ What's left once the instructions are right is usually register choice.
   pointer, and one translation through an accessor. No compiler or
   option changes this (2.7.2 to 2.95.2, GCSE, CSE options, `-O1`,
   `-fno-omit-frame-pointer`).
+- **Only the part with the calls in the inline function.** With the whole
+  body inline, the code after the calls (a copy of the real function's
+  local, `cur`) read it at fixed stack offsets; the original reads it
+  through a pointer (`lw 0x10($sp)`, `lw 4($v1)`, `lw 8($v1)`, an inline
+  helper's parameter). chunk_02b's rotation setters matched with only the
+  rotation inline and the rest in the real one, and the matrix the original
+  keeps in a saved register (`mx`, the frame's first local) declared in the
+  real function and passed in. chunk_09's `func_8002434C` (151 to 2 off)
+  the same way, plus an inline taking `&w` to keep that address from the
+  first call, as the original does.
+- **A parameter copied into a local.** When two saved registers are swapped
+  between a parameter and a value computed from it, copy the parameter into
+  a local first and use the copy (`Arg22 *cc = c; g = cc->m_04;`): chunk_22's
+  `func_8003DF7C` and `func_8003E194` matched (12 off each before). A sweep
+  over a chunk's parked functions trying each parameter copied is cheap and
+  found that one; on others it only came closer.
 - The permuter (`tools/permuter_setup.py`) is the tool for this. Most of
   its suggestions are noise (dummy variables, `x++; x--;`); keep the idea
   behind a good one, written plainly (the `ClearFlags` case above).
