@@ -231,7 +231,7 @@ void func_80068038(Model43 *m, int len) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_43", func_800681A4);
 
 #ifdef NON_MATCHING
-// The original keeps 1000's reciprocal, 2 and 5 in saved registers for the whole loop (a frame of 0x30); GCC loads them where they're used (0x20), which changes everything after. The bits' tests also come out with xori here (141 off).
+// The original keeps 1000's reciprocal, 2 and 5 in saved registers for the whole loop; with -fmove-all-movables (the chunk's flag) it went from 141 to 91 off; the bits' tests still come out with xori here.
 void func_80068900(Model43 *m, Tab43 *c) {
     Owner43 *own = m->m_54;
 

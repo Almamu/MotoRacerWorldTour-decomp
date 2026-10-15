@@ -242,7 +242,7 @@ int func_80063A5C(Obj41 *o) {
 }
 
 #ifdef NON_MATCHING
-// The outer loop's shape (the original enters it with a jump into the body, 2 kept in $s7) and the registers: far off (114 differ)
+// The outer loop's shape (the original enters it with a jump into the body, 2 kept in $s7) and the registers: 85 off with -fmove-all-movables
 /* Each bike of mode 2 in turn: the others within range ahead and behind passed to func_80063C60. */
 void func_80063A68(Obj41 *o, Game41 *g) {
     Bk41 *self = o->m_54;
