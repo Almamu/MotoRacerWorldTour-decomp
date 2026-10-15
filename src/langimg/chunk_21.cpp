@@ -16,7 +16,7 @@ struct Link21 {
     char m_name[4];
 };
 
-// chunk_61's colour zone: off, four fixed colours, or fading
+// chunk_61's colour zone: 0 off, 1 fixed, or fading
 struct Zone21 {
     int m_00;
     int m_04;
@@ -25,7 +25,7 @@ struct Zone21 {
     int m_18, m_1C;
 };
 
-// The zone's parameters: its colours' indices in the table
+// The zone's parameters: four indices into the table, or four values
 struct Par21 {
     int m_00, m_04, m_08, m_0C;
     int m_10, m_14, m_18, m_1C;
