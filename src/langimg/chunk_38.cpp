@@ -163,6 +163,36 @@ int func_8005E1D0(Own38 *o);
 void func_8005E2A8(Own38 *o);
 Ctl38 *func_8005F358(Ctl38 *c);
 void func_8005F380(Ctl38 *c);
+
+// A bike's settings (0x3C bytes) and a rider's (0x54), by index
+struct Set38 {
+    int m_00[0xF];
+};
+struct Rider38 {
+    int m_00[0x15];
+};
+struct Pick38 {
+    u8 m_00[8];
+    Set38 m_08;
+    Rider38 m_44;
+};
+// The game's options (chunk_51's)
+struct Opts38 {
+    u8 m_00[0x118];
+    int m_118, m_11C; // each player's bike, or -1
+    int m_120, m_124; // each player's rider, or -1
+    int m_128, m_12C;
+    u8 m_130[0x1574];
+    int m_16A4; // two players
+};
+extern Opts38 *D_800BC884;
+extern Pick38 *D_800C6FB8; // the picks by index (indexed by bytes)
+extern Set38 D_800C71C4, D_800C725C;
+extern Rider38 D_800C7200, D_800C7298;
+extern int D_800D11B8, D_800D11BC;
+void *memset(void *d, int c, int n);
+void func_800AFB98(int n);
+void func_8005F0D4(void);
 }
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_38", func_8005D15C);
@@ -431,7 +461,46 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_38", func_8005E3A4);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_38", func_8005EE48);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_38", func_8005F0D4);
+// The pick of index i
+static inline Pick38 *Pick38At(int i) {
+    return *(Pick38 **)((u8 *)&D_800C6FB8 + (i << 2));
+}
+
+void func_8005F0D4(void) {
+    D_800D11B8 = D_800BC884->m_128;
+    if (D_800BC884->m_118 != -1) {
+        Set38 *d = &D_800C71C4;
+
+        *d = Pick38At(D_800BC884->m_118)->m_08;
+    }
+    if (D_800BC884->m_120 != -1) {
+        Rider38 *d = &D_800C7200;
+
+        *d = Pick38At(D_800BC884->m_120)->m_44;
+    }
+    if (D_800BC884->m_16A4) {
+        D_800D11BC = D_800BC884->m_12C;
+        if (D_800BC884->m_11C != -1) {
+            Set38 *d = &D_800C725C;
+
+            *d = Pick38At(D_800BC884->m_11C)->m_08;
+        }
+        if (D_800BC884->m_124 != -1) {
+            Rider38 *d = &D_800C7298;
+
+            *d = Pick38At(D_800BC884->m_124)->m_44;
+        }
+        func_800AFB98(2);
+    } else {
+        if (D_800BC884->m_11C != -1) {
+            memset(&D_800C725C, 0, sizeof(Set38));
+        }
+        if (D_800BC884->m_124 != -1) {
+            memset(&D_800C7298, 0, sizeof(Rider38));
+        }
+        func_800AFB98(1);
+    }
+}
 
 Ctl38 *func_8005F358(Ctl38 *c) {
     func_8005F380(c);
