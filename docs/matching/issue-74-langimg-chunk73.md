@@ -16,7 +16,7 @@ use the device name format `"bu%02x:"`.
 
 One file, `src/langimg/chunk_73.cpp`, 0x800A32A0-0x800A54F0.
 
-17 functions: 13 match, 4 are still asm.
+17 functions: 14 match, 3 are still asm.
 
 ## The settings
 
@@ -40,7 +40,7 @@ globals.
 
 | Function | State | Notes |
 |---|---|---|
-| `func_800A32A0` | asm | 228 instructions |
+| `func_800A32A0` | match | a save file's header written: its title in Shift-JIS, its icon, then the file created |
 | `func_800A3614` | asm | 147 instructions |
 | `func_800A3848` | matches | a file erased |
 | `func_800A3A44` | asm | 483 instructions |
@@ -63,3 +63,15 @@ two arguments through. The directory loop steps `p++, i++` in that order;
 the result is set after the free space's update. `"%s%s%s"` is
 `D_800B7BD4`, defined in `.rodata` after the function (a literal that
 short would go to `.sdata` under `-G8`), then the unused `"bu%02x:%s"`.
+
+## Group C, more functions
+
+- `func_800A32A0` (a save's header: `SC`, the icon's frame count, the
+  blocks, the title converted to Shift-JIS by `func_800A2380`, the clut
+  and frames copied, the file created unless flag 0x20) matches. The
+  header is reached a second time through a `Head73 *` (for the clut's
+  copy), which gives the original's extra saved register; the block count
+  is computed before the header's stores, and rounded in two steps
+  (`blocks *= 0x2000; hdr[3] = blocks / 0x2000;`); the title is read as
+  `s8` for the `lb`. Its three strings (`"%s :%s"`, `"%s"` and the
+  printf's) are defined after it in `.rodata`, as `D_800B7BD4`.
