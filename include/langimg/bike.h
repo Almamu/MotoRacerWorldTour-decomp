@@ -44,7 +44,9 @@ struct BikeOwner {
     s8 m_189;
     u8 m_pad18A[0x17A];
     SVECTOR m_304;
-    u8 m_pad30C[0x258];
+    u8 m_pad30C[0x1EE];
+    short m_4FA;
+    u8 m_pad4FC[0x68];
     int m_564;
 };
 
