@@ -65,3 +65,4 @@ issue it worked on, and add it below.
 | [issue-22-langimg-chunk21.md](issue-22-langimg-chunk21.md) | The game's chunk_21: a scene's items and history; two loads before two stores, an early `return` for a flag test |
 | [issue-18-langimg-chunk17.md](issue-18-langimg-chunk17.md) | The game's chunk_17: a rider's view and the maps; the scratchpad's address in a local, a constant and a test in locals |
 | [issue-65-langimg-chunk64.md](issue-65-langimg-chunk64.md) | The game's chunk_64: animation tables and tracks; two default returns kept apart, inline functions with pointer parameters, an index in a variable |
+| [issue-34-langimg-chunk33.md](issue-34-langimg-chunk33.md) | The game's chunk_33: the race and its bikes; the racer declared small, a bike's flags as shifts, a count and an end per loop |
