@@ -92,7 +92,7 @@ settings
 | `src/langimg` chunk_23 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=D_800CABB7` |
 | `src/langimg` chunk_45 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (eleven) |
 | `src/langimg` chunk_66 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (five) |
-| `src/langimg` chunk_17, chunk_19, chunk_21, chunk_22, chunk_25, chunk_26, chunk_27, chunk_28, chunk_29, chunk_31, chunk_39, chunk_40, chunk_41, chunk_44, chunk_46, chunk_47, chunk_49, chunk_50, chunk_51, chunk_52, chunk_55, chunk_56, chunk_57, chunk_58, chunk_59, chunk_60, chunk_61, chunk_64, chunk_67, chunk_68, chunk_69, chunk_70, chunk_71, chunk_72, chunk_73, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
+| `src/langimg` chunk_17, chunk_19, chunk_21, chunk_22, chunk_25, chunk_26, chunk_27, chunk_28, chunk_29, chunk_31, chunk_33, chunk_39, chunk_40, chunk_41, chunk_44, chunk_46, chunk_47, chunk_49, chunk_50, chunk_51, chunk_52, chunk_55, chunk_56, chunk_57, chunk_58, chunk_59, chunk_60, chunk_61, chunk_64, chunk_67, chunk_68, chunk_69, chunk_70, chunk_71, chunk_72, chunk_73, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_06 to chunk_12 (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_02b (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `SCES_030.37` (`src/sces`) | GCC 2.91.66 | 0 | `-fsigned-char` | `--expand-div` |
@@ -144,7 +144,10 @@ with sizes, so this isn't the compiler's doing.
 Under split addresses a global declared with a size of 8 bytes or less
 (`extern int D_800CB480;`) is still one `la`, which stays out of delay
 slots; declared as an array of unknown size it's split and scheduled.
-chunk_45 has both (`func_8006BA80`, `func_8006C77C`). chunk_72 reads most
+chunk_45 has both (`func_8006BA80`, `func_8006C77C`). chunk_33 passes
+chunk_06's racer (`D_800CA7D8`) as one `la`: declared `extern int` and
+passed as `(Racer *)&D_800CA7D8`, as a `Racer` it was split
+(`func_80053E44`, `func_80053D4C`). chunk_72 reads most
 of its globals split, a few through `$gp`: the split ones are declared as
 arrays of unknown size and used as `x[0]`. The registers tell which: a
 global loaded with `lui $v1` and `lw $v0, %lo(x)($v1)` is GCC's split (an
@@ -227,6 +230,13 @@ globals), a script that tries every order is quicker than guessing:
 - **A counter set after the first call.** chunk_68's `func_80099F2C`
   sets its loop counter in the delay slot of its second call: `i = 0;`
   written after the first call, not at its declaration.
+- **A load repeated in each branch.** chunk_33's `func_800537FC` picks
+  x from one of two fields and loads y (the same field either way) right
+  after: `y = scr->m_20;` written in both branches matched; once after
+  the `if`, GCC scheduled the load later.
+- **A field read before a copy.** chunk_33's `func_80053D4C` loads a
+  found object's pointer before copying a vector to the stack: `Ent33x *y
+  = x->m_04;` first, then the copy.
 
 ### Result variables
 
@@ -417,6 +427,14 @@ globals), a script that tries every order is quicker than guessing:
   `&slot->voices[n]` once, uses it twice and passes it on, write it so:
   `sv = &slot->voices[n]; sv[0].unk1 = x; sv[1].unk1 = x; f(..., sv);`
   (`func_80012C18`, `func_80012D38`).
+- **The step's order.** A loop over the bikes with a pointer and a count
+  increments the pointers first: `for (i = 0; i < 5; b++, i++)`;
+  `i++, b++` put the count's `addiu` first (chunk_33's `func_80055410`).
+- **A count and an end per loop.** chunk_33's `func_800550C0` counts
+  over the same five bikes twice; with one count and one end pointer for
+  both loops, the first loop's two registers swapped; with a second
+  count and a second end they took the original's (the function matched
+  with the constant below).
 
 ### Temporaries and folding
 
@@ -465,6 +483,14 @@ globals), a script that tries every order is quicker than guessing:
 - **A multiplication written as shifts.** `x * 0x3000` is `(x * 3) << 12`
   to GCC; the original's `(x << 12) + (x << 13)` (and `<< 14`, `<< 15`
   for `0xC000`) is written so (`func_80016A8C`, `func_80016C3C`).
+- **A `mult` by a constant: the constant in a local.** chunk_33's
+  `func_800547FC` multiplies by 0xB33 with `li` and `mult`; `x * 0xB33`
+  became shifts and adds, `sc = 0xB33; ... x * sc` a `mult` (the function
+  is parked for its registers).
+- **A constant compared in a loop.** chunk_33's `func_800550C0` loads the
+  1 its loop compares with before zeroing the count; `one = 1;` written
+  there and compared with (`== one`) matched, a literal 1 was loaded after
+  (the permuter).
 - **`do { } while (0)` around statements.** Twice the permuter's whole
   fix: around `i = 0` before a loop (`func_80017FB4`, its order against
   the loads) and around a loop's body (`func_8001865C`, its registers: the
@@ -473,7 +499,11 @@ globals), a script that tries every order is quicker than guessing:
   keeps the counter live on the found path (GCC then undoes the `i--` it
   took into a delay slot, as the original does), and around a whole
   function's body (`func_80060668`, its registers). chunk_29's
-  `func_8004C9D0` has one around its last `if`/`else`. A workaround; say
+  `func_8004C9D0` has one around its last `if`/`else`. chunk_33's
+  `func_800542A4` has one around a loop body's first three statements (a
+  vector copied to the stack, a store, a call taking the copy): without
+  it, the copy's address was hoisted out of the loop and kept on the
+  stack; an inline function in their place didn't help. A workaround; say
   so at the use.
 - **A second pointer against cross-jumping.** Two identical statement
   runs that end at the same label are merged into one; the original's
@@ -700,6 +730,15 @@ mean a `short` field.
   header through a `DPSHEADER *` (`hdr->width`), which the original keeps
   in a register; as an array of halfwords it didn't.
 
+- **Two bitfield tests merged.** chunk_33's `func_800550C0` counts the
+  bikes with bit 6 set and a signed 5-bit field (bits 1-5) equal to 1.
+  As bitfields, GCC merged the two tests into one masked compare (`andi
+  0x7E`, `== 0x42`) and, tested apart, compared the field as `andi 0x3E`;
+  the original extracts each (`srl`/`andi`, `sll`/`sra`). Written as
+  shifts, `(x >> 6) & 1` and `(int)(x << 26) >> 27 == 1`, it matched.
+- **`&= 1` on an `int` flag.** chunk_33's `func_80053BF8` masks a 0-or-1
+  flag with `andi 1` before clearing it: `int test; ... test &= 1;`
+  matched, a `bool` didn't.
 - **Bitfields for a global's bits.** `x &= ~2` and a bitfield store
   `x.m_b1 = 0` give the same instructions scheduled differently
   (`func_8006BF4C`); packing values with bitfield stores (`func_8006BD78`)
