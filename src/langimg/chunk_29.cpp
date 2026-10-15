@@ -1,4 +1,5 @@
 #include "common.h"
+#include "psyq.h"
 
 /* Classes on Cobjet and CName, their globals (docs/matching/issue-30-langimg-chunk29.md) */
 
@@ -49,9 +50,17 @@ void func_8004C14C(Named29 *o, int f);
 void func_8004C184(Named29 *o, int f);
 void func_8004C3FC(Tab29 *t, int i, int a, int b, int c);
 void func_8004C420(Tab29 *t, int i, int v);
+struct Vec29 {
+    long vx, vy, vz;
+};
 // A player's state
 struct Ply29 {
-    u8 m_00[0x154];
+    MATRIX m_00; // its view
+    u8 m_20[0xD8];
+    Vec29 m_F8; // where it looks from
+    u8 m_104[0x18];
+    Vec29 m_11C;
+    u8 m_128[0x2C];
     int m_154; // a choice, 0 to 5
 };
 struct Lp29 {
@@ -84,6 +93,16 @@ struct Rc29 {
 struct Cur29 {
     u8 m_00[4];
     int m_04;
+    u8 m_08[0x2C];
+    MATRIX *m_34;
+    u8 m_38[0x24];
+    int m_5C; // its target, or -1
+    u8 m_60[0x1C0];
+    int m_220;
+};
+// The scene's objects
+struct Objs29 {
+    void **m_00;
 };
 // The game: the players' views
 struct Game29 {
@@ -91,7 +110,9 @@ struct Game29 {
     int m_10;
     u8 m_14[4];
     int m_18;
-    u8 m_1C[0x2E8];
+    u8 m_1C[0x58];
+    Objs29 *m_74;
+    u8 m_78[0x28C];
     int m_304;
     u8 m_308[4];
     int m_30C;
@@ -129,6 +150,11 @@ void func_8004C38C(Game29 *g);
 void func_8004C7EC(Game29 *g);
 char *func_8004B96C(int k);
 void func_8004C430(Game29 *g, int i);
+void func_8004CD5C(Game29 *g, int i);
+void func_800167B8(void *o, Vec29 *out);
+void func_80078458(Ply29 *p, Vec29 *at);
+extern int D_800CB2F0;
+void func_8004FE38(void *a, Ply29 *p, int c);
 int func_8004B844(int a, int b);
 // A scale's four weights for each of its kinds, and its sizes
 struct Sc29 {
@@ -405,7 +431,65 @@ int func_8004C9D0(Game29 *g, int i) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_29", func_8004CB5C);
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_29", func_8004CD5C);
+static inline void VecCopyL29(Vec29 *d, Vec29 *s) {
+    int x = s->vx;
+    int y = s->vy;
+    int z = s->vz;
+
+    d->vx = x;
+    d->vy = y;
+    d->vz = z;
+}
+
+void func_8004CD5C(Game29 *g, int i) {
+    Cur29 *c = g->m_464[i];
+    Ply29 *p = g->m_43C[i];
+    MATRIX *m = c->m_34;
+    Cur29 *a = 0;
+    Vec29 v;
+
+    if (c->m_04 & 0x8000) {
+        a = c;
+    }
+    if (a && a->m_5C != -1) {
+        int k = a->m_5C;
+        Objs29 *objs = g->m_74;
+        void *o = 0;
+
+        if (k >= 0) {
+            o = objs->m_00[k];
+        }
+        {
+            int x = m->t[0];
+            int y = m->t[1];
+            int z = m->t[2];
+
+            v.vx = x;
+            v.vy = y;
+            v.vz = z;
+        }
+        VecCopyL29(&p->m_F8, &v);
+        func_800167B8(o, &v);
+        VecCopyL29(&p->m_11C, &v);
+        func_80078458(p, &v);
+    } else {
+        p->m_00 = *m;
+        p->m_00.t[0] = p->m_00.t[1] = p->m_00.t[2] = 0;
+        {
+            int x = m->t[0];
+            int y = m->t[1];
+            int z = m->t[2];
+
+            v.vx = x;
+            v.vy = y;
+            v.vz = z;
+        }
+        VecCopyL29(&p->m_F8, &v);
+        if (c->m_04 & 0x1000000) {
+            func_8004FE38(&D_800CB2F0, p, c->m_220);
+        }
+    }
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_29", func_8004CEFC);
 
