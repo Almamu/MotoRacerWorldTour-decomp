@@ -278,7 +278,7 @@ extern int D_800CB2C0;
 void func_80044DFC(Obj27 *o);
 void func_8003BF0C(Stage27 *s);
 void func_8003E3AC(Stage27 *s);
-void func_8004AC78(int a);
+int func_8004AC78(int a);
 void func_8004AEDC(void);
 void func_8004B480(void);
 Hd27 *func_80078FE8(int *list, int s);
@@ -400,7 +400,7 @@ int func_8004845C(Obj27 *o) {
 }
 
 #ifdef NON_MATCHING
-// The demo index's clamp, stored to D_800D5F64 before the two tables are read into locals (as the original), is an if (v >= 0) around the upper bound, the stage read through a local; left (20 off): the tables' two addresses built in the other order, and global loads after the calls in $v0 where the original uses $v1.
+// The demo index's clamp, stored to D_800D5F64 before the two tables are read into locals (as the original), is an if (v >= 0) around the upper bound, the stage read through a local, func_8004AC78 declared int as its definition; left (14 off, from 20): the tables' two addresses built in the other order, and one global load after a call in $v0 where the original uses $v1.
 int func_80048494(Obj27 *o) {
     int s;
 
