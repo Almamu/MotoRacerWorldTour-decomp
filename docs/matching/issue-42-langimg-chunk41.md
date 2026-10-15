@@ -13,7 +13,7 @@ same object, `Bike31::m_30`). Its functions:
 
 One file, `src/langimg/chunk_41.cpp`, 0x80063428-0x800653F4.
 
-23 functions: 15 match, 2 are parked, 6 are still asm.
+23 functions: 15 match, 3 are parked, 5 are still asm.
 
 ## The settings
 
@@ -64,9 +64,22 @@ small globals.
 | `func_80064608` | asm | 294 instructions |
 | `func_80064AA0` | asm | 369 instructions |
 | `func_80065044` | parked | a speed from a table, capped: the cell's address the other way round (2 off) |
-| `func_800650F8` | asm | 191 instructions |
+| `func_800650F8` | parked | a slope between two points: two registers |
 
 ## Second pass
 
 - `func_80065044` matches: the cell's address as a byte offset added to the row (`(Cell41 *)((j << 5) + (u8 *)row)`).
 - Built with `-fmove-all-movables` (the Makefile's CFLAGS for the chunk, group A's finding in the techniques): every matched function still matches, and the parked ones it touches come closer. `func_80063A68` went from 116 to 86 off.
+
+## Group B follow-up
+
+- `func_800650F8` written and parked (5 off): the slope between the
+  bike's point and the next one, each a section's point moved sideways to
+  its lane (`LanePt41`: the point copied, a vector from the sine table
+  turned by the lane's side and added), the heights' difference times
+  their mean over the distance, limited to `D_800CB448`. What got it from
+  162 to 6: one scratch vector passed into the inline function for both
+  points (the original's frame), the cell indexed from the index inside
+  the inline function, as arrays, `d->x` stored before `d->y = 0`, and
+  the first row written in place, not through a local (a permuter's find).
+  Left: the second row's index and table loaded into swapped registers.

@@ -237,7 +237,141 @@ int func_80052120(int a);
 int func_8004C9D0(Game29 *g, int i);
 }
 
+extern "C" {
+// A player of the race (8 bytes)
+struct Seat29 {
+    u8 m_00; // its colour
+    u8 m_01[3];
+    int m_04; // 1 a player, 3 a computer's, 2 a ghost, 0 none
+};
+extern Seat29 D_800D5E48[5];
+extern u8 D_800D5F50[][4];
+extern int D_800CB2C4, D_800CB2C8, D_800CB2CC;
+extern int D_800D5F34, D_800D5F38, D_800D5F3C, D_800D5F40, D_800D5F44, D_800D5F48;
+extern int D_800D4898;
+void func_800A0CBC(int *a);
+int func_80050E88(int i);
+int func_8004B4B0(void);
+}
+
+#ifdef NON_MATCHING
+// The race's seats from the mode, written in full: the original keeps the constant 1 in a saved register across the second call (for the player count's switch), which shifts everything after it by one instruction (150 off); the cases and loops are laid out as the original's.
+int func_8004B4B0(void) {
+    int n1, n2, n3;
+    int i, k, m;
+
+    func_800A0CBC(&D_800D4898);
+    D_800CB2CC = func_80050E88(D_800D5F38);
+    n1 = 0;
+    n3 = 0;
+    D_800CB2C8 = D_800D5F44;
+    n2 = 0;
+    switch (D_800D5F3C) {
+    case 0:
+        n1 = 1;
+        break;
+    case 1:
+        n1 = 2;
+        break;
+    }
+    switch (D_800D5F40) {
+    case 5:
+        n1 = 1;
+        D_800CB2C8 = 1;
+        if (D_800D5F3C == n1) {
+            D_800CB2C4 = 2;
+            n2 = 1;
+        } else {
+            D_800CB2C4 = n1;
+        }
+        break;
+    case 6:
+        D_800CB2C4 = 0x100;
+        n1 = 1;
+        n2 = 1;
+        break;
+    case 9:
+        D_800CB2C4 = 2;
+        n1 = 1;
+        n2 = 1;
+        break;
+    case 1:
+        if (D_800D5F3C == 1) {
+            D_800CB2C4 = 0x80;
+        } else {
+            D_800CB2C4 = 0x40;
+            n3 = 1;
+        }
+        break;
+    case 3:
+    case 7:
+        if (D_800D5F3C == 1) {
+            D_800CB2C4 = 0x80;
+            break;
+        }
+    case 8:
+        D_800CB2C4 = 0x40;
+        n3 = 4;
+        break;
+    case 4:
+        if (D_800D5F3C == 1) {
+            D_800CB2C4 = 0x80;
+        } else {
+            n3 = D_800D5F48;
+            D_800CB2C4 = 0x40;
+        }
+        break;
+    case 2:
+        if (D_800D5F3C == 1) {
+            D_800CB2C4 = 8;
+        } else {
+            D_800CB2C4 = 4;
+        }
+        break;
+    case 0:
+        if (D_800D5F3C == 1) {
+            D_800CB2C4 = 0x20;
+        } else {
+            D_800CB2C4 = 0x10;
+        }
+        break;
+    default:
+        D_800CB2C4 = 0;
+        break;
+    }
+    D_800D5F48 = n3;
+    i = 0;
+    for (k = n1 - 1; k >= 0; k--) {
+        D_800D5E48[i++].m_04 = 1;
+    }
+    for (k = n2 - 1; k >= 0; k--) {
+        D_800D5E48[i++].m_04 = 3;
+    }
+    for (k = n3 - 1; k >= 0; k--) {
+        D_800D5E48[i++].m_04 = 2;
+    }
+    for (; i < 5; i++) {
+        D_800D5E48[i].m_04 = 0;
+    }
+    if ((u32)(D_800CB2CC - 3) < 2 || D_800CB2CC == 6) {
+        m = 1;
+    } else {
+        m = 8;
+    }
+    i = 0;
+    do {
+        D_800D5E48[i].m_00 = D_800D5F50[i][0] + m * D_800D5F34;
+        i++;
+    } while (i < n1);
+    D_800CB2C0 = 0;
+    func_80045168(&D_800CABC0, 1, -1, 8, &D_800CB2D8, 16, 18, 0);
+    func_80045168(&D_800CABC0, 2, -1, 2, 16, 2, &D_800CB2C0, 7);
+    func_80045168(&D_800CABC0, 2, -1, 2, 18, 1, &D_800CB2C0, 0);
+    return 1;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_29", func_8004B4B0);
+#endif
 
 int func_8004B844(int a, int b) {
     func_80045168(&D_800CABC0, 0, -1, 1, a);

@@ -56,7 +56,7 @@ global (`D_800C5868`).
 | `func_8004818C`, `func_800490C8` | match | a check through the vtable |
 | `func_800481E0` | matches | the race's cleanup |
 | `func_8004845C` | matches | the stage told the state |
-| `func_80048494` | parked | the game's step: a store's place |
+| `func_80048494` | parked | the game's step: registers after the calls |
 | `func_800487D0` | matches | an event sent, the stage told |
 | `func_80048824` | matches | another object set up, a value from `func_800B5A1C` passed to it |
 | `func_80048980` | matches | another object's fields set |
@@ -81,3 +81,12 @@ global (`D_800C5868`).
   store at 4); the clamp is `if (v >= 0) { r = 2; if (v < 3) r = v; }
   else r = 0;`, which gives the original's branches. Left: GCC moves the
   clamped value's store below the two tables' loads.
+
+## Group B follow-up, continued
+
+- `func_80048494` from 27 to 20 off: the clamped index stored to
+  `D_800D5F64` first and the two tables then read into locals
+  (`int b = D_800C57F8[r]; int c = D_800C57EC[r];`) before the store and
+  the call, as the original. Left: the two tables' addresses built in the
+  other order, and the global loads right after the calls in `$v0` where
+  the original uses `$v1`.

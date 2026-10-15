@@ -639,8 +639,17 @@ void func_8009E360(Obj70 *o) {
     func_8009E3C0(o, 0x29, 0xBE, o->m_0C * 430 / 1000);
 }
 
+// A draw mode packet: its tag and the mode word
+static inline u_long *DrawMode70(u_long *p) {
+    p[0] = 0x01000000;
+    p[1] = 0xE1000220;
+    return p;
+}
+
 #ifdef NON_MATCHING
-// Registers and scheduling around the packets (188 off): the original loads the ordering table before storing the packet pointer
+// Registers around the packets (160 off): each draw mode packet is set just past its primitive and the
+// pointer stepped to it in place (`move`, `sw 0x1C`, `addiu 0x1C`, `sw 4`; see "GPU packets" in the
+// techniques); here GCC gives the stepped pointer its own register, the next packet being built from it
 /* A gauge: its frame, a tick, and the fill up to w (of 0x1AE). */
 void func_8009E3C0(Obj70 *o, int x, int y, int w) {
     Game70 *g = D_800C886C;
@@ -650,16 +659,14 @@ void func_8009E3C0(Obj70 *o, int x, int y, int w) {
     g->m_68[14].m_func((char *)g + g->m_68[14].m_delta, 0);
     p = (u_long *)D_800C8C70;
     p[0] = 0x06000000;
-    p[1] = 0x4E808000;
     p[6] = 0x55555555;
+    p[1] = 0x4E808000;
     p[2] = XY(x, y - 7);
     p[3] = XY(x + 0x1AE, y - 7);
     p[4] = XY(x + 0x1AE, y + 5);
     p[5] = XY(x, y + 5);
     ADD_PRIM(D_800CBDC0 + 1, D_800C8C70);
-    p = (u_long *)(D_800C8C70 + 0x1C);
-    p[0] = 0x01000000;
-    p[1] = 0xE1000220;
+    p = DrawMode70((u_long *)D_800C8C70 + 7);
     ot = D_800CBDC0 + 1;
     D_800C8C70 = (u8 *)p;
     ADD_PRIM(ot, D_800C8C70);
@@ -670,9 +677,7 @@ void func_8009E3C0(Obj70 *o, int x, int y, int w) {
     p[2] = XY(x, y - 7);
     p[3] = XY(x, y + 5);
     ADD_PRIM(D_800CBDC0 + 1, D_800C8C70);
-    p = (u_long *)(D_800C8C70 + 0x10);
-    p[0] = 0x01000000;
-    p[1] = 0xE1000220;
+    p = DrawMode70((u_long *)D_800C8C70 + 4);
     ot = D_800CBDC0 + 1;
     D_800C8C70 = (u8 *)p;
     ADD_PRIM(ot, D_800C8C70);
@@ -686,9 +691,7 @@ void func_8009E3C0(Obj70 *o, int x, int y, int w) {
         p[4] = XY(x, y + 5);
         p[5] = XY(x + w, y + 5);
         ADD_PRIM(D_800CBDC0 + 1, D_800C8C70);
-        p = (u_long *)(D_800C8C70 + 0x18);
-        p[0] = 0x01000000;
-        p[1] = 0xE1000220;
+        p = DrawMode70((u_long *)D_800C8C70 + 6);
         ot = D_800CBDC0 + 1;
         D_800C8C70 = (u8 *)p;
         ADD_PRIM(ot, D_800C8C70);
@@ -701,9 +704,7 @@ void func_8009E3C0(Obj70 *o, int x, int y, int w) {
         p[4] = XY(x, y + 5);
         p[5] = XY(x + w, y + 5);
         ADD_PRIM(D_800CBDC0 + 1, D_800C8C70);
-        p = (u_long *)(D_800C8C70 + 0x18);
-        p[0] = 0x01000000;
-        p[1] = 0xE1000220;
+        p = DrawMode70((u_long *)D_800C8C70 + 6);
         ot = D_800CBDC0 + 1;
         D_800C8C70 = (u8 *)p;
         ADD_PRIM(ot, D_800C8C70);
