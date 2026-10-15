@@ -281,7 +281,7 @@ int func_800269F0(Bike *b, int x) {
 }
 
 #ifdef NON_MATCHING
-/* The first branch's clamp isn't cross-jumped into the last one's, as in the original (24 off) */
+/* The first clamp, written as int compared as shorts, is now cross-jumped into the last one as in the original; left: the call result and the two loads of 0x28E in rotated registers (11 off) */
 /* The clutch's engagement (m_28E, 4.12): rising towards the engine's
  * speed, held at 0.2 on the ground at a standstill, or set from the
  * engine speed's ratio to m_2BE when shifting; clamped to 0 to 1. */
@@ -290,11 +290,11 @@ void func_80026A1C(Bike *b) {
 
     if (b->m_28C != 0x1000 && b->m_28E < 0x1000) {
         if (b->m_2BC < e) {
-            short v = b->m_28E + b->m_290 * 5;
+            int v = b->m_28E + b->m_290 * 5;
 
             b->m_28E = v;
-            if (v >= 0) {
-                if (v > 0x1000) {
+            if ((short)v >= 0) {
+                if ((short)v > 0x1000) {
                     v = 0x1000;
                 }
             } else {
