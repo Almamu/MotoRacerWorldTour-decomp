@@ -92,7 +92,7 @@ settings
 | `src/langimg` chunk_23 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=D_800CABB7` |
 | `src/langimg` chunk_45 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (eleven) |
 | `src/langimg` chunk_66 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (five) |
-| `src/langimg` chunk_19, chunk_22, chunk_25, chunk_27, chunk_28, chunk_29, chunk_31, chunk_39, chunk_40, chunk_41, chunk_44, chunk_46, chunk_47, chunk_49, chunk_50, chunk_51, chunk_52, chunk_55, chunk_56, chunk_57, chunk_58, chunk_59, chunk_60, chunk_61, chunk_67, chunk_68, chunk_69, chunk_70, chunk_71, chunk_72, chunk_73, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
+| `src/langimg` chunk_19, chunk_22, chunk_25, chunk_26, chunk_27, chunk_28, chunk_29, chunk_31, chunk_39, chunk_40, chunk_41, chunk_44, chunk_46, chunk_47, chunk_49, chunk_50, chunk_51, chunk_52, chunk_55, chunk_56, chunk_57, chunk_58, chunk_59, chunk_60, chunk_61, chunk_67, chunk_68, chunk_69, chunk_70, chunk_71, chunk_72, chunk_73, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_06 to chunk_12 (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_02b (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `SCES_030.37` (`src/sces`) | GCC 2.91.66 | 0 | `-fsigned-char` | `--expand-div` |
@@ -229,6 +229,14 @@ globals), a script that tries every order is quicker than guessing:
 
 ### Branches
 
+- **The block laid out first is the `if`'s.** chunk_26's `func_80046B78`
+  sets a flag to 0 or 1 after a chain of tests; the original has the 0
+  block first, so its source is one condition for 0: `if (a || (b &&
+  ...)) x = 0; else x = 1;`. Written as nested `if`/`else`s, each
+  assignment came out right after its own test.
+- **Two addresses, two calls.** `f(c ? a : b)` with two big objects
+  loads the first before the test; chunk_26's `func_80046870` builds each
+  in its branch (the `lui` in a delay slot): `if (c) f(a); else f(b);`.
 - **Tests GCC would merge.** `(f & 0x400004) == 0x400004 && !(f & 2)`
   becomes one test of `f & 0x400006`; the original tests them apart, with
   a load between: nested `if`s (`func_80013764`).
@@ -310,6 +318,10 @@ globals), a script that tries every order is quicker than guessing:
   }` (with `t` 0 on entry GCC drops the first test of `!t`). A `goto`
   loop gave the layout but no hoisting of the loop's constants; `for
   (;;)` and `do`/`while` came out rotated.
+  The same layout comes from `while (!found && n)`: chunk_26's
+  `func_80046194` and `func_80045F78` test the node at the top and the
+  flag at the bottom, and matched so; `while (n && !found)` put both
+  tests at the bottom.
 - **Empty constructors' loops.** A static object whose arrays' elements
   have empty constructors leaves count-down loops with nothing in them
   (chunk_47's `func_8006FB74`). Written `i = 63; do {} while (--i !=
