@@ -7,7 +7,7 @@ a pack's header and blocks found by a hash of their names, a CRC check.
 Also a glyph lookup for text and a fast fill. One file,
 `src/langimg/chunk_72.cpp`, 0x800A1110-0x800A32A0.
 
-59 functions: 44 match, 9 are parked, 6 are still asm.
+59 functions: 47 match, 6 are parked, 6 are still asm.
 
 ## The settings
 
@@ -37,7 +37,7 @@ macro.
 |---|---|---|
 | `func_800A1110`, `func_800A1170` | parked | the file to start at; the next one: registers (14 and 32 off) |
 | `func_800A1228` to `func_800A12C4` | match | the slots cleared, sorted by their counts (`qsort`) |
-| `func_800A138C` | parked | a slot's index: the delay slot's filling (3 off) |
+| `func_800A138C` | matches | a slot's index |
 | `func_800A13C0` to `func_800A164C` | match | pointers, positions, the cards' first user |
 | `func_800A1654`, `func_800A17EC`, `func_800A195C` | asm | 102, 92 and 124 instructions |
 | `func_800A1B4C` | matches | |
@@ -45,7 +45,7 @@ macro.
 | `func_800A1BD0` to `func_800A1C74` | match | the CD's start, a file searched for twice |
 | `func_800A1CF8`, `func_800A1EFC` | parked | the CD reader (87 off); a block by its name's hash (74 off) |
 | `func_800A207C` | matches | a file's header, its entries' positions |
-| `func_800A2148`, `func_800A2234` | parked | a block read with a CRC check (2 off); a block by name (6 off) |
+| `func_800A2148`, `func_800A2234` | match | a block read with a CRC check; a block by name |
 | `func_800A2290` to `func_800A2304` | match | wrappers, a fast fill |
 | `func_800A2380` | parked | a character's glyph: the endings' order (23 off) |
 | `func_800A2490` to `func_800A26A0` | match | the card events' handlers and counters |
@@ -64,3 +64,12 @@ macro.
   count-down loops matched with a counter each.
 - **A test the other way.** `if (!f()) return -1; return 1;` and the
   reverse lay their branches out differently (`func_800A1C10`).
+
+## Second pass
+
+- `func_800A138C`: the search walks a pointer down with a post-decrement in
+  the test (`if (*p-- == x)`), which puts the decrement in the compare's
+  delay slot.
+- `func_800A2148`: chunk_74's `func_800A6448` is `void` (it was declared
+  `u32` here), and the CRC test is `b->m_crc != crc`.
+- `func_800A2234` matched as it was, once `func_800A2148` did.

@@ -9,7 +9,7 @@ its strings emptied, the riders' count, the laps, each row's number,
 times and markers. One file, `src/langimg/chunk_56.cpp`,
 0x80081270-0x800831BC.
 
-34 functions: 25 match, 7 are parked, 2 are still asm.
+34 functions: 29 match, 3 are parked, 2 are still asm.
 
 ## The settings
 
@@ -67,17 +67,29 @@ small globals.
 | `func_80082468` | matches | the vertices moved by the camera, each set on the ground |
 | `func_8008259C` | matches | two virtual calls on `D_800CBDC4` around a draw call |
 | `func_8008264C` | matches | four values from a table |
-| `func_8008267C` | parked | an index kept and two fields set from a table: the table's address and the index swap |
+| `func_8008267C` | matches | an index kept and two fields set from a table |
 | `func_800826BC` | parked | a rectangle from the boxes: registers (24 off) |
 | `func_800827DC`, `func_8008280C` | match | a table's index from a value's size in bits (the GTE's leading zeros) |
 | `func_80082840` | matches | the panel's strings emptied |
-| `func_80082904` | parked | the panel set up: the strings' copies (12 off) |
-| `func_80082A8C` | parked | how many riders are in, and a marker: the string's copy (9 off) |
+| `func_80082904` | matches | the panel set up |
+| `func_80082A8C` | matches | how many riders are in, and a marker |
 | `func_80082B14`, `func_80082B64` | match | a time as text, a rider's value tested against a table by mode |
 | `func_80082BEC` | parked | a row's three times around the rider's: registers |
 | `func_80082DA4` | matches | a cell's digit, or `-` |
-| `func_80082DE4` | parked | a 4-byte string: its address's register |
+| `func_80082DE4` | matches | a 4-byte string |
 | `func_80082E74` | matches | a pointer chosen by an item's kind |
 | `func_80082F1C` | matches | a row's number as text |
 | `func_80082FA8` | parked | the lap's time, coloured by how fast: `$s0` and `$s1` swap |
 | `func_80083078` | matches | a row of the panel, for the rider shown |
+
+## Second pass
+
+- **Unsized string symbols.** `func_80082904`, `func_80082A8C` and
+  `func_80082DE4` copy short strings from the data with `memcpy` or a
+  struct copy. Declared with a size (`extern short D_800C8AC0[2];`), GCC
+  takes the symbol for small data and loads from it directly; declared
+  unsized (`extern short D_800C8AC0[];`), it builds the address in a
+  register first (`lui`/`addiu` into `$t3`), as the original. All three
+  match that way, no `strcpy` needed.
+- **A table indexed by bytes** (chunk_37's case): `func_8008267C` reads
+  `*(int *)((u8 *)D_800C89F8 + (i << 2) + 8)`.

@@ -169,7 +169,7 @@ extern Range72 D_800BC8BC[];
 extern u16 D_800BC8C8[]; // the punctuation's glyphs
 void func_800A63FC(void);
 u32 func_800A645C(void *p, int n, int a);
-u32 func_800A6448(void);
+void func_800A6448(void);
 void *func_800A1CF8(int mode, CdlLOC *loc, int size, void *buf);
 void *malloc(unsigned int n);
 void *func_800B5730(void *p, int size);
@@ -336,21 +336,17 @@ void func_800A12C4(Card72 *c) {
     }
 }
 
-#ifdef NON_MATCHING
-/* What fills the match's delay slot: the original advances its pointer there (3 off) */
 int func_800A138C(Card72 *c, int x) {
     int i = 4;
+    int *p = &c->m_1700[4];
 
     do {
-        if (c->m_1700[i] == x) {
+        if (*p-- == x) {
             return i;
         }
     } while (--i >= 0);
     return -1;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A138C);
-#endif
 
 void func_800A13C0(Card72 *c) {
     c->m_1630[0] = D_800BC88C;
@@ -693,8 +689,6 @@ Hdr72 *func_800A207C(char *name, void *buf) {
     return h;
 }
 
-#ifdef NON_MATCHING
-/* The block's CRC loaded into $v1, not $v0 (2 off) */
 /* A block read into buf (allocated if none is given), read again once if its
  * CRC is wrong; its size to *out. */
 void *func_800A2148(Pack72 *h, Blk72 *b, void *buf, int *out) {
@@ -707,7 +701,7 @@ again:
     func_800A63FC();
     crc = func_800A645C(buf, b->m_size, 0);
     func_800A6448();
-    if (crc != b->m_crc) {
+    if (b->m_crc != crc) {
         if (tries) {
             if (ours) {
                 free(buf);
@@ -723,12 +717,7 @@ again:
     }
     return buf;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A2148);
-#endif
 
-#ifdef NON_MATCHING
-/* The first and last arguments in each other's saved registers (6 off) */
 void *func_800A2234(Pack72 *h, char *name, void *buf, int *out) {
     Blk72 *b = func_800A1EFC(h, name);
 
@@ -737,9 +726,6 @@ void *func_800A2234(Pack72 *h, char *name, void *buf, int *out) {
     }
     return buf;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A2234);
-#endif
 
 void func_800A2290(void) {
     func_80015210();

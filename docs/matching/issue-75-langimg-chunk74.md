@@ -6,7 +6,7 @@ table, `strupr` and `strlwr`, number and time formatting, a small
 overlay loader, cheat-code sequences, and hand-written decoders. One
 file, `src/langimg/chunk_74.cpp`, 0x800A54F0-0x800A7084.
 
-43 functions: 29 match, 7 are hand-written (they stay asm), 6 are
+43 functions: 30 match, 6 are hand-written (they stay asm), 6 are
 parked, 1 is still asm.
 
 ## The settings
@@ -17,9 +17,7 @@ small globals.
 ## Hand-written
 
 `config/langimg/handwritten.txt` (new) lists the game's hand-written
-functions, which count as done: `func_800A63FC` (a copy into the
-scratchpad unless `$sp` is there already, with an 8-byte frame it never
-uses), `func_800A6A4C` (a table into the scratchpad), `func_800A6A98`,
+functions, which count as done: `func_800A6A4C` (a table into the scratchpad), `func_800A6A98`,
 `func_800A6BD8` and `func_800A6D54` (a bitstream decoder in pieces that
 jump into each other), `func_800A6FA0` (a 64-bit multiply and divide),
 `func_800A7034` (a call on a stack in the scratchpad). Each has
@@ -74,7 +72,7 @@ instructions GCC doesn't emit (`neg`, `add`, `addi`) or handles `$sp` and
 | `func_800A6344`, `func_800A638C` | match | `strupr`, `strlwr` |
 | `func_800A63D4`, `func_800A63DC` | match | empty |
 | `func_800A63E4` | matches | a halfword's bytes swapped |
-| `func_800A63FC` | hand-written | |
+| `func_800A63FC` | matches | the CRC table copied to the scratchpad |
 | `func_800A6448`, `func_800A645C` | match | the CRC table set, CRC-32 |
 | `func_800A658C` | matches | code relocation |
 | `func_800A6650` | matches | an overlay run |
@@ -82,3 +80,9 @@ instructions GCC doesn't emit (`neg`, `add`, `addi`) or handles `$sp` and
 | `func_800A6850` | matches | a value scaled one of two ways by a flag |
 | `func_800A68BC` | parked | cheat-code sequences: registers |
 | `func_800A6A4C`, `func_800A6A98`, `func_800A6BD8`, `func_800A6D54`, `func_800A6FA0`, `func_800A7034` | hand-written | |
+
+## Second pass
+
+- `func_800A63FC` is C after all (it is off `config/langimg/handwritten.txt`):
+  the 8-byte frame is a local whose address is the stack's (`if (((int)&here
+  >> 16) != 0x1800)`), and the copy a `for (i = 255; i != -1; i--)` loop.

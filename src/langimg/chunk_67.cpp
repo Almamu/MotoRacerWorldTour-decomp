@@ -206,8 +206,6 @@ static inline void VecNegL67(Vec67 *d, Vec67 *s) {
     d->z = -z;
 }
 
-#ifdef NON_MATCHING
-// The negated translation: the original loads all three before the first store (9 off)
 /* m inverted in place: transposed, its translation through it and negated. */
 void func_800980F4(Mat67 *m) {
     Vec67 v;
@@ -224,18 +222,18 @@ void func_800980F4(Mat67 *m) {
     m->m[2][1] = t;
     func_80098768(m, &m->t, &v);
     {
-        int x = -v.x;
-        int y = -v.y;
-        int z = -v.z;
+        int x = v.x;
+        int y = v.y;
+        int z = v.z;
 
+        x = -x;
+        y = -y;
+        z = -z;
         m->t.x = x;
         m->t.y = y;
         m->t.z = z;
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_67", func_800980F4);
-#endif
 
 /* d = s inverted. */
 Mat67 *func_80098178(Mat67 *d, Mat67 *s) {
