@@ -56,7 +56,7 @@ extern DrawState *D_800C886C;
 extern u8 D_800C885C;
 extern u8 D_800C885D;
 extern int D_800C8860;
-void func_80077BE4(void *tex, int align, int x, int y);
+int func_80077BE4(void *tex, int align, int x, int y);
 
 void func_80018954(MATRIX *view, Cobjet *o, long *sxy);
 /* The subclasses' vtables: one entry each, their destructor */

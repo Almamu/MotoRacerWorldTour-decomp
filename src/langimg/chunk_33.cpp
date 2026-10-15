@@ -231,7 +231,7 @@ struct Img33 {
     u8 m_04;
 };
 extern Img33 *D_800CC28C;
-void func_80077EE0(Img33 *img, int a, int x, int y, int s, int w, int c);
+int func_80077EE0(Img33 *img, int a, int x, int y, int s, int w, int c);
 void func_80081F28(void *p, Vector3 *v);
 void func_8005114C(Bike33 *b, void *m, int n);
 void func_80081FE0(void *p, void *m, Vector3 *lo, Vector3 *hi);

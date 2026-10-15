@@ -220,7 +220,7 @@ extern char D_800CABB7;   // its last byte
 extern char D_800C4F78[]; // what a text too long becomes
 extern int D_800C8D8C;
 extern char D_800C4FC8[], D_800C4FD4[];
-void func_800A6168(char *buf, const char *fmt, char *ap); // vsprintf
+int func_800A6168(char *buf, const char *fmt, char *ap); // vsprintf
 int func_80040A24(Named *o, int *a);
 int func_800406E0(Named *o, int a);
 void func_80044D0C(Named *o);
@@ -492,7 +492,7 @@ void func_80040034(Named *o, int a) {
 }
 
 #ifdef NON_MATCHING
-/* Registers: the room's copy and the buffer's index (9 off) */
+/* Registers: the room's copy and the buffer's index (6 off, with func_800A6168 returning its int) */
 /* An entry's text from a format and its arguments, cut to its room. */
 int func_8004009C(Named *o, int h, int ent, int fmt, char *ap) {
     NamedEntry *e = (NamedEntry *)ent;
