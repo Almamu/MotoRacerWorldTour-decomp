@@ -16,7 +16,7 @@ Also:
 
 One file, `src/langimg/chunk_58.cpp`, 0x80085258-0x80087468.
 
-19 functions: 10 match, 4 are parked, 5 are still asm.
+19 functions: 10 match, 5 are parked, 4 are still asm.
 
 ## The settings
 
@@ -62,7 +62,7 @@ small globals.
 | `func_80085284` | asm | 386 instructions |
 | `func_80085888` | parked | a settings block filled: the stores' order |
 | `func_80085900` | parked | the start's lights: 65 off |
-| `func_80085C28` | asm | 458 instructions |
+| `func_80085C28` | parked | the start lights drawn: the packet pointer reloaded |
 | `func_80086350` | matches | the camera set at a point |
 | `func_800863CC` | matches | the camera moved to a point over a time |
 | `func_80086424` | parked | the camera's interpolation: registers |
@@ -77,3 +77,25 @@ small globals.
 | `func_80086F14` | matches | a buffer given memory |
 | `func_80086F20` | matches | a buffer's memory allocated |
 | `func_80086F64` | asm | 322 instructions |
+
+## Group C large functions, continued
+
+`func_80085C28` (458 instructions) draws the start lights: a draw area for
+the screen, the six lamps (each a lit image at its level and the dark one
+at the rest), a grey bar, the box's outline (a polyline of three sides and
+a line), the box in the player's colour, and a draw area for the box. It
+is written in the original's order and parked (424 off; 196 with stack
+offsets and branch targets left out):
+- the draw area is a macro (`SET_AREA58`) reading its rectangle's fields
+  where they're used, as the original does (`lhu` when masked, `lh` when
+  added); passed as values or through a pointer, they were read once;
+- the grey bar's four corners are computed into locals before its
+  stores, the later packets read the fields again after each store;
+- left: before each link the original loads the packet pointer
+  `D_800C8C70` again; GCC keeps it in a register, not treating the
+  packets' stores as able to change it. The draw areas' words are also
+  or'ed in another order, and the images' base and the constant 5 are in
+  swapped saved registers.
+
+`ui.h` is included for `ADD_PRIM`, so the chunk's own `memset`, `malloc`
+and `free` declarations went (`psyq.h` has them).
