@@ -83,7 +83,11 @@ struct Bk29 {
     s8 m_320;
     u8 m_321;
     s8 m_322;
-    u8 m_323[0x245];
+    u8 m_323[0x3D];
+    int m_360;
+    u8 m_364[0x79];
+    s8 m_3DD;
+    u8 m_3DE[0x18A];
 };
 struct Rc29 {
     int m_00; // the race's kind of game
@@ -96,6 +100,9 @@ struct Rc29 {
     u8 m_1E0C[8];
     int m_1E14[2];
     int m_1E1C[2];
+    u8 m_1E24[0x1C];
+    u8 m_1E40[0x10A];
+    s8 m_1F4A;
 };
 struct Cur29 {
     u8 m_00[4];
@@ -131,7 +138,10 @@ struct Game29 {
     int m_430[2];
     u8 m_438[4];
     Ply29 *m_43C[2];
-    u8 m_444[0x20];
+    u8 m_444[0x14];
+    void *m_458;
+    void *m_45C; // the camera's target
+    u8 m_460[4];
     Cur29 **m_464;
     int m_468[2];
     s8 m_470[2];
@@ -164,6 +174,16 @@ Ref29 *func_80078FC4(void *a, int b);
 Ent29 *func_800891E8(void *l, int i);
 void func_80054744(Game29 *g, char *s, int t, int i, int a, int c, int d);
 int func_8004C1BC(Game29 *g, int i, int k);
+// A bike's model: its matrix at 0x34
+struct Body29 {
+    u8 m_00[0x34];
+    MATRIX *m_34;
+};
+extern int D_800D60EC;
+void *func_8008C500(void *a, Game29 *g, int b, Bk29 *k, void *e);
+void *func_8008C678(void *a, Game29 *g, Vec29 *v, int n);
+void func_8008BCB0(void *c, Ply29 *p, Body29 *m, Bk29 *b, Vec29 *v, Game29 *g);
+int func_8004CB5C(Game29 *g, int i);
 void func_8004F0C4(Game29 *g, int i);
 void func_80078280(Ply29 *p);
 void func_8004C4E4(Game29 *g, int i, int c);
@@ -498,7 +518,66 @@ int func_8004C9D0(Game29 *g, int i) {
     return r;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_29", func_8004CB5C);
+// The identity, rows from the diagonal out (chunk_48's IdentMat48)
+static inline void IdentMat29(MATRIX *m) {
+    m->m[0][0] = 0x1000;
+    m->m[1][1] = 0x1000;
+    m->m[2][2] = 0x1000;
+    m->m[0][1] = m->m[0][2] = m->t[0] = 0;
+    m->m[1][0] = m->m[1][2] = m->t[1] = 0;
+    m->m[2][0] = m->m[2][1] = m->t[2] = 0;
+}
+
+static inline void ZeroVec29(Vec29 *v) {
+    v->vx = v->vy = v->vz = 0;
+}
+
+int func_8004CB5C(Game29 *g, int i) {
+    int r = 0;
+    int k = g->m_470[i];
+    Rc29 *rc = g->m_378;
+    Bk29 *b = 0;
+
+    if (k >= 0) {
+        b = &rc->m_2E8[k];
+    }
+    if (b) {
+        Body29 *m = (Body29 *)b->m_30;
+
+        if (m) {
+            Ply29 *p = g->m_43C[i];
+            void *c;
+            Vec29 v;
+
+            if (rc->m_1F4A) {
+                c = func_8008C500(g->m_458, g, D_800D60EC, b, rc->m_1E40);
+            } else {
+                int n = 0;
+
+                v = *(Vec29 *)m->m_34->t;
+                if (b->m_360 && b->m_3DD >= 26) {
+                    n = b->m_3DD - 25;
+                }
+                c = func_8008C678(g->m_458, g, &v, n);
+            }
+            if (c) {
+                v = *(Vec29 *)m->m_34->t;
+                func_8008BCB0(c, p, m, b, &v, g);
+                r = 1;
+            }
+            if (g->m_45C != c) {
+                g->m_438[i] = 1;
+            }
+            g->m_45C = c;
+            if (!r) {
+                IdentMat29(&p->m_00);
+                ZeroVec29(&p->m_F8);
+                func_8004C870(g, i, b);
+            }
+        }
+    }
+    return r;
+}
 
 static inline void VecCopyL29(Vec29 *d, Vec29 *s) {
     int x = s->vx;
