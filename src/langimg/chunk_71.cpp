@@ -311,6 +311,17 @@ struct U32P {
 } __attribute__((packed));
 
 void func_800A0584(u8 *src, u8 *dst);
+// A file of the pack (chunk_72's Blk72): its size at 4
+struct Blk71 {
+    int m_00;
+    int m_04;
+};
+Blk71 *func_800A1EFC(void *h, char *name);
+void *func_800A2234(void *h, char *name, void *buf, int *out);
+int func_800B5A1C(void);
+void *func_800B5730(void *p, int size);
+void *malloc(int size);
+void *func_800A06AC(char *name, void *buf, int *size);
 }
 
 void func_8009F180(Menu71 *m) {
@@ -863,7 +874,44 @@ void func_800A0680(void) {
     D_800D4788[0] = func_800A207C("\\MR3.DAT;1", 0);
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_800A06AC);
+void *func_800A06AC(char *name, void *buf, int *size) {
+    u8 *res;
+    int len = func_800A1EFC(D_800D4788[0], name)->m_04;
+    int own = 0;
+
+    if (!buf) {
+        int avail;
+
+        own = 1;
+        avail = func_800B5A1C() - 16;
+        res = (u8 *)malloc(avail);
+        buf = (void *)((u32)(res + avail - len - 0x800) & ~3);
+    }
+    func_800A2234(D_800D4788[0], name, buf, 0);
+    if (*(int *)buf == 0x53535A4C) {
+        if (own) {
+            len = ((int *)buf)[1];
+            func_800A0584((u8 *)buf + 8, res);
+        } else {
+            int n = ((int *)buf)[1];
+            int k = len - 0x1400;
+            u8 *d = (u8 *)buf + ((n - k) & ~3);
+
+            func_800A0558(d, (u8 *)buf, len);
+            func_800A0584(d + 8, (u8 *)buf);
+            len = n;
+        }
+    } else if (own) {
+        memcpy(res, buf, len);
+    }
+    if (own) {
+        res = (u8 *)func_800B5730(res, len);
+    }
+    if (size) {
+        *size = len;
+    }
+    return res;
+}
 
 int *func_800A080C(int *p) {
     func_800A0834(p);
