@@ -521,7 +521,7 @@ CdlFILE *func_800A1C74(CdlFILE *fp, char *name) {
 }
 
 #ifdef NON_MATCHING
-/* A first draft of the reader: the retries' and the pack's paths laid out differently (87 off) */
+/* With -fmove-all-movables (the chunk's flag): only the hook's address: its high half in $v0 where the original uses $v1 (2 off) */
 /* size bytes read from loc into buf (allocated if none is given), the sector
  * read again twice on an error. Mode 2 reads a pack: its first sector gives
  * its size. */

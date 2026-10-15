@@ -511,7 +511,7 @@ int func_800A6100(const char *a, const char *b, int n) {
 /* A small vsprintf: %d and %s, with a width (digits or *) and 0 to pad
  * with zeroes. Returns the length. */
 #ifdef NON_MATCHING
-// The original hoists six constants out of the loop into $t4-$t9 (and 10 into $s0); ours loads them in place. Only -fmove-all-movables hoists them here
+// The original hoists six constants out of the loop into $t4-$t9 (and 10 into $s0); the chunk is now built with -fmove-all-movables, which hoists them too (104 off, from 121), the rest still laid out differently
 int func_800A6168(s8 *d, s8 *fmt, va_list ap) {
     s8 *start = d;
     s8 buf[16];
