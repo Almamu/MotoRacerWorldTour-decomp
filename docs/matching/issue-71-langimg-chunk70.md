@@ -52,10 +52,19 @@ globals (`D_800C935C`, `D_800C9360`, `D_800C9C04`, `D_800CBE98`).
 | `func_8009D9CC` | asm | the page's state machine (284 instructions, two jump tables) |
 | `func_8009DDA8` to `func_8009DF90` | match | a save's data in and out, the page's frame |
 | `func_8009E01C` to `func_8009E360` | match | the buffer, buttons' states and flags, the gauge's call |
-| `func_8009E3C0` | parked | the gauge: a frame, a tick and the fill, with hand-linked packets (188 off) |
+| `func_8009E3C0` | parked | the gauge: a frame, a tick and the fill, with hand-linked packets (160 off) |
 | `func_8009E724` | matches | empty |
 | `func_8009E72C` | parked | the selected entry's four digits (registers) |
 | `func_8009E930` | matches | the digits' caller |
 | `func_8009E954` | parked | the page's setup: rectangles and two rows of cells (registers) |
 | `func_8009EAD0` | matches | a flag set when a choice is 0 |
 | `func_8009EAEC` | asm | 459 instructions |
+
+## GPU packets
+
+`func_8009E3C0` went from 188 to 160 off: its first packet's colour word
+(`p[6]`) written before its code word (`p[1]`) in the C, which gives the
+original's store order, and its draw modes set through an inline helper. Its draw mode blocks
+are the "GPU packets" pattern in the techniques, but with another
+primitive built right after each one GCC keeps the stepped pointer in its
+own register; that part isn't solved.

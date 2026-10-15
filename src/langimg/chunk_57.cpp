@@ -194,6 +194,43 @@ void func_800831BC(Txt57 *t, int i, int k, Box57 *w, int flags);
 short func_800803C4(int a, char *b);
 }
 
+// A name shown on its own line: its font, place, width and image
+struct Label57 {
+    s8 m_00[2]; // the font's index
+    u8 m_02[0xA];
+    short m_0C[2]; // y
+    short m_10[2]; // x
+    short m_14[2]; // the margin
+    char m_18[2][0x20];
+    short m_58[2]; // < 0: hidden
+    int m_5C[2];   // the image, or 0
+};
+
+extern u8 D_800C885C;  // the image's mode
+extern u8 D_800C885D;  // its alpha
+extern int D_800C8860; // its colour
+extern u8 D_800C89D4, D_800C89D5;
+extern u8 *D_800C8C70;  // the next free GPU packet
+extern u32 *D_800CBDC0; // the ordering table
+extern "C" void func_80077BE4(int img, int a, int x, int y);
+extern "C" void func_80083618(Label57 *l, int i);
+
+// ui.h's ADD_PRIM: links packet p in at ordering table entry ot (lwl/swl on the links' 3 bytes)
+#define ADD_PRIM57(ot, p) \
+    do { \
+        u32 _l, _p; \
+        __asm__ volatile("lwl %0, 2(%2)\n\tsll %1, %3, 8\n\tswl %0, 2(%3)\n\tswl %1, 2(%2)" \
+                         : "=&r"(_l), "=&r"(_p) \
+                         : "r"(ot), "r"(p)); \
+    } while (0)
+#define XY57(x, y) (((x) & 0xFFFF) | ((y) << 16))
+
+// A draw mode packet: its tag and the mode word
+static inline void SetDM57(u32 *p, u32 mode) {
+    p[0] = 0x01000000;
+    p[1] = mode;
+}
+
 // A short set from an int (its loads stay words)
 static inline void Put57(short *d, int v) {
     *d = v;
@@ -323,7 +360,61 @@ void func_8008350C(Txt57 *t, int i) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_57", func_8008350C);
 #endif
 
+#ifdef NON_MATCHING
+// The packets match the original's shape (a POLY_F4, then a draw mode set just past it with the pointer stepped in place: see "GPU packets" in the techniques); left: the label's x and y in swapped saved registers and the measured width reloaded from the stack where the original keeps it in a register (91 off).
+void func_80083618(Label57 *l, int i) {
+    if (l->m_58[i] >= 0) {
+        int x = l->m_10[i];
+        int y = l->m_0C[i];
+        int m = l->m_14[i];
+        short r[4];
+        short w;
+        int left;
+        u32 *p;
+        u32 *ot;
+
+        if (l->m_5C[i]) {
+            D_800C885C = 4;
+            D_800C885D = 0x80;
+            D_800C8860 = 0xFFFFFF;
+            func_80077BE4(l->m_5C[i], 0x200, x, y);
+        }
+        D_800C89D0 = 0;
+        if (D_800C89D4 != 8 || D_800C89D5) {
+            D_800C89D4 = 8;
+            D_800C89D5 = 0;
+            func_80080F8C();
+        }
+        func_80080040((&D_800CBD58)[l->m_00[i]], l->m_18[i], x + m, y + 3, (int *)r);
+        w = r[2];
+        if (w < w + m * 2) {
+            r[2] = w = w + m * 2;
+        }
+        left = x;
+        if (r[0] < left) {
+            left = r[0];
+        }
+        p = (u32 *)D_800C8C70;
+        p[0] = 0x05000000;
+        p[1] = 0x2A808080;
+        p[2] = XY57(left, y);
+        p[3] = XY57(left + w, y);
+        p[4] = XY57(left, y + r[3] + 6);
+        p[5] = XY57(left + w, y + r[3] + 6);
+        ADD_PRIM57(D_800CBDC0 + 1, D_800C8C70);
+        p = (u32 *)D_800C8C70;
+        SetDM57(p + 6, 0xE1000240);
+        p += 6;
+        ot = D_800CBDC0 + 1;
+        D_800C8C70 = (u8 *)p;
+        ADD_PRIM57(ot, D_800C8C70);
+        p += 2;
+        D_800C8C70 = (u8 *)p;
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_57", func_80083618);
+#endif
 
 void func_8008386C(Txt57 *t, int i) {
     t->m_18[i][0] = 0;
