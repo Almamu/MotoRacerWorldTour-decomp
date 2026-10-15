@@ -28,7 +28,7 @@ One file, `src/langimg/chunk_15.cpp`, 0x8002F4E4-0x80031500. The
 fields it reads are now named in `bike.h` and `motor.h` (by offset;
 `AnimChan` got its four values).
 
-14 functions: 8 match, 5 are parked, 1 is still asm.
+14 functions: 9 match, 4 are parked, 1 is still asm.
 
 ## The settings
 
@@ -71,8 +71,6 @@ globals.
 - **Parked.**
   - `func_8003031C`: the bound's sum in `$v0` where the original has
     `$v1` (3 off).
-  - `func_80030AB0`: the position and the second vector's address in
-    swapped saved registers (11 off).
   - `func_8002FF3C`: the test for a sign change (`(o < 0 && n > 0) ||
     (n < 0 && o > 0)`): the original branches on the new value's sign
     first and tests the old one's last (5 off). Its angle's wrap matched
@@ -94,6 +92,13 @@ globals.
   in other registers, and the original copies the motor pointer between
   two of them. Its fields are now named in `bike.h` (0xD4-0xE0) and
   `motor.h` (0x64, 0x68, 0xAC, 0xB4, 0xB8, 0xD4-0xDC, 0x100).
+- **Saved register order.** `func_80030AB0` matched with the speed at
+  0x29C read through an inline accessor (`Speed15(b)`, for the starting
+  value and the one subtracted after the calls): the accessor's result is
+  a fresh value, which changed the order the values are born in, and the
+  argument (the new position) and the second vector's address got the
+  original's `$s1` and `$s0` (the permuter's find; docs/
+  matching_techniques.md, "Saved register order").
 
 ## The functions
 
@@ -106,7 +111,7 @@ globals.
 | `func_8003031C` | parked | the motion pulled back: registers |
 | `func_80030458` | matches | the flags from the kind of ground |
 | `func_80030644` | parked | the rider's model posed: far off (registers) |
-| `func_80030AB0` | parked | the bike placed: registers |
+| `func_80030AB0` | matches | the bike placed |
 | `func_80030C98` | matches | the speed's fractions |
 | `func_80030CF0` | matches | whether the flag at 0x14F is set |
 | `func_80030CFC` | matches | the vector at 0x45C and the values after it reset |
