@@ -173,15 +173,23 @@ functions count as not done). CI draws them on every run and, on `main`
 once every check passed, replaces the single commit of the `badges`
 branch with them.
 
-The same counts go to [decompilati.onl](https://decompilati.onl), whose
-non-matching figure is the parked code alone (not added to the matching
-one). `tools/chunks.py progress FILE` writes the report (after `make
-sdk`, as for the badges): bytes of code over both executables, then each
-executable, split into the game's chunks and the libraries, each chunk
-with its source file and addresses, and the commit. CI writes it on every
-run and, on `main` once every check passed, sends it with the
-`DECOMPILATION_PROGRESS_TOKEN` secret. Without the secret (a fork) the
-step does nothing, and a failed report doesn't fail the run.
+The matching count also goes out as a progress report in
+[objdiff](https://github.com/encounter/objdiff)'s `report.json` format,
+which progress sites read. `tools/chunks.py report FILE` writes it
+(after `make sdk`, as for the badges). It has one unit per chunk, with
+its functions (matched, or not) and its source file, and the categories
+`langimg` and `sces`, each split into `_game` and `_lib`. A chunk is
+complete when all its functions match. The parked functions count as not
+matched: objdiff's format has no slot for C that builds but doesn't match
+(its fuzzy match measures how close the code is, which isn't measured
+here).
+
+CI writes the report on every run and uploads it as the `report`
+artifact (objdiff's name for a project with one version). The sites read
+it from the successful runs on `main`:
+[decompilati.onl](https://decompilati.onl) through its GitHub App
+(https://github.com/apps/decompilati-onl), and any other site that reads
+decomp.dev-style `report` artifacts the same way. No secret is needed.
 
 ## Decompiling a function
 
