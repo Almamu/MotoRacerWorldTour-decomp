@@ -32,7 +32,7 @@ struct F51 {
     u8 m_0C[0x10];
     int m_1C;
     u8 m_20[0x48];
-    VtEntry *m_vt; // 0x68
+    VtEntry *m_vt;     // 0x68
     DRAWENV m_draw[2]; // 0x6C
     DISPENV m_disp[2]; // 0x124
     int m_14C, m_150, m_154, m_158, m_15C, m_160, m_164, m_168;
