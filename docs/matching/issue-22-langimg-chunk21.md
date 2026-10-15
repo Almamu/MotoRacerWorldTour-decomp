@@ -1,7 +1,7 @@
 # The game's chunk_21: a scene's items and history (#22)
 
-A scene (`Scene21`, the object chunk_23 calls a stage) with its items
-(0x74 bytes each, a name first):
+A scene (`Scene21`; chunk_23's `Scene` and `Stage` describe parts of
+it) with its items (0x74 bytes each, a name first):
 - an item found by name, made current (two names go back instead), kept
   in a history, and gone back to, one or n items;
 - a named link found in the list at 0x16C;
@@ -33,12 +33,13 @@ globals `D_800C4D88`, `D_800C4D98` and `D_800C4D9C`.
 - **`(i + 2) << 2` on a byte pointer.** `func_8003B600` computes `(m_AB0
   + 2) * 4` and adds it; on an `int *`, GCC distributed it (`m_AB0 * 4 +
   8`). `(int *)((u8 *)p + (n + 2) * 4)` kept it for one; the other, an
-  argument, needed `(u8 *)p + ((n + 2) << 2)`.
+  argument, needed `(u8 *)p + ((n + 2) << 2)` (or the sum done on
+  `int`s).
 - **A value read before the `if`.** The same function reads `m_AB0` and
   computes the count before testing whether it reuses its buffers.
 - **An early `return` for a flag test.** `func_8003CD88` tests bit 0
-  with `andi` and `bnez`; `if (!(f & 1)) { ... }` gave `xori` and `andi`
-  (the flag word is used again below), `if (f & 1) return;` matched.
+  with `andi` and `bnez`; `if (!(f & 1)) { ... }` gave `xori` and `andi`;
+  `if (f & 1) return;` matched.
 - **A result set in every branch.** `func_8003CBA0` keeps its 0 result in
   a saved register from the start; with an early `return 0` per case GCC
   folded it, with one `if`/`else if`/`else` chain and one `return r` it
