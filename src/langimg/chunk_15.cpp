@@ -291,17 +291,18 @@ void func_8002FF3C(Bike *b) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_15", func_8002FF3C);
 #endif
 
-#ifdef NON_MATCHING
-// Registers: the bound's sum in $v0 where the original has $v1 (3 off).
 void func_8003031C(Bike *b) {
     if (D_800C5E14->m_378->m_10->m_state != 6 && b->m_58 && b->m_5D0->m_10 && b->m_29C > 0x1000) {
         Vector3 d, e, f;
         int a;
 
         func_800998D0(&d, &b->m_5D0->m_04, &b->m_5CC->m_04);
+        int l;
+
         a = func_80099454(&d, 0x11);
-        if ((func_80099454(&b->m_36C, 0x14) >> 3) + 0x80 < a) {
-            int l = func_8009931C(&b->m_36C);
+        l = func_80099454(&b->m_36C, 0x14) >> 3;
+        if (l + 0x80 < a) {
+            l = func_8009931C(&b->m_36C);
 
             e = d;
             func_80023140(&e, l >> 3, 0x11);
@@ -310,9 +311,6 @@ void func_8003031C(Bike *b) {
         }
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_15", func_8003031C);
-#endif
 
 void func_80030458(Bike *b) {
     int k = b->m_58;

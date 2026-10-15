@@ -28,7 +28,7 @@ One file, `src/langimg/chunk_15.cpp`, 0x8002F4E4-0x80031500. The
 fields it reads are now named in `bike.h` and `motor.h` (by offset;
 `AnimChan` got its four values).
 
-14 functions: 9 match, 4 are parked, 1 is still asm.
+14 functions: 10 match, 3 are parked, 1 is still asm.
 
 ## The settings
 
@@ -69,8 +69,6 @@ globals.
 - **`abs`.** GCC's `abs` (`bgez`, `negu`) gave `func_80030AB0`'s speed
   difference.
 - **Parked.**
-  - `func_8003031C`: the bound's sum in `$v0` where the original has
-    `$v1` (3 off).
   - `func_8002FF3C`: the test for a sign change (`(o < 0 && n > 0) ||
     (n < 0 && o > 0)`): the original branches on the new value's sign
     first and tests the old one's last (5 off). Its angle's wrap matched
@@ -108,7 +106,7 @@ globals.
 | `func_8002FBA4` | parked | a state stepped: registers |
 | `func_8002FF34` | matches | empty |
 | `func_8002FF3C` | parked | the angle and its rate integrated: a test's layout |
-| `func_8003031C` | parked | the motion pulled back: registers |
+| `func_8003031C` | matches | the motion pulled back |
 | `func_80030458` | matches | the flags from the kind of ground |
 | `func_80030644` | parked | the rider's model posed: far off (registers) |
 | `func_80030AB0` | matches | the bike placed |
@@ -118,3 +116,11 @@ globals.
 | `func_80030D70` | matches | a value from the channel at 0x4E0 |
 | `func_80031078` | matches | the channel at 0x378 set or eased |
 | `func_80031138` | matches | the value at 0x46C eased |
+
+## Near-misses pass
+
+- **`func_8003031C` matches** (3 off before): one variable holds the bound
+  and then the length (`l = f(...) >> 3; if (l + 0x80 < a) { l =
+  func_8009931C(...); ...`). With two variables the shifted bound stayed in
+  `$v0` and the sum reused it; as one variable doing two jobs its value stays
+  in `$v0` and the sum goes to `$v1`, as the original.

@@ -555,6 +555,20 @@ globals), a script that tries every order is quicker than guessing:
 
 ### Temporaries and folding
 
+- **A constant multiply spelled so GCC expands it the original's way.**
+  `(x << 13) + (x << 12)` in the original is `x * 0x3000`, but GCC
+  expands `x * 0x3000` as `(x * 3) << 12` and the two written shifts pick
+  other registers. `(x << 12) * 3` gives the original's code (chunk_02b's
+  `func_80016A8C`, 20 off to 0): the `* 3` expanded as a shift and an add
+  of the shifted value.
+- **One variable for two values in turn.** When the original keeps a
+  call's result where it was computed and puts the next sum in another
+  temporary, the source may reuse one variable for two values one after the
+  other (chunk_15's `func_8003031C`: `l = f() >> 3; if (l + 0x80 < a) { l =
+  g(); ...`); with two variables the sum reused the first value's register.
+- **A flag as a conditional expression.** chunk_13's `func_8002CED4`
+  matched with `big = l ? (f || l > len + 0x2000) : 0;` where `l && (...)`
+  and `if`s gave the length and the flag each other's temporaries.
 - **Packed fields read in the original's order.** When the original
   extracts bitfields of one word in an order other than the one it stores
   them in (chunk_62's coordinates: y, z, then x, stored x, y, z), read them
