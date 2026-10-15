@@ -127,6 +127,7 @@ void func_8008386C(Txt57 *t, int i);
 void func_80083A44(Hud57 *h, int i);
 void func_80083AB8(Hud57 *h, int i, Bike57 *b);
 void func_80083D18(Hud57 *h, int i, int t);
+void func_80083B08(Hud57 *h, int i, Bike57 *b);
 void func_80083D40(Hud57 *h, int i, int k);
 void func_80083E14(Hud57 *h, int i, int a, int t, int v);
 int func_800841BC(Node57 *n, int i, int force);
@@ -356,7 +357,69 @@ void func_80083AB8(Hud57 *h, int i, Bike57 *b) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_57", func_80083B08);
+/* Message i's slide stepped by its state at 0x7C: in from 0x04 to 0x08,
+ * held, out again; its position written to 0x0C or 0x10. */
+void func_80083B08(Hud57 *h, int i, Bike57 *b) {
+    int on = 1;
+    int to = h->m_08[i];
+    int from = h->m_04[i];
+    int f = 0;
+    int v;
+
+    if (h->m_34[i] > 0) {
+        f = ((D_800D6124.m_t - h->m_2C[i]) << 12) / h->m_34[i];
+    }
+    switch (h->m_7C[i]) {
+    case 1:
+        func_80083AB8(h, i, b);
+        if (f <= 0x1000) {
+            v = from + ((to - from) * f >> 12);
+        } else {
+            v = to;
+            h->m_7C[i] = 2;
+        }
+        break;
+    case 2:
+        on = 0;
+        if (!b->m_326) {
+            func_80083E14(h, i, 5, 2000, 0);
+        } else {
+            func_80083AB8(h, i, b);
+        }
+        break;
+    case 3:
+    case 4:
+    case 5:
+        on = 0;
+        if (f > 0x1000) {
+            func_80083D18(h, i, 300);
+            h->m_7C[i] = 6;
+        }
+        break;
+    case 6:
+        if (f <= 0x1000) {
+            v = to + ((from - to) * f >> 12);
+        } else {
+            v = from;
+            h->m_7C[i] = 0;
+        }
+        break;
+    case 0:
+    default:
+        on = 0;
+        break;
+    }
+    if (on) {
+        if (h->m_02[i]) {
+            h->m_0C[i] = v;
+        } else {
+            h->m_10[i] = v;
+        }
+    }
+}
+
+// The word after its jump table, the end of this file's .rodata
+extern "C" const int D_800B78B8 __attribute__((section(".rodata"))) = 0;
 
 void func_80083D18(Hud57 *h, int i, int t) {
     h->m_34[i] = t;
