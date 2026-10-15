@@ -92,7 +92,7 @@ settings
 | `src/langimg` chunk_23 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=D_800CABB7` |
 | `src/langimg` chunk_45 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (eleven) |
 | `src/langimg` chunk_66 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (five) |
-| `src/langimg` chunk_17, chunk_19, chunk_20, chunk_21, chunk_22, chunk_25, chunk_26, chunk_27, chunk_28, chunk_29, chunk_31, chunk_33, chunk_37, chunk_38, chunk_39, chunk_40, chunk_41, chunk_44, chunk_46, chunk_47, chunk_49, chunk_50, chunk_51, chunk_52, chunk_55, chunk_56, chunk_57, chunk_58, chunk_59, chunk_60, chunk_61, chunk_64, chunk_67, chunk_68, chunk_69, chunk_70, chunk_71, chunk_72, chunk_73, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
+| `src/langimg` chunk_17, chunk_19, chunk_20, chunk_21, chunk_22, chunk_25, chunk_26, chunk_27, chunk_28, chunk_29, chunk_31, chunk_32, chunk_33, chunk_37, chunk_38, chunk_39, chunk_40, chunk_41, chunk_44, chunk_46, chunk_47, chunk_49, chunk_50, chunk_51, chunk_52, chunk_55, chunk_56, chunk_57, chunk_58, chunk_59, chunk_60, chunk_61, chunk_64, chunk_67, chunk_68, chunk_69, chunk_70, chunk_71, chunk_72, chunk_73, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_06 to chunk_12 (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_02b (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `SCES_030.37` (`src/sces`) | GCC 2.91.66 | 0 | `-fsigned-char` | `--expand-div` |
@@ -252,6 +252,11 @@ globals), a script that tries every order is quicker than guessing:
 - **A return per test.** chunk_38's `func_8005E0D8` returns 0 from a
   block of its own after two tests: `if (!a) return 0; if (!b) return 0;`
   gave it, `if (!a || !b) return 0;` didn't.
+- **The result set after the early return.** chunk_32's `func_80051618`
+  returns 0 at once without a path and otherwise keeps its result in a
+  saved register, zeroed in the delay slot of the branch into the body:
+  `int r; if (!p) return 0; r = 0;` gave it. With `int r = 0;` GCC knew
+  `r` was 0 on the later early exits and returned the constant.
 - **Nested `if`s, not an early return.** chunk_20's `func_8003B038`
   returns its result's register on both early exits (`addu $v0, $s3`):
   `if (a) { if (b) { ... } } return r;` gave it; `if (!a) return r;`
@@ -339,7 +344,11 @@ globals), a script that tries every order is quicker than guessing:
 - **Which block comes first.** GCC lays out an `if`'s block before its
   `else`. chunk_39's `func_80060668` has the restart menu's call first,
   so its condition is the negated one: `if (a != b || (c != 8 && c != 4))
-  restart; else retire;`.
+  restart; else retire;`. chunk_32's `func_80053250` clears flags before it
+  sets them: `if (a != 7 || !b) clear; else set;`.
+- **A case falling into the next.** chunk_32's `func_80051AE0` sets its
+  result for kinds 1 and 8 to 10 and falls into kind 0's test; with a
+  `break` the cases were laid out differently.
 - **Sometimes two returns.** Unlike `FindEntry`, chunk_56's
   `func_80081330` returns 3 from two `if`s in a row (`if (x > 224) return
   3; if (y > 224) return 3;`); `||` put the return's block elsewhere.
@@ -370,6 +379,10 @@ globals), a script that tries every order is quicker than guessing:
 - **A loop GCC won't rotate: `goto`.** chunk_47's list search tests the
   node at the top and loops back on "not found":
   `next: if (n) { found = ...; n = n->next; if (!found) goto next; }`.
+  chunk_32's `func_80051AE0` jumps to its test first and steps the index
+  just before it: `goto test; next: i++; test: if (i < n) { ...; if (!r)
+  goto next; }`; `for`, `while` and `while (!r && i < n)` copied the
+  test before the loop.
   `while`, `do`/`while` with a `break`, and self tail recursion all came
   out rotated.
 - **A search with its bound at the top and its result at the bottom.**
@@ -579,6 +592,15 @@ globals), a script that tries every order is quicker than guessing:
 
 ### Pointers and locals
 
+- **A global read once for two tests.** chunk_32's `func_80053250`
+  compares `D_800D49A4` with 1, then the player with the same value
+  after a call: `(m = D_800D49A4) == 1` and `i == m`, `m` a local of its
+  own (reusing another local changed the registers throughout).
+- **Elements through the array, not a local pointer.** The same
+  function's loop over three cameras reads each as `o->m_3B8[k].f`
+  (`addu $a1, $s0, $v0`, offset first); a local `Cam32 *c =
+  &o->m_3B8[k];` swapped the `addu`'s operands.
+
 - **A pointer to a field's array walks the loop.** `int *sel =
   m->m_A9C->m_08.m_18;` before a loop and `sel[i]` inside it gives the
   original's pointer to `+0x20`, kept in a register and stepped by 4;
@@ -711,7 +733,8 @@ A vector copied with its first load folded and the next two through an
 address register (`lw 0x64($v1)`, then `addiu $v0, $v1, 0x64; lw
 0x4($v0)`) is an inline that reads all three fields before storing them,
 called with the fields' addresses: `VecCopyL(&d->v, &s->v)` (chunk_41's
-`func_80063848`, chunk_31's `func_8005148C` and `func_800508B4`). Struct
+`func_80063848`, chunk_31's `func_8005148C` and `func_800508B4`; chunk_32's
+`func_80051618` stores each field as it reads it). Struct
 assignment, `memcpy` and pointer locals fold every offset. When the
 stores go through a matrix's address with the translation's offset
 (`sw 0x14($a1)`), the inline takes the matrix (`SetTrans(&m, &p->v)`,
@@ -753,6 +776,11 @@ mean a `short` field.
   (`m_state : 4` at bit 16, `m_mode : 2` at bit 20), each assignment keeps
   its own. An anonymous union with the word keeps the other functions'
   `int` uses as they were.
+- **Flags cleared one `and` at a time.** chunk_32's `func_80053250`
+  clears a short's flags with an `and` per bit (`-2` then `-3`) and sets
+  them with one `ori`: read into an `int` (`lh`), `f &= ~1; f &= ~2;`
+  kept the two `and`s. As bitfields GCC merged the clears into one
+  `andi`; in a `short` local the last clear went through `sll`/`sra`.
 - **Narrow parameters are extended by the callee.** A `char` or `short`
   parameter gets an `sll`/`sra` (or `andi`) at the start of the function;
   if the original has none, the parameter is an `int`, even when only its
@@ -804,7 +832,9 @@ mean a `short` field.
   with chunk_45's `int` return, not `void`. The callee's own definition
   also gives its parameters: `func_8006C094` and `func_8006976C` take a
   third argument, which explained registers the original kept free
-  (`func_8005DF6C` passes its own `$a1` and `$a2` on).
+  (`func_8005DF6C` passes its own `$a1` and `$a2` on). chunk_32's
+  `func_80053198` keeps its second argument in `$a3` from the start: it
+  is the fourth argument of chunk_56's `func_8008280C`.
 - **No return statement.** A function called for its result whose
   original leaves in `$v0` what its own callee returned, with no copy:
   its source had no `return` (GCC 2.9x accepts that in a non-void
