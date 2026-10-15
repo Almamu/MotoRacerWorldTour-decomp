@@ -92,7 +92,7 @@ settings
 | `src/langimg` chunk_23 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=D_800CABB7` |
 | `src/langimg` chunk_45 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (eleven) |
 | `src/langimg` chunk_66 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` (five) |
-| `src/langimg` chunk_17, chunk_19, chunk_20, chunk_21, chunk_22, chunk_25, chunk_26, chunk_27, chunk_28, chunk_29, chunk_31, chunk_33, chunk_37, chunk_39, chunk_40, chunk_41, chunk_44, chunk_46, chunk_47, chunk_49, chunk_50, chunk_51, chunk_52, chunk_55, chunk_56, chunk_57, chunk_58, chunk_59, chunk_60, chunk_61, chunk_64, chunk_67, chunk_68, chunk_69, chunk_70, chunk_71, chunk_72, chunk_73, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
+| `src/langimg` chunk_17, chunk_19, chunk_20, chunk_21, chunk_22, chunk_25, chunk_26, chunk_27, chunk_28, chunk_29, chunk_31, chunk_33, chunk_37, chunk_38, chunk_39, chunk_40, chunk_41, chunk_44, chunk_46, chunk_47, chunk_49, chunk_50, chunk_51, chunk_52, chunk_55, chunk_56, chunk_57, chunk_58, chunk_59, chunk_60, chunk_61, chunk_64, chunk_67, chunk_68, chunk_69, chunk_70, chunk_71, chunk_72, chunk_73, chunk_74 (2.91.66 code) | GCC 2.91.66 | 8 | (split addresses) | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_06 to chunk_12 (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `src/langimg` chunk_02b (2.91.66 code) | GCC 2.91.66 | 8 | `-mno-split-addresses` | `--expand-div --div-no-checks --small-externs=...` |
 | `SCES_030.37` (`src/sces`) | GCC 2.91.66 | 0 | `-fsigned-char` | `--expand-div` |
@@ -244,6 +244,14 @@ globals), a script that tries every order is quicker than guessing:
 
 ### Result variables
 
+- **The found path through the common return.** chunk_38's
+  `func_8005E1D0` returns its result from `$s2`, -1 until found: with
+  `r = v; func(); return r;` in the loop GCC returned a constant -1 at
+  the end; with the found and not-found paths both ending in `break` and
+  one `return r;` after the loop, `r` stayed in the register.
+- **A return per test.** chunk_38's `func_8005E0D8` returns 0 from a
+  block of its own after two tests: `if (!a) return 0; if (!b) return 0;`
+  gave it, `if (!a || !b) return 0;` didn't.
 - **Nested `if`s, not an early return.** chunk_20's `func_8003B038`
   returns its result's register on both early exits (`addu $v0, $s3`):
   `if (a) { if (b) { ... } } return r;` gave it; `if (!a) return r;`
@@ -325,7 +333,9 @@ globals), a script that tries every order is quicker than guessing:
   has a jump table for 1 to 8 whose last two entries go to the end, and
   each case loads the same pointer itself. Without `case 7: break; case 8:
   break;` the table stopped at 6 and GCC hoisted the shared load above
-  the jump.
+  the jump. chunk_38's `func_8005DE2C` switches on a bike's state
+  through a table for 0 to 4: with only `case 1` and `case 3: case 4:`
+  GCC compared instead; `case 0: case 2: break;` gave the table.
 - **Which block comes first.** GCC lays out an `if`'s block before its
   `else`. chunk_39's `func_80060668` has the restart menu's call first,
   so its condition is the negated one: `if (a != b || (c != 8 && c != 4))
@@ -336,6 +346,12 @@ globals), a script that tries every order is quicker than guessing:
 
 ### Loops
 
+- **A loop entered at its body: `do`/`while`.** chunk_38's loops over
+  the five bikes jump into the body and test the count at the top of the
+  next pass: `i = 0; b = r->m_2E8; do { ...; b++; } while (++i < 5);`
+  gave that layout, a `for` didn't. A `continue` in it skips the `b++`,
+  as in the original's `func_8005E2A8`, whose "no time" path counts on
+  without moving to the next bike.
 - **The element and the next one's address.** chunk_64's `func_800913C0`
   keeps the element and its successor (computed early, in a delay slot):
   `Chan64 *c = p++;` at the top of the loop. Stepping `c++` at the bottom
@@ -784,6 +800,11 @@ mean a `short` field.
   right after the call come out differently, even when the result isn't
   used. When a register differs right after a call, try an `int` return
   on the callee first.
+  chunk_38's `func_8005E2A8` matched once `func_8006C694` was declared
+  with chunk_45's `int` return, not `void`. The callee's own definition
+  also gives its parameters: `func_8006C094` and `func_8006976C` take a
+  third argument, which explained registers the original kept free
+  (`func_8005DF6C` passes its own `$a1` and `$a2` on).
 - **No return statement.** A function called for its result whose
   original leaves in `$v0` what its own callee returned, with no copy:
   its source had no `return` (GCC 2.9x accepts that in a non-void
