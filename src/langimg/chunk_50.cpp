@@ -58,7 +58,23 @@ struct Node50 {
     struct Node50 *m_04;
     u8 m_08[0xC];
     Vec50 *m_14;
+    SVec50 *m_18;
 };
+// A subclass between two track nodes: the halves of its ends' differences
+struct Seg50 {
+    u8 m_00[0x28];
+    Node50 *m_28;
+    Node50 *m_2C;
+    u8 m_30[0x54];
+    SVec50 m_84;
+    SVec50 m_8C;
+};
+
+static inline void Halve50(SVec50 *v) {
+    v->x >>= 1;
+    v->y >>= 1;
+    v->z >>= 1;
+}
 
 struct Mat50 {
     short m[3][3];
@@ -93,6 +109,7 @@ extern int D_800C87B4;
 extern int D_800C87EC;
 
 extern "C" {
+void func_80075A1C(Seg50 *o);
 Obj50 *func_80074510(Obj50 *o);
 Obj50 *func_80074534(Obj50 *o);
 void func_800745AC(Obj50 *o, int f);
@@ -180,7 +197,33 @@ void func_800758F4(Trk50 *o) {
     func_80099D48(&o->m_68, 1);
 }
 
+#ifdef NON_MATCHING
+// The short vectors' copies (lwl/lwr): the original's go through $t4/$t5, GCC's through $t0/$t1, and the differences' loads come out in another order (104 off, the structure the same).
+void func_80075A1C(Seg50 *o) {
+    Node50 *p = o->m_28;
+    Node50 *q = o->m_2C;
+    Node50 *pp = p->m_04;
+    Node50 *qn = q->m_00;
+    SVec50 a, b, c, d, t;
+
+    a = *pp->m_18;
+    b = *p->m_18;
+    c = *q->m_18;
+    d = *qn->m_18;
+    t.x = c.x - a.x;
+    t.y = c.y - a.y;
+    t.z = c.z - a.z;
+    o->m_84 = t;
+    t.x = d.x - b.x;
+    t.y = d.y - b.y;
+    t.z = d.z - b.z;
+    o->m_8C = t;
+    Halve50(&o->m_84);
+    Halve50(&o->m_8C);
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_50", func_80075A1C);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_50", func_80075BEC);
 
