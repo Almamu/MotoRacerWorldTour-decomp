@@ -187,6 +187,20 @@ void *func_800A06AC(char *name, void *buf, int *size);
 void func_80015678(void (*f)(void));
 void func_800A1654(void);
 void func_800A17EC(int x, char *name);
+// A three-point Gouraud line (LINE_G3) as words
+struct Line72 {
+    u32 m_tag;
+    u32 m_c0;
+    u32 m_xy0;
+    u32 m_c1;
+    u32 m_xy1;
+    u32 m_c2;
+    u32 m_xy2;
+};
+extern int D_800C9F14;        // the spinner's size, 0 to 5
+extern int D_800C9F18;        // its step
+extern short D_800BF3A0[][2]; // sines and cosines by angle (4.12)
+void DrawPrim(void *p);
 void *func_800B5730(void *p, int size);
 extern void (**D_800D6000)(void *p); // a hook on what's read
 
@@ -453,7 +467,39 @@ void func_800A164C(int *p) {
     *p = 0;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_72", func_800A1654);
+/* The loading spinner: 32 lines out from (460, 425), their length
+ * swinging between 11 and 16. */
+void func_800A1654(void) {
+    Line72 p;
+    Line72 *l = &p;
+    int a, r;
+
+    p.m_tag = 0x06000000;
+    l->m_c0 = 0x30007F7F;
+    l->m_c1 = 0x7F;
+    l->m_c2 = 0x7F;
+    l->m_xy0 = 0x01A901CC;
+    r = 16 - D_800C9F14;
+    for (a = 0; a < 0x1000;) {
+        int n;
+
+        l->m_xy1 = (u16)(r * D_800BF3A0[a & 0xFFF][0] / 4096 + 0x1CC) |
+                   ((r * D_800BF3A0[a & 0xFFF][1] / 4096 + 0x1A9) << 16);
+        n = a + 0x80;
+        l->m_xy2 = (u16)(r * D_800BF3A0[n & 0xFFF][0] / 4096 + 0x1CC) |
+                   ((r * D_800BF3A0[n & 0xFFF][1] / 4096 + 0x1A9) << 16);
+        DrawPrim(l);
+        a = n;
+    }
+    D_800C9F14 += D_800C9F18;
+    if (D_800C9F18 > 0) {
+        if (D_800C9F14 >= 5) {
+            D_800C9F18 = -1;
+        }
+    } else if (D_800C9F14 <= 0) {
+        D_800C9F18 = 1;
+    }
+}
 
 /* A picture shown full screen: the named one, or the default one. */
 void func_800A17EC(int x, char *name) {
