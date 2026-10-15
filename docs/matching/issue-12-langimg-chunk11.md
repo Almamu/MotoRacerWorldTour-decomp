@@ -4,7 +4,7 @@ Six large methods of the bike (chunk_09): its per-frame state from the
 motion's flags, its drag, the engine's force on the ground, and three
 more. One file, `src/langimg/chunk_11.cpp`, 0x80027614-0x800297B4.
 
-6 functions: 2 match, 1 is parked, 3 are still asm.
+6 functions: 2 match, 2 are parked, 2 are still asm.
 
 ## The settings
 
@@ -15,7 +15,8 @@ checks, no small globals (`langimg.chunk_11_*`).
 
 | Function | State | Notes |
 |---|---|---|
-| `func_80027614`, `func_80027A90`, `func_800283D0` | asm | 287, 276 (with `sprintf`) and 927 instructions |
+| `func_80027614` | parked | the automatic gearbox: two register pairs (12 off) |
+| `func_80027A90`, `func_800283D0` | asm | 276 (with `sprintf`) and 927 instructions |
 | `func_80027EE0` | matches | the ground and clutch flags from the motion, and `m_2E4` raised and lowered (316 instructions) |
 | `func_80029248` | parked | the engine's force: the first test's layout, and a flag GCC sets with `sltu` |
 | `func_800295D4` | matches | the drag: the speed squared times the motor's drag (120 instructions) |
@@ -33,3 +34,22 @@ checks, no small globals (`langimg.chunk_11_*`).
 `include/langimg/bike.h` gained the fields these read; its generator now
 sizes array fields properly (`u8 m_52C[4]` was one byte and moved
 everything after it).
+
+## Sixth pass
+
+`func_80027614`, the automatic gearbox, is written and parked 12 off: the
+engine speed asked for (from chunk_14's `func_8002E684`, declared here
+with its motion argument) clamped to the top speed, the speed's fraction
+for the kind 3 bikes, then gears changed against the motor's upshift points
+(`func_80027098`, `func_800270FC`) or by the motion's flags 0x10 and 0x20.
+What made the difference:
+- **The flags word read again.** The second flag test reads `b->m_5CC`
+  again rather than the local the first one used (the permuter's find,
+  76 off to 12): the original reloads the word for it.
+- **One clamp written as a `?:`**, the other with the result set first
+  (`r = q;`) and the negative case as the `else`, as the original lays
+  them out.
+- **An index computed as `gear + (shift - 1)`** in one test and as
+  `gear + shift - 1` in the loop, as the original computes them.
+Left: the top speed and the clamped speed, and the gear and the shift,
+each in swapped registers.

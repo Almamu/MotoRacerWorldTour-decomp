@@ -120,9 +120,11 @@ struct Lvl71 {
 struct Card71 {
     int m_00;
     Three71 m_04;
-    u8 m_80[0x94];
+    int m_80;
+    int m_84[0x24];
     int m_114;
-    u8 m_118[0x3C];
+    u8 m_118[0x38];
+    int m_150;
     int m_154;
     u32 m_b0 : 1;
     u32 m_b1 : 1;
@@ -139,7 +141,8 @@ struct Card71 {
     Group71 m_15D8;
     u8 m_1624[4];
     int m_1628;
-    u8 m_162C[0x70];
+    int m_162C;
+    int *m_1630[27];
     int m_169C;
     int m_16A0;
     int m_16A4;
@@ -246,6 +249,10 @@ void func_8009FD60(Menu71 *m);
 void func_8009FDE8(Menu71 *m);
 void func_8009F450(Menu71 *m);
 int func_800A0DC4(Card71 *c, int a, int b);
+int func_800A138C(Card71 *c, int x);
+int func_800A1528(int *d, Pos71 *p);
+int func_800A158C(Pos71 *p);
+extern int D_800D5F10[];
 char *func_8009FFCC(void);
 void func_8009FAB0(Menu71 *m);
 struct Seven71 {
@@ -1116,4 +1123,71 @@ int func_800A0DC4(Card71 *c, int a, int b) {
     return r;
 }
 
+#ifdef NON_MATCHING
+// The card pointer's area ($s4) and the saved slot ($s5) in swapped saved registers, and the found flag's test as xori where the original has andi then bnez (14 off). The directory read once into a local and D_800D5F10 declared unsized gave the rest.
+int func_800A0E58(Card71 *c) {
+    int fd;
+    Three71 *t = &c->m_04;
+
+    c->m_154 = 2;
+    if (c->m_150 != -1) {
+        *c->m_1630[c->m_150] = 1;
+    }
+    fd = c->m_1730;
+    if (fd != -1) {
+        c->m_1730 = -1;
+        c->m_16A8 = 8;
+    } else if (c->m_162C) {
+        int dir = t->m_78;
+        int *d = func_800A14B8(dir);
+        Pos71 *p = func_800A14E8(dir);
+        int k = p->m_00;
+
+        if (func_800A1528(d, p)) {
+            int r = func_800A138C(c, 0);
+
+            if (r < 3) {
+                c->m_1628 |= 1;
+                p->m_08[k] = r + 1;
+                if (k < 2 && p->m_08[k + 1] == fd) {
+                    p->m_08[k + 1] = 0;
+                }
+                if (func_800A158C(p)) {
+                    Pos71 *a, *b, *e;
+
+                    c->m_1628 |= 8;
+                    a = func_800A14E8(0);
+                    b = func_800A14E8(1);
+                    e = func_800A14E8(2);
+                    if (a->m_08[0] > 0 && a->m_08[1] > 0 && a->m_08[2] > 0 && b->m_08[0] > 0 &&
+                        b->m_08[1] > 0 && b->m_08[2] > 0 && !c->m_80) {
+                        c->m_80 = 1;
+                        if (e->m_08[0] == -1) {
+                            e->m_08[0] = 0;
+                        }
+                    }
+                }
+            } else {
+                c->m_1628 |= 2;
+                func_800A0DC4(c, t->m_78, k);
+            }
+            if (!((c->m_1628 >> 1) & 1)) {
+                if (k < 2) {
+                    func_800A0DC4(c, t->m_78, k + 1);
+                }
+            }
+        } else {
+            p->m_04++;
+            c->m_154 = 5;
+        }
+    }
+    func_800A138C(c, 0);
+    if (c->m_162C && !c->m_84[c->m_16A0]) {
+        D_800D5F10[0] = c->m_16A0;
+        c->m_84[c->m_16A0] = 1;
+    }
+    return 0;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_71", func_800A0E58);
+#endif

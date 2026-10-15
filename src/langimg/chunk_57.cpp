@@ -202,7 +202,7 @@ static inline void Put57(short *d, int v) {
 /* Text i placed in box w: after texture k (or none, -1), by the flags'
  * alignment. */
 #ifdef NON_MATCHING
-// Registers: the width and the texture's width swapped ($a3/$t0), and the row's address added the other way round (t + 2i where GCC has 2i + t) for the stores through Put57; direct stores narrow the box's loads to lhu (15 off).
+// Registers: the width and the texture's width swapped ($a3/$t0); the rows' addresses as byte offsets (t + (i << 1) + field) gave the original's t + 2i (11 off).
 void func_800831BC(Txt57 *t, int i, int k, Box57 *w, int flags) {
     if (w->m_44 && w->m_48) {
         u8 *tex = 0;
@@ -228,20 +228,20 @@ void func_800831BC(Txt57 *t, int i, int k, Box57 *w, int flags) {
             width = tw;
         }
         if ((m & 0x30) != 0x20) {
-            Put57(&t->m_04[i], w->m_00 - width - 1);
-            Put57(&t->m_08[i], w->m_18);
+            Put57((short *)((u8 *)t + (i << 1) + 0x04), w->m_00 - width - 1);
+            Put57((short *)((u8 *)t + (i << 1) + 0x08), w->m_18);
         } else {
-            Put57(&t->m_04[i], w->m_00 + w->m_08 + 1);
-            Put57(&t->m_08[i], w->m_1C - width);
+            Put57((short *)((u8 *)t + (i << 1) + 0x04), w->m_00 + w->m_08 + 1);
+            Put57((short *)((u8 *)t + (i << 1) + 0x08), w->m_1C - width);
         }
         t->m_02[i] = 1;
         a = flags & 0x300;
         if (!a) {
-            Put57(&t->m_0C[i], w->m_20);
+            Put57((short *)((u8 *)t + (i << 1) + 0x0C), w->m_20);
         } else if (a == 0x200) {
-            Put57(&t->m_0C[i], w->m_24 - fh - th);
+            Put57((short *)((u8 *)t + (i << 1) + 0x0C), w->m_24 - fh - th);
         } else if (a == 0x100) {
-            Put57(&t->m_0C[i], w->m_2C);
+            Put57((short *)((u8 *)t + (i << 1) + 0x0C), w->m_2C);
         }
         t->m_5C[i] = tex;
     }
