@@ -55,16 +55,30 @@ struct Base49 {
     int m_10;
 };
 // A link: the next, the previous, two values by direction
-struct Lnk49 {
-    Lnk49 *m_00;
-    Lnk49 *m_04;
-    int m_08;
-    int m_0C[2];
+struct Vec49 {
+    int x;
+    int y;
+    int z;
 };
 struct Flags49 {
     unsigned m_lo : 8;
     unsigned m_a : 2;
     unsigned m_b : 2;
+};
+struct Ang49 {
+    short x, y, z, pad;
+};
+struct Lnk49 {
+    Lnk49 *m_00;
+    Lnk49 *m_04;
+    int m_08;
+    int m_0C[2];
+    struct Vec49 *m_14; // a key's position
+    Ang49 *m_18;        // and angles
+    union {
+        int m_1C;
+        Flags49 m_1Cf;
+    };
 };
 struct Obj49 {
     int m_00;
@@ -93,6 +107,17 @@ struct Obj49 {
     struct Lnk49 *m_2C;
     int m_30;
     void *m_34; // the vtable
+};
+// An object moved along keys (derived from Obj49)
+struct Obj49k {
+    Obj49 m_base;
+    u8 m_38[0x18];
+    struct Vec49 m_50;
+    u8 m_5C[0x18];
+    Ang49 m_74; // its angles, eased towards the key's
+    Ang49 m_7C; // last frame's
+    u8 m_84[0x10];
+    s8 m_94;
 };
 extern int D_800CB870, D_800CB874, D_800CB878, D_800CB880, D_800CB884, D_800CB888;
 extern int D_800D60FC, D_800D6100, D_800D60EC, D_800D6128;
@@ -127,17 +152,17 @@ Lnk49 *func_80074924(Obj49 *o);
 void func_800747A8(Obj49 *o, int dir, int *t, int n);
 int func_80074AC8(Obj49 *o);
 void func_800746B0(Obj49 *o, int dflt, int dir, int e, int sub);
-struct Vec49 {
-    int x;
-    int y;
-    int z;
-};
 Vec49 *func_8009964C(Vec49 *v, int k); // v * k, returns v
 void func_80099D48(Vec49 *v, int s);
 void func_80063C60(Pos49 *o, u8 *p, Vec49 *v, int a, int k, int b, int d);
 void func_8007356C(Pool49 *p, Pos49 *w, Trk49 *t);
 int func_80073C2C(Pool49 *p, int lo, int hi, Trk49 *t, int m, int racers, Ent49 *skip, int skipv,
                   int kind);
+void func_80076504(short *a, short b);
+int func_80099E3C(Vec49 *a, Vec49 *b);
+void func_800758F4(Obj49k *o);
+void func_80075A1C(Obj49k *o);
+void func_80074DA0(Obj49k *o, int dflt, int dir, int e, int sub);
 }
 void CobjetLinkDtor49(Node49 *l, int f) asm("_._10CobjetLink");
 
@@ -674,6 +699,84 @@ void func_80074D78(Obj49 *o, int f) {
     func_800745AC(o, f);
 }
 
+static inline void VecCopyL49(Vec49 *d, Vec49 *s) {
+    int x = s->x;
+    int y = s->y;
+    int z = s->z;
+
+    d->x = x;
+    d->y = y;
+    d->z = z;
+}
+
+// Whether two angles differ
+static inline int AngNe49(Ang49 *a, Ang49 *b) {
+    int r = 0;
+
+    if (a->x != b->x || a->y != b->y || a->z != b->z) {
+        r = 1;
+    }
+    return r;
+}
+
+#ifdef NON_MATCHING
+// Registers: the object and the second argument in swapped saved registers (the key then reusing the argument's), and the vtable call's function and offset in other registers (45 off).
+void func_80074DA0(Obj49k *o, int dflt, int dir, int e, int sub) {
+    Lnk49 *k;
+
+    if (o->m_base.m_28) {
+        void (*fn)(void *);
+        int d;
+
+        if (e) {
+            d = ((VtEntry49 *)o->m_base.m_34)[4].m_delta;
+            fn = (void (*)(void *))((VtEntry49 *)o->m_base.m_34)[4].m_func;
+        } else {
+            d = ((VtEntry49 *)o->m_base.m_34)[5].m_delta;
+            fn = (void (*)(void *))((VtEntry49 *)o->m_base.m_34)[5].m_func;
+        }
+        fn((u8 *)o + d);
+    }
+    func_800746B0(&o->m_base, dflt, dir, e, sub);
+    k = o->m_base.m_2C;
+    if (k) {
+        Lnk49 *p;
+        Vec49 a, b;
+        Ang49 u, t;
+        int f, g;
+
+        t = *k->m_18;
+        p = o->m_base.m_28;
+        func_80076504(&o->m_74.x, t.x);
+        func_80076504(&o->m_74.y, t.y);
+        func_80076504(&o->m_74.z, t.z);
+        o->m_7C = o->m_74;
+        VecCopyL49(&a, p->m_14);
+        VecCopyL49(&b, k->m_14);
+        f = 0;
+        if (e || func_80099E3C(&o->m_50, &b)) {
+            f = 1;
+        }
+        k->m_1Cf.m_a = f;
+        if (!o->m_94) {
+            u = *p->m_18;
+            t = *k->m_18;
+        }
+        g = 0;
+        if (e || o->m_94 || AngNe49(&o->m_7C, &t)) {
+            g = 1;
+        }
+        k->m_1Cf.m_b = g;
+        if (k->m_1Cf.m_lo == 1) {
+            func_800758F4(o);
+            if (!o->m_94) {
+                func_80075A1C(o);
+            }
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_49", func_80074DA0);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_49", func_80075058);

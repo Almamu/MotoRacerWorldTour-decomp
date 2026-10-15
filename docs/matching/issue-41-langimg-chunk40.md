@@ -18,7 +18,7 @@ Also the four lists sorted with `qsort`, the first time only.
 
 One file, `src/langimg/chunk_40.cpp`, 0x80061484-0x80063428.
 
-23 functions: 16 match, 3 are parked, 4 are still asm.
+23 functions: 16 match, 4 are parked, 3 are still asm.
 
 ## The settings
 
@@ -66,7 +66,7 @@ globals.
 | `func_800614C0`, `func_80061510`, `func_80061540` | match | a bike's object's parts set from a list |
 | `func_800615C4` | matches | the parts' positions kept, their nodes updated |
 | `func_800618BC` | asm | 503 instructions |
-| `func_80062098` | asm | 209 instructions |
+| `func_80062098` | parked | a bike's crash steps: registers |
 | `func_800623DC` | matches | a bike reset |
 | `func_80062440` | asm | 222 instructions |
 | `func_800627B8`, `func_800627C0`, `func_800627D8`, `func_800627E4` | match | the waiting bits |
@@ -80,3 +80,16 @@ globals.
 | `func_800631A4` | matches | the last values kept |
 | `func_80063250` | matches | a band from three tables, a value interpolated |
 | `func_80063398` | parked | a vector from two others: the last copy's registers |
+
+## Group B follow-up
+
+- `func_80062098` written and parked (109 off): a bike's crash steps
+  (`Bike40`): its animation stepped (chunk_17's `func_80034D14`,
+  `func_800354D0`), the model's position kept, then the next step from the
+  list at 0x2F8 started (`func_8009243C`), and at the first one the bike's
+  matrix and position set from the key's angles. The crash state is read
+  again through its byte field (the original's sign extension), and the
+  shape's position is copied field by field (not `VecCopyL40`, whose
+  pointer form loads through the address). Left: the bike and the step's
+  index in other saved registers, and the matrix at 0x2A4's address not
+  kept in `$s0`.

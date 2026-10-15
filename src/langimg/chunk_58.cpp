@@ -38,19 +38,43 @@ struct Cam58 {
     short m_58;  // how far along, in 4096ths
 };
 
-// A camera's settings (0x34 bytes)
+// The start's lights (0x34 bytes): their centre, corner and size, the
+// lamps' kinds and levels, the step, its progress, start and length
 struct Set58 {
-    u8 m_00[8];
+    short m_00, m_02;
+    short m_04, m_06;
     short m_08;
     short m_0A;
     int m_0C;
     int m_10;
     int m_14;
-    u8 m_18[0xC];
+    u8 m_18[6];
+    u8 m_1E[6];
     short m_24;
-    u8 m_26[6];
+    u8 m_26[2];
+    int m_28;
     int m_2C;
     int m_30;
+};
+// The race (chunk_36's Own36) and a bike (chunk_36's Bike36)
+struct Bike58 {
+    u8 m_00[0x320];
+    s8 m_320;
+    u8 m_321[0x247];
+};
+struct Run58 {
+    u8 m_00[0x2E8];
+    Bike58 m_2E8[5];
+};
+struct Own58 {
+    u8 m_00[0x378];
+    Run58 *m_378;
+    u8 m_37C[0xF4];
+    s8 m_470[2];
+};
+struct Gfx58 {
+    u8 m_00[0x58];
+    int m_58;
 };
 
 // A point and two values
@@ -75,7 +99,10 @@ struct Ent58 {
 };
 
 extern Cfg58 D_800CC030;
-extern short D_800C8BAC;
+extern short D_800C8BAC; // the steps' lengths
+extern Own58 *D_800C5E14;
+extern Gfx58 *D_800C886C;
+extern "C" int func_8006CA84(int id, int a);
 extern int D_800CBD30;
 extern int D_800CBD34;
 extern int D_800CBD3C;
@@ -139,7 +166,109 @@ void func_80085888(Set58 *c, int b) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_58", func_80085888);
 #endif
 
+/* The start's lights stepped at time now: their lamps lit one by one, then the
+ * go; their size grows and shrinks. */
+#ifdef NON_MATCHING
+// Written in full, the switch's jump table and bodies as the original's; the size's store in the first branch merged by GCC into the second's tail (0x80 and 50 in other registers there), the bike's and the run's loads in another order and the clamp laid out the other way round, which shifts the rest (65 off).
+extern "C" void func_80085900(Set58 *c, int now) {
+    Own58 *o = D_800C5E14;
+    Bike58 *b = 0;
+    int k = o->m_470[0];
+    int t, v;
+    int a, n;
+
+    if (k >= 0) {
+        b = &o->m_378->m_2E8[k];
+    }
+    if (D_800C886C->m_58 == 2) {
+        c->m_00 = 0x80;
+        c->m_02 = 0x80;
+    } else {
+        c->m_00 = b->m_320 ? 0x80 : 0x100;
+        c->m_02 = 50;
+    }
+    if (c->m_28 == 0x1000) {
+        c->m_2C = now;
+        if (++c->m_24 >= 12) {
+            c->m_24 = 11;
+        }
+        c->m_30 = (&D_800C8BAC)[c->m_24];
+    }
+    t = ((now - c->m_2C) << 12) / c->m_30;
+    c->m_28 = t;
+    if (t < 0) {
+        t = 0;
+    } else if (t > 0x1000) {
+        t = 0x1000;
+    }
+    c->m_28 = t;
+    a = -1;
+    n = -1;
+    switch (c->m_24) {
+    case 0:
+        c->m_1E[0] = 0xFF;
+        c->m_1E[1] = 0xFF;
+        c->m_1E[2] = 0xFF;
+        c->m_1E[3] = 0xFF;
+        c->m_1E[4] = 0xFF;
+        c->m_1E[5] = 0xFF;
+        c->m_18[0] = 0;
+        c->m_18[1] = 0;
+        c->m_18[2] = 0;
+        c->m_18[3] = 0;
+        c->m_18[4] = 0;
+        c->m_18[5] = 0;
+        v = c->m_28;
+        goto size;
+    case 2:
+        c->m_18[0] = 1;
+        c->m_1E[0] = c->m_28 * 255 >> 12;
+        if (!c->m_28) {
+            a = 0x42;
+            n = 0x25;
+        }
+        break;
+    case 4:
+        c->m_18[1] = 1;
+        c->m_1E[1] = c->m_28 * 255 >> 12;
+        if (!c->m_28) {
+            a = 0x42;
+            n = 0x26;
+        }
+        break;
+    case 6:
+        c->m_18[2] = 1;
+        c->m_1E[2] = c->m_28 * 255 >> 12;
+        if (!c->m_28) {
+            a = 0x42;
+            n = 0x27;
+        }
+        break;
+    case 8:
+        c->m_18[3] = c->m_18[4] = c->m_18[5] = 2;
+        v = c->m_28 * 255 >> 12;
+        c->m_1E[2] = c->m_1E[1] = c->m_1E[0] = ~v;
+        c->m_1E[5] = c->m_1E[4] = c->m_1E[3] = v;
+        if (!c->m_28) {
+            a = 0x43;
+            n = 0x28;
+        }
+        break;
+    case 10:
+        v = 0x1000 - c->m_28;
+    size:
+        c->m_08 = (u32)(v * 75) >> 11;
+        c->m_0A = (u32)(v * 25) >> 11;
+        break;
+    }
+    func_8006CA84(a, 127);
+    func_8006CA84(n, 127);
+    c->m_04 = c->m_00 - c->m_08 / 2;
+    c->m_06 = c->m_02 - c->m_0A / 2;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_58", func_80085900);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_58", func_80085C28);
 

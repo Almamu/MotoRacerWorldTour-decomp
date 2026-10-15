@@ -117,7 +117,8 @@ without the flag (`tools/try_func.py NAME -D NON_MATCHING
 chunk_06 and chunk_24 have it too (their parked functions got closer,
 nothing matched yet), and so do chunk_59, chunk_68, chunk_72 and chunk_74
 (chunk_72's `func_800A1CF8` from 92 off to 2, chunk_59's `func_80088FD4`
-from 104 to 16).
+from 104 to 16), and chunk_55 (its string-width loop `func_8007F33C`
+keeps -1, -4, 0xFFFF and a base in saved registers: 169 off to 92).
 
 ### Unsplit addresses (`-mno-split-addresses`)
 
@@ -844,6 +845,14 @@ globals), a script that tries every order is quicker than guessing:
   another, chunk_28's `func_800497AC` matched with `delete[] (u8 *)p`;
   calling `__builtin_vec_delete(p)` directly put the reloaded pointer
   after each call in `$v1` instead of `$v0`.
+- **A retry as a `goto`, with the label's first statement in the jump's
+  delay slot.** When the original jumps back to the top of a block with a
+  `j` whose delay slot repeats the block's first instruction (and the
+  same instruction also comes just before the block), the source is a
+  label and a `goto`, with that instruction as the label's first
+  statement: `reorg` copies it into the backward jump's delay slot and
+  retargets the jump after it. As a `for (;;)` GCC hoisted addresses out
+  of the loop instead (chunk_38's `func_8005EE48`, `top: pa = &a;`).
 - **Unused locals.** A frame bigger than its variables need means the
   original had locals the optimiser dropped: `int unused[6];` gives
   `func_8001184C`'s 0x30-byte frame.

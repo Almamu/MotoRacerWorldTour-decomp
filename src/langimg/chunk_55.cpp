@@ -43,7 +43,10 @@ struct Font55 {
     s8 m_04; // the spacing
     u8 m_05;
     u8 m_06; // a space's width
-    u8 m_07[0x11];
+    u8 m_07; // the kerning: a table after the glyphs, or chunk_56's pairs
+    u16 m_08;
+    u16 m_0A;
+    u8 m_0C[0xC];
     Glyph55 m_18[1];
 };
 // An icon: its left and right
@@ -55,6 +58,7 @@ struct Icon55 {
 
 extern Icon55 *D_800CC030[];
 extern int D_800C89E0; // the spacing, or -1 for the font's
+extern void ***D_800C8D8C;
 extern u8 D_800C89D4;
 extern u8 D_800C89D5;
 extern int D_800C89D8;
@@ -75,6 +79,8 @@ int func_800812C4(Map55 *m);
 void func_8007F294(void);
 void func_8007F2AC(Spr55 *p, u16 a, u16 b);
 int func_8007F2C8(Tab55 *t, u8 a, u8 b);
+int func_8007F33C(Font55 *f, u8 *s);
+int func_80081330(void *t, int a, int b);
 void func_80080678(void);
 int func_80080F30(void);
 int func_800803C4(Font55 *f, u8 *s);
@@ -113,7 +119,71 @@ int func_8007F2C8(Tab55 *t, u8 a, u8 b) {
     return 0;
 }
 
+/* A string's width with its kerning, up to the end of its line. */
+#ifdef NON_MATCHING
+// Written in full, the structure the original's (with -fmove-all-movables: -1, -4, 0xFFFF and the glyphs' base hoisted); left: the space's glyph addressed through the hoisted base where the original indexes the font, the previous character in $a1 where the original has $a3, and the width added through a copy (92 off).
+int func_8007F33C(Font55 *f, u8 *s) {
+    int w = 0;
+    u8 prev = 0;
+    int c;
+
+    while ((c = *s++) != 0) {
+        switch (c) {
+        case '\t':
+            w += f->m_06 * 2;
+            break;
+        case ' ':
+            if (f->m_02 <= ' ') {
+                int g = f->m_18[c - f->m_02].m_02;
+
+                w += g + (D_800C89E0 != -1 ? D_800C89E0 : f->m_04);
+            } else {
+                w += f->m_06;
+            }
+            break;
+        case '\n':
+            return w;
+        default: {
+            u8 i = c - f->m_02;
+
+            if (i < f->m_01) {
+                Glyph55 *g;
+
+                if (f->m_08) {
+                    if (f->m_07) {
+                        int base = ((f->m_01 * f->m_01) & ~3) + 4;
+
+                        if (prev) {
+                            w += ((s8 *)f->m_18)[prev - f->m_02 + f->m_01 * i];
+                        }
+                        g = (Glyph55 *)((u8 *)&f->m_18[i] + base);
+                    } else {
+                        if (prev) {
+                            w += func_8007F2C8((Tab55 *)f, prev, c);
+                        }
+                        g = &f->m_18[i] + f->m_08;
+                    }
+                } else {
+                    if (f->m_0A != 0xFFFF && prev) {
+                        int k = func_80081330((*D_800C8D8C)[f->m_07], prev, c);
+
+                        if (k) {
+                            w += (short)(k * f->m_00) / f->m_0A;
+                        }
+                    }
+                    g = &f->m_18[i];
+                }
+                w += g->m_02 + (D_800C89E0 != -1 ? D_800C89E0 : f->m_04);
+            }
+            prev = c;
+        }
+        }
+    }
+    return w;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_55", func_8007F33C);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_55", func_8007F5E8);
 

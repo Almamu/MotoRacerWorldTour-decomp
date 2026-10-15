@@ -12,7 +12,7 @@ What's here:
 
 One file, `src/langimg/chunk_55.cpp`, 0x8007F294-0x80081270.
 
-20 functions: 12 match, 3 are parked, 5 are still asm.
+20 functions: 12 match, 4 are parked, 4 are still asm.
 
 ## The settings
 
@@ -40,6 +40,18 @@ globals from `D_800C89D0` on.
   before the case it acts on, though the `0x1000` case does nothing. A
   switch with an empty case loses the test. Parked.
 
+## Group C, continued
+
+- `func_8007F33C` (a string's width with its kerning, up to the end of
+  its line) is written and parked, 92 off. Its loop keeps -1, -4, 0xFFFF
+  and the glyphs' base in saved registers: the chunk is now built with
+  `-fmove-all-movables`, which took it from 169 to 92 off (every matched
+  function still matches, the parked `func_800803C4` unchanged). Left: the
+  space's glyph addressed through the hoisted base where the original
+  indexes the font, the previous character in another register, and the
+  width added through a copy. The previous character declared `u8` saved
+  the zero-extension before chunk_55's `func_8007F2C8` (which takes `u8`s).
+
 ## The functions
 
 | Function | State | Notes |
@@ -47,7 +59,7 @@ globals from `D_800C89D0` on.
 | `func_8007F294` | matches | a counter |
 | `func_8007F2AC` | matches | a sprite's two fields |
 | `func_8007F2C8` | matches | a pair's value |
-| `func_8007F33C` | asm | 171 instructions |
+| `func_8007F33C` | parked | a string's width with its kerning: 92 off |
 | `func_8007F5E8` | asm | 216 instructions |
 | `func_8007F948` | asm | 446 instructions |
 | `func_80080040` | asm | 225 instructions |

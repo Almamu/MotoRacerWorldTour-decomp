@@ -8,7 +8,7 @@ sound settings applied, groups of named entries, an LZ unpacker and the
 open of `\MR3.DAT`. One file, `src/langimg/chunk_71.cpp`,
 0x8009F180-0x800A1110.
 
-57 functions: 49 match, 5 are parked, 3 are still asm (`func_8009F180`
+57 functions: 49 match, 6 are parked, 2 are still asm (`func_8009F180`
 matched during chunk_70, #71, once `func_800A41BC` was declared `int`).
 
 ## The settings
@@ -34,6 +34,16 @@ small and they're declared as scalars. chunk_72's split loads (`lui $v1`,
 - `E71`: an entry with a value, a name of 3 characters, two shorts;
   `Group71` five of them and one more.
 
+## Group C, continued
+
+- `func_800A0E58` (a file loaded from the card: its flags, the next
+  directory tried, the slot marked) is written and parked, 14 off. The
+  current directory read once into a local for its two calls, and
+  `D_800D5F10` declared unsized (so its address is built as the
+  original's), took it from 169 to 14; left are two saved registers
+  swapped and one bit's test (`xori` where the original has `andi` then
+  `bnez`). `Card71` now names 0x80, 0x84, 0x150, 0x162C and 0x1630.
+
 ## The functions
 
 | Function | State | Notes |
@@ -55,7 +65,7 @@ small and they're declared as scalars. chunk_72's split loads (`lui $v1`,
 | `func_800A09C0` | parked | the current cell's name: a register (third pass) |
 | `func_800A0AE8` | matches | the settings' defaults |
 | `func_800A0C58` to `func_800A0DC4` | match | the cards' state set up, reset, updated, a directory chosen |
-| `func_800A0E58` | asm | 174 instructions |
+| `func_800A0E58` | parked | a file loaded from the card: 14 off |
 
 - **Locals read first.** The four volume handlers matched with the menu
   and the key's code read into locals before anything else.

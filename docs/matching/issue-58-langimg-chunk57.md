@@ -41,6 +41,12 @@ globals from `D_800CBD24` on.
   into a string at any offset (`swl`/`swr`); a packed one-`int` struct
   gives that. It's parked on its registers.
 
+## Group C, continued
+
+- `func_800831BC` went from 15 to 11 off: its rows' addresses written as
+  byte offsets (`(u8 *)t + (i << 1) + 4`) give the original's `t + 2i`;
+  the width and the texture's width are still in swapped registers.
+
 ## The functions
 
 | Function | State | Notes |
