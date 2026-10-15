@@ -481,10 +481,13 @@ void func_80030644(Bike *b, Rider15 *r, int draw) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_15", func_80030644);
 #endif
 
-#ifdef NON_MATCHING
-// Registers: the position and the second vector's address in swapped saved registers (11 off).
+// The bike's speed (0x29C)
+static inline int Speed15(Bike *b) {
+    return b->m_29C;
+}
+
 void func_80030AB0(Bike *b, Vector3 *p, int f) {
-    int old = b->m_29C;
+    int old = Speed15(b);
     Vector3 u, v;
     int d;
 
@@ -500,7 +503,7 @@ void func_80030AB0(Bike *b, Vector3 *p, int f) {
     func_80099D48(&b->m_pos, 5);
     SetTrans(b->m_34, &b->m_pos);
     func_80026164(b, 0, 1);
-    old -= b->m_29C;
+    old -= Speed15(b);
     b->m_5B = 1;
     d = abs(old) / 8 * 255 / 4096;
     if (d > 255) {
@@ -517,9 +520,6 @@ void func_80030AB0(Bike *b, Vector3 *p, int f) {
         }
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_15", func_80030AB0);
-#endif
 
 void func_80030C98(Bike *b, short v) {
     b->m_298 = v;
