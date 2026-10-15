@@ -5,20 +5,27 @@
 extern "C" {
 // An entry, 0xCC bytes
 struct Ent49 {
-    u8 m_00[8];
+    int m_00;
+    int m_04;         // its kind
     u8 m_08[0xC];     // its position
     short m_14[0x10]; // its matrix
     int m_34;
     int m_38; // where it is along the track
-    u8 m_3C[0x44];
+    u8 m_3C[4];
+    int m_40;
+    u8 m_44[0x3C];
     int m_80; // bit 0: in use
     u8 m_84[0x18];
     int m_9C; // its speed
     u8 m_A0[0x2C];
 };
+struct Who49;
 struct Pool49 {
-    u8 m_00[0x30];
-    int m_30; // how many
+    u8 m_00[0xC];
+    int m_0C; // how many racers
+    u8 m_10[4];
+    struct Who49 *m_14[7]; // the racers
+    int m_30;              // how many
     Ent49 *m_34;
 };
 struct Rng49 {
@@ -128,6 +135,8 @@ Vec49 *func_8009964C(Vec49 *v, int k); // v * k, returns v
 void func_80099D48(Vec49 *v, int s);
 void func_80063C60(Pos49 *o, u8 *p, Vec49 *v, int a, int k, int b, int d);
 void func_8007356C(Pool49 *p, Pos49 *w, Trk49 *t);
+int func_80073C2C(Pool49 *p, int lo, int hi, Trk49 *t, int m, int racers, Ent49 *skip, int skipv,
+                  int kind);
 }
 void CobjetLinkDtor49(Node49 *l, int f) asm("_._10CobjetLink");
 
@@ -261,7 +270,56 @@ void func_80073AA0(void *g, int k, int *lo, int *hi) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_49", func_80073AA0);
 #endif
 
+// A distance along the track brought within half its length
+static inline int Wrap49(int d, int half, int len) {
+    if (half < d) {
+        d -= len;
+    }
+    if (d < -half) {
+        d += len;
+    }
+    return d;
+}
+
+// Whether the stretch from lo - m to hi + m is free of the pool's entries
+// (but skip, those with skipv at 0x40 and, unless kind is -1, of other kinds)
+// and, with racers, of the racers within 0x32000
+#ifdef NON_MATCHING
+// GCC hoists lo - m out of the first loop into a saved register where the original recomputes it in each pass and keeps the entries' count there instead; the registers differ from there on (73 off).
+int func_80073C2C(Pool49 *p, int lo, int hi, Trk49 *t, int m, int racers, Ent49 *skip, int skipv,
+                  int kind) {
+    int len = t->m_2C;
+    int half = len >> 1;
+    int i;
+
+    for (i = 0; i < p->m_30; i++) {
+        Ent49 *e = &p->m_34[i];
+
+        if (e != skip && e->m_40 != skipv && (kind == -1 || e->m_04 == kind) && (e->m_80 & 1)) {
+            int a = Wrap49(lo - m - e->m_38, half, len);
+            int b = Wrap49(hi + m - e->m_38, half, len);
+
+            if (a < 0 && b > 0) {
+                return 0;
+            }
+        }
+    }
+    if (racers) {
+        for (i = 0; i < p->m_0C; i++) {
+            int pos = p->m_14[i]->m_30->m_208;
+            int a = Wrap49(lo - pos - 0x32000, half, len);
+            int b = Wrap49(hi - pos + 0x32000, half, len);
+
+            if (b > 0 && a < 0) {
+                return 0;
+            }
+        }
+    }
+    return 1;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_49", func_80073C2C);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_49", func_80073E54);
 
