@@ -143,7 +143,50 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_30", func_8004D734);
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_30", func_8004E99C);
 
 #ifdef NON_MATCHING
-// The original computes the product's translation address (sp+0x5C) again for each of its two calls; GCC keeps it in a saved register, which takes $s3 and a frame of 0x80 against 0x78 (149 off; the stack slots and the two rotations' stores match).
+// With the product's two calls and both turns in inline functions (the original's addresses recomputed) only the fog clamp is left: the original loads the value into $s0 and sets 100 after a branch; written as a ?: here, GCC tests a copy (5 off).
+// A turn about z by an angle (4.12), from the sine table
+static inline void RotZ30(MATRIX *m, int a) {
+    int c = D_800BF3A0[a & 0xFFF][1];
+    int s = D_800BF3A0[a & 0xFFF][0];
+
+    m->m[2][2] = 0x1000;
+    m->m[2][0] = 0;
+    m->m[0][2] = 0;
+    m->m[2][1] = 0;
+    m->m[1][2] = 0;
+    m->m[1][1] = c;
+    m->m[0][0] = c;
+    m->m[0][1] = -s;
+    m->m[1][0] = s;
+}
+
+// A turn about y by an angle (4.12), from the sine table
+static inline void RotY30(MATRIX *m, int a) {
+    int c = D_800BF3A0[a & 0xFFF][1];
+    int s = D_800BF3A0[a & 0xFFF][0];
+
+    m->m[1][1] = 0x1000;
+    m->m[1][0] = 0;
+    m->m[0][1] = 0;
+    m->m[2][1] = 0;
+    m->m[1][2] = 0;
+    m->m[0][2] = s;
+    m->m[2][2] = c;
+    m->m[0][0] = c;
+    m->m[2][0] = -s;
+}
+
+static inline void SetAng30(SVECTOR *a, int y) {
+    a->vx = 0;
+    a->vz = 0;
+    a->vy = y;
+}
+
+static inline void Move30(Cam30 *c, MATRIX *out, MATRIX *r) {
+    func_8009887C(c->m_00.t, out->t);
+    func_800997D0((Vec30 *)out->t, (Vec30 *)r->t);
+}
+
 void func_8004EE10(Own30 *o, int i) {
     int k = o->m_470[i];
     Body30 *m = 0;
@@ -168,44 +211,18 @@ void func_8004EE10(Own30 *o, int i) {
 
             u.v = p->m_0C;
             VecCopyL30(&c->m_F8, &u.v);
-            u.a.vx = 0;
-            u.a.vz = 0;
-            u.a.vy = p->m_68;
-            cs = D_800BF3A0[u.a.vy & 0xFFF][1];
-            sn = D_800BF3A0[u.a.vy & 0xFFF][0];
-            c->m_00.m[1][1] = 0x1000;
-            c->m_00.m[1][0] = 0;
-            c->m_00.m[0][1] = 0;
-            c->m_00.m[2][1] = 0;
-            c->m_00.m[1][2] = 0;
-            c->m_00.m[0][2] = sn;
-            c->m_00.m[2][2] = cs;
-            c->m_00.m[0][0] = cs;
-            c->m_00.m[2][0] = -sn;
+            SetAng30(&u.a, p->m_68);
+            RotY30(&c->m_00, u.a.vy);
             if (!span) {
                 y = p->m_74;
             } else {
                 y = (p->m_74 - p->m_72) * (u.a.vy - lo) / span + p->m_72;
             }
-            cs = D_800BF3A0[y & 0xFFF][1];
-            sn = D_800BF3A0[y & 0xFFF][0];
-            r.m[2][2] = 0x1000;
-            r.m[2][0] = 0;
-            r.m[0][2] = 0;
-            r.m[2][1] = 0;
-            r.m[1][2] = 0;
-            r.m[1][1] = cs;
-            r.m[0][0] = cs;
-            r.m[0][1] = -sn;
-            r.m[1][0] = sn;
+            RotZ30(&r, y);
             func_80098674(&r, &c->m_00, &out);
-            func_8009887C(c->m_00.t, out.t);
-            func_800997D0((Vec30 *)out.t, (Vec30 *)r.t);
+            Move30(c, &out, &r);
             c->m_00 = out;
-            f = p->m_6E;
-            if (f < 100) {
-                f = 100;
-            }
+            f = p->m_6E < 100 ? 100 : p->m_6E;
             func_8001D23C(D_800CA7D8, D_800CA934, f, 0x800, 0);
             func_8001D23C(o->m_49C, D_800CA934, f, 0x800, 0);
         }

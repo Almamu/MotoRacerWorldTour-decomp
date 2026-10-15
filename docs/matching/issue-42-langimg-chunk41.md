@@ -13,7 +13,7 @@ same object, `Bike31::m_30`). Its functions:
 
 One file, `src/langimg/chunk_41.cpp`, 0x80063428-0x800653F4.
 
-23 functions: 15 match, 3 are parked, 5 are still asm.
+23 functions: 16 match, 3 are parked, 4 are still asm.
 
 ## The settings
 
@@ -62,7 +62,7 @@ small globals.
 | `func_800643BC` | matches | the destructor |
 | `func_800643E4` | parked | the orientation matrix: stack addresses in saved registers |
 | `func_80064608` | asm | 294 instructions |
-| `func_80064AA0` | asm | 369 instructions |
+| `func_80064AA0` | matches | a bike's values from its motor and the race |
 | `func_80065044` | parked | a speed from a table, capped: the cell's address the other way round (2 off) |
 | `func_800650F8` | parked | a slope between two points: two registers |
 
@@ -83,3 +83,21 @@ small globals.
   the inline function, as arrays, `d->x` stored before `d->y = 0`, and
   the first row written in place, not through a local (a permuter's find).
   Left: the second row's index and table loaded into swapped registers.
+
+## Large functions
+
+- `func_80064AA0` (369 instructions) matches: a bike's values at
+  0x45C-0x48C and 0x118 from its motor's entry (0x34 bytes) in the race's
+  table at 0x390, and twenty globals from the race's settings at 0x3EC,
+  through `MULSHIFT` by a factor (the settings' value at 0x174 by
+  `D_800D5F30`, plus `D_800D5F4C`, at least 0x199) or `0x2000` minus it.
+  Three things mattered:
+  - the last switch (the game mode, 1-4 and 5-6) written with a body per
+    case: with the cases sharing two bodies GCC compared; with one each it
+    built the original's jump table and merged the bodies after;
+  - the top speed at 0x118 stored after the entry's value at 0x30 (the
+    original's store order);
+  - the run's value read into a local before the index is stored
+    (`int r = ...; o->m_450 = k; o->m_3F0 = r;`).
+  The repeated `MULSHIFT`s (with their shift loaded again where the
+  original does) needed nothing special.

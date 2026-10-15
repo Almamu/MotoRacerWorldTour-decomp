@@ -21,7 +21,7 @@ chunk_23's kind, its vtable at 0x68) and its run's bikes:
 
 One file, `src/langimg/chunk_36.cpp`, 0x800593CC-0x8005B788.
 
-10 functions: 5 match, 2 are parked, 3 are still asm.
+10 functions: 6 match, 2 are parked, 2 are still asm.
 
 ## The settings
 
@@ -68,7 +68,7 @@ globals `D_800CB3A0`, `D_800CB3BC` and `D_800CB3C4`.
 
 | Function | State | Notes |
 |---|---|---|
-| `func_800593CC` | asm | 357 instructions |
+| `func_800593CC` | matches | a bike's progress on the track |
 | `func_80059960` | parked | a bike's slot started or called: an address |
 | `func_80059B54` | matches | a slot set and passed on |
 | `func_80059BE8` | matches | whether a bike is racing |
@@ -78,3 +78,20 @@ globals `D_800CB3A0`, `D_800CB3BC` and `D_800CB3C4`.
 | `func_8005A148` | asm | 275 instructions |
 | `func_8005A594` | matches | returns 1 |
 | `func_8005A59C` | asm | 1154 instructions |
+
+## Large functions
+
+- `func_800593CC` (357 instructions) matches: a bike in the race found on
+  the track again (chunk_48's `func_8007142C` and `func_80071994` from its
+  model's position), its wrong-way bit set from the points it moved
+  through (`func_80070E20`, a fifth and four fifths of the sections), its
+  slot handled (`func_80059960`), and its distance from the start line at
+  0x3C and 0x3E counted along the sections. Three things mattered:
+  - the model's position copied field by field from the pose's
+    translation, its three loads first and the stores after the bike's
+    two copies at 0x24 and 0x26 (`pt = b->m_22` between them);
+  - after the search, the section written back first (`b->m_20 =
+    sec->m_00; b->m_22 = pt; b->m_45 = k;`), which puts its load ahead of
+    the point's and the flag's, as the original's;
+  - the wrong-way bit set as a bitfield and read back as `(b->m_00 >> 7) &
+    1`; the in-race test the same way, `(b->m_00 >> 6) & 1`.

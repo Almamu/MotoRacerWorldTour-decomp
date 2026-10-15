@@ -10,6 +10,9 @@ struct VtEntry36 {
     short m_index;
     void *m_func;
 };
+struct Vec36 {
+    int x, y, z;
+};
 struct Pose36 {
     u8 m_00[4];
     short m_04;
@@ -17,31 +20,43 @@ struct Pose36 {
     short m_0A;
     u8 m_0C[4];
     short m_10;
+    u8 m_12[2];
+    Vec36 m_14; // the translation
 };
 struct Body36 {
     u8 m_00[0x34];
     Pose36 *m_34;
-};
-struct Vec36 {
-    int x, y, z;
 };
 // A bike, 0x568 bytes (chunk_38's Bike38)
 struct Bike36 {
     union {
         u32 m_00;    // flags: bit 6, in the race; bits 1-5, its kind
         u8 m_00b[4]; // 1: its state
+        struct {
+            unsigned m_b0 : 1;
+            int m_kind : 5;
+            unsigned m_in : 1;
+            unsigned m_back : 1; // going the wrong way
+        } m_f;
     };
     u8 m_04[0xC];
     int m_10;
-    u8 m_14[0xE];
-    short m_22;
-    u8 m_24[2];
+    u8 m_14[8];
+    int m_1C;
+    short m_20; // its section
+    short m_22; // its point
+    short m_24; // last frame's
     short m_26;
     u8 m_28[8];
     Body36 *m_30;
-    u8 m_34[0xF];
+    u8 m_34[8];
+    short m_3C; // its distance from the start line
+    short m_3E;
+    u8 m_40[3];
     s8 m_43;
-    u8 m_44[0x145];
+    u8 m_44;
+    s8 m_45;
+    u8 m_46[0x143];
     s8 m_189;
     u8 m_18A[0x19D];
     u8 m_327;
@@ -65,6 +80,21 @@ struct Run36 {
     s8 m_1E39;
     u8 m_1E3A[2];
     struct List36 *m_1E3C;
+    u8 m_1E40[0xE4]; // the track (chunk_48's)
+    short m_1F24;    // the start line's point
+    short m_1F26;    // and section
+    u8 m_1F28[0x22];
+    s8 m_1F4A;
+};
+// A section of the track (chunk_48's Ent48)
+struct Sec36 {
+    short m_00;
+    s8 m_02; // -1: the end of the track
+    u8 m_03;
+    u32 m_04; // bit 1: counted
+    int m_08; // how many points
+    u8 m_0C[0x44];
+    struct Sec36 *m_50; // the next section
 };
 // An entry of the run's list at 0x1E3C (12 bytes)
 struct Ent36 {
@@ -92,7 +122,9 @@ struct State36 {
     int m_52C;
 };
 struct Hold36 {
-    u8 m_00[0x52C];
+    u8 m_00[0x4E4];
+    int m_4E4;
+    u8 m_4E8[0x44];
     int m_52C;
 };
 struct Game36 {
@@ -179,6 +211,10 @@ Step36 *func_80052120(void *s);
 int func_80051EA4(void *s, Own36 *o);
 void func_8006ABD4(void *c, int id);
 
+Sec36 *func_8007142C(void *track, int i);
+int func_80071994(void *track, int deep, Sec36 **pe, int *pi, Vec36 *x, int *pr, int *pflag);
+int func_80070E20(Sec36 *a, Sec36 *b);
+int func_800593CC(Own36 *o, int x, Bike36 *b);
 void func_80059960(Own36 *o, int x, Bike36 *b, void *l);
 void func_80059B54(Own36 *o, int i, int s, int a);
 int func_80059BE8(Own36 *o);
@@ -188,7 +224,129 @@ int func_80059FAC(Own36 *o);
 int func_8005A594(void);
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_36", func_800593CC);
+int func_800593CC(Own36 *o, int x, Bike36 *b) {
+    if (b && ((b->m_00 >> 6) & 1) && o->m_378->m_1F4A > 0) {
+        Vec36 pos;
+        Sec36 *sec;
+        int pt, found, k;
+        Sec36 *a, *c;
+
+        found = 0;
+        {
+            Pose36 *ps = b->m_30->m_34;
+            int px = ps->m_14.x;
+            int py = ps->m_14.y;
+            int pz = ps->m_14.z;
+
+            b->m_26 = b->m_22;
+            b->m_24 = b->m_20;
+            pt = b->m_22;
+            pos.x = px;
+            pos.y = py;
+            pos.z = pz;
+        }
+        sec = func_8007142C(o->m_378->m_1E40, b->m_20);
+        k = b->m_45;
+        if (func_80071994(o->m_378->m_1E40, 1, &sec, &pt, &pos, &found, &k)) {
+            b->m_1C = found;
+            b->m_20 = sec->m_00;
+            b->m_22 = pt;
+            b->m_45 = k;
+        }
+        a = func_8007142C(o->m_378->m_1E40, b->m_20);
+        c = func_8007142C(o->m_378->m_1E40, b->m_24);
+        if (!b->m_189) {
+            if (b->m_20 == b->m_24) {
+                if (b->m_22 != b->m_26) {
+                    b->m_f.m_back = b->m_22 < b->m_26;
+                    if ((b->m_00 >> 7) & 1) {
+                        if (func_80070E20(a, c) && (b->m_22 << 12) / a->m_08 < 0x333 &&
+                            (b->m_26 << 12) / c->m_08 >= 0xCCD) {
+                            b->m_f.m_back = 0;
+                        }
+                    } else if (func_80070E20(a, c) && (b->m_26 << 12) / c->m_08 < 0x333 &&
+                               (b->m_22 << 12) / a->m_08 >= 0xCCD) {
+                        b->m_f.m_back = 1;
+                    }
+                }
+            } else if (c && a && a->m_02 < c->m_02) {
+                b->m_f.m_back = 0;
+            }
+        }
+        func_80059960(o, x, b, a);
+    }
+    if (b->m_3E == -0x7FFF && b->m_20 != -1 && b->m_22 != -1) {
+        int sec0, pt0;
+        Sec36 *start, *e, *first;
+
+        b->m_3C = 0;
+        sec0 = o->m_378->m_1F26;
+        start = func_8007142C(o->m_378->m_1E40, sec0);
+        pt0 = o->m_378->m_1F24;
+        e = func_8007142C(o->m_378->m_1E40, b->m_20);
+        first = 0;
+        if (sec0 == b->m_20) {
+            if (b->m_22 >= pt0 && o->m_378->m_10->m_4E4) {
+                b->m_3C += start->m_08 - (b->m_22 - pt0);
+            } else {
+                b->m_3C = pt0 - b->m_22;
+            }
+        } else {
+            for (;;) {
+                if ((e->m_04 >> 1) & 1) {
+                    if (!first) {
+                        first = e;
+                    }
+                    if (e == start) {
+                        b->m_3C += o->m_378->m_1F24 + 1;
+                        break;
+                    }
+                    b->m_3C += e->m_08;
+                }
+                e = e->m_50;
+                if (e == first) {
+                    break;
+                }
+            }
+        }
+        if (!o->m_378->m_10->m_4E4) {
+            b->m_3E = -b->m_3C;
+            b->m_3C = 0;
+        } else {
+            b->m_3E = 0;
+        }
+    }
+    {
+        int pt = b->m_22;
+        int lpt = b->m_26;
+        int sec = b->m_20;
+        int lsec = b->m_24;
+
+        if (pt != -1 && sec != -1 && lpt != -1 && lsec != -1) {
+            Sec36 *a = func_8007142C(o->m_378->m_1E40, sec);
+            Sec36 *c = func_8007142C(o->m_378->m_1E40, lsec);
+
+            if (sec != lsec) {
+                if (a->m_02 != -1 && c->m_02 != -1) {
+                    if (c->m_02 < a->m_02) {
+                        b->m_3E++;
+                    } else if (a->m_02 < c->m_02) {
+                        b->m_3E--;
+                    }
+                }
+            } else if (a->m_02 != -1 && pt != lpt) {
+                if (!lpt && a->m_08 >> 1 < pt) {
+                    b->m_3E -= a->m_08 - pt;
+                } else if (a->m_08 >> 1 < lpt && pt < a->m_08 >> 1) {
+                    b->m_3E += pt + 1;
+                } else {
+                    b->m_3E += pt - lpt;
+                }
+            }
+        }
+    }
+    return 0;
+}
 
 static inline void SetVec36(Vec36 *v, int x, int y, int z) {
     v->x = x;
