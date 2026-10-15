@@ -29,7 +29,7 @@ void func_80023140(Vector3 *v, int len, int shift);
  * or down by the engine speed against the motor's upshift points, or by the
  * motion's flags 0x10 and 0x20 when the bike's automatic flag is off. */
 #ifdef NON_MATCHING
-// Written: the first part matches; left: a register pair in the gear tests and the motion's flags word, which the original reads again for its second test (76 off).
+// Left: two register pairs, the top speed and the clamped speed in the engine-speed clamp, and the gear and shift in the change-down test (12 off; reading b->m_5CC again for the second flag test took it from 76).
 void func_80027614(Bike *b) {
     Motion *m = b->m_5D0;
     int sp;
@@ -115,7 +115,7 @@ void func_80027614(Bike *b) {
                 func_80027098(b);
             }
             b->m_2D8 = 0;
-        } else if ((a->m_00 & 0x20) && !(b->m_5C8->m_00 & 0x20)) {
+        } else if ((b->m_5CC->m_00 & 0x20) && !(b->m_5C8->m_00 & 0x20)) {
             if (b->m_2D8 > 50) {
                 func_800270FC(b);
             }

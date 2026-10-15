@@ -41,7 +41,9 @@ struct Motor {
     int m_D4;
     int m_D8;
     int m_DC;
-    u8 m_E0[0x14];
+    int m_E0, m_E4; // the front and rear springs' stiffness
+    int m_E8, m_EC; // and damping
+    u8 m_F0[4];
     int m_F4;
     u8 m_F8[8];
     int m_100;
