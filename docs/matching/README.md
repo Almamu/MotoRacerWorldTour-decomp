@@ -83,3 +83,4 @@ issue it worked on, and add it below.
 | [issue-44-langimg-chunk43.md](issue-44-langimg-chunk43.md) | The game's chunk_43: a bike's model and its motion; the division first in the compare, one copy after two branches |
 | [issue-17-langimg-chunk16.md](issue-17-langimg-chunk16.md) | The game's chunk_16: more of the bike; a field read before the stores, two stack slots for the angles, a struct copied member by member |
 | [issue-19-langimg-chunk18.md](issue-19-langimg-chunk18.md) | The game's chunk_18: shapes, a bike's sound and a menu cursor; declare what a callee returns, a switch's range check |
+| [issue-31-langimg-chunk30.md](issue-31-langimg-chunk30.md) | The game's chunk_30: the race's cameras; two locals in one stack slot (a union), the index read before the run |
