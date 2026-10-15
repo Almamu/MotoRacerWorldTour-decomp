@@ -483,12 +483,11 @@ static inline void LanePt41(Row41 *r, int i, int k, Vec41 *out, Vec41 *d) {
 }
 
 #ifdef NON_MATCHING
-// Two sections' lane points and their height difference over the distance: only the two rows' addresses are built with their operands the other way round (the section's offset first) and the second row's index and table loaded into swapped registers (6 off).
+// Two sections' lane points and their height difference over the distance: only the second row's address, its index and table loaded into swapped registers (5 off).
 void func_800650F8(Obj41 *o, int *out, Tab41 *t) {
     if (out) {
-        Row41 *a = &t->m_28[o->m_1F4];
         int i = o->m_1F8;
-        int h0 = a->m_08[o->m_210][i].m_0E << 11;
+        int h0 = t->m_28[o->m_1F4].m_08[o->m_210][i].m_0E << 11;
         int h1 = t->m_28[o->m_1FC].m_08[o->m_210][o->m_200].m_0E << 11;
         Vec41 p, q, d;
         int k;
@@ -497,7 +496,7 @@ void func_800650F8(Obj41 *o, int *out, Tab41 *t) {
             *out = 0;
             return;
         }
-        LanePt41(a, i, o->m_210, &p, &d);
+        LanePt41(&t->m_28[o->m_1F4], i, o->m_210, &p, &d);
         LanePt41(&t->m_28[o->m_1FC], o->m_200, o->m_210, &q, &d);
         k = (h1 - h0) * ((h0 + h1) >> 1);
         func_800998D0(&d, &q, &p);
