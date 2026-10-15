@@ -344,8 +344,38 @@ void func_80034190(short *a, short *b, short *c) {
     *c = a[0] = t;
 }
 
-#ifdef NON_MATCHING
-// Registers: the original recomputes the stack matrices' addresses (sp+0x58, sp+0x80) for each call; GCC keeps them in saved registers, a frame of 0xC8 against 0xC0 (118 off; as chunk_30's func_8004D560 and func_8004EE10; no compiler option tried changes it).
+// A matrix turned about x by ang, times the transpose of r1, into out
+static inline void func_8003425C_turn(int ang, MATRIX *r1, MATRIX *m2, MATRIX *out) {
+    SVECTOR s;
+    MATRIX m3;
+
+    s.vy = 0;
+    s.vz = 0;
+    s.vx = ang;
+    func_80034A08(m2, &s);
+    m2->t[0] = m2->t[1] = m2->t[2] = 0;
+    func_80098178(&m3, r1);
+    func_80098674(m2, &m3, out);
+    func_8009887C(m3.t, out->t);
+}
+
+// The camera's offset turned by a matrix, moved by t and added to its position
+static inline void func_8003425C_offset(View17 *v, MATRIX *out, Vec17 *t, Vec17 *pos) {
+    Vec17 res, w;
+
+    w.vx = 0;
+    w.vy = v->m_04;
+    w.vz = v->m_08;
+    func_80098768(out, &w, &res);
+    func_800997D0(&res, t);
+    func_800997D0(pos, &res);
+}
+
+// A matrix's translation as a vector
+static inline Vec17 *MatTrans17(MATRIX *m) {
+    return (Vec17 *)m->t;
+}
+
 void func_8003425C(View17 *v, Rider17 *r, Cam17 *c) {
     if (v->m_00) {
         Bike17 *b = r->m_30;
@@ -357,39 +387,18 @@ void func_8003425C(View17 *v, Rider17 *r, Cam17 *c) {
         func_80097F68(&r1, &a);
         {
             MATRIX m2;
-            SVECTOR s;
-            MATRIX m3;
 
-            s.vy = 0;
-            s.vz = 0;
-            s.vx = v->m_0C;
-            func_80034A08(&m2, &s);
-            m2.t[0] = m2.t[1] = m2.t[2] = 0;
-            func_80098178(&m3, &r1);
-            func_80098674(&m2, &m3, &out);
-            func_8009887C(m3.t, out.t);
-            func_800997D0((Vec17 *)out.t, (Vec17 *)m2.t);
+            func_8003425C_turn(v->m_0C, &r1, &m2, &out);
+            func_800997D0(MatTrans17(&out), MatTrans17(&m2));
         }
         c->m_00 = out;
         c->m_00.t[0] = c->m_00.t[1] = c->m_00.t[2] = 0;
         VecCopyL17(&c->m_F8, &b->m_64);
         func_80097F68(&out, &v->m_194);
         out.t[0] = out.t[1] = out.t[2] = 0;
-        {
-            Vec17 res, w;
-
-            w.vx = 0;
-            w.vy = v->m_04;
-            w.vz = v->m_08;
-            func_80098768(&out, &w, &res);
-            func_800997D0(&res, (Vec17 *)out.t);
-            func_800997D0(&c->m_F8, &res);
-        }
+        func_8003425C_offset(v, &out, MatTrans17(&out), &c->m_F8);
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_17", func_8003425C);
-#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_17", func_8003442C);
 

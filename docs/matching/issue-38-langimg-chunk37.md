@@ -25,7 +25,7 @@ delay loops on a counter's first use, a vector's three shorts passed to
 
 One file, `src/langimg/chunk_37.cpp`, 0x8005B788-0x8005D15C.
 
-21 functions: 15 match, 3 are parked, 3 are still asm.
+21 functions: 15 match, 5 are parked, 1 is still asm.
 
 ## The settings
 
@@ -103,7 +103,28 @@ global (`D_800CB3C0`).
 | `func_8005C5D8` | matches | a vector's shorts passed on |
 | `func_8005C608` | matches | two calls |
 | `func_8005C648` | asm | 238 instructions |
-| `func_8005CA00` | asm | 231 instructions |
+| `func_8005CA00` | parked | the display's layout: registers |
 | `func_8005CD9C` | matches | empty |
-| `func_8005CDA4` | asm | 226 instructions |
+| `func_8005CDA4` | parked | the race set up: two arms' shared load |
 | `func_8005D12C` | matches | a call and a global copied |
+
+## Group B follow-up, continued
+
+- The chunk is now built with `-fmove-all-movables`: every matched
+  function still matches, `func_8005BC94` goes from 82 to 75 off and the
+  new `func_8005CDA4` from 214 to 134 (its loop keeps 4 in `$s7` as the
+  original).
+- `func_8005CDA4` written and parked: the run's mode and laps from the
+  settings, two and three of chunk_51's objects made (`operator new` and
+  their constructor `func_80078244` called directly, as the original), the
+  two text tables `D_800CB2F8`/`D_800CB2F4` picked by the rules' kind and
+  the mode, each object's values copied, three buffers made with `new
+  u8[]`, then `func_80020298`, `func_8006BE7C` and `func_8006CA78`.
+  `func_8005CD9C` (empty) now takes the race, as its caller passes it.
+  Left: in the third mode's two arms the original loads `D_800C656C` in
+  each, GCC shares it (134 off, most of it a shift).
+- `func_8005CA00` written and parked (165 off): the display's layout from
+  the font's text sizes and the mode, the cameras' `D_800CB400` factors,
+  and the cameras' fonts and texts. Left: the original keeps the first
+  loop's counter in a saved register shared with the second loop, and
+  reloads the text's height in another order.
