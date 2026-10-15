@@ -162,7 +162,18 @@ void func_800928FC(Ent64 *d, Vec64 *s);
 /* The channels posed in the model's order under a root matrix: each one's
  * matrix from its part (or its own at 0x10), placed by its parent's. */
 #ifdef NON_MATCHING
-// Registers: GCC hoists the scratch matrix's address (sp+0x30) out of the channels' loop into a saved register, the original computes it at each use; the order list and the root matrix are also in swapped saved registers (81 off).
+// The rotation through an inline function (Rot64), so the scratch matrix's address is computed at each use as the original's; left: inside it, the part pointer loaded before the first angle, and the other two angles in swapped registers (6 off).
+static inline void Rot64(MATRIX *t, Chan64 *c) {
+    int ax = *(short *)&c->m_14[0];
+    int ay, az;
+    Part64 *p;
+
+    p = (Part64 *)c->m_3C;
+    ay = *(short *)&c->m_14[2];
+    az = *(short *)&c->m_14[4];
+    func_80097E4C(t, ax + p->m_0C, ay + p->m_0E, az + p->m_10);
+}
+
 void func_800910EC(Anim64 *a, MATRIX *root) {
     int n = a->m_00;
     Chan64 *ch = a->m_08;
@@ -197,7 +208,7 @@ void func_800910EC(Anim64 *a, MATRIX *root) {
                 MATRIX *out;
                 MATRIX *dst;
                 Part64 *p;
-                long x, y, z;
+                long z, y, x;
 
                 if (!pm) {
                     pm = &m;
@@ -205,13 +216,7 @@ void func_800910EC(Anim64 *a, MATRIX *root) {
                 if (f & 0x400) {
                     out = (MATRIX *)c->m_10;
                 } else {
-                    int ax = *(short *)&c->m_14[0];
-                    int ay, az;
-
-                    p = (Part64 *)c->m_3C;
-                    ay = *(short *)&c->m_14[2];
-                    az = *(short *)&c->m_14[4];
-                    func_80097E4C(&t, ax + p->m_0C, ay + p->m_0E, az + p->m_10);
+                    Rot64(&t, c);
                     out = &t;
                 }
                 p = (Part64 *)c->m_3C;
