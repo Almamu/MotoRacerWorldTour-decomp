@@ -111,7 +111,7 @@ extern int D_800CBD3C;
 extern int D_800CBD44;
 extern int D_800CBCE0;
 extern int D_800C8A7C;
-extern Ent58 D_800CBD68; // five
+extern int D_800CBD68; // five Ent58s, declared small: its address is one `la`
 extern int D_800D60EC;
 
 extern "C" {
@@ -131,20 +131,15 @@ void func_80086F14(Buf58 *b, void *p, int n);
 void func_80086F20(Buf58 *b, int n);
 }
 
-#ifdef NON_MATCHING
-// The table's address: the original builds it in $v1 directly, as an unsplit `la`; with -mno-split-addresses this matches, but func_80086A50 then doesn't (2 off)
 void func_80085258(void) {
     int i = 5;
-    Ent58 *e = &D_800CBD68;
+    Ent58 *e = (Ent58 *)&D_800CBD68;
 
     for (; i != 0; i--) {
         e->m_00 |= 0xF0;
         e++;
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_58", func_80085258);
-#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_58", func_80085284);
 
