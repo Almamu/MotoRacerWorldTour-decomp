@@ -64,6 +64,12 @@
 // The light matrix times V0, plus the translation (mvmva 1, 1, 0, 1, 0)
 #define GTE_MVMVA_LV0TR() __asm__ volatile("nop\n\tnop\n\t.word 0x4A4A2012")
 // IR1-IR3 squared into MAC1-MAC3 (sqr 0)
+// A GTE data register loaded from or stored to memory (off(p))
+#define GTE_LWC2(r, off, p) __asm__ volatile("lwc2 $" #r ", " #off "(%0)" : : "r"(p))
+#define GTE_SWC2(r, off, p) __asm__ volatile("swc2 $" #r ", " #off "(%0)" : : "r"(p) : "memory")
+// Depth cueing of the colour in RGB with the one in RFC/GFC/BFC (here
+// register 28's), by IR0
+#define GTE_DPCL() __asm__ volatile("nop\n\tnop\n\t.word 0x4A680029")
 #define GTE_SQR0() __asm__ volatile("nop\n\tnop\n\t.word 0x4AA00428")
 // The leading zeros (or ones) of a value: LZCS in, two instructions, LZCR out
 #define GTE_LZC(r, v) \
