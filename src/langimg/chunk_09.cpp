@@ -30,6 +30,9 @@ void func_80033280(Bike *b);
 void func_80033D1C(MATRIX *m, SVECTOR *rot); // a rotation matrix
 Vector3 *func_800997A4(Vector3 *a, Vector3 *b);
 Vector3 *func_80099B60(Vector3 *out, Vector3 *a, Vector3 *b, int shift); // a cross product
+// The same, declared void where func_8002434C calls it (as its caller saw it)
+void func_80022D20_void(Vector3 *out, Vector3 *in) __asm__("func_80022D20");
+void func_80099B60_void(Vector3 *out, Vector3 *a, Vector3 *b, int shift) __asm__("func_80099B60");
 Vector3 *func_80022D20(Vector3 *out, Vector3 *in);
 // A run's measures: times to two speeds, the time between two speeds, times
 // to two distances, the top speed (0x3C bytes)
@@ -405,55 +408,92 @@ void func_800242A4(Bike *b, int flags) {
 }
 
 #ifdef NON_MATCHING
-/* The stack layout matches; GCC here keeps the locals' addresses in saved registers where the original recomputes them (the open problem of func_80016E34) */
+/* The matrix as an inline function (its locals recomputed), the angles
+ * through int parameters, the transform through an inline taking &w, the
+ * copies all loads first, func_80099B60 and func_80022D20 called through
+ * void declarations (as this caller saw them): 2 off (from 151), only
+ * 0x4000000 built in $v0 where the original uses $v1 */
 /* The bike's matrix from its three angles (y, then x, then z) and its
  * position: its heading the matrix's z (4.26), its side and up from it. */
-void func_8002434C(Bike *b) {
-    {
-        MATRIX a, m, my;
-        SVECTOR ry;
-        MATRIX mx;
-        SVECTOR rx;
-        MATRIX mz;
-        SVECTOR rz;
+// A matrix's translation
+static inline long *MatTrans09(MATRIX *m) {
+    return m->t;
+}
 
-        ry.vx = 0;
-        ry.vy = b->m_ry;
-        ry.vz = 0;
-        func_80033D1C(&my, &ry);
-        my.t[0] = my.t[1] = my.t[2] = 0;
-        rx.vy = 0;
-        rx.vz = 0;
-        rx.vx = b->m_rx;
-        func_80033D1C(&mx, &rx);
-        mx.t[0] = mx.t[1] = mx.t[2] = 0;
-        func_80098674(&my, &mx, &m);
-        func_8009887C(mx.t, m.t);
-        func_800997D0(m.t, my.t);
-        rz.vx = 0;
-        rz.vy = 0;
-        rz.vz = -b->m_rz;
-        func_80033D1C(&mz, &rz);
-        mz.t[0] = mz.t[1] = mz.t[2] = 0;
-        func_80098674(&m, &mz, &a);
-        func_8009887C(mz.t, a.t);
-        func_800997D0(a.t, m.t);
-        b->m_mat = a;
-    }
+// out = m * v, translation included
+static inline void Transform09(MATRIX *m, Vector3 *v, Vector3 *out) {
+    func_80098768(m, &v->vx, &out->vx);
+    func_800997D0(&out->vx, m->t);
+}
+
+static inline void SetVec09(Vector3 *v, int x, int y, int z) {
+    v->vx = x;
+    v->vy = y;
+    v->vz = z;
+}
+
+// A turn about y by ang into m (its translation cleared)
+static inline void RotY09(MATRIX *m, SVECTOR *r, int ang) {
+    r->vx = 0;
+    r->vy = ang;
+    r->vz = 0;
+    func_80033D1C(m, r);
+    m->t[0] = m->t[1] = m->t[2] = 0;
+}
+
+// A turn about x by ang into m (its translation cleared)
+static inline void RotX09(MATRIX *m, SVECTOR *r, int ang) {
+    r->vy = 0;
+    r->vz = 0;
+    r->vx = ang;
+    func_80033D1C(m, r);
+    m->t[0] = m->t[1] = m->t[2] = 0;
+}
+
+// A turn about z by ang into m (its translation cleared)
+static inline void RotZ09(MATRIX *m, SVECTOR *r, int ang) {
+    r->vx = 0;
+    r->vy = 0;
+    r->vz = ang;
+    func_80033D1C(m, r);
+    m->t[0] = m->t[1] = m->t[2] = 0;
+}
+
+// The bike's matrix from its three angles: an inline function's locals, so
+// their addresses are computed anew for each call as in the original
+static inline void BikeMatrix09(Bike *b) {
+    MATRIX a, m, my;
+    SVECTOR ry;
+    MATRIX mx;
+    SVECTOR rx;
+    MATRIX mz;
+    SVECTOR rz;
+
+    RotY09(&my, &ry, b->m_ry);
+    RotX09(&mx, &rx, b->m_rx);
+    func_80098674(&my, &mx, &m);
+    func_8009887C(mx.t, m.t);
+    func_800997D0(MatTrans09(&m), my.t);
+    RotZ09(&mz, &rz, -b->m_rz);
+    func_80098674(&m, &mz, &a);
+    func_8009887C(mz.t, a.t);
+    func_800997D0(a.t, MatTrans09(&m));
+    b->m_mat = a;
+}
+
+void func_8002434C(Bike *b) {
+    BikeMatrix09(b);
     {
         Vector3 w, u;
 
-        u.vx = 0;
-        u.vy = 0;
-        u.vz = 0x4000000;
-        func_80098768(&b->m_mat, &u.vx, &w.vx);
-        func_800997D0(&w.vx, b->m_mat.t);
-        VecCopyF(&b->m_330, &w);
-        VecCopyF(&b->m_33C, &b->m_330);
-        VecCopyF(&b->m_360, &b->m_33C);
-        func_80022D20(&u, &b->m_33C);
+        SetVec09(&u, 0, 0, 0x4000000);
+        Transform09(&b->m_mat, &u, &w);
+        VecCopy(&b->m_330, &w);
+        VecCopy(&b->m_33C, &b->m_330);
+        VecCopy(&b->m_360, &b->m_33C);
+        func_80022D20_void(&u, &b->m_33C);
         func_800997A4(&w, &u);
-        func_80099B60(&u, &w, &b->m_33C, 26);
+        func_80099B60_void(&u, &w, &b->m_33C, 26);
         VecCopy(&b->m_348, &u);
         func_800990E8(&b->m_348, 26);
         VecCopy(&b->m_354, &b->m_330);
