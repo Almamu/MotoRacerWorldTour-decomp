@@ -179,10 +179,17 @@ which progress sites read. `tools/chunks.py report FILE` writes it
 (after `make sdk`, as for the badges). It has one unit per chunk, with
 its functions (matched, or not) and its source file, and the categories
 `langimg` and `sces`, each split into `_game` and `_lib`. A chunk is
-complete when all its functions match. The parked functions count as not
-matched: objdiff's format has no slot for C that builds but doesn't match
-(its fuzzy match measures how close the code is, which isn't measured
-here).
+complete when all its functions match.
+
+The parked functions go in the fuzzy match, at how close their C comes.
+Each chunk with any is compiled with `-DNON_MATCHING` (the Makefile's own
+command, as `tools/try_func.py` does). Each parked function is compared
+with its `.s` file, the two aligned first so that one extra or missing
+instruction costs one, not everything after it. Relocated operands are
+ignored, as in `tools/try_func.py`. A function scores the instructions
+in common over the longer side, and the report's fuzzy match weighs those
+scores by size. It sits between the matching badge and the non-matching
+one, which counts the parked functions whole.
 
 CI writes the report on every run and uploads it as the `report`
 artifact (objdiff's name for a project with one version). The sites read
