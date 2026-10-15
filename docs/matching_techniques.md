@@ -115,7 +115,9 @@ matching. Locals written to hold such constants as a workaround (`int one
 without the flag (`tools/try_func.py NAME -D NON_MATCHING
 --cflags=-fmove-all-movables`) shows which chunks want it. chunk_02,
 chunk_06 and chunk_24 have it too (their parked functions got closer,
-nothing matched yet).
+nothing matched yet), and so do chunk_59, chunk_68, chunk_72 and chunk_74
+(chunk_72's `func_800A1CF8` from 92 off to 2, chunk_59's `func_80088FD4`
+from 104 to 16).
 
 ### Unsplit addresses (`-mno-split-addresses`)
 

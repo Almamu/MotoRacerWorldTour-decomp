@@ -394,7 +394,7 @@ int func_80088F34(Grid59 *g) {
 
 /* Each drawn tile's primitives linked after the next one's. */
 #ifdef NON_MATCHING
-// The original keeps 0xFF000000 in $fp through the loop; GCC builds it at the store
+// With -fmove-all-movables (the chunk's flag) the loop's constants are hoisted as the original's; left: the tag search's loads in other registers and order (16 off)
 int func_80088FD4(Grid59 *g) {
     if (g->m_00 > 0 && g->m_2C == 1) {
         int n = func_80089200(g, 1);
@@ -416,7 +416,7 @@ int func_80088FD4(Grid59 *g) {
                     Tag59 *r = (Tag59 *)(b[1] | 0x80000000);
                     u32 v = a->m_addr;
 
-                    while (r->m_addr != (b[0] & 0xFFFFFF)) {
+                    while ((b[0] & 0xFFFFFF) != r->m_addr) {
                         r = (Tag59 *)(r->m_addr | 0x80000000);
                     }
                     r->m_addr = v;
