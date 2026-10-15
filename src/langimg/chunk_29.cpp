@@ -73,7 +73,11 @@ struct Bk29 {
     Lp29 *m_28;
     u8 m_2C[4];
     int m_30;
-    u8 m_34[0x154];
+    int m_34;
+    int m_38;
+    u8 m_3C[7];
+    s8 m_43; // its player, or -1
+    u8 m_44[0x144];
     u16 m_188;
     u8 m_18A[0x196];
     s8 m_320;
@@ -89,6 +93,9 @@ struct Rc29 {
     struct Bk29 m_2E8[5];
     u8 m_1DF0[0x18];
     int m_1E08;
+    u8 m_1E0C[8];
+    int m_1E14[2];
+    int m_1E1C[2];
 };
 struct Cur29 {
     u8 m_00[4];
@@ -112,7 +119,9 @@ struct Game29 {
     int m_18;
     u8 m_1C[0x58];
     Objs29 *m_74;
-    u8 m_78[0x28C];
+    u8 m_78[0x44];
+    int m_BC[2];
+    u8 m_C4[0x240];
     int m_304;
     u8 m_308[4];
     int m_30C;
@@ -124,7 +133,7 @@ struct Game29 {
     Ply29 *m_43C[2];
     u8 m_444[0x20];
     Cur29 **m_464;
-    u8 m_468[8];
+    int m_468[2];
     s8 m_470[2];
     u8 m_472[2];
     int m_474[2];
@@ -141,7 +150,20 @@ extern char D_800D4798;
 extern int D_800CBC94;
 extern int D_800CB2C0;
 char *strcat(char *d, const char *s);
-int func_80078FC4(void *a, int b);
+// A slot of D_800CBC94's (chunk_51's): its list at 0x30
+struct Ref29 {
+    u8 m_00[0x30];
+    u8 m_30[4];
+};
+struct Ent29 {
+    u8 m_00[0x48];
+    int m_48;
+    int m_4C;
+};
+Ref29 *func_80078FC4(void *a, int b);
+Ent29 *func_800891E8(void *l, int i);
+void func_80054744(Game29 *g, char *s, int t, int i, int a, int c, int d);
+int func_8004C1BC(Game29 *g, int i, int k);
 void func_8004F0C4(Game29 *g, int i);
 void func_80078280(Ply29 *p);
 void func_8004C4E4(Game29 *g, int i, int c);
@@ -305,7 +327,54 @@ void func_8004C184(Named29 *o, int f) {
     CNameDtor29(o, f);
 }
 
+#ifdef NON_MATCHING
+// The player's bike index's address: the original adds the index to g+0x470; GCC adds 0x470 to the index first (2 off; with the base in a local first the order comes right but -1 and the pointer swap registers, 8 off).
+int func_8004C1BC(Game29 *g, int i, int k) {
+    Ref29 *r = func_80078FC4(&D_800CBC94, g->m_18);
+    s8 *pk = &g->m_470[i];
+    Bk29 *b;
+
+    if (*pk != (s8)-1) {
+        b = &g->m_378->m_2E8[*pk];
+        b->m_43 = -1;
+        b->m_38 = 0x110;
+    }
+    *pk = k;
+    g->m_468[i] = -1;
+    if (k >= 0) {
+        Ent29 *e;
+
+        b = &g->m_378->m_2E8[k];
+        e = func_800891E8(r->m_30, g->m_BC[i]);
+        if (e && e->m_48) {
+            b->m_43 = i;
+            b->m_38 = e->m_4C;
+        } else {
+            b->m_38 = 0x110;
+        }
+    } else {
+        b = 0;
+    }
+    if (b) {
+        if (b->m_34 != -1) {
+            g->m_378->m_1E14[i] = 0;
+        } else {
+            g->m_378->m_1E14[i] = b->m_34;
+        }
+        g->m_378->m_1E1C[i] = -1;
+        if (g->m_378->m_00 & 0xA8) {
+            char buf[2];
+
+            buf[0] = k + '1';
+            buf[1] = 0;
+            func_80054744(g, buf, 3000, i, 4, 0xFFFF, 4);
+        }
+    }
+    return 1;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_29", func_8004C1BC);
+#endif
 
 void func_8004C38C(Game29 *g) {
     int i;
