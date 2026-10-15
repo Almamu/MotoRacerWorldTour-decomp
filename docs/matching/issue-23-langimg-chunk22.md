@@ -17,7 +17,7 @@ entries.
 
 One file, `src/langimg/chunk_22.cpp`, 0x8003D60C-0x8003F6B8.
 
-23 functions: 17 match, 4 are parked, 2 are still asm.
+23 functions: 19 match, 2 are parked, 2 are still asm.
 
 ## The settings
 
@@ -70,6 +70,16 @@ globals.
   saved registers (12 off each). The body as one inline function taking
   the two callees was further off.
 
+## Inline-helpers pass
+
+- `func_8003DF7C` and `func_8003E194` match with the script context copied
+  into a local first (`Arg22 *cc = c;`, the context then read through
+  `cc`): the copy and the view then take the original's saved registers
+  (`$s3`/`$s4`).
+- `func_8003D9EC`: the same copy takes it from 47 to 37 off; left: the
+  table's address formed in both of the view's branches, the loop counter
+  cleared later and an object's copy in `$a1`.
+
 ## The functions
 
 | Function | State | Notes |
@@ -83,7 +93,7 @@ globals.
 | `func_8003D9CC` | matches | a slot cleared (a `do { } while (0)`) |
 | `func_8003D9EC`, `func_8003DB9C` | parked | written in the second pass |
 | `func_8003DD8C`, `func_8003DE84` | match | a key's handlers |
-| `func_8003DF7C`, `func_8003E194` | parked | the timed keys' handlers: registers |
+| `func_8003DF7C`, `func_8003E194` | match | the timed keys' handlers (the context copied into a local) |
 | `func_8003E3AC` | matches | the handlers registered |
 | `func_8003E5B0` | matches | the state from the pairs |
 | `func_8003E6FC` | asm | 357 instructions |

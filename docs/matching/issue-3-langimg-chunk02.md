@@ -11,7 +11,7 @@ cut in three:
 | `src/langimg/chunk_02a.cpp` | C++: `CName`, `CNamed`, `Cobjet`'s constructor, destructor, `Init` | 0x80015EAC-0x80016144 | the game's (2.95.2, `-G8`) |
 | `src/langimg/chunk_02b.cpp` | the objects' helpers, the scene tree's draw | 0x80016144-0x800177E8 | GCC 2.91.66, `-G8`, divisions without checks, `--small-externs` (`langimg.chunk_02b_*`) |
 
-3 + 9 + 22 functions: 23 match, 11 are parked.
+3 + 9 + 22 functions: 26 match, 8 are parked.
 
 **Revised in #4** ([issue-4-langimg-chunk03.md](issue-4-langimg-chunk03.md)):
 the 2.91.66 code isn't C. It allocates with `new[]` and calls `Cobjet`'s
@@ -79,7 +79,7 @@ twice, and GCC drops the first pair.
 |---|---|---|
 | `func_80016144` | matches | variadic: PsyQ's `stdarg.h`; the second loop as a `goto` |
 | `func_80016234`, `func_80016798` | match | |
-| `func_80016268`, `func_80016434`, `func_80016600` | parked | the rotation setters: 22, 22 and 101 off (below) |
+| `func_80016268`, `func_80016434`, `func_80016600` | match | the rotation setters (the inline-helpers pass, below) |
 | `func_800167B8` | parked | registers: the original moves `o` to `$a2` |
 | `func_800167F8` | matches | locals declared `b`, then `a`, for their stack slots |
 | `func_8001687C`, `func_80016914` | match | the angle cache |
@@ -173,3 +173,23 @@ address, the frame register here, is kept in `$s0` in the original).
 `func_80016E34`'s two matrix products through `CompMatrixTo02b` took it from
 461 to 423 off. docs/matching_techniques.md, "Stack addresses kept or
 recomputed: inline functions".
+
+## Inline-helpers pass
+
+The rotation setters match with only the rotation in an inline function,
+the rest in the real one: the position's copy (`SetTrans02b(o->m_matp,
+&cur)`) then reads `cur` through a pointer as the original does, which it
+didn't when the copy too was inside the inline function.
+- `func_80016268` and `func_80016434`: `RotXYZ02b`/`RotXZY02b(o, rot)`,
+  their matrices the inline function's locals (each address computed anew
+  for each call), `tmp`'s translation through `MatTrans02b`; `cur` stays
+  the real function's (the frame's first local).
+- `func_80016600`: `mx`, the frame's first local, is the real function's
+  and passed in (`RotZYX02b(o, rot, &mx)`): as a parameter its address is
+  kept in `$s0` and its translation cleared through it, as in the
+  original; the other matrices are the inline function's.
+
+`func_80016E34` stays parked: its frame is 0x10 bigger in the original,
+its blocks' locals at other offsets (the products' matrix and the camera's
+vectors at 0x10 and 0x20, the saved child matrix at 0x30). Its parent matrix copied into a
+local takes it from 425 to 389 off, not kept.

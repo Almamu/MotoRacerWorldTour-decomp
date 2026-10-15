@@ -94,68 +94,34 @@ static inline void RotZ02b(MATRIX *m, SVECTOR *a, int ang) {
     m->t[0] = m->t[1] = m->t[2] = 0;
 }
 
-#ifdef NON_MATCHING
-/* The body as an inline function (the stack locals' addresses then computed
- * anew for each call, as the original's), the rotations through RotX/Y/Z02b
- * and tmp's translation through an inline accessor: 22 off (from 131), the
- * position's copy at the end scheduled otherwise */
+// The rotation, x, then y, then z: its matrices are the inline's locals, so their
+// addresses are computed anew for each call, as the original's
+static inline void RotXYZ02b(Cobjet *o, SVECTOR *rot) {
+    MATRIX mx;
+    SVECTOR a;
+    MATRIX my;
+    MATRIX mz;
+    MATRIX res;
+    MATRIX tmp;
+    MATRIX *m;
+
+    RotX02b(&mx, &a, rot->vx);
+    RotY02b(&my, &a, rot->vy);
+    RotZ02b(&mz, &a, rot->vz);
+    m = o->m_matp;
+    func_80098674(&my, &mx, &tmp);
+    func_8009887C(mx.t, tmp.t);
+    func_800997D0(MatTrans02b(&tmp), my.t);
+    func_80098674(&tmp, &mz, &res);
+    func_8009887C(mz.t, res.t);
+    func_800997D0(res.t, MatTrans02b(&tmp));
+    *m = res;
+}
+
 /* Sets the object's rotation (x, then y, then z) and position; with no
  * position it keeps its own. */
-static inline void SetRotXYZ02b(Cobjet *o, SVECTOR *rot, Vector3 *pos) {
-    Vector3 cur;
-    MATRIX mx;
-    SVECTOR a;
-    MATRIX my;
-    MATRIX mz;
-    MATRIX res;
-    MATRIX tmp;
-
-    if (!o->m_matp) {
-        func_80016798(o);
-    }
-    if (!pos) {
-        func_800167B8(o, &cur);
-    }
-    if (rot) {
-        MATRIX *m;
-
-        RotX02b(&mx, &a, rot->vx);
-        RotY02b(&my, &a, rot->vy);
-        RotZ02b(&mz, &a, rot->vz);
-        m = o->m_matp;
-        func_80098674(&my, &mx, &tmp);
-        func_8009887C(mx.t, tmp.t);
-        func_800997D0(MatTrans02b(&tmp), my.t);
-        func_80098674(&tmp, &mz, &res);
-        func_8009887C(mz.t, res.t);
-        func_800997D0(res.t, MatTrans02b(&tmp));
-        *m = res;
-    }
-    if (pos) {
-        SetTrans02b(o->m_matp, pos);
-    } else if (rot) {
-        SetTrans02b(o->m_matp, &cur);
-    }
-}
-
 void func_80016268(Cobjet *o, SVECTOR *rot, Vector3 *pos) {
-    SetRotXYZ02b(o, rot, pos);
-}
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02b", func_80016268);
-#endif
-
-#ifdef NON_MATCHING
-/* As func_80016268 (22 off, from 131) */
-/* As func_80016268, the rotation in the order x, z, y. */
-static inline void SetRotXZY02b(Cobjet *o, SVECTOR *rot, Vector3 *pos) {
     Vector3 cur;
-    MATRIX mx;
-    SVECTOR a;
-    MATRIX my;
-    MATRIX mz;
-    MATRIX res;
-    MATRIX tmp;
 
     if (!o->m_matp) {
         func_80016798(o);
@@ -164,19 +130,7 @@ static inline void SetRotXZY02b(Cobjet *o, SVECTOR *rot, Vector3 *pos) {
         func_800167B8(o, &cur);
     }
     if (rot) {
-        MATRIX *m;
-
-        RotX02b(&mx, &a, rot->vx);
-        RotY02b(&my, &a, rot->vy);
-        RotZ02b(&mz, &a, rot->vz);
-        m = o->m_matp;
-        func_80098674(&mz, &mx, &tmp);
-        func_8009887C(mx.t, tmp.t);
-        func_800997D0(MatTrans02b(&tmp), mz.t);
-        func_80098674(&tmp, &my, &res);
-        func_8009887C(my.t, res.t);
-        func_800997D0(res.t, MatTrans02b(&tmp));
-        *m = res;
+        RotXYZ02b(o, rot);
     }
     if (pos) {
         SetTrans02b(o->m_matp, pos);
@@ -185,56 +139,87 @@ static inline void SetRotXZY02b(Cobjet *o, SVECTOR *rot, Vector3 *pos) {
     }
 }
 
-void func_80016434(Cobjet *o, SVECTOR *rot, Vector3 *pos) {
-    SetRotXZY02b(o, rot, pos);
-}
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02b", func_80016434);
-#endif
+// The rotation, x, then z, then y
+static inline void RotXZY02b(Cobjet *o, SVECTOR *rot) {
+    MATRIX mx;
+    SVECTOR a;
+    MATRIX my;
+    MATRIX mz;
+    MATRIX res;
+    MATRIX tmp;
+    MATRIX *m;
 
-#ifdef NON_MATCHING
-/* As func_80016268, but the original keeps mx's address (its first local,
- * the frame's own register here) in $s0 and clears its translation through
- * it: 101 off (from 111) */
+    RotX02b(&mx, &a, rot->vx);
+    RotY02b(&my, &a, rot->vy);
+    RotZ02b(&mz, &a, rot->vz);
+    m = o->m_matp;
+    func_80098674(&mz, &mx, &tmp);
+    func_8009887C(mx.t, tmp.t);
+    func_800997D0(MatTrans02b(&tmp), mz.t);
+    func_80098674(&tmp, &my, &res);
+    func_8009887C(my.t, res.t);
+    func_800997D0(res.t, MatTrans02b(&tmp));
+    *m = res;
+}
+
+/* As func_80016268, the rotation in the order x, z, y. */
+void func_80016434(Cobjet *o, SVECTOR *rot, Vector3 *pos) {
+    Vector3 cur;
+
+    if (!o->m_matp) {
+        func_80016798(o);
+    }
+    if (!pos) {
+        func_800167B8(o, &cur);
+    }
+    if (rot) {
+        RotXZY02b(o, rot);
+    }
+    if (pos) {
+        SetTrans02b(o->m_matp, pos);
+    } else if (rot) {
+        SetTrans02b(o->m_matp, &cur);
+    }
+}
+
+// The rotation, z then y then x, into the caller's mx: a parameter, so its
+// address stays in a saved register as the original's
+static inline void RotZYX02b(Cobjet *o, SVECTOR *rot, MATRIX *mx) {
+    SVECTOR a;
+    MATRIX my;
+    MATRIX mz;
+    MATRIX res;
+    MATRIX tmp;
+    MATRIX *m;
+
+    RotX02b(mx, &a, rot->vx);
+    RotY02b(&my, &a, rot->vy);
+    RotZ02b(&mz, &a, rot->vz);
+    m = o->m_matp;
+    func_80098674(&my, &mz, &tmp);
+    func_8009887C(mz.t, tmp.t);
+    func_800997D0(MatTrans02b(&tmp), my.t);
+    func_80098674(&tmp, mx, &res);
+    func_8009887C(mx->t, res.t);
+    func_800997D0(res.t, MatTrans02b(&tmp));
+    *m = res;
+}
+
 /* Sets the object's rotation (in the order z, y, x) and, if given, its
  * position. */
-static inline void SetRotZYX02b(Cobjet *o, SVECTOR *rot, Vector3 *pos) {
+void func_80016600(Cobjet *o, SVECTOR *rot, Vector3 *pos) {
     MATRIX mx;
-    SVECTOR a;
-    MATRIX my;
-    MATRIX mz;
-    MATRIX res;
-    MATRIX tmp;
 
     if (!o->m_matp) {
         func_80016798(o);
     }
     if (rot) {
-        MATRIX *m;
-
-        RotX02b(&mx, &a, rot->vx);
-        RotY02b(&my, &a, rot->vy);
-        RotZ02b(&mz, &a, rot->vz);
-        m = o->m_matp;
-        func_80098674(&my, &mz, &tmp);
-        func_8009887C(mz.t, tmp.t);
-        func_800997D0(MatTrans02b(&tmp), my.t);
-        func_80098674(&tmp, &mx, &res);
-        func_8009887C(mx.t, res.t);
-        func_800997D0(res.t, MatTrans02b(&tmp));
-        *m = res;
+        RotZYX02b(o, rot, &mx);
     }
     if (pos) {
         SetTrans02b(o->m_matp, pos);
     }
 }
-
-void func_80016600(Cobjet *o, SVECTOR *rot, Vector3 *pos) {
-    SetRotZYX02b(o, rot, pos);
-}
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_02b", func_80016600);
-#endif
 
 /* Points the object at its own matrix. */
 void func_80016798(Cobjet *o) {
