@@ -51,7 +51,9 @@ struct Slot22 {
     int m_00;
     int m_04;
     // the handlers by kind, then a second copy from 0x44
-    int m_08, m_0C, m_10, m_14, m_18, m_1C, m_20, m_24, m_28, m_2C, m_30, m_34, m_38, m_3C, m_40, m_44, m_48, m_4C, m_50, m_54, m_58, m_5C, m_60, m_64, m_68, m_6C, m_70, m_74, m_78, m_7C, m_80, m_84, m_88, m_8C, m_90, m_94;
+    int m_08, m_0C, m_10, m_14, m_18, m_1C, m_20, m_24, m_28, m_2C, m_30, m_34, m_38, m_3C, m_40,
+        m_44, m_48, m_4C, m_50, m_54, m_58, m_5C, m_60, m_64, m_68, m_6C, m_70, m_74, m_78, m_7C,
+        m_80, m_84, m_88, m_8C, m_90, m_94;
 };
 
 // The game object (chunk_69's Game69)
