@@ -97,11 +97,17 @@ struct Run37 {
 };
 // A camera, 0x5C bytes (chunk_58's Cam58)
 struct Cam37 {
-    u8 m_00[0x14];
+    u8 m_00[8];
+    short m_08, m_0A; // its lens: the projection's distance and half width
+    u8 m_0C[8];
     SVec37 m_14; // where it looks
     SVec37 m_1C; // from
     SVec37 m_24; // to
-    u8 m_2C[0x2E];
+    int m_2C;
+    int m_30;
+    int m_34;
+    int m_38, m_3C; // two fonts
+    u8 m_40[0x1A];
     short m_5A;
 };
 // What func_8006AA30 returns
@@ -124,7 +130,7 @@ struct Ent37 {
 // What func_800891E8 returns
 struct Txt37 {
     u8 m_00[0x30];
-    int m_30;
+    int m_30, m_34; // its width and height
 };
 struct Font37 {
     u8 m_00[0x30];
@@ -148,13 +154,16 @@ struct Own37 {
     u16 *m_37C;
     u8 m_380[0x18];
     SVec37 *m_398;
-    u8 m_39C[0x1C];
+    u8 m_39C[0x10];
+    int m_3AC;
+    int m_3B0, m_3B4;
     struct Cam37 *m_3B8;
     SVec37 m_3BC;
     SVec37 m_3C4;
     SVec37 m_3CC;
     SVec37 m_3D4;
-    u8 m_3DC[0x10];
+    short m_3DC, m_3DE; // the two fonts' indices
+    u8 m_3E0[0xC];
     int m_3EC;
     u8 m_3F0[0x87C];
     struct Grid37 *m_C6C;
@@ -163,7 +172,13 @@ struct Own37 {
 extern int D_800CB3C0;
 extern int D_800C6AB0[]; // "n_motoX"
 extern int D_800CBC94;
-extern int D_800CB400; // a table of ints, declared small
+extern int D_800CB400;   // a table of ints, declared small
+extern int D_800CBD58[]; // the fonts
+extern u8 *D_800CC088;
+extern int D_800D49A4;
+extern int D_800D5F40;
+int func_800803C4(int font, int s);
+void func_8005CA00(Own37 *o);
 extern Snd37 D_800CAE90;
 extern Snd37 D_800CB0A0;
 extern void *D_800C89F4;
@@ -617,7 +632,93 @@ void func_8005C608(void) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_37", func_8005C648);
 
+#ifdef NON_MATCHING
+// The race display's layout, written in full: the original keeps the first loop's counter in a saved register shared with the second loop ($s2) and loads D_800CC088 before the first store; here the first counter is a temporary and the text's height is reloaded in another order (165 off).
+void func_8005CA00(Own37 *o) {
+    int i, j, s;
+    Txt37 *t = func_800891E8(func_80078FC4(&D_800CBC94, o->m_18)->m_30, o->m_C4[0]);
+    u8 *g = D_800CC088;
+
+    o->m_3B0 = 0x800000;
+    if (D_800D5F40 == 4 || D_800D5F40 == 2 || !D_800D5F40) {
+        o->m_3B4 = 0x30;
+    } else {
+        o->m_3B4 = 0x20;
+    }
+    for (i = 2; i >= 0; i--) {
+        (&D_800CB400)[i] = (o->m_3B8[i].m_08 << 12) / -o->m_3B8[i].m_0A;
+    }
+    if (o->m_378->m_00 == 2) {
+        o->m_3C4.pad = t->m_34 >> 1;
+        o->m_3BC.pad = 4;
+        o->m_3C4.y = t->m_34 >> 2;
+        o->m_3C4.x = 0;
+        o->m_3BC.z = 0;
+        o->m_3BC.x = 0;
+        o->m_3BC.y = t->m_34 >> 1;
+        o->m_3C4.z = (o->m_3C4.pad << 13) / 3 >> 12;
+    } else if (o->m_378->m_00 & 0xA8) {
+        if (D_800D49A4 == 1) {
+            if (!D_800D5F40) {
+                o->m_3AC = 0x64;
+            } else {
+                o->m_3AC = 0x54;
+            }
+            o->m_3C4.pad = t->m_34 >> 1;
+            o->m_3BC.pad = 4;
+            o->m_3C4.y = t->m_34 >> 2;
+            o->m_3BC.y = t->m_34 >> 1;
+            o->m_3BC.z = 0;
+            o->m_3BC.x = t->m_30 >> 1;
+        } else {
+            o->m_3AC = 0x54;
+            o->m_3C4.y = 8;
+            o->m_3BC.pad = 2;
+            o->m_3C4.pad = ((t->m_34 * 3) << 12 >> 14) - 8;
+            o->m_3B4 = 0x800000;
+            o->m_3BC.y = t->m_34 >> 1;
+            o->m_3B0 = (g[4] - g[0]) >> 1;
+            o->m_3BC.z = 0;
+            o->m_3BC.x = t->m_30 >> 1;
+        }
+    } else {
+        o->m_3AC = 0x49;
+        o->m_3C4.y = 0;
+        o->m_3BC.pad = 4;
+        o->m_3C4.pad = t->m_34 >> 1;
+        o->m_3BC.y = t->m_34 >> 1;
+        o->m_3BC.z = 0;
+        o->m_3BC.x = t->m_30 >> 1;
+    }
+    o->m_3DC = 2;
+    o->m_3DE = 2;
+    s = func_8005C424(o, 0x37);
+    o->m_3CC.x = -func_800803C4(D_800CBD58[o->m_3DC], s);
+    o->m_3CC.y = o->m_3D4.y = o->m_3C4.y + o->m_3C4.pad + 2;
+    o->m_3D4.pad = o->m_3C4.y;
+    o->m_3CC.pad = -(*(u8 *)D_800CBD58[o->m_3DE] * 2);
+    for (j = 2; j >= 0; j--) {
+        int id;
+
+        o->m_3B8[j].m_38 = D_800CBD58[o->m_3DC];
+        o->m_3B8[j].m_3C = D_800CBD58[o->m_3DE];
+        o->m_3B8[j].m_30 = s;
+        o->m_3B8[j].m_2C = 0;
+        if (j >= 3) {
+            id = 0x36;
+        } else if (j >= 2) {
+            id = 0x35;
+        } else if (j > 0) {
+            id = 0x34;
+        } else {
+            id = 0x33;
+        }
+        o->m_3B8[j].m_34 = func_8005C424(o, id);
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_37", func_8005CA00);
+#endif
 
 void func_8005CD9C(void) {
 }
