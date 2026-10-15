@@ -51,13 +51,33 @@ struct Bits69 {
     unsigned m_16 : 4;
 };
 
+// A run's measures (chunk_09's Stats09)
+struct Stats69 {
+    int m_00; // a speed
+    int m_04; // the time to it
+    int m_08;
+    int m_0C;
+    int m_10, m_14; // a range of speeds
+    int m_18;       // the time spent in it
+    int m_1C;       // a distance
+    int m_20;       // the time to it
+    int m_24;       // the speed there
+    int m_28;
+    int m_2C;
+    int m_30;
+    int m_34; // the top speed
+    int m_38; // when
+};
+
 struct Scr69 {
     u8 m_00[4];
     Draw69 *m_04;
     Name69 m_08;
     u8 m_13;
-    short m_14;
-    u8 m_16[2];
+    union {
+        short m_14;
+        int m_14w; // the track, read as a word by func_8009BDB8
+    };
     int m_18;
     u8 m_1C[0x14];
     struct Text69 *m_30;
@@ -71,10 +91,18 @@ struct Scr69 {
     struct Bits69 *m_98;
     u8 m_9C[8];
     Flag69 *m_A4;
-    u8 m_A8[0x94];
+    u8 m_A8[0x10];
+    int m_B8[0x21]; // the speeds sampled
     int m_13C;
     int m_140;
-    u8 m_144[0x207C];
+    u8 m_144[0x1EB4];
+    struct Stats69 m_1FF8[6]; // per track and units
+    u8 m_2160[0x20];
+    struct Text69 *m_2180[11]; // the measures' lines
+    int m_21AC[2];             // the units' names, kph and mph
+    int m_21B4;
+    u8 m_21B8[4];
+    int m_21BC;
     Hold69 *m_21C0;
     Hold69 *m_21C4;
     Flag69 *m_21C8;
@@ -249,6 +277,16 @@ extern char D_800C9354[];
 extern int D_800C94C8;
 extern int D_800CC1F0[];
 extern s8 D_800B8868;
+extern int D_800D49A8; // the units: 0 kph, 1 mph
+extern int D_800C8C0C;
+extern char D_800C92D8[];
+extern char D_800C92E4[];
+extern char D_800C92F0[];
+extern char D_800C92F4[];
+extern char D_800C9300[];
+extern char D_800C9308[];
+extern char D_800C9314[];
+extern char D_800C931C[];
 
 extern "C" {
 void func_8003B7B0(Game69 *o);
@@ -275,6 +313,11 @@ void func_800A6788(int a, int b);
 void func_8009C84C(Game69 *o, int f);
 int func_800A60AC(const char *a, const char *b);
 void func_8009BDB8(Game69 *o);
+void func_8006976C(void *a, int b, void *c);
+int func_80023E48(void *m, int *out, int dt, int n);
+int func_80023A30(void *x, int *spd, int dt, int n, Stats69 *s);
+char *func_80086A38(int b, int i);
+int func_800A6850(int x);
 void func_8009C694(Game69 *o);
 void func_8003E5B0(Game69 *o);
 List69 *func_800A14CC(void);
@@ -409,7 +452,68 @@ void func_8009B8F8(Game69 *o, int a, Run69 *r) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_69", func_8009B9B4);
 
+/* The run's measures, sampled from its speeds, in tenths, then shown. */
+#ifdef NON_MATCHING
+// A time in hundredths as seconds and hundredths, or none
+static inline void Time69(Scr69 *s, int k, int v) {
+    if (v) {
+        sprintf(s->m_2180[k]->m_0C, D_800C92E4, v / 100, v % 100);
+    } else {
+        sprintf(s->m_2180[k]->m_0C, D_800C92F0);
+    }
+}
+
+// Registers only: the run's record in $s0 and the format's high half in $s1 where the original has them the other way round (38 off, every instruction otherwise the original's).
+void func_8009BDB8(Game69 *o) {
+    Scr69 *s = o->m_A80->m_60;
+    Draw69 *d = s->m_04;
+    Stats69 *r;
+    int n;
+    char *a, *b;
+
+    func_8006976C(&d->m_174, d->m_170, d);
+    func_80023E48(d, s->m_B8, 16, 2000);
+    r = &s->m_1FF8[s->m_14w + D_800D49A8 * 3];
+    r->m_04 = 0;
+    r->m_0C = 0;
+    r->m_20 = 0;
+    r->m_2C = 0;
+    r->m_38 = 0;
+    r->m_18 = 0;
+    func_80023A30(d, s->m_B8, 16, 2000, r);
+    r->m_04 /= 10;
+    r->m_0C /= 10;
+    r->m_20 /= 10;
+    r->m_2C /= 10;
+    r->m_38 /= 10;
+    r->m_18 /= 10;
+    sprintf(s->m_2180[8]->m_0C, D_800C92D8, r->m_00,
+            func_80086A38(D_800C8C0C, s->m_21AC[!D_800D49A8]));
+    Time69(s, 0, r->m_04);
+    sprintf(s->m_2180[9]->m_0C, D_800C92D8, r->m_08,
+            func_80086A38(D_800C8C0C, s->m_21AC[!D_800D49A8]));
+    Time69(s, 1, r->m_0C);
+    Time69(s, 2, r->m_20);
+    Time69(s, 3, r->m_2C);
+    sprintf(s->m_2180[10]->m_0C, D_800C92F4, r->m_10, r->m_14,
+            func_80086A38(D_800C8C0C, s->m_21AC[!D_800D49A8]));
+    Time69(s, 4, r->m_18);
+    n = func_800A6850(r->m_34);
+    sprintf(s->m_2180[5]->m_0C, D_800C9300, n, func_80086A38(D_800C8C0C, s->m_21AC[!D_800D49A8]));
+    if (r->m_38) {
+        a = func_80086A38(D_800C8C0C, s->m_21B4);
+        sprintf(s->m_2180[6]->m_0C, D_800C9308, a, r->m_38 / 100, r->m_38 % 100);
+    } else {
+        sprintf(s->m_2180[6]->m_0C, D_800C9314, func_80086A38(D_800C8C0C, s->m_21B4));
+    }
+    n = func_800A6850(r->m_24);
+    a = func_80086A38(D_800C8C0C, s->m_21BC);
+    b = func_80086A38(D_800C8C0C, s->m_21AC[!D_800D49A8]);
+    sprintf(s->m_2180[7]->m_0C, D_800C931C, a, n, b);
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_69", func_8009BDB8);
+#endif
 
 /* The view's four items shown (flag 2) or hidden, and its layout's two
  * values set to match. */
