@@ -6,10 +6,26 @@ struct Snd28 {
 };
 
 // The game object
+// The game's vtable: the entry at 0xD0
+struct VtG28 {
+    u8 m_00[0xD0];
+    short m_D0;
+    short m_D2;
+    void (*m_D4)(void *o);
+};
+// The tables freed with the game (at its 0xC70)
+struct Tabs28 {
+    u8 m_00[0x28];
+    void *m_28;
+    void *m_2C;
+    void *m_30;
+};
 struct Game28 {
     u8 m_00[0x18];
     int m_18;
-    u8 m_1C[0x54];
+    u8 m_1C[0x4C];
+    VtG28 *m_68;
+    u8 m_6C[4];
     int m_70;
     int m_74;
     int m_78;
@@ -23,6 +39,8 @@ struct Game28 {
     u8 m_37C[0xC0];
     void *m_43C[2];
     void *m_444[3];
+    u8 m_450[0x820];
+    Tabs28 *m_C70;
 };
 
 // A save: its settings, a 0x20-byte block and a 0x14-byte block
@@ -88,6 +106,7 @@ extern char D_800D4798;
 extern char D_800CB1C0;
 extern Disp28 *D_800C886C;
 extern int D_800C873C;
+extern int D_800CA7D8;
 extern int D_800C4938;
 extern int D_800C8C68;
 extern int D_800CBE90;
@@ -130,6 +149,11 @@ void func_8008A1D0(Snd28 *s);
 void func_800963BC(void);
 void func_800A67E8(int a);
 void func_8004970C(Game28 *g);
+void func_800497AC(Game28 *g);
+void func_800544A0(Game28 *g);
+void func_8001D99C(void *p);
+void func_8006FD40(void *p);
+void func_80044E94(Game28 *g);
 void func_80044ED8(Game28 *g);
 void func_800498E4(Game28 *g);
 int func_8004AB7C(Save28 *s);
@@ -161,7 +185,33 @@ void func_8004970C(Game28 *g) {
     func_80044F34(g);
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_28", func_800497AC);
+/* The game ended: its race and sounds released, its tables freed, the
+ * virtual function at 0xD0, then the globals it had saved put back. */
+void func_800497AC(Game28 *g) {
+    func_800544A0(g);
+    func_8001D99C(&D_800CA7D8);
+    func_8006FD40(&D_800CAE90);
+    func_8006FD40(&D_800CB0A0);
+    if (g->m_C70->m_30) {
+        delete[] (u8 *)g->m_C70->m_30;
+        g->m_C70->m_30 = 0;
+    }
+    if (g->m_C70->m_2C) {
+        delete[] (u8 *)g->m_C70->m_2C;
+        g->m_C70->m_2C = 0;
+    }
+    if (g->m_C70->m_28) {
+        delete[] (u8 *)g->m_C70->m_28;
+        g->m_C70->m_28 = 0;
+    }
+    g->m_68->m_D4((u8 *)g + g->m_68->m_D0);
+    func_80044E94(g);
+    D_800C873C = g->m_70;
+    D_800C4938 = g->m_74;
+    D_800C8C68 = g->m_78;
+    D_800CBE90 = g->m_7C;
+    D_800CBE94 = g->m_80;
+}
 
 void func_800498E4(Game28 *g) {
     int i;
