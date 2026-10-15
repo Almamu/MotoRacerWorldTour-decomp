@@ -50,8 +50,8 @@ struct Item22b {
 struct Slot22 {
     int m_00;
     int m_04;
-    int m_08, m_0C, m_10, m_14, m_18, m_1C, m_20, m_24, m_28, m_2C, m_30, m_34, m_38, m_3C;
-    u8 m_40[0x58];
+    // the handlers by kind, then a second copy from 0x44
+    int m_08, m_0C, m_10, m_14, m_18, m_1C, m_20, m_24, m_28, m_2C, m_30, m_34, m_38, m_3C, m_40, m_44, m_48, m_4C, m_50, m_54, m_58, m_5C, m_60, m_64, m_68, m_6C, m_70, m_74, m_78, m_7C, m_80, m_84, m_88, m_8C, m_90, m_94;
 };
 
 // The game object (chunk_69's Game69)
@@ -746,7 +746,89 @@ void func_8003EC6C(Game22 *g, int i, int v) {
     g->m_ABC[i].m_04 = v;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_22", func_8003EC90);
+void func_8003EC90(Game22 *g, int i, int set, void (*f)(int *p, int x, Arg22 *c)) {
+    switch (i) {
+    case 0:
+        g->m_ABC[set].m_08 = (int)f;
+        g->m_ABC[set].m_44 = (int)f;
+        g->m_ABC[set].m_0C = (int)f;
+        g->m_ABC[set].m_48 = (int)f;
+        g->m_ABC[set].m_10 = (int)f;
+        g->m_ABC[set].m_4C = (int)f;
+        g->m_ABC[set].m_14 = (int)f;
+        g->m_ABC[set].m_50 = (int)f;
+        g->m_ABC[set].m_1C = (int)f;
+        g->m_ABC[set].m_58 = (int)f;
+        g->m_ABC[set].m_18 = (int)f;
+        g->m_ABC[set].m_54 = (int)f;
+        g->m_ABC[set].m_20 = (int)f;
+        g->m_ABC[set].m_5C = (int)f;
+        g->m_ABC[set].m_24 = (int)f;
+        g->m_ABC[set].m_60 = (int)f;
+        g->m_ABC[set].m_3C = (int)f;
+        g->m_ABC[set].m_78 = (int)f;
+        g->m_ABC[set].m_28 = (int)f;
+        g->m_ABC[set].m_64 = (int)f;
+        g->m_ABC[set].m_38 = (int)f;
+        g->m_ABC[set].m_74 = (int)f;
+        g->m_ABC[set].m_40 = (int)f;
+        g->m_ABC[set].m_94 = (int)f;
+        break;
+    case 21:
+        g->m_ABC[set].m_40 = (int)f;
+        g->m_ABC[set].m_94 = (int)f;
+        break;
+    case 1:
+        g->m_ABC[set].m_08 = (int)f;
+        g->m_ABC[set].m_44 = (int)f;
+        break;
+    case 2:
+        g->m_ABC[set].m_0C = (int)f;
+        g->m_ABC[set].m_48 = (int)f;
+        break;
+    case 3:
+        g->m_ABC[set].m_14 = (int)f;
+        g->m_ABC[set].m_50 = (int)f;
+        break;
+    case 4:
+        g->m_ABC[set].m_10 = (int)f;
+        g->m_ABC[set].m_4C = (int)f;
+        break;
+    case 5:
+        g->m_ABC[set].m_1C = (int)f;
+        g->m_ABC[set].m_58 = (int)f;
+        break;
+    case 6:
+        g->m_ABC[set].m_18 = (int)f;
+        g->m_ABC[set].m_54 = (int)f;
+        break;
+    case 7:
+        g->m_ABC[set].m_20 = (int)f;
+        g->m_ABC[set].m_5C = (int)f;
+        break;
+    case 8:
+        g->m_ABC[set].m_24 = (int)f;
+        g->m_ABC[set].m_60 = (int)f;
+        break;
+    case 10:
+        g->m_ABC[set].m_28 = (int)f;
+        g->m_ABC[set].m_64 = (int)f;
+        break;
+    case 11:
+        g->m_ABC[set].m_30 = (int)f;
+        g->m_ABC[set].m_6C = (int)f;
+        break;
+    case 12:
+        g->m_ABC[set].m_38 = (int)f;
+        g->m_ABC[set].m_74 = (int)f;
+        break;
+    case 9:
+    case 13:
+        g->m_ABC[set].m_3C = (int)f;
+        g->m_ABC[set].m_78 = (int)f;
+        break;
+    }
+}
 
 int func_8003F0F8(Game22 *g, int kind, int set) {
     int r = 0;
