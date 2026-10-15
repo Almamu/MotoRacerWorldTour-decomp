@@ -88,3 +88,7 @@ global (`D_800CB3C8`).
 | `func_8005F0D4` | asm | 161 instructions |
 | `func_8005F358` | matches | a bike's controls cleared, returned |
 | `func_8005F380` | matches | a bike's controls cleared |
+
+## Second pass
+
+- `func_8005DE2C` came from 83 to 39 off with its parameters copied into locals; still parked.

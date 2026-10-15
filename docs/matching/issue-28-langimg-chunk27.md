@@ -67,3 +67,7 @@ global (`D_800C5868`).
 | `func_80048DD0` | matches | the destructor |
 | `func_80048EC4` | parked | the racers given their tiles' slots: registers |
 | `func_8004911C` | asm | 380 instructions |
+
+## Second pass
+
+- Built with `-fmove-all-movables` (the Makefile's CFLAGS for the chunk, group A's finding in the techniques): every matched function still matches, and the parked ones it touches come closer. `func_80048EC4` went from 107 to 75 off.

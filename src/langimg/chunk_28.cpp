@@ -61,7 +61,7 @@ struct Vt28 {
     u8 m_00[0x68];
     short m_68;
     short m_6A;
-    void (*m_6C)(void *o);
+    int (*m_6C)(void *o); // returns a value (in $v0)
 };
 
 struct Disp28 {
@@ -258,8 +258,6 @@ int func_8004AACC(Buf28 *b) {
     return 1;
 }
 
-#ifdef NON_MATCHING
-// The virtual call's registers: the original loads the function into $v0, its delta into $a0
 int func_8004AB0C(void) {
     Disp28 *d;
 
@@ -271,9 +269,6 @@ int func_8004AB0C(void) {
     d->m_68->m_6C((u8 *)d + d->m_68->m_68);
     return 1;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_28", func_8004AB0C);
-#endif
 
 /* A save's settings copied out. */
 int func_8004AB7C(Save28 *s) {

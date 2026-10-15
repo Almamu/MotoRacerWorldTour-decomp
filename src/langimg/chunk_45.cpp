@@ -575,18 +575,18 @@ int func_8006B9B0(Slots45 *s) {
     return -1;
 }
 
-#ifdef NON_MATCHING
-/* The call is the loop's test, as in the original; its registers and the counter's place still differ (8 off) */
+/* The first of n objects whose virtual function 6 returns 0, or -1. */
 int func_8006B9F8(Obj50 *o, int n) {
     int r = -1;
     int i = 0;
-    int v;
+    int k = n;
+    Obj50 *p = o;
 
-    if (n > 0) {
-        while (v = VCALL(o, 6), n--, v) {
+    if (k > 0) {
+        while (VCALL(p, 6)) {
             i++;
-            o++;
-            if (n == 0) {
+            p++;
+            if (--k == 0) {
                 goto done;
             }
         }
@@ -595,9 +595,6 @@ int func_8006B9F8(Obj50 *o, int n) {
 done:
     return r;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006B9F8);
-#endif
 
 /* The last user gone, the bank released. */
 void func_8006BA80(void) {

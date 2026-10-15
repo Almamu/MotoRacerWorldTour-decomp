@@ -7,7 +7,7 @@ at 0x30 (its vtable at 0x68, `D_800C8884`), a subclass of it
 its users, and stubs. One file, `src/langimg/chunk_51.cpp`,
 0x800773E8-0x800792DC.
 
-51 functions: 37 match, 2 are parked, 12 are still asm.
+51 functions: 38 match, 4 are parked, 9 are still asm.
 
 ## The settings
 
@@ -41,3 +41,8 @@ The functions still asm are 46 to 160 instructions:
 `func_80079174`. Parked: `func_80079124` (a reset: the constants'
 registers, 6 off) and `func_800783A8` (a motion set from a table: the
 stack argument's load scheduled earlier, 26 off).
+
+## Second pass
+
+- `func_80078458` (an object's matrix turned to face a point) matches.
+- `func_80078280` (an object's defaults, through chunk_48's matrix and vector inline functions) is parked at 6 off (two constant stores swapped by the scheduler), `func_80077844` (a mesh's points placed) at 5 (the field pointers the loop walks).

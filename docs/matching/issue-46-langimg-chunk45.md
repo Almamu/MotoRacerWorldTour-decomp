@@ -89,3 +89,7 @@ mode (its `lui` before the call, `addiu` in the delay slot).
 chunk_23's constructor (`func_8003FC94`, #24) matched during this pass:
 the permuter wrote its zeros as one chained assignment,
 `o->m_04 = o->m_10 = *(int *)o = 0;`, before the -1 stores.
+
+## Second pass
+
+- `func_8006B9F8` matches: its arguments copied into locals and the call as a plain `while` test (`while (VCALL(p, 6)) {...}`).

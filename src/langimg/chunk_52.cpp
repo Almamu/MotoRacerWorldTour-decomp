@@ -246,17 +246,12 @@ int func_800795FC(Gfx52 *g) {
     return 1;
 }
 
-#ifdef NON_MATCHING
-// Registers: the two globals' %hi parts swap $v0 and $v1 (4 off)
 void func_80079648(void *o, Cb52 cb, int arg) {
     EnterCriticalSection();
     D_800B8874[0] = cb;
     D_800B8878[0] = arg;
     ExitCriticalSection();
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_52", func_80079648);
-#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_52", func_8007968C);
 

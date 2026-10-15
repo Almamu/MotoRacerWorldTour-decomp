@@ -20,7 +20,7 @@ More of the race (`Own35`, chunk_34's `Own34`), its run and bikes:
 
 One file, `src/langimg/chunk_35.cpp`, 0x800574EC-0x800593CC.
 
-12 functions: 3 match, 5 are parked, 4 are still asm.
+12 functions: 4 match, 4 are parked, 4 are still asm.
 
 ## The settings
 
@@ -72,3 +72,8 @@ globals `D_800C68BC` and `D_800CB3C4`.
 | `func_800589B0` | asm | 391 instructions |
 | `func_80058FCC` | matches | the camera's bike's model |
 | `func_800591D4` | parked | the places: registers |
+
+## Second pass
+
+- `func_800591D4` matches: its parameter copied into a local first (`Own35 *o = race;`), which swapped the two saved registers back.
+- Built with `-fmove-all-movables` (the Makefile's CFLAGS for the chunk, group A's finding in the techniques): every matched function still matches, and the parked ones it touches come closer. `func_80057B18` went from 120 to 40 off and `func_80058070` from 119 to 34.

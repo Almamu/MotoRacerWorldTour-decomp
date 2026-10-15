@@ -68,3 +68,7 @@ globals `D_800CB42C` to `D_800CB460` (twelve of them).
 | `func_80068900` | parked | the linked models: constants |
 | `func_80068B60` | asm | 466 instructions |
 | `func_800692A8` | matches | a table row's flag |
+
+## Second pass
+
+- Built with `-fmove-all-movables` (the Makefile's CFLAGS for the chunk, group A's finding in the techniques): every matched function still matches, and the parked ones it touches come closer. `func_80068900` went from 146 to 95 off.

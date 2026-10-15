@@ -795,6 +795,20 @@ globals), a script that tries every order is quicker than guessing:
   value of one type over a slot it just used for another (a vector, then
   a short vector read back), declare the two as a union, before the
   locals that come after them in the frame (chunk_30's `func_8004EE10`).
+- **Arguments passed through.** A function that keeps a register it never
+  sets (the original uses `$a3` for its object where yours uses `$a2`) may
+  take an argument it only passes on: chunk_44's `func_8006A1B4(o, a)` hands
+  `a` to its virtual call, and `func_8006A848` passes its own on to it.
+- **Copy a parameter into a local.** Two saved registers swapped between an
+  argument and a local can come back with `T *o = o_p;` at the top
+  (chunk_35's `func_800591D4`, chunk_45's `func_8006B9F8`).
+- **A constant argument through an inline function.** When the original
+  loads a comparison's constant before the loop's other values, the loop
+  may be an inline function taking it as an argument (chunk_31's
+  `Count31(r, 1)`).
+- **An index's byte offset added to the base.** `(T *)((i * 5 << 4) + (u8
+  *)base)` (chunk_44) or `((j << 5) + (u8 *)row)` (chunk_41) where `base[i]`
+  adds the other way round.
 - **Unsized symbols for block copies.** A short string or struct copied
   from the data through a register (`lui`/`addiu` into `$t3`, then
   `lwl`/`lh`/`lb` from it) is a symbol declared without a size: with one

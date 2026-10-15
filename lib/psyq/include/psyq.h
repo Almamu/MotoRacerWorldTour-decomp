@@ -86,7 +86,7 @@ int sprintf(char *buf, const char *fmt, ...);
 int bcmp(const void *a, const void *b, int n);
 
 /* libapi */
-void EnterCriticalSection(void);
+int EnterCriticalSection(void);
 void ExitCriticalSection(void);
 void *InterruptCallback(int irq, void (*f)());
 
