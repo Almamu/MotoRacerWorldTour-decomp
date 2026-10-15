@@ -14,6 +14,8 @@ void func_8002A260(void);
 void func_8002A268(Bike *b, Vector3 *v);
 void func_8002A3F0(Bike *b);
 void func_8002A7A0(Bike *b, int steer, int f);
+void func_8002AF8C(Bike *b);
+extern int D_800D5F40;
 extern int D_800D5F30;
 Vector3 *func_80099D74(Vector3 *v, int shift); // v << shift
 Vector3 *func_80099D48(Vector3 *v, int shift); // v >> shift
@@ -414,6 +416,113 @@ void func_8002AF3C(Bike *b) {
     b->m_5CC->m_20 = b->m_motor->m_A8;
 }
 
+#ifdef NON_MATCHING
+/* The springs: each wheel's (front with the motion's 0x14 and 0x1C, rear with
+ * 0x18 and 0x20) stiffness and damping, raised by the motor's tuning entry,
+ * two thirds of it for a slow bike whose owner's value at 0x4FA is under
+ * 0x1000, into the force's y at 0x2F8; then the value at 0x554's change
+ * against 0x55C pushes it too, and kind 3 bikes in the air get a push along
+ * their heading. */
+void func_8002AF8C(Bike *b) {
+    int half = 0;
+    u8 kind = b->m_58;
+    Motion *m;
+    int s;
+
+    if ((u32)(kind - 1) < 2 && b->m_29C <= 0x1000) {
+        half = b->m_54->m_4FA < 0x1000;
+    }
+    m = b->m_5CC;
+    if (m->m_14) {
+        Motor *mo = b->m_motor;
+        int k = mo->m_E0;
+        int d = mo->m_E8;
+
+        if (mo->m_16C && !kind) {
+            if (mo->m_185[mo->m_170].m_01[0] == 1) {
+                k += 1000;
+                d += 100;
+            } else if (mo->m_185[mo->m_170].m_01[0] == 2) {
+                k += 2000;
+                d += 200;
+            }
+        }
+        if (half) {
+            k = k * 2 / 3;
+        }
+        b->m_2F4.vy +=
+            k * (mo->m_A4 - m->m_1C) / 0x20000 + (-d * (m->m_1C - b->m_5C8->m_1C) / b->m_290 >> 5);
+    }
+    kind = b->m_58;
+    m = b->m_5CC;
+    if ((s8)kind) {
+        s = b->m_554 - b->m_55C;
+        if (s) {
+            Motor *mo = b->m_motor;
+
+            s = s * mo->m_148 / b->m_290;
+            if (m->m_10) {
+                int r;
+
+                if (s < 0) {
+                    r = s * 3686;
+                } else {
+                    int c = 0x1000;
+
+                    if (mo->m_16C) {
+                        if ((s8)kind == 2 && D_800D5F40 == 4) {
+                            c = 0xCCC;
+                        } else if (!mo->m_185[mo->m_170].m_01[0]) {
+                            c = 0x1333;
+                        } else if (mo->m_185[mo->m_170].m_01[0] == 2) {
+                            c = 0xCCC;
+                        }
+                    }
+                    if ((s8)kind == 3) {
+                        c = 0x1000;
+                    }
+                    r = s * c;
+                }
+                b->m_2F4.vy += r / 4096;
+                kind = b->m_58;
+                m = b->m_5CC;
+            }
+        }
+        if ((s8)kind == 3 && !m->m_10 && b->m_14A && s > 0) {
+            Vector3 h, w;
+
+            h = b->m_330;
+            func_80099D48(&h, 14);
+            func_800997A4(&w, &h);
+            VecCopyL(&h, &w);
+            func_800995C4(&h, s << 1);
+            func_800997D0(&b->m_2F4.vx, &h.vx);
+            m = b->m_5CC;
+        }
+    }
+    if (m->m_18) {
+        Motor *mo = b->m_motor;
+        int k = mo->m_E4;
+        int d = mo->m_EC;
+
+        if (mo->m_16C && !b->m_58) {
+            if (mo->m_185[mo->m_170].m_01[0] == 1) {
+                k += 1000;
+                d += 100;
+            } else if (mo->m_185[mo->m_170].m_01[0] == 2) {
+                k += 2000;
+                d += 200;
+            }
+        }
+        if (half) {
+            k = k * 2 / 3;
+        }
+        b->m_2F4.vy +=
+            k * (mo->m_A8 - m->m_20) / 0x20000 + (-d * (m->m_20 - b->m_5C8->m_20) / b->m_290 >> 5);
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_12", func_8002AF8C);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_12", func_8002B40C);
