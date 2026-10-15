@@ -60,26 +60,28 @@ LIB_cdaudio_G      := 0
 langimg.chunk_01_G := 0
 # The game's code built with GCC 2.91.66 (its classes are 2.95.2's).
 langimg.chunk_02_GCC  := 2.91.66-psx
-langimg.chunk_02_CFLAGS :=
+langimg.chunk_02_CFLAGS := -fmove-all-movables
 langimg.chunk_02_MASPSXFLAGS = $(MASPSXFLAGS) --small-externs=
 langimg.chunk_02b_GCC := 2.91.66-psx
 langimg.chunk_02b_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=D_800C493C,D_800C4944
 langimg.chunk_03_GCC  := 2.91.66-psx
-langimg.chunk_03_CFLAGS :=
+langimg.chunk_03_CFLAGS := -fmove-all-movables
 langimg.chunk_03_MASPSXFLAGS = $(MASPSXFLAGS) --small-externs=D_800C4988,D_800CA778
 langimg.chunk_04_GCC  := 2.91.66-psx
-langimg.chunk_04_CFLAGS :=
+langimg.chunk_04_CFLAGS := -fmove-all-movables
 langimg.chunk_04_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=
 langimg.chunk_05_GCC  := 2.91.66-psx
-langimg.chunk_05_CFLAGS :=
+langimg.chunk_05_CFLAGS := -fmove-all-movables
 langimg.chunk_05_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=
 langimg.chunk_06_GCC  := 2.91.66-psx
+langimg.chunk_06_CFLAGS := -mno-split-addresses -fmove-all-movables
 langimg.chunk_06_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=D_800C4D14,D_800CA7D0
 langimg.chunk_07_GCC  := 2.91.66-psx
 langimg.chunk_07_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=D_800CA960
 langimg.chunk_08_GCC  := 2.91.66-psx
 langimg.chunk_08_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=
 langimg.chunk_09_GCC  := 2.91.66-psx
+langimg.chunk_09_CFLAGS := -mno-split-addresses -fmove-all-movables
 langimg.chunk_09_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=
 langimg.chunk_10_GCC  := 2.91.66-psx
 langimg.chunk_10_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=
@@ -172,7 +174,7 @@ langimg.chunk_55_GCC  := 2.91.66-psx
 langimg.chunk_55_CFLAGS :=
 langimg.chunk_55_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=D_800C89D0,D_800C89D4,D_800C89D5,D_800C89D8,D_800C89D9,D_800C89DA,D_800C89DC,D_800C89E0,D_800C89E4,D_800C89EC,D_800C89F0,D_800CBC98,D_800CBCD8,D_800CBCDA,D_800CBCDC,D_800CBCDE
 langimg.chunk_22_GCC  := 2.91.66-psx
-langimg.chunk_22_CFLAGS :=
+langimg.chunk_22_CFLAGS := -fmove-all-movables
 langimg.chunk_22_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=
 langimg.chunk_57_GCC  := 2.91.66-psx
 langimg.chunk_57_CFLAGS :=
@@ -184,7 +186,7 @@ langimg.chunk_28_GCC  := 2.91.66-psx
 langimg.chunk_28_CFLAGS :=
 langimg.chunk_28_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=D_800C5E2C,D_800CAFA8,D_800CAFAC,D_800CB1BC,D_800CB2C0
 langimg.chunk_19_GCC  := 2.91.66-psx
-langimg.chunk_19_CFLAGS :=
+langimg.chunk_19_CFLAGS := -fmove-all-movables
 langimg.chunk_19_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=
 langimg.chunk_59_GCC  := 2.91.66-psx
 langimg.chunk_59_CFLAGS :=
@@ -211,7 +213,7 @@ langimg.chunk_37_GCC  := 2.91.66-psx
 langimg.chunk_37_CFLAGS :=
 langimg.chunk_37_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=D_800CB3C0
 langimg.chunk_20_GCC  := 2.91.66-psx
-langimg.chunk_20_CFLAGS :=
+langimg.chunk_20_CFLAGS := -fmove-all-movables
 langimg.chunk_20_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=
 langimg.chunk_38_GCC  := 2.91.66-psx
 langimg.chunk_38_CFLAGS :=
@@ -229,7 +231,7 @@ langimg.chunk_62_GCC  := 2.91.66-psx
 langimg.chunk_62_CFLAGS :=
 langimg.chunk_62_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=
 langimg.chunk_24_GCC  := 2.91.66-psx
-langimg.chunk_24_CFLAGS :=
+langimg.chunk_24_CFLAGS := -fmove-all-movables
 langimg.chunk_24_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=
 langimg.chunk_48_GCC  := 2.91.66-psx
 langimg.chunk_48_CFLAGS :=

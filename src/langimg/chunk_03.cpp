@@ -906,9 +906,6 @@ void func_800194E4(Obj2D *o) {
     }
 }
 
-#ifdef NON_MATCHING
-/* Registers only (15 off): the original keeps the constants -0xF01 and 2
- * in $t1 */
 /* Starts a sequence: its objects' flags and m_3F set, and their linked
  * entries restarted, forwards or (back) backwards. Returns whether it has
  * entries. */
@@ -947,14 +944,16 @@ int func_80019578(Seq *s, int a, int back, int c) {
         k = (CobjetLinkedPos *)s->m_links->m_items[e->m_link];
         k->m_flags &= ~0xF00;
         l = o->m_links;
-        do {
-            if (l) {
-                CobjetLinked *x = s->m_links->m_items[l->m_index];
+        if (l) {
+            CobjetLinked *x = s->m_links->m_items[l->m_index];
 
-                if (x && x != k && x->m_id == k->m_id) {
-                    x->m_2C = 0;
-                }
+            if (x && x != k && x->m_id == k->m_id) {
+                x->m_2C = 0;
             }
+        }
+        // The original only walks the rest of the list: its first entry is
+        // the only one tested (the loop's branch goes back to the m_next load)
+        do {
             l = l->m_next;
         } while (l);
         if (!a && (u32)(k->m_id - 3) < 3) {
@@ -970,6 +969,3 @@ int func_80019578(Seq *s, int a, int back, int c) {
     }
     return s->m_entries != 0;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_03", func_80019578);
-#endif
