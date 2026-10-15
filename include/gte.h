@@ -36,6 +36,9 @@
 #define GTE_GET_MAC13(x, z) __asm__ volatile("mfc2 %0, $25\n\tmfc2 %1, $27" : "=r"(x), "=r"(z))
 // The Z averages' scale factors
 #define GTE_SET_ZSF(a, b) __asm__ volatile("ctc2 %0, $29\n\tctc2 %1, $30" : : "r"(a), "r"(b))
+// The same, read: ZSF3 into a, ZSF4 into b. The outputs are listed b first,
+// which gives the original's saved registers (chunk_53's func_8007C428).
+#define GTE_GET_ZSF(a, b) __asm__ volatile("cfc2 %1, $29\n\tcfc2 %0, $30" : "=r"(b), "=r"(a))
 
 #define GTE_RTPS() __asm__ volatile("nop\n\tnop\n\t.word 0x4A180001")
 #define GTE_RTPT() __asm__ volatile("nop\n\tnop\n\t.word 0x4A280030")
