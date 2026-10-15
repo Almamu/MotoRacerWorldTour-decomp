@@ -102,8 +102,25 @@ static inline void SetVec30(Vec30 *v, int x, int y, int z) {
     v->vz = z;
 }
 
-#ifdef NON_MATCHING
-// The original needs a saved register less: it keeps the angles' and the second matrix's addresses in one register ($s1) and the camera's position in $s0 from its copy on, and recomputes the last vector's address; GCC keeps each in its own (a frame of 0xA0 against 0x98, 119 off).
+// The camera's matrix: the transpose of r, its translation cleared
+static inline void func_8004D560_set(Cam30 *c, MATRIX *r) {
+    MATRIX t;
+
+    func_80098178(&t, r);
+    c->m_00 = t;
+    c->m_00.t[0] = c->m_00.t[1] = c->m_00.t[2] = 0;
+}
+
+// The offset (0, 0x1000, 0) turned by a matrix, moved by t and added to pos
+static inline void func_8004D560_offset(MATRIX *m, Vec30 *t, Vec30 *pos) {
+    Vec30 res, w;
+
+    SetVec30(&w, 0, 0x1000, 0);
+    func_80098768(m, &w, &res);
+    func_800997D0(&res, t);
+    func_800997D0(pos, &res);
+}
+
 void func_8004D560(Own30 *o, int i) {
     int k = o->m_470[i];
     Body30 *m = 0;
@@ -116,27 +133,22 @@ void func_8004D560(Own30 *o, int i) {
     c = o->m_43C[i];
     if (m) {
         SVECTOR a, d;
-        MATRIX r, t;
-        Vec30 w, v;
+        MATRIX r;
 
         a = m->m_70;
         func_80034190(&a, &d, m->m_15A);
         func_80097F68(&r, &a);
-        func_80098178(&t, &r);
-        c->m_00 = t;
-        c->m_00.t[0] = c->m_00.t[1] = c->m_00.t[2] = 0;
+        func_8004D560_set(c, &r);
         VecCopyL30(&c->m_F8, &m->m_64);
-        func_80097F68(&t, &d);
-        t.t[0] = t.t[1] = t.t[2] = 0;
-        SetVec30(&v, 0, 0x1000, 0);
-        func_80098768(&t, &v, &w);
-        func_800997D0(&w, (Vec30 *)t.t);
-        func_800997D0(&c->m_F8, &w);
+        {
+            MATRIX t;
+
+            func_80097F68(&t, &d);
+            t.t[0] = t.t[1] = t.t[2] = 0;
+            func_8004D560_offset(&t, (Vec30 *)t.t, &c->m_F8);
+        }
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_30", func_8004D560);
-#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_30", func_8004D734);
 
