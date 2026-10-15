@@ -4,7 +4,7 @@ The motor's gearing (wheel speed from engine speed, per gear) and the
 bike's object: its constructor and destructor, its frame helpers, its
 heading. One file, `src/langimg/chunk_09.cpp`, 0x800236F0-0x80025614.
 
-19 functions: 12 match, 6 are parked, 1 is still asm.
+19 functions: 12 match, 7 are parked, none is still asm.
 near-misses pass and the pass over the large functions). Two of chunk_08's
 parked functions match now too (#9).
 
@@ -59,6 +59,19 @@ chunk_08.
   the units flag `D_800D49A8` read once per sample right after the call,
   into a local both conversions use.
 
+## Fifth pass
+
+- `func_80024824` (the bike reset: about 150 fields cleared or set, its
+  vectors zeroed, its four channels reset through `func_8006BB9C`, its
+  three motions through `func_80024C60`) is written and parked, 18 off.
+  Its fields are now named in `include/langimg/bike.h`. What's left is
+  scheduling: the original stores the speed (50) and its fractions 0xCC
+  and 0x199 (as chunk_15's `func_80030C98` computes them) after the
+  vector at 0x3E8 is zeroed, in source order; GCC loads the constants
+  earlier and interleaves the stores. The fractions written as the
+  computation (or through an inline copy of `func_80030C98`) gave the
+  same code.
+
 ## The functions
 
 | Function | State | Notes |
@@ -72,7 +85,7 @@ chunk_08.
 | `func_800242A4` | matches | the destructor |
 | `func_8002434C` | parked | the bike's matrix from its angles: the stack layout matches, but the locals' addresses go to saved registers |
 | `func_80024584` | parked | placing the bike: the matrix copy's two pointers swap registers (26 off) |
-| `func_80024824` | asm | 271 instructions |
+| `func_80024824` | parked | the bike reset: the order of a run of constant stores |
 | `func_80024C60`, `func_80024C90` | match | a motion cleared; the frames copied from their sources |
 | `func_80024D0C` | parked | the bike's angles and heading: a first draft, registers throughout |
 | `func_80025074` | parked | the heading: registers, and a compare with the constant in a register (47 off) |
