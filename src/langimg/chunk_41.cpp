@@ -113,10 +113,10 @@ int func_80063A5C(Obj41 *o);
 void func_800643BC(Obj41 *o, int f);
 void func_80063848(Obj41 *d, Obj41 *s);
 void func_8006973C(Mat41 *m, SVec41 *a);
-void func_80098674(Mat41 *a, Mat41 *b, Mat41 *out);
+Mat41 *func_80098674(Mat41 *a, Mat41 *b, Mat41 *out); // a product, returns out
 void func_8009887C(Vec41 *v, Vec41 *out);
-void func_800997D0(Vec41 *v, Vec41 *a);
-void func_80098768(Mat41 *m, Vec41 *v, Vec41 *out);
+Vec41 *func_800997D0(Vec41 *v, Vec41 *a); // v += a, returns v
+Vec41 *func_80098768(Mat41 *m, Vec41 *v, Vec41 *out);
 void func_800643E4(Obj41 *o);
 struct Mode41 {
     u8 m_00[0x3EC];
@@ -415,9 +415,6 @@ static inline void SetSVec41(SVec41 *v, int x, int y, int z) {
     v->z = z;
 }
 
-#ifdef NON_MATCHING
-// The angles' matrices in an inline function (their stack addresses then computed for each call, as the original's), the forward block's matrix and result through pointer locals and the translation through SetTrans41: only the forward vector's address in $v1 where the original has $a3, and the registers after it (8 off, from 139)
-/* The matrix from the angles (y, then x, then z), the forward vector through it, the positions kept. */
 static inline void SetVec41(Vec41 *v, int x, int y, int z) {
     v->x = x;
     v->y = y;
@@ -475,6 +472,7 @@ static inline void Angles41(Obj41 *o) {
     o->m_2A4 = m1;
 }
 
+/* The matrix from the angles (y, then x, then z), the forward vector through it, the positions kept. */
 void func_800643E4(Obj41 *o) {
     Angles41(o);
     {
@@ -496,9 +494,6 @@ void func_800643E4(Obj41 *o) {
         VecCopyL41(&o->m_78, (Vec41 *)o->m_64);
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_41", func_800643E4);
-#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_41", func_80064608);
 
