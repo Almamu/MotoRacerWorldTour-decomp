@@ -153,6 +153,8 @@ void func_80035518(Shape18 *o) {
     MATRIX *m = &o->m_60;
     Vec18 pos, acc, a, b, c, d;
     int moved, iter;
+    Pt18 *p;
+    int i;
 
     {
         int x = m->t[0];
@@ -169,82 +171,77 @@ top:
     if (iter >= 3) {
         goto out;
     }
-body: {
-    {
-        Pt18 *p = o->m_00;
-        int i;
+body:
+    p = o->m_00;
+    moved = 0;
+    acc.x = 0;
+    acc.y = 0;
+    acc.z = 0;
+    for (i = 0; i < o->m_04; i++, p++) {
+        int k, hit;
 
-        moved = 0;
-        acc.x = 0;
-        acc.y = 0;
-        acc.z = 0;
-        for (i = 0; i < o->m_04; i++, p++) {
-            int k, hit;
+        k = 0;
+        do {
+            int r;
 
-            k = 0;
-            do {
-                int r;
+            hit = 0;
+            {
+                int x = p->m_10.x;
+                int y = p->m_10.y;
+                int z = p->m_10.z;
 
-                hit = 0;
-                {
-                    int x = p->m_10.x;
-                    int y = p->m_10.y;
-                    int z = p->m_10.z;
-
-                    a.x = x;
-                    a.y = y;
-                    a.z = z;
-                    b.x = x;
-                    b.y = y;
-                    b.z = z;
-                }
-                r = func_8001B350(&p->m_34, &a);
-                if (r == -1) {
-                    int h = func_8001AFF4(p->m_34.m_00, &a, &p->m_48);
-
-                    func_80099D48(&p->m_48, 12);
-                    if (a.y < h) {
-                        hit = 2;
-                        a.y = h;
-                    }
-                } else {
-                    hit = 1;
-                    func_80096E28((char *)p->m_34.m_00 + (r * 4 + 0x1C), &p->m_48, 14);
-                }
-                func_800998D0(&c, &b, &a);
-                k++;
-            } while (0x19000 < func_8009923C(&c) && k < 50);
-            if (hit) {
-                int l;
-
-                func_80099DCC(&c, &p->m_48, 2);
-                VecCopyL18(&p->m_1C, &c);
-                func_800998D0(&c, &b, &a);
-                l = func_80099B88(&c, &p->m_1C) - 10;
-                d = p->m_1C;
-                func_8009964C(&d, l + (l >> 3));
-                func_80099D48(&d, 12);
-                func_80099834(&c, &d);
-                func_800997D0(&a, &c);
-                p->m_00 = 1;
-                func_80099834(&a, &b);
-                acc.x = Max18(acc.x, a.x);
-                acc.y = Max18(acc.y, a.y);
-                acc.z = Max18(acc.z, a.z);
-                moved++;
+                a.x = x;
+                a.y = y;
+                a.z = z;
+                b.x = x;
+                b.y = y;
+                b.z = z;
             }
+            r = func_8001B350(&p->m_34, &a);
+            if (r == -1) {
+                int h = func_8001AFF4(p->m_34.m_00, &a, &p->m_48);
+
+                func_80099D48(&p->m_48, 12);
+                if (a.y < h) {
+                    hit = 2;
+                    a.y = h;
+                }
+            } else {
+                hit = 1;
+                func_80096E28((char *)p->m_34.m_00 + (r * 4 + 0x1C), &p->m_48, 14);
+            }
+            func_800998D0(&c, &b, &a);
+            k++;
+        } while (0x19000 < func_8009923C(&c) && k < 50);
+        if (hit) {
+            int l;
+
+            func_80099DCC(&c, &p->m_48, 2);
+            VecCopyL18(&p->m_1C, &c);
+            func_800998D0(&c, &b, &a);
+            l = func_80099B88(&c, &p->m_1C) - 10;
+            d = p->m_1C;
+            func_8009964C(&d, l + (l >> 3));
+            func_80099D48(&d, 12);
+            func_80099834(&c, &d);
+            func_800997D0(&a, &c);
+            p->m_00 = 1;
+            func_80099834(&a, &b);
+            acc.x = Max18(acc.x, a.x);
+            acc.y = Max18(acc.y, a.y);
+            acc.z = Max18(acc.z, a.z);
+            moved++;
         }
-        iter++;
-        p = o->m_00;
-        for (i = 0; i < o->m_04; i++, p++) {
-            func_800997D0(&p->m_10, &acc);
-        }
-        func_800997D0(&pos, &acc);
     }
+    iter++;
+    p = o->m_00;
+    for (i = 0; i < o->m_04; i++, p++) {
+        func_800997D0(&p->m_10, &acc);
+    }
+    func_800997D0(&pos, &acc);
     if (moved) {
         goto top;
     }
-}
 out:
     VecCopyL18((Vec18 *)m->t, &pos);
 }
