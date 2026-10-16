@@ -12,7 +12,7 @@ it) with its items (0x74 bytes each, a name first):
 
 One file, `src/langimg/chunk_21.cpp`, 0x8003B600-0x8003D60C.
 
-16 functions: 12 match, 4 are still asm.
+16 functions: 14 match, 2 are still asm.
 
 ## The settings
 
@@ -64,5 +64,21 @@ globals `D_800C4D88`, `D_800C4D98` and `D_800C4D9C`.
 | `func_8003CC9C` | matches | back n items |
 | `func_8003CD30`, `func_8003CD38` | match | the history cleared, the current item kept |
 | `func_8003CD88` | matches | back one item |
-| `func_8003CDEC` | asm | 338 instructions |
-| `func_8003D334` | asm | 189 instructions |
+| `func_8003CDEC` | matches | a menu entry chosen: its values set, its actions run, its handler called, then by kind a text, a cell, back n items or a flag |
+| `func_8003D334` | matches | a menu left: its values set, back one item and the name copied |
+- **One pointer for two lookups.** `func_8003CDEC` and `func_8003D334`
+  each find two named values (an inline lookup with a result variable
+  and a `break`), mark them used and store into them; with one `int *p`
+  reused for both they matched, with two pointers the second stayed live
+  in another register.
+- **A lookup's result through an out-parameter.** The handler found by
+  name goes through `FindFn21(t, name, &h)`, so `h` lives on the stack
+  as in the original.
+- **A text declared `s8`.** The item's text is compared byte by byte as
+  signed (`lb`); declaring the field `s8` (and casting to `char *` for
+  `strcpy`/`strlen`) kept the loop's counter, where a cast at the use
+  turned it into a pointer.
+- **The word after the jump table.** `func_8003D334`'s switch has a
+  jump table followed by a zero word, the end of this file's `.rodata`;
+  without it spelled out (`D_800B73DC`) every later datum moves by 4,
+  which only the full build shows.

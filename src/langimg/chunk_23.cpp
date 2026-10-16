@@ -260,7 +260,7 @@ extern char D_800C4FC8[], D_800C4FD4[];
 int func_800A6168(char *buf, const char *fmt, char *ap); // vsprintf
 int func_80040A24(Named *o, int *a);
 int func_800406E0(Named *o, int a);
-void func_80044D0C(Named *o);
+void func_80044D0C(Named *o, int a);
 void *__builtin_vec_new(unsigned int n);
 void func_800405A0(Named *o);
 void func_80040B04(Named *o);
@@ -733,7 +733,7 @@ int func_800406A4(Named *o) {
 }
 
 #ifdef NON_MATCHING
-/* Temporaries' registers and the prologue's order (13 off; D_800D497C declared small for its one la, from 20) */
+/* The vtable's and the stage's loads in other temporaries (5 off; func_80044D0C given its second argument, which the original passes on, from 13; D_800D497C declared small for its one la, from 20) */
 /* The stage set up: virtual call 25, its numbers and sounds, its two
  * tables (21 and 9 entries). */
 int func_800406E0(Named *o, int a) {
@@ -741,7 +741,7 @@ int func_800406E0(Named *o, int a) {
     int r;
     int *t;
 
-    func_80044D0C(o);
+    func_80044D0C(o, a);
     r = VCALL1(o, 25, a);
     func_80040B04(o);
     func_800405A0(o);

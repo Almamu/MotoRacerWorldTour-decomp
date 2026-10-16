@@ -22,7 +22,9 @@ struct Vec17 {
 
 // What the view follows (chunk_41's object)
 struct Bike17 {
-    u8 m_00[0x64];
+    u8 m_00[0x34];
+    MATRIX *m_34; // its matrix
+    u8 m_38[0x2C];
     Vec17 m_64;   // its position
     SVECTOR m_70; // its angles
     u8 m_78[0xB4];
@@ -48,13 +50,56 @@ struct Cam17 {
 };
 
 struct Rider17 {
-    u8 m_00[0x30];
+    u8 m_00[8];
+    u16 m_08;
+    u8 m_0A[0x26];
     Bike17 *m_30;
 };
 
 struct Kind17 {
     u8 m_00[0xA];
     short m_0A;
+    u8 m_0C[0x10];
+    short m_1C;
+    short m_1E;
+};
+// The rider's three matrices
+struct Mats17 {
+    u8 m_00[0x190];
+    MATRIX *m_190;
+    u8 m_194[0xFC];
+    MATRIX *m_290;
+    u8 m_294[0xFC];
+    MATRIX *m_390;
+};
+// The animation at the view's 0x40, drawn through a pointer to member
+struct Anim17 {
+    int m_00;
+    Kind17 *m_04;
+    u8 m_08[0x1F];
+    u8 m_27;
+    int m_28;
+    void (Anim17::*m_2C)(MATRIX *m); // how it is drawn
+
+    void Draw(MATRIX *m) __asm__("func_8008FD74");
+};
+typedef void (Anim17::*Draw17)(MATRIX *m);
+// A pointer to member's three parts
+struct Pmf17 {
+    short m_delta;
+    short m_index;
+    void *m_pfn;
+};
+// What is drawn from (its matrix at 0x60)
+struct Eye17 {
+    u8 m_00[0x60];
+    MATRIX m_60;
+};
+struct Spr17 {
+    int m_00;
+    int m_04;
+    u8 m_08[0xC];
+    MATRIX *m_14;
 };
 
 // Something to look at (0x1C bytes)
@@ -76,9 +121,12 @@ struct View17 {
     u8 m_3E[2];
     int m_40; // an animation's (chunk_62's Anim62) first word
     Kind17 *m_44;
-    u8 m_48[0x18];
-    int m_60[3];
-    Pair17 m_6C;
+    Mats17 *m_48;
+    u8 m_4C[0x14];
+    u8 m_60[7];
+    u8 m_67;
+    int m_68; // its colour
+    Draw17 m_6C;
     int m_74;
     Target17 m_78[5]; // what it can look at
     Target17 m_104;   // between the two below
@@ -108,7 +156,9 @@ struct Racer17 {
     u8 m_34[0x534];
 };
 struct Run17 {
-    u8 m_00[0x2E8];
+    u8 m_00[8];
+    int m_08; // the race's kind
+    u8 m_0C[0x2DC];
     Racer17 m_2E8[5];
 };
 struct Game17 {
@@ -159,7 +209,7 @@ struct Maps17 {
     int m_14;
 };
 
-extern Pair17 D_800C8D34[];
+extern Draw17 D_800C8D34[]; // how each kind is drawn
 void func_80097E4C(void *a, int x, int y, int z);
 int func_80063450(Bike17 *b);
 void func_80036964(void *o);
@@ -181,6 +231,16 @@ void func_80034D14(void *o, int a);
 void func_800354D0(View17 *v, Eight17 *out);
 void func_80034AC8(Maps17 *m, int v);
 void func_8003425C(View17 *v, Rider17 *r, Cam17 *c);
+void func_8003442C(View17 *v, Rider17 *r, Eye17 *e);
+int func_80063A30(Bike17 *b);
+void func_800995C4(long *v, int len);
+void func_800910EC(void *a, MATRIX *m);
+void func_8007F000(Spr17 *o);
+void func_8008FD74(void);
+extern Spr17 D_800CBCA0;
+extern int D_800CBCA0_0 __asm__("D_800CBCA0"); // its first two words, stored directly
+extern int D_800CBCA4;
+extern int D_800CC2A8;
 void func_80097F68(MATRIX *m, SVECTOR *r);
 MATRIX *func_80098178(MATRIX *d, MATRIX *s);
 MATRIX *func_80098674(MATRIX *a, MATRIX *b, MATRIX *out); // a product
@@ -400,7 +460,78 @@ void func_8003425C(View17 *v, Rider17 *r, Cam17 *c) {
     }
 }
 
+/* The rider drawn: its three matrices set, its matrix from the bike's
+ * turned by the view's angles, seen from e, its colour by the race, and
+ * drawn by the kind's pointer to member at half size. */
+#ifdef NON_MATCHING
+// Written in full, the pointer-to-member call through the kind's table (D_800C8D34[1] set to &Anim17::Draw) in the original's shape; left: the saved registers (the view's animation at 0x40 lives in its own register and is copied for the call), u16 0x8 read as lhu where GCC narrows it to lbu, the position's copy and the matrix's scaling read through pointers (225 off).
+void func_8003442C(View17 *v, Rider17 *r, Eye17 *e) {
+    if (v->m_00) {
+        Anim17 *a = (Anim17 *)&v->m_40;
+        MATRIX out, r1;
+        Vec17 p;
+        MATRIX m6;
+        Vec17 d;
+        MATRIX id;
+        int c;
+
+        *v->m_48->m_190 = v->m_134[0];
+        *v->m_48->m_290 = v->m_134[1];
+        *v->m_48->m_390 = v->m_134[2];
+        a->m_27 = r->m_08 & 7;
+        r1 = *r->m_30->m_34;
+        func_80097F68(&r1, &v->m_194);
+        VecCopyL17(&p, MatTrans17(r->m_30->m_34));
+        VecCopyL17(MatTrans17(&r1), &p);
+        m6 = e->m_60;
+        func_80098674(&m6, &r1, &out);
+        d.vx = r1.t[0] - m6.t[0];
+        d.vy = r1.t[1] - m6.t[1];
+        d.vz = r1.t[2] - m6.t[2];
+        func_8009887C(&d.vx, out.t);
+        out.m[0][0] <<= 2;
+        out.m[0][1] <<= 2;
+        out.m[0][2] <<= 2;
+        out.m[1][0] <<= 2;
+        out.m[1][1] <<= 2;
+        out.m[1][2] <<= 2;
+        out.m[2][0] <<= 2;
+        out.m[2][1] <<= 2;
+        out.m[2][2] <<= 2;
+        func_800995C4(out.t, 0x4000);
+        func_80033D4C_one(&id);
+        func_800910EC(a, &id);
+        if ((unsigned int)(D_800C5E14->m_378->m_08 - 5) < 2) {
+            int k = func_80063A30(r->m_30) & 7;
+
+            if (k == 6) {
+                c = 0x346A7C;
+            } else if (k == 7) {
+                c = 0x6A797E;
+            } else {
+                goto grey;
+            }
+        } else {
+        grey:
+            c = 0x808080;
+        }
+        v->m_68 = c;
+        D_800C8D34[1] = &Anim17::Draw;
+        v->m_6C = D_800C8D34[a->m_04->m_0A];
+        D_800CBCA0_0 = 0x9E;
+        D_800CBCA4 = D_800CC2A8;
+        D_800CBCA0.m_14 = &r1;
+        func_8007F000(&D_800CBCA0);
+        v->m_44->m_1E >>= 2;
+        v->m_44->m_1C += 2;
+        (a->*a->m_2C)(&out);
+        v->m_44->m_1E <<= 2;
+        v->m_44->m_1C -= 2;
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_17", func_8003442C);
+#endif
 
 /* What the view looks at, from its bike's state. */
 void func_8003491C(View17 *v, Rider17 *r) {
