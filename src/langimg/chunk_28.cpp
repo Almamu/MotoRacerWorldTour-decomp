@@ -98,6 +98,9 @@ extern int D_800CBC94;
 extern char *D_800C9E94; // names, by number
 extern int D_800C5E2C;
 extern int D_800C5E2C_w[] asm("D_800C5E2C"); // the same word, read the other way
+// The same word again under a second linker symbol (linker/langimg/undefined_syms_manual.txt):
+// not one of the chunk's small globals, so maspsx reads it with lui/lw, as func_80049B9C does
+extern int D_800C5E2C_far;
 extern char D_800C5E3C[];
 extern char D_800C5F2C[];
 extern char D_800C5F48[];
@@ -292,20 +295,15 @@ void func_80049AE8(void) {
     }
 }
 
-#ifdef NON_MATCHING
-// The arguments read into locals in order (23 off to 6); left: the name's address in $t0 where the original reuses $v1, and D_800C5E2C's high half in $v0 where the original loads it into $a3 itself (it's read without $gp here)
 char *func_80049B9C(int i, int x, int f) {
     char *fmt = D_800C5F2C;
     char **name = (char **)((u8 *)&D_800C9E94 + (i << 2));
-    int w = D_800C5E2C_w[0];
+    int w = D_800C5E2C_far;
     char *s = f == 1 ? D_800C5F48 : D_800C5F4C;
 
     sprintf(&D_800CB1C0, fmt, *name, w, s, 0x73);
     return &D_800CB1C0;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_28", func_80049B9C);
-#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_28", func_80049C14);
 
