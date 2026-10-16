@@ -2,3 +2,4 @@
  * globals and not (see docs/matching_techniques.md, "A second linker symbol").
  */
 D_800C5E2C_far = 0x800C5E2C;
+D_800C8C70_far = 0x800C8C70;

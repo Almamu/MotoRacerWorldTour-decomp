@@ -281,7 +281,7 @@ void *memset(void *p, int c, size_t n);
 int func_8009574C(Item60 *o, int a);
 extern Virt60 *D_800CBDC4;
 extern int D_800CBDC0;
-extern int D_800C8C70_[] asm("D_800C8C70"); // also read here as an array
+extern int D_800C8C70_far[]; // D_800C8C70 by its second name, not through $gp
 
 void func_80089AA4(Pieces60 *o);
 Hold60 *func_8008A06C(Hold60 *h);
@@ -508,7 +508,7 @@ int func_800897FC(Buf60 *b, int a, int n) {
 }
 
 #ifdef NON_MATCHING
-/* D_800C8C70 is read here with lui and lw into one register, not through $gp as elsewhere in the file (2 off) */
+/* D_800C8C70 is read here with lui and lw, not through $gp as elsewhere in the file: through its second name D_800C8C70_far the address is right; left is the value loaded into $v0 where the original uses $v1, the lui's register (2 off) */
 /* The frame's ordering table cleared. */
 int func_800898C4(Buf60 *b) {
     if (!b->m_10) {
@@ -516,7 +516,7 @@ int func_800898C4(Buf60 *b) {
     }
     ClearOTagR(b->m_10 + b->m_0C * D_800B8868, b->m_0C);
     func_800895D8();
-    return D_800C8C70_[0] != 0;
+    return D_800C8C70_far[0] != 0;
 }
 #else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_60", func_800898C4);
