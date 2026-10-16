@@ -22,7 +22,7 @@ at 0x28):
 
 One file, `src/langimg/chunk_43.cpp`, 0x800673CC-0x800692EC.
 
-10 functions: 6 match, 1 is parked, 3 are still asm.
+10 functions: 7 match, 1 is parked, 2 are still asm.
 
 ## The settings
 
@@ -50,8 +50,8 @@ globals `D_800CB42C` to `D_800CB460` (twelve of them).
   A `do`, a `for (;;)` with `break`s and a `while` entered at its body all
   gave the same. Its flag at 0x14D is the two compares or'ed without
   short-circuit (`(a < d) | (d < b)`).
-- **Still asm.** `func_800678C8` (476 instructions), `func_800681A4` (480)
-  and `func_80068B60` (466), not tried.
+- **Still asm.** `func_800678C8` (476 instructions) and `func_80068B60`
+  (466), not tried.
 
 ## Group B, more functions
 
@@ -74,7 +74,7 @@ globals `D_800CB42C` to `D_800CB460` (twelve of them).
 | `func_80067650` | matches | a model copied from another |
 | `func_800678C8` | asm | 476 instructions |
 | `func_80068038` | matches | the value at 0x33C |
-| `func_800681A4` | asm | 480 instructions |
+| `func_800681A4` | matches | the bikes' chase states and flags |
 | `func_80068900` | parked | the linked models: constants |
 | `func_80068B60` | asm | 466 instructions |
 | `func_800692A8` | matches | a table row's flag |
@@ -82,3 +82,14 @@ globals `D_800CB42C` to `D_800CB460` (twelve of them).
 ## Second pass
 
 - Built with `-fmove-all-movables` (the Makefile's CFLAGS for the chunk, group A's finding in the techniques): every matched function still matches, and the parked ones it touches come closer. `func_80068900` went from 146 to 95 off.
+
+## Group B, large functions
+
+`func_800681A4` (480 instructions: each linked bike's chase state, then its
+flags) matched from 126 off with:
+- the `m_438 > 0` test nested in its own `if` (not one more `&&`);
+- the walk's last test written `own != m->m_54`;
+- the slot's value a signed byte;
+- the third rule's two indices read into locals first (`k = c->m_80`,
+  `i = m->m_218`, `j = i + 1`); with only `j` a local it got worse;
+- the flags for game mode 2 as an `if`/`else if` chain, not a `switch`.

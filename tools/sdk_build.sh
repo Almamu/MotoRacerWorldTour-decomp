@@ -27,10 +27,15 @@ for t in langimg sces; do
         $OBJCOPY --set-section-alignment .text=4 --set-section-alignment .data=4 \
             --set-section-alignment .bss=4 --set-section-alignment .rodata=4 "$obj"
     done < "$d/objects.txt"
+    # The hand-written second names, as in the Makefile, where there are any
+    manual=()
+    if [ -f "linker/$t/undefined_syms_manual.txt" ]; then
+        manual=(-T "linker/$t/undefined_syms_manual.txt")
+    fi
     $LD -EL --no-check-sections --no-warn-rwx-segments -Map "$d/$t.map" \
         -T "$d/${t}_syms.ld" -T "$d/$t.ld" \
         -T "linker/$t/undefined_syms_auto.txt" -T "linker/$t/undefined_funcs_auto.txt" \
-        -o "$d/$t.elf"
+        "${manual[@]}" -o "$d/$t.elf"
     $OBJCOPY -O binary "$d/$t.elf" "$OUT/$t.bin"
 done
 python3 -c "import sys; p=sys.argv[1]; d=open(p,'rb').read(); n=-(len(d)-16)%2048; open(p,'ab').write(bytes(n))" "$OUT/langimg.bin"

@@ -98,6 +98,9 @@ extern int D_800CBC94;
 extern char *D_800C9E94; // names, by number
 extern int D_800C5E2C;
 extern int D_800C5E2C_w[] asm("D_800C5E2C"); // the same word, read the other way
+// The same word again under a second linker symbol (linker/langimg/undefined_syms_manual.txt):
+// not one of the chunk's small globals, so maspsx reads it with lui/lw, as func_80049B9C does
+extern int D_800C5E2C_far;
 extern char D_800C5E3C[];
 extern char D_800C5F2C[];
 extern char D_800C5F48[];
@@ -127,6 +130,63 @@ extern int D_800D5F58;
 extern int D_800D5E48; // a Blk28, declared small
 extern int D_800D5F70; // a Blk28b, declared small
 extern int D_800D48B8;
+// The race's settings (func_8004AFBC)
+struct Tab28 {
+    u8 m_00[0x18];
+    int m_18;
+    int m_1C, m_20, m_24; // the settings for the modes 3, 2 and 1
+    int m_28[4][2];       // by player: two values
+};
+struct Ent28 {
+    int *m_00[3];
+    int *m_0C;
+    u8 m_10[4];
+    int m_14;
+};
+struct Lst28 {
+    Ent28 *m_00;
+};
+struct Sel28 {
+    int m_00, m_04;
+};
+struct Row28 {
+    u8 m_00[0x14];
+    int m_14;
+    u8 m_18[4];
+};
+struct Rows28 {
+    u8 m_00[4];
+    Row28 *m_04;
+};
+struct Car28 {
+    int m_00, m_04, m_08, m_0C, m_10;
+    int m_14[3];
+};
+struct Cars28 {
+    u8 m_00[4];
+    Car28 *m_04;
+};
+extern Tab28 D_800D489C;
+extern int D_800D489C_la __asm__("D_800D489C"); // declared small: its address one la
+extern int D_800D4898[];
+extern int D_800D4898_la __asm__("D_800D4898"); // declared small: its address one la
+extern int D_800D48B0[];
+extern int D_800D48B0_la __asm__("D_800D48B0"); // declared small: its address one la
+extern int D_800D5FC8;
+extern int D_800D5F2C;
+extern int D_800D5F48;
+extern int D_800D5F54[];
+extern int D_800D5F5C[];
+extern int D_800D5F54_la __asm__("D_800D5F54");
+extern int D_800D5F5C_la __asm__("D_800D5F5C");
+extern Rows28 *D_800C6710;
+extern Cars28 *D_800C9EEC;
+extern char D_800C6440[];
+extern "C" {
+Lst28 *func_800A14CC(void);
+Sel28 *func_800A1504(void);
+void func_800A1268(void *p);
+}
 extern int D_800D48BC;
 extern int D_800D48C0;
 
@@ -292,20 +352,15 @@ void func_80049AE8(void) {
     }
 }
 
-#ifdef NON_MATCHING
-// The arguments read into locals in order (23 off to 6); left: the name's address in $t0 where the original reuses $v1, and D_800C5E2C's high half in $v0 where the original loads it into $a3 itself (it's read without $gp here)
 char *func_80049B9C(int i, int x, int f) {
     char *fmt = D_800C5F2C;
     char **name = (char **)((u8 *)&D_800C9E94 + (i << 2));
-    int w = D_800C5E2C_w[0];
+    int w = D_800C5E2C_far;
     char *s = f == 1 ? D_800C5F48 : D_800C5F4C;
 
     sprintf(&D_800CB1C0, fmt, *name, w, s, 0x73);
     return &D_800CB1C0;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_28", func_80049B9C);
-#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_28", func_80049C14);
 
@@ -421,7 +476,126 @@ void func_8004AF0C(int k, int f) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_28", func_8004AFBC);
+int func_8004AFBC(void) {
+    Tab28 *t = (Tab28 *)&D_800D489C_la;
+    int ok = 1;
+
+    if (D_800D5F40 == 8) {
+        Lst28 *l = func_800A14CC();
+        Sel28 *c = func_800A1504();
+        Ent28 *e = &l->m_00[c->m_00];
+
+        if (D_800D5FC8 == -1) {
+            D_800D5F38 = e->m_0C[c->m_04];
+            D_800D5F34 = l->m_00[c->m_00].m_14;
+            D_800D5F50 = D_800D5F58;
+            D_800D5F4C = e->m_00[D_800D5F30][c->m_04];
+        } else {
+            switch (D_800D5FC8) {
+            case 2:
+                D_800D5F38 = 16;
+                break;
+            case 5:
+                D_800D5F38 = 13;
+                break;
+            case 6:
+                D_800D5F38 = 14;
+                break;
+            case 7:
+                D_800D5F38 = 11;
+                break;
+            case 8:
+                D_800D5F38 = 17;
+                break;
+            case 9:
+                D_800D5F38 = 15;
+                break;
+            case 10:
+                D_800D5F38 = 12;
+                break;
+            }
+            func_8004AF0C(D_800D5F38, 0);
+            D_800D5F50 = 0;
+            D_800D5F58 = 0;
+            D_800D5F34 = 0;
+            D_800D5F4C = 0;
+        }
+        D_800D5F44 = D_800C6710->m_04[D_800D5F38].m_14;
+    } else if (D_800D5F40 == 4) {
+        Car28 *k = &D_800C9EEC->m_04[D_800D5F2C];
+
+        D_800D5F38 = k->m_04;
+        D_800D5F34 = k->m_00;
+        D_800D5F58 = D_800D5F50 = k->m_0C;
+        D_800D5F44 = k->m_10;
+        D_800D5F48 = k->m_08;
+        D_800D5F4C = k->m_14[D_800D5F30];
+    } else {
+        int n, i;
+        int *p, *q;
+
+        func_800A1268(&D_800D4898_la);
+        if (D_800D5F3C == ok) {
+            func_8004AF0C(t->m_18, 1);
+        }
+        if (!D_800D5F40) {
+            D_800D5F38 = 13;
+            D_800D5F50 = 0;
+        } else if (D_800D5F40 == 2) {
+            D_800D5F50 = 0;
+            D_800D5F38 = t->m_20;
+        } else if (D_800D5F40 == ok) {
+            D_800D5F50 = 0;
+            D_800D5F38 = t->m_24;
+        } else if (D_800D5F40 == 3) {
+            D_800D5F50 = 0;
+            D_800D5F38 = t->m_1C;
+        } else {
+            D_800D5F38 = *(int *)((u8 *)&D_800D48B0_la + (D_800D5F3C << 2));
+        }
+        i = 0;
+        if (D_800D5F38 == 0 || D_800D5F38 == 2 || D_800D5F38 == 3 || D_800D5F38 == 4 ||
+            D_800D5F38 == 5 || D_800D5F38 == 11 || D_800D5F38 == 12 || D_800D5F38 == 13) {
+            i = 1;
+        }
+        D_800D5F34 = t->m_28[D_800D5F3C][i];
+        if (D_800D5F40 == 9) {
+            D_800D5F44 = 1;
+        } else {
+            D_800D5F44 = D_800C6710->m_04[D_800D5F38].m_14;
+        }
+        n = 1;
+        p = &D_800D5F5C_la;
+        q = &D_800D5F54_la;
+        do {
+            *p-- = *q--;
+        } while (--n >= 0);
+    }
+    {
+        int c = D_800D5F44;
+        int r;
+
+        if (c > 0) {
+            r = 8;
+            if (c < 9) {
+                r = c;
+            }
+        } else {
+            r = 1;
+        }
+        D_800D5F44 = r;
+    }
+    if ((u32)(D_800D5F38 - 11) < 7 && D_800D5F34 == 1) {
+        D_800D5F34 = 0;
+    }
+    if (ok) {
+        D_800C5E2C_far = (int)(D_800D5F34 == 1 ? D_800C6440 : D_800C5F4C);
+    }
+    return 1;
+}
+
+// The word after its jump table
+extern "C" const int D_800B7544 __attribute__((section(".rodata"))) = 0;
 
 void func_8004B480(void) {
     if (func_8004AFBC()) {

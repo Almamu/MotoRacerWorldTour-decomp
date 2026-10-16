@@ -246,7 +246,7 @@ langimg.chunk_63_GCC  := 2.91.66-psx
 langimg.chunk_63_CFLAGS :=
 langimg.chunk_63_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=
 langimg.chunk_34_GCC  := 2.91.66-psx
-langimg.chunk_34_CFLAGS :=
+langimg.chunk_34_CFLAGS := -fmove-all-movables
 langimg.chunk_34_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=
 langimg.chunk_35_GCC  := 2.91.66-psx
 langimg.chunk_35_CFLAGS := -fmove-all-movables
@@ -380,7 +380,7 @@ clean:
 # re-evaluated after the script is (re)generated.
 .SECONDEXPANSION:
 $(BUILD)/%.elf: linker/%.ld $$(call ld_objects,linker/$$*.ld)
-	$(LD) $(LDFLAGS) -Map $(BUILD)/$*.map -T $< -T linker/$*/undefined_syms_auto.txt -T linker/$*/undefined_funcs_auto.txt -o $@
+	$(LD) $(LDFLAGS) -Map $(BUILD)/$*.map -T $< -T linker/$*/undefined_syms_auto.txt -T linker/$*/undefined_funcs_auto.txt $(addprefix -T ,$(wildcard linker/$*/undefined_syms_manual.txt)) -o $@
 
 # LANGIMG.DAT: the 16-byte header plus the image, padded to whole 2 KB
 # sectors (not counting the header).
