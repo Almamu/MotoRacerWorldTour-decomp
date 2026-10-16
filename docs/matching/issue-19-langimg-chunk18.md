@@ -44,14 +44,24 @@ globals.
   body before modes 1 and 2 (a switch's bodies after its compares); here
   mode 0 is an `else` after them (15 off). As a full `switch`, GCC compared
   1 first.
-- **Still asm.** `func_80035518` (251 instructions, with `$fp` and
-  spills), `func_80035904` (914) and `func_80036964` (609), not tried.
+- **Parked.** `func_80035518`, a shape's points pushed out of the ground
+  (up to three passes, each point up to 50 tries): 43 off, the saved
+  registers of the point, its try counter and its hit flag rotated. The
+  chunk is now built with `-fmove-all-movables` (the 0x19000 limit and the
+  stack addresses are hoisted to spill slots in the original); the other
+  functions match under it. The passes are a `goto` into the body with the
+  `iter < 3` test above it (no C loop gave that layout), and the largest
+  move by axis is an inline `Max18` returning `Abs18(v) > Abs18(m) ? v : m`
+  (as `if`s, 112 off). The decomp-permuter found reading the translation
+  through a `long *` (225 off before these).
+- **Still asm.** `func_80035904` (914) and `func_80036964` (609), not
+  tried.
 
 ## The functions
 
 | Function | State | Notes |
 |---|---|---|
-| `func_80035518` | asm | 251 instructions |
+| `func_80035518` | parked | a shape out of the ground: registers (43 off) |
 | `func_80035904` | asm | 914 instructions |
 | `func_8003674C` | matches | a shape's points placed |
 | `func_80036850` | matches | a bike's channel and sound |

@@ -148,18 +148,22 @@ static inline int Max18(int m, int v) {
 }
 
 #ifdef NON_MATCHING
-// Saved registers rotated: the point is in $s5 where the original has $s3, the try counter in $s4 ($s5) and the hit flag in $s3 ($s4); the max-abs helper's result in $a1 where the original has $a0. The loop shapes and stack slots are the original's (58 off).
+// 43 off: saved registers rotated. The point is in $s5 where the original
+// has $s3, the try counter in $s4 ($s5) and the hit flag in $s3 ($s4); the
+// max-abs helper's result in $a1 ($a0); the matrix's translation is reached
+// from o + 0x74 (the original from o + 0x60, its offset 0x14). The loop
+// shapes and stack slots are the original's.
 void func_80035518(Shape18 *o) {
-    MATRIX *m = &o->m_60;
+    long *t = o->m_60.t;
     Vec18 pos, acc, a, b, c, d;
     int moved, iter;
     Pt18 *p;
     int i;
 
     {
-        int x = m->t[0];
-        int y = m->t[1];
-        int z = m->t[2];
+        int x = t[0];
+        int y = t[1];
+        int z = t[2];
 
         iter = 0;
         pos.x = x;
@@ -243,7 +247,7 @@ body:
         goto top;
     }
 out:
-    VecCopyL18((Vec18 *)m->t, &pos);
+    VecCopyL18((Vec18 *)t, &pos);
 }
 #else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_18", func_80035518);
