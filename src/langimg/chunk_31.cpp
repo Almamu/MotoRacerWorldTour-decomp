@@ -265,6 +265,40 @@ int func_80099B88(Vec31 *a, Vec31 *b);
 Vec31 *func_800996D4(Vec31 *d, int k, Vec31 *s);
 Vec31 *func_8009975C(Vec31 *d, Vec31 *s, int k);
 Vec31 *func_800997D0(Vec31 *v, Vec31 *a);
+// A model's animation: its channels (0x80 bytes each)
+struct Chan31 {
+    u8 m_00[0x1C];
+    Vec31 m_1C; // its position
+    u8 m_28[0x58];
+};
+struct Shape31 {
+    u8 m_00[0x1C];
+    short m_1C; // its points' shift
+};
+// A bike's model and its box
+struct Box31 {
+    u8 m_00[0x13C];
+    Vec31 m_13C; // the box's lowest corner
+    Vec31 m_148; // the highest
+    u8 m_154[0x150];
+    Mat31 m_2A4;
+    u8 m_2C4[0x68];
+    Shape31 *m_32C;
+    Chan31 *m_330;
+};
+extern short D_800C6724[8]; // the channels at the box's corners
+Vec31 *func_800998D0(Vec31 *d, Vec31 *a, Vec31 *b);
+Vec31 *func_80098768(Mat31 *m, Vec31 *v, Vec31 *out);
+void func_80098E9C(Vec31 *v);
+Vec31 *func_80099CB0(Vec31 *out, Vec31 *a, Vec31 *b);
+Vec31 *func_80099DCC(Vec31 *out, Vec31 *in, int shift);
+Mat31 *func_80098178(Mat31 *d, Mat31 *s);
+Mat31 *func_80098674(Mat31 *a, Mat31 *b, Mat31 *out);
+void func_8009887C(Vec31 *in, Vec31 *out);
+Vec31 *func_80099D74(Vec31 *v, int shift);
+void func_80098DD4(Vec31 *lo, Vec31 *v);
+void func_80098E38(Vec31 *hi, Vec31 *v);
+void func_8005114C(Box31 *o, Mat31 *out, int pad);
 int func_8004F83C(void *o, Vec31 *v, int c);
 void func_800507B0(Run31 *r);
 }
@@ -778,7 +812,111 @@ void func_80051114(Bike31 *b) {
     }
 }
 
+// A vector turned by a matrix and moved by its translation
+static inline void Turn31(Mat31 *r, Vec31 *tr, Vec31 *in, Vec31 *w, Vec31 *out) {
+    func_80098768(r, in, w);
+    func_800997D0(w, tr);
+    VecCopyL31(out, w);
+}
+
+static inline void SetAll31(Vec31 *v, int k) {
+    v->x = v->y = v->z = k;
+}
+
+// The model's frame: the basis transposed, times its matrix
+static inline void Frame31(Mat31 *m, Mat31 *t, Mat31 *r, Mat31 *p, Vec31 *tr) {
+    func_80098178(t, m);
+    func_80098674(t, r, p);
+    func_8009887C(tr, &p->t);
+    func_800997D0(&p->t, &t->t);
+}
+
+// A corner put in the frame and added to the box
+static inline void Corner31(Vec31 *c, Mat31 *p, Vec31 *v, Vec31 *lo, Vec31 *hi) {
+    func_80098768(p, c, v);
+    func_800997D0(v, &p->t);
+    func_80098DD4(lo, v);
+    func_80098E38(hi, v);
+}
+
+#ifdef NON_MATCHING
+// Registers and stack slots are the original's; only the order differs: the original moves the model and the forward vector's address before the corner loop's counter and pointer, ours after, and it takes the translation's address after the first turn's call where ours takes it before (14 off).
+void func_8005114C(Box31 *o, Mat31 *out, int pad) {
+    int unused[16];
+    int i;
+    short *id;
+    Mat31 r;
+    Vec31 *tr;
+    Vec31 u, w, x, v;
+    Mat31 m, p, t;
+    Vec31 *lo, *hi, *pw, *pv, *px;
+    Mat31 *pm;
+    int sh;
+
+    r = o->m_2A4;
+    r.t.x = r.t.y = r.t.z = 0;
+    i = 0;
+    id = D_800C6724;
+    func_800998D0(&u, &o->m_330[10].m_1C, &o->m_330[3].m_1C);
+    tr = &r.t;
+    Turn31(&r, tr, &u, &w, &u);
+    u.y = 0;
+    func_80098E9C(&u);
+    pw = &w;
+    w.x = 0;
+    pw->y = 0x1000;
+    w.z = 0;
+    pv = &v;
+    px = &x;
+    func_80099CB0(pv, &u, pw);
+    func_80099DCC(px, pv, 12);
+    m.m[0][0] = x.x;
+    m.m[0][1] = w.x;
+    m.m[0][2] = u.x;
+    m.m[1][0] = x.y;
+    m.m[1][1] = w.y;
+    m.m[1][2] = u.y;
+    m.m[2][0] = x.z;
+    m.m[2][1] = w.z;
+    m.m[2][2] = u.z;
+    m.t.x = 0;
+    m.t.y = 0;
+    m.t.z = 0;
+    Frame31(&m, &t, &r, &p, tr);
+    lo = &o->m_13C;
+    hi = &o->m_148;
+    SetAll31(lo, 0x7FFFFFFF);
+    SetAll31(hi, 0x80000000);
+    for (; i < 8; id++, i++) {
+        Corner31(&o->m_330[*id].m_1C, &p, &v, lo, hi);
+    }
+    *out = m;
+    pm = &o->m_2A4;
+    {
+        int tx = pm->t.x;
+        int ty = pm->t.y;
+        int tz = pm->t.z;
+
+        out->t.x = tx;
+        out->t.y = ty;
+        out->t.z = tz;
+        v.x = tx;
+        v.y = ty;
+        v.z = tz;
+    }
+    sh = 12 - o->m_32C->m_1C;
+    func_80099D74(lo, sh);
+    func_80099D74(hi, sh);
+    o->m_13C.x -= pad;
+    o->m_13C.y -= pad;
+    o->m_13C.z -= pad;
+    o->m_148.x += pad;
+    o->m_148.y += pad;
+    o->m_148.z += pad;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_31", func_8005114C);
+#endif
 
 void func_8005148C(Bike31 *b, int v) {
     b->m_544 = 0;
