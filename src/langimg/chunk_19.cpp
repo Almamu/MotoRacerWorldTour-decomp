@@ -8,6 +8,20 @@ struct Item19 {
     union {
         char m_0C[0x20];
         int m_0Ci[2];
+        struct {
+            int m_value;
+            short m_10h;
+            short m_page; // 0x12: a colour page
+        } m_col;
+        struct {
+            s8 m_lo;
+            s8 m_hi;
+            s8 m_0E;
+            s8 m_0F;
+            int m_row;
+            int m_wrap; // 0x14: 0 wraps round, 1 and 2 stop at the ends
+            void *m_18;
+        } m_num;
     };
     s8 m_2C;
     s8 m_2D;
@@ -33,7 +47,8 @@ struct Char19 {
 struct Slot19 {
     u8 m_00[4];
     int m_04;
-    u8 m_08[8];
+    u8 m_08[4];
+    int m_0C; // its colour, for kind 0x41
     Char19 *m_10;
     u8 m_14[0x40];
     int m_54; // its colour
@@ -47,10 +62,15 @@ struct Menu19 {
     u8 m_04[0x24];
     Slot19 *m_28;
     Item19 *m_2C;
-    u8 m_30[0xE];
+    u8 m_30[8];
+    int m_38; // its own colour
+    s8 m_3C;
+    s8 m_3D;
     s8 m_3E;
     s8 m_3F;
-    u8 m_40[0xC];
+    u8 m_40;
+    s8 m_41;
+    u8 m_42[0xA];
     int m_4C; // how many
     int m_50; // which
     u8 m_54[4];
@@ -132,20 +152,40 @@ struct Res19 {
 
 // A group of menus (36 bytes)
 struct Grp19 {
-    u8 m_00[0xC];
+    u8 m_00[0xA];
+    short m_0A; // which
     struct Menu19 **m_0C;
     u8 m_10[0x14];
 };
 struct Row19 {
-    u8 m_00[8];
+    int m_00; // its value
+    u8 m_04[4];
     Grp19 *m_08;
 };
 // The menus' context: the text's owner, the menus by group
 struct Ctx19 {
-    u8 m_00[0x38];
+    u8 m_00[0x2C];
+    unsigned m_2C_lo : 24;
+    int m_mode : 2;
+    unsigned m_2C_hi : 6;
+    u8 m_30[8];
     void *m_38;
-    u8 m_3C[0x10];
+    u8 m_3C[8];
+    void *m_44; // its sounds
+    u8 m_48[4];
     Row19 *m_4C;
+};
+// A letter's first word: its colour page in bits 25-28
+struct Page19 {
+    unsigned m_lo : 25;
+    unsigned m_page : 4;
+    unsigned m_hi : 3;
+};
+// A menu's first word, its bits 20-21
+struct Flags19 {
+    unsigned m_lo : 20;
+    int m_mode : 2;
+    unsigned m_hi : 10;
 };
 struct Ref19 {
     u8 m_00[0xA];
@@ -162,6 +202,8 @@ void func_8003762C(Menu19 *n, Ctx19 *x, Ref19 *r, int a);
 void func_8003FC28(void *o, int i, int j);
 Res19 *func_8003AA90(void *v, char *name);
 int func_80097128(void *p);
+Ref19 *func_8003AB24(Ctx19 *x, int g, int a, int b, int c, int d, int e);
+void func_80039E74(Ctx19 *x, int a);
 void func_800383D8(Menu19 *m, int i, Game19 *g, Item19 *it);
 int func_800804B8(s8 c);
 void func_80038BBC(Tab19 *t, Game19 *g);
@@ -175,7 +217,7 @@ Elem19 *func_8003B3C4(View19 *v, const char *name);
 int func_80019D0C(void *set, Seq19 *s, int a, int back, int c);
 int func_8001983C(Seq19 *s);
 void func_80019B2C(Seq19 *s, int id);
-int func_8003781C(Menu19 *e, void *s, void *p, int a, int b);
+int func_8003781C(Menu19 *n, Ctx19 *x, Ref19 *r, int a, int b);
 int func_8003899C(Tab19 *t, int flag);
 void func_800386B4(Bar19 *m, Game19 *g, int mode);
 void func_80038828(Bar19 *m, Game19 *g, int mode);
@@ -239,7 +281,143 @@ void func_8003762C(Menu19 *n, Ctx19 *x, Ref19 *r, int a) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_19", func_8003762C);
 #endif
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_19", func_8003781C);
+int func_8003781C(Menu19 *n, Ctx19 *x, Ref19 *r, int a, int b) {
+    int found = 0;
+    Item19 *it = n->m_2C;
+
+    if (!b && a) {
+        func_8003FC28(x->m_44, 0, n->m_3C);
+    }
+    for (; it; it = it->m_08) {
+        if (it->m_04 != 0) {
+            continue;
+        }
+        switch (it->m_00) {
+        case 1: {
+            int nm;
+            int xm;
+            int c;
+            Slot19 *sl;
+
+            if (b) {
+                found = 1;
+                break;
+            }
+            nm = ((Flags19 *)n)->m_mode;
+            c = it->m_col.m_value;
+            if (nm) {
+                c = n->m_38;
+            }
+            xm = x->m_mode;
+            sl = n->m_28;
+            if (xm) {
+                if (!(sl->m_04 & 0x41)) {
+                    break;
+                }
+                sl->m_0C = c;
+                ((Page19 *)sl->m_10)->m_page = it->m_col.m_page;
+            } else {
+                if (!(sl->m_04 & 0x40)) {
+                    break;
+                }
+                sl->m_54 = c;
+                ((Page19 *)n->m_28->m_58)->m_page = it->m_col.m_page;
+            }
+            break;
+        }
+        case 2: {
+            int h;
+
+            if (b) {
+                found = 1;
+                break;
+            }
+            h = func_80017E10(x->m_38, it->m_0C, strlen(it->m_0C));
+            func_800184A4(x->m_38, h);
+            func_80018224(x->m_38, h, n->m_28);
+            func_80017A9C(h, -1);
+            break;
+        }
+        case 3:
+            if (b) {
+                found = 1;
+                break;
+            }
+            func_80037318(it, x, a, n);
+            if (a) {
+                func_8003FC28(x->m_44, 1, n->m_3D);
+            }
+            break;
+        case 4:
+            if (b) {
+                found = 1;
+                break;
+            }
+            if (!a) {
+                if (it->m_num.m_18) {
+                    func_8003AB24(x, it->m_num.m_row, 1, 0, 1, -1, 1);
+                    x->m_4C[it->m_num.m_row].m_00 = func_80097128(it->m_num.m_18);
+                    func_8003AB24(x, it->m_num.m_row, 0, 0, 1, -1, 1);
+                }
+            } else {
+                int v = x->m_4C[it->m_num.m_row].m_00;
+                Ref19 *e;
+
+                if (it->m_num.m_lo == it->m_num.m_hi) {
+                    v = it->m_num.m_lo;
+                } else if (a > 0) {
+                    v++;
+                    if (it->m_num.m_hi < v) {
+                        switch (it->m_num.m_wrap) {
+                        case 0:
+                            v = it->m_num.m_lo;
+                            break;
+                        case 1:
+                        case 2:
+                            v = it->m_num.m_hi;
+                            break;
+                        }
+                    }
+                } else {
+                    v--;
+                    if (v < it->m_num.m_lo) {
+                        switch (it->m_num.m_wrap) {
+                        case 0:
+                            v = it->m_num.m_hi;
+                            break;
+                        case 1:
+                        case 2:
+                            v = it->m_num.m_lo;
+                            break;
+                        }
+                    }
+                }
+                e = func_8003AB24(x, it->m_num.m_row, 1, it->m_num.m_0F, 0, -1, 1);
+                x->m_4C[it->m_num.m_row].m_00 = v;
+                func_80039E74(x, 8);
+                func_8003AB24(x, it->m_num.m_row, 0, 0, !it->m_num.m_0E, e->m_0A, 1);
+                func_8003FC28(x->m_44, 5, n->m_41);
+            }
+            break;
+        case 5:
+            if (b) {
+                found = 1;
+                break;
+            } else {
+                Grp19 *g = x->m_4C[it->m_num.m_row].m_08;
+
+                if (g) {
+                    Grp19 *e = &g[it->m_col.m_value];
+
+                    e->m_0A = r->m_0A;
+                    func_8003781C(e->m_0C[r->m_0A], x, (Ref19 *)e, a, 0);
+                }
+            }
+            break;
+        }
+    }
+    return found;
+}
 
 int func_80037C80(Menu19 *m) {
     int r = 0;
@@ -710,3 +888,6 @@ void func_80038F44(Tab19 *t, void *g) {
 }
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_19", func_8003907C);
+
+// The word after its jump table, the end of this file's .rodata
+extern "C" const int D_800B7304 __attribute__((section(".rodata"))) = 0;
