@@ -18,7 +18,7 @@ shorts passed to `func_80097E4C`.
 
 One file, `src/langimg/chunk_64.cpp`, 0x800910EC-0x80093150.
 
-19 functions: 11 match, 2 are parked, 6 are still asm.
+19 functions: 12 match, 2 are parked, 5 are still asm.
 
 ## The settings
 
@@ -66,7 +66,7 @@ globals `D_800CBE58`, `D_800CBE5C` and `D_800CBE68`.
 | `func_8009243C` | parked | a track started: registers |
 | `func_80092480` | parked | a track played to a time: the keys' addresses |
 | `func_800925A8` | matches | a list of objects updated |
-| `func_80092684` | asm | 104 instructions |
+| `func_80092684` | matches | each object's matrix from the eye's, then its call |
 | `func_80092824` | matches | the defaults set up |
 | `func_800928CC` | matches | a vector's shorts passed on |
 | `func_800928FC` | matches | a vector's words to shorts |
@@ -117,3 +117,14 @@ globals `D_800CBE58`, `D_800CBE5C` and `D_800CBE68`.
   offsets: written as four loads into locals followed by three `+=`, it
   matched; summed in the call's arguments, the part pointer was loaded
   first and the angles came out in swapped registers.
+
+## The `$fp` pass
+
+`func_80092684` matches: each object with a model gets its matrix from the
+eye's (an identity's translation, through `func_80098674` and
+`func_8009887C`), then its animation and its call through the pointer to
+member at 0x2C (`(o->*o->m_2C)(0)`, GCC 2's virtual or not test). Nine
+saved registers: the matrix and vector pointers are locals assigned in
+the loop just before their use (`po = &out;`), which loop.c hoists in
+that order as the original's set-ups, and the vector difference is an
+inline doing all six loads first (`VecSub64`).
