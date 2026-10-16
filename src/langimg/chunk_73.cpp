@@ -315,8 +315,8 @@ extern int D_800D60C0[];
 extern int D_800D60C8[];
 extern char *D_800D6070[];
 extern "C" const char D_800B7BE8[];
+extern "C" const char D_800B7BFC[]; // "%d %d\n", in .rodata (defined after its use, see D_800B7BD4)
 #ifdef NON_MATCHING
-extern "C" const char D_800B7BFC[8] __attribute__((section(".rodata"))) = "%d %d\n";
 extern "C" const char D_800B7C04[12] __attribute__((section(".rodata"))) = "Format pOK\n";
 extern "C" const char D_800B7C10[16] __attribute__((section(".rodata"))) = "Format No card\n";
 extern "C" const char D_800B7C20[16] __attribute__((section(".rodata"))) = "Format Error\n";
@@ -612,6 +612,7 @@ int func_800A4614(int n, int *out) {
     }
     return r;
 }
+extern "C" const char D_800B7BFC[8] __attribute__((section(".rodata"))) = "%d %d\n";
 #else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_73", func_800A4614);
 #endif
