@@ -6,9 +6,12 @@
 
 extern "C" {
 // A bike (chunk_09's Bike): its kind in bits 1-5
+struct Model43;
 struct Owner43 {
     u32 m_00;
-    u8 m_04[0x184];
+    u8 m_04[0x2C];
+    struct Model43 *m_30;
+    u8 m_34[0x154];
     u8 m_188;
 };
 // A row of a table (32 bytes)
@@ -25,9 +28,9 @@ struct Ent43 {
     Row43 **m_08;
     u8 m_0C[8];
 };
-struct Model43;
 struct Bike43 {
-    u8 m_00[0x30];
+    u32 m_00; // its kind in bits 1-5
+    u8 m_04[0x2C];
     struct Model43 *m_30;
 };
 // A link to another bike (0x40 bytes)
@@ -39,8 +42,23 @@ struct Link43 {
 struct Tab43 {
     u8 m_00[0x28];
     Ent43 *m_28;
-    u8 m_2C[0x48];
+    int m_2C;
+    u8 m_30[0x44];
     Bike43 *m_74;
+    int m_78, m_7C, m_80;
+    u8 m_84[4];
+    int m_88;
+    u8 m_8C[4];
+    int m_90[7];
+    struct Model43 *m_AC[4][5];
+};
+struct Hold43 {
+    u8 m_00[0x52C];
+    int m_52C;
+};
+struct Slot43 {
+    u8 m_00[4];
+    s8 m_04;
 };
 struct Vec43 {
     int x, y, z;
@@ -84,7 +102,11 @@ struct Model43 {
     int m_204, m_208;
     u8 m_20C[4];
     int m_210;
-    u8 m_214[0x64];
+    int m_214;
+    int m_218;
+    u8 m_21C[4];
+    Slot43 **m_220;
+    u8 m_224[0x54];
     int m_278;   // its speed
     Vec43 m_27C; // its velocity
     Vec43 m_288;
@@ -103,11 +125,19 @@ struct Model43 {
     int m_3F0;
     u8 m_3F4[0x1C];
     int m_410;
-    u8 m_414[0x40];
+    u8 m_414[0x18];
+    u32 m_42C;
+    int m_430;
+    u8 m_434[4];
+    int m_438;
+    int m_43C;
+    u8 m_440[0x14];
     int m_454;
     int m_458;
     int m_45C;
-    u8 m_460[0x28];
+    u8 m_460[0x14];
+    int m_474;
+    u8 m_478[0x10];
     int m_488;
     int m_48C;
     int m_490;
@@ -135,6 +165,9 @@ int func_8009923C(Vec43 *v);
 void func_80067230(Model43 *m, Vec43 *v, int a);
 
 extern int D_800CB434, D_800CB43C;
+extern int D_800CB42C, D_800CB430, D_800CB438, D_800CB440, D_800CB444, D_800CB458, D_800CB45C,
+    D_800CB460;
+void func_800681A4(Model43 *m, Bike43 *b, void *o, Hold43 *h, Tab43 *c);
 extern int D_800D6100;
 int func_8001D018(Tab43 *c, Link43 *a, Link43 *b);
 int abs(int x);
@@ -327,7 +360,199 @@ void func_80068038(Model43 *m, int len) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_43", func_800681A4);
+#define KIND43(w) ((int)((w) << 26) >> 27)
+
+void func_800681A4(Model43 *m, Bike43 *b, void *o, Hold43 *h, Tab43 *c) {
+    Owner43 *own = m->m_54;
+    Model43 *lead = c->m_74->m_30;
+
+    do {
+        if (m->m_214 != -1) {
+            if (c->m_88) {
+                m->m_490 = 4;
+                m->m_498 = 0;
+            } else if (m->m_490 == 6) {
+                int d = m->m_208 - m->m_204;
+
+                if (d < 0) {
+                    d += c->m_2C;
+                }
+                if (d >= m->m_48C) {
+                    m->m_490 = 0;
+                }
+            } else {
+                Bike43 *nb = m->m_1B4.m_00;
+
+                if (m->m_490 == 3) {
+                    if (func_8001D018(c, &m->m_1B4, &m->m_498->m_1B4) < 0) {
+                        m->m_490 = 0;
+                        m->m_498 = 0;
+                    } else if (!func_800692A8(m, c)) {
+                        m->m_490 = 5;
+                    }
+                } else if (KIND43(nb->m_00) == 2 &&
+                           (m->m_3F0 == 3 || m->m_3F0 == 7 || m->m_3F0 == 8)) {
+                    Model43 *n = nb->m_30;
+
+                    if (n->m_474 < m->m_474) {
+                        int d = func_8001D018(c, &m->m_1B4, &n->m_1B4);
+
+                        if (d < D_800CB460 && d > 0) {
+                            m->m_490 = 5;
+                            m->m_498 = n;
+                        }
+                    }
+                }
+                if (m->m_490 == 5 && func_800692A8(m, c) &&
+                    func_8001D018(c, &m->m_1B4, &m->m_498->m_1B4) < D_800CB460) {
+                    m->m_490 = 3;
+                }
+                if (m->m_490 != 3 && m->m_490 != 6 && m->m_490 != 5 && m->m_490 != 8) {
+                    m->m_490 = 0;
+                    m->m_498 = 0;
+                    if (m->m_214 < c->m_7C || c->m_7C == -1) {
+                        if ((c->m_78 + 1 == m->m_474 || (c->m_78 == 0 && m->m_474 == 0)) &&
+                            m->m_218 == c->m_90[m->m_474] - 1 &&
+                            D_800CB458 <
+                                func_8001D018(c, &lead->m_1B4, &c->m_AC[m->m_474][0]->m_1B4)) {
+                            if (m->m_438 > 0) {
+                                m->m_490 = 1;
+                                m->m_498 = lead;
+                                m->m_438 -= D_800D6100;
+                            }
+                        }
+                    } else if (m->m_214 == c->m_7C + 1) {
+                        m->m_490 = 2;
+                        m->m_498 = lead;
+                    }
+                }
+                if (m->m_490 == 0 && m->m_218 + 1 < c->m_90[m->m_474]) {
+                    m->m_490 = 2;
+                    m->m_498 = c->m_AC[m->m_474][m->m_218 + 1]->m_54->m_30;
+                }
+                {
+                    int k = c->m_80;
+
+                    if (k == m->m_474) {
+                        int i = m->m_218;
+                        int j = i + 1;
+
+                        if (i == 0 && j < c->m_90[k]) {
+                            m->m_490 = 5;
+                            m->m_498 = c->m_AC[k][j]->m_54->m_30;
+                        }
+                    }
+                }
+            }
+        }
+        m->m_494 = 0;
+        switch (m->m_490) {
+        case 8:
+            m->m_490 = 0;
+            m->m_494 |= 8;
+            break;
+        case 6:
+            m->m_494 |= 0x40;
+            break;
+        case 7:
+            m->m_494 |= 0x200;
+            break;
+        case 4:
+            m->m_494 |= 2;
+            break;
+        case 1:
+            m->m_494 |= 1;
+            break;
+        case 2: {
+            int d = func_8001D018(c, &m->m_1B4, &m->m_498->m_1B4);
+
+            if (D_800CB438 < d) {
+                m->m_494 |= 2;
+            } else if (KIND43(m->m_498->m_54->m_00) == 1) {
+                m->m_494 = 2;
+            } else if (D_800CB430 < d) {
+                m->m_494 |= 4;
+            } else {
+                m->m_494 |= 1;
+            }
+            break;
+        }
+        case 5: {
+            int d = func_8001D018(c, &m->m_1B4, &m->m_498->m_1B4);
+
+            if (d <= D_800CB460) {
+                if (D_800CB45C < d) {
+                    m->m_494 |= 0x14;
+                } else {
+                    m->m_494 |= 0x18;
+                }
+                break;
+            }
+        }
+        case 3:
+            m->m_494 |= 0x12;
+            break;
+        }
+        D_800CB42C = 0;
+        m->m_430 = 0;
+        if (c->m_7C != -1) {
+            int k = m->m_214 - c->m_7C;
+
+            if (m->m_214 < c->m_7C) {
+                k = c->m_7C - m->m_214;
+            }
+            if (k == 1) {
+                int d = func_8001D018(c, &lead->m_1B4, &m->m_1B4);
+
+                if (D_800CB440 < d && d < D_800CB444 && m->m_43C > 0) {
+                    int lim;
+
+                    m->m_43C -= D_800D6100;
+                    if (d > 0) {
+                        lim = D_800CB444;
+                    } else {
+                        lim = D_800CB440;
+                    }
+                    m->m_430 = (lim - d) / (lim >> 12);
+                }
+                if (m->m_430 > D_800CB42C) {
+                    D_800CB42C = m->m_430;
+                }
+            }
+        }
+        if (D_800CB42C) {
+            m->m_490 = 7;
+            m->m_498 = lead;
+            m->m_494 |= 0x200;
+        }
+        m->m_42C = 0;
+        if (*m->m_220) {
+            m->m_42C = (*m->m_220)->m_04;
+        }
+        if (h->m_52C == 3) {
+            u32 k = m->m_42C;
+
+            if (k && k != 4 && k != 6 && k != 7) {
+                m->m_494 |= 0x401;
+            }
+        } else if (h->m_52C == 1) {
+            u32 k = m->m_42C;
+
+            if (k && k != 6 && k != 7) {
+                m->m_494 |= 1;
+            }
+        } else if (h->m_52C == 2) {
+            u32 k = m->m_42C;
+
+            if (k >= 2 && k != 6 && k != 7 && k != 4) {
+                m->m_494 |= 1;
+            } else if (k == 4) {
+                m->m_494 |= 0x180;
+            }
+        }
+        m = m->m_1B4.m_00->m_30;
+    } while (KIND43(m->m_54->m_00) == 2 && own != m->m_54);
+}
 
 #ifdef NON_MATCHING
 // The original keeps 1000's reciprocal, 2 and 5 in saved registers for the whole loop; with -fmove-all-movables (the chunk's flag) it went from 141 to 91 off; the bits' tests still come out with xori here.
