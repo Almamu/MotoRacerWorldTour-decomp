@@ -40,6 +40,48 @@ int func_80097944(u32 lo, u32 hi, int d);
 Vec67 *func_80098768(Mat67 *m, Vec67 *v, Vec67 *out); // returns out
 void func_8009793C(void);
 int func_80097A68(int a, int s, int b);
+// A script's value or operation (8 bytes): the value or its address, the
+// operation, the value's kind (1 a function, 2 a variable's address, 3 and
+// 4 a constant)
+struct Ent67 {
+    int m_00;
+    u16 m_04;
+    u16 m_06;
+    Ent67() {
+        m_00 = 0;
+        m_04 = 0;
+        m_06 = 0;
+    }
+    ~Ent67() {
+    }
+};
+// A variable's slot (8 bytes): set once written
+struct Slot67 {
+    int m_00;
+    int m_04;
+};
+// The script's variables: their values and slots
+struct Vars67 {
+    int *m_00;
+    Slot67 *m_04;
+    u8 m_08[0xC];
+    int m_14; // how many
+};
+// A function called by a script
+struct Fn67 {
+    u8 m_00[0x20];
+    int (*m_20)(int a, int *args, int n);
+    int m_24;
+    int m_28; // its arguments
+};
+// A script: its operations and variables
+struct Script67 {
+    Ent67 *m_00;
+    int m_04; // the error
+    int m_08; // how many operations
+    Vars67 *m_0C;
+};
+int func_80097128(Script67 *s);
 void func_80098090(Mat67 *d, Mat67 *s);
 void func_800980F4(Mat67 *m);
 Mat67 *func_80098178(Mat67 *d, Mat67 *s);
@@ -88,7 +130,176 @@ static inline void VecCopyL67(Vec67 *d, Vec67 *s) {
     d->z = z;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_67", func_80097128);
+// The variable slot of an address, or 0
+static inline Slot67 *Slot67Of(Vars67 *v, int *p) {
+    Slot67 *r = 0;
+
+    if (p >= v->m_00 && p < v->m_00 + v->m_14) {
+        r = &v->m_04[p - v->m_00];
+    }
+    return r;
+}
+
+int func_80097128(Script67 *s) {
+    int vals[256];
+    int n = 0;
+    Ent67 ents[256];
+    int i;
+    int v;
+    u16 t;
+    int k;
+
+    for (i = 0; i < s->m_08; i++) {
+        if (s->m_00[i].m_04 != 0 && s->m_00[i].m_04 != 18) {
+            if (ents[n - 1].m_06 == 2) {
+                Slot67 *sl = Slot67Of(s->m_0C, (int *)ents[n - 1].m_00);
+
+                if (sl && !sl->m_04) {
+                    goto unset;
+                }
+            }
+            if ((u32)(s->m_00[i].m_04 - 2) >= 2 && ents[n - 2].m_06 == 2) {
+                Slot67 *sl = Slot67Of(s->m_0C, (int *)ents[n - 2].m_00);
+
+                if (sl && !sl->m_04) {
+                    goto unset;
+                }
+            }
+        }
+        switch (s->m_00[i].m_04) {
+        case 0:
+            switch (s->m_00[i].m_06) {
+            case 2:
+                v = *(int *)s->m_00[i].m_00;
+                break;
+            case 3:
+            case 4:
+                v = s->m_00[i].m_00;
+                break;
+            }
+            vals[n] = v;
+            ents[n] = s->m_00[i];
+            n++;
+            break;
+        case 17:
+            vals[n - 1] = *(int *)vals[n - 1];
+            break;
+        case 1:
+            if (s->m_00[i].m_06 == 1) {
+                Fn67 *f = (Fn67 *)s->m_00[i].m_00;
+                int r = f->m_20(f->m_24, (int *)((n << 2) + (int)vals), f->m_28);
+                int k;
+
+                vals[n - ((Fn67 *)s->m_00[i].m_00)->m_28] = r;
+                k = n + 1;
+                n = k - ((Fn67 *)s->m_00[i].m_00)->m_28;
+            }
+            break;
+        case 18:
+            k = ents[0].m_06;
+            if (k == 3) {
+                ents[0].m_00 = vals[n - 2];
+            }
+            t = k;
+            if (t == 2) {
+                goto set;
+            }
+            if (t == 3) {
+            set:
+                int x = vals[n - 1];
+                Slot67 *sl;
+
+                ents[0].m_04 = 0;
+                switch (ents[0].m_06) {
+                case 2:
+                case 3:
+                    *(int *)ents[0].m_00 = x;
+                    break;
+                case 4:
+                    ents[0].m_00 = x;
+                    break;
+                }
+                sl = Slot67Of(s->m_0C, (int *)ents[0].m_00);
+                if (sl) {
+                    sl->m_04 = 1;
+                }
+                return *(int *)ents[0].m_00;
+            }
+            s->m_04 = 3;
+            return 0;
+        case 8:
+            vals[n - 2] = vals[n - 2] + vals[n - 1];
+            n--;
+            break;
+        case 7:
+            vals[n - 2] = vals[n - 2] - vals[n - 1];
+            n--;
+            break;
+        case 4:
+            vals[n - 2] = vals[n - 2] * vals[n - 1];
+            n--;
+            break;
+        case 5:
+            if (!vals[n - 1]) {
+                vals[n - 2] = 0;
+            } else {
+                vals[n - 2] = vals[n - 2] / vals[n - 1];
+            }
+            n--;
+            break;
+        case 6:
+            vals[n - 2] = vals[n - 2] % vals[n - 1];
+            n--;
+            break;
+        case 14:
+            vals[n - 2] = vals[n - 2] == vals[n - 1];
+            n--;
+            break;
+        case 13:
+            vals[n - 2] = vals[n - 2] != vals[n - 1];
+            n--;
+            break;
+        case 15:
+            vals[n - 2] = vals[n - 2] && vals[n - 1];
+            n--;
+            break;
+        case 16:
+            vals[n - 2] = vals[n - 2] || vals[n - 1];
+            n--;
+            break;
+        case 3:
+            if (vals[n - 1]) {
+                vals[n - 1] = 0;
+            } else {
+                vals[n - 1] = 1;
+            }
+            break;
+        case 2:
+            vals[n - 1] = -vals[n - 1];
+            break;
+        case 9:
+            vals[n - 2] = vals[n - 2] < vals[n - 1];
+            n--;
+            break;
+        case 10:
+            vals[n - 2] = vals[n - 2] > vals[n - 1];
+            n--;
+            break;
+        case 11:
+            vals[n - 2] = vals[n - 2] <= vals[n - 1];
+            n--;
+            break;
+        case 12:
+            vals[n - 2] = vals[n - 2] >= vals[n - 1];
+            n--;
+            break;
+        }
+    }
+    return vals[0];
+unset:
+    s->m_04 = 4;
+    return 0;
+}
 
 void func_8009793C(void) {
 }

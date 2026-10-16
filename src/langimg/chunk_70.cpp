@@ -242,7 +242,7 @@ int func_800A4614(int a, int *p);
 int func_800A44F8(int a);
 int func_800A42EC(int a, void *b, u8 *c, int d);
 int func_800A6100(const char *a, const char *b, int n);
-int func_80037C80(int a, Num70 *b);
+int func_80037C80(int a);
 extern char D_800C9C10[];
 void func_80037D58(int a, int y);
 void func_8009E954(Menu70 *m);
@@ -850,8 +850,6 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_70", func_8009E3C0);
 void func_8009E724(void) {
 }
 
-#ifdef NON_MATCHING
-// Registers and the digits' table address (the permuter's best is 450)
 /* The selected entry's four digits shown; returns its index. */
 int func_8009E72C(Menu70 *m, Hold70 *h) {
     Dst70 *d;
@@ -870,10 +868,11 @@ int func_8009E72C(Menu70 *m, Hold70 *h) {
     p = (Page70 *)h->m_60;
     k = d->m_14[d->m_08];
     j = p->m_0C->m_28[k];
-    r = func_80037C80(p->m_2C, p->m_0C);
+    r = func_80037C80(p->m_2C);
     q->m_0C = r;
     q->m_10 = p->m_10->m_28[k];
-    e = &p->m_14[q->m_10 * (d->m_28[d->m_08][j] + 1)];
+    e = p->m_14;
+    e += q->m_10 * (d->m_28[d->m_08][j] + 1);
     p->m_78[0]->m_0C[0] = (*e)->m_28[r * 4] + '0';
     p->m_78[0]->m_0C[1] = 0;
     p->m_78[1]->m_0C[0] = (*e)->m_28[r * 4 + 0x20] + '0';
@@ -884,9 +883,6 @@ int func_8009E72C(Menu70 *m, Hold70 *h) {
     p->m_78[3]->m_0C[1] = 0;
     return j + d->m_28[d->m_08][j] * 2;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_70", func_8009E72C);
-#endif
 
 void func_8009E930(Menu70 *m) {
     func_8009E72C(m, m->m_A80);

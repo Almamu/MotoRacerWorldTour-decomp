@@ -33,7 +33,7 @@ the run's bikes (`Bike34`, 0x568 bytes):
 
 One file, `src/langimg/chunk_34.cpp`, 0x800554E0-0x800574EC.
 
-10 functions: 7 match, 2 are parked, 1 is still asm.
+10 functions: 7 match, 3 are parked.
 
 ## The settings
 
@@ -78,7 +78,7 @@ globals.
 - **Parked.**
   - `func_80056874`: the run read for the time at 0x1DF0 in `$a0` where
     the original has `$a2` (and copies it to `$a0` for the loop), 5 off.
-- **Still asm.** `func_800557C4` (926 instructions), not tried.
+- **Parked.** `func_800557C4` (926 instructions): see below.
 
 ## The functions
 
@@ -87,7 +87,7 @@ globals.
 | `func_800554E0` | matches | the race's state set to 2, the objects placed |
 | `func_80055614` | matches | the state set to 4 or 3 |
 | `func_80055650` | matches | a bike's place handled |
-| `func_800557C4` | asm | 926 instructions |
+| `func_800557C4` | parked | the race ended: results, records, menu (28 runs out of place) |
 | `func_8005663C` | matches | the next step started |
 | `func_800567CC` | matches | the step checked |
 | `func_80056874` | parked | the race's clock: registers |
@@ -102,3 +102,15 @@ original passes the bike's index to `func_80053198`, whose definition
 takes `(Own34 *o, int i)`, but the prototype here declared only the
 first. With the second argument declared and passed, the function
 matches with no other change.
+
+## Group B, large functions
+
+`func_800557C4` (the race's end: times saved, records checked, the end
+menu built) is written in the original's shape, with two inline counts
+(bikes in the race, players among them) and the record's position copied
+through a helper that checks its source. The chunk is now built with
+`-fmove-all-movables`, which every matched function survives; it put the
+loop's constants in saved registers as the original does (890 to 793
+off). Left: the original saves `$s7` too, walks `D_800D5F84` with its own
+pointer, tests `D_800D5F40 == 8` with `xori`, and stores an entry's flags
+twice (three fields cleared, then `m_d` set) where GCC here merges them.
