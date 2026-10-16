@@ -107,16 +107,20 @@ struct Pad50 {
 struct Poly50 {
     u8 m_00[4];
     u8 m_04[4];
-    u32 m_08[7];
+    u32 m_08[4];
+    s8 m_18;
+    u8 m_19;
+    short m_1A;
+    u32 m_1C[2];
 };
 // A primitive of the model (28 bytes)
 struct Prim50 {
     u8 m_00[8];
     u32 *m_08;
     u8 m_0C, m_0D;
-    u8 m_0E[2];
+    short m_0E;
     u8 m_10, m_11;
-    u8 m_12[2];
+    short m_12;
     u8 m_14, m_15, m_16, m_17;
     u32 m_18; // flags: 0x18000000, the count; 0x20004
 };
@@ -136,10 +140,18 @@ struct MTab50 {
     Mdl50 **m_items;
 };
 // A mesh: its polygons copied and patched into its model's primitives
+// The entry at 0x20 of a mesh's vtable
+struct MVt50 {
+    u8 m_00[0x20];
+    short m_20;
+    short m_22;
+    void (*m_24)(void *o);
+};
 struct Msh50 {
     u8 m_00[0x28];
     PSrc50 *m_28;
-    u8 m_2C[0xC];
+    u8 m_2C[8];
+    MVt50 *m_34;
     int m_38;
     int m_3C;
     int *m_40;
@@ -155,6 +167,9 @@ extern int D_800C87EC;
 extern "C" {
 void func_80075A1C(Seg50 *o);
 void func_80076948(Msh50 *o);
+void func_80076658(Msh50 *o, int a, int b, int c, int d);
+void func_80015E04(Prim50 *p);
+void func_800746B0(Msh50 *o, int a, int b, int c, int d);
 Obj50 *func_80074510(Obj50 *o);
 Obj50 *func_80074534(Obj50 *o);
 void func_800745AC(Obj50 *o, int f);
@@ -352,23 +367,81 @@ void func_80076600(Obj50 *o, int f) {
     func_800745AC(o, f);
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_50", func_80076658);
+void func_80076658(Msh50 *o, int a, int b, int c, int d) {
+    if (o->m_28) {
+        if (c) {
+            o->m_34->m_24((char *)o + o->m_34->m_20);
+        } else {
+            int i = o->m_3C - 1;
+            Poly50 *poly = &o->m_44[i];
+            int *idx = &o->m_40[i];
+            u32 *c0 = poly->m_08;
+            Prim50 *prims = D_800C8C68->m_items[o->m_38]->m_04->m_1C;
+            Poly50 *src = &o->m_28->m_14[i];
 
-#ifdef NON_MATCHING
-// The original hoists its constants (0x20004, 0x20000, 0xFFFFFF out of the outer loop, the inner loop's into $t1/$s2/$t2/$s1/$s0/$t9) as -fmove-all-movables does; with that flag this C is 92 off (registers in the setup, the inner loop's first test), but the flag breaks other chunk_50 functions, and without it it's 159 off.
+            do {
+                Prim50 *p = &prims[*idx];
+                int k;
+
+                p->m_12 = src->m_18;
+                p->m_0E = src->m_1A;
+                func_80015E04(p);
+                if ((p->m_18 & 0x20004) == 0x20000) {
+                    *c0 &= 0xFF000000;
+                    *c0 |= (u32)p->m_08 & 0xFFFFFF;
+                }
+                k = (p->m_18 & 0x18000000) >> 27;
+                do {
+                    u8 *ca, *cb;
+
+                    if ((p->m_18 & 0x20004) == 0x20004) {
+                        ((u32 *)poly)[k + 2] &= 0xFF000000;
+                        ((u32 *)poly)[k + 2] |= p->m_08[k] & 0xFFFFFF;
+                    }
+                    cb = &poly->m_00[k];
+                    ca = cb;
+                    cb += 4;
+                    switch (k) {
+                    case 0:
+                        *ca = p->m_0C;
+                        *cb = p->m_0D;
+                        break;
+                    case 1:
+                        *ca = p->m_10;
+                        *cb = p->m_11;
+                        break;
+                    case 2:
+                        *ca = p->m_14;
+                        *cb = p->m_15;
+                        break;
+                    case 3:
+                        *ca = p->m_16;
+                        *cb = p->m_17;
+                        break;
+                    }
+                } while (--k >= 0);
+                src--;
+                c0 -= 9;
+                poly--;
+                idx--;
+            } while (--i >= 0);
+        }
+    }
+    func_800746B0(o, a, b, c, d);
+}
+
 void func_80076948(Msh50 *o) {
     if (o->m_28) {
         int i = o->m_3C - 1;
-        Poly50 *poly = &o->m_28->m_14[i];
         Poly50 *dst = &o->m_44[i];
-        int *idx = &o->m_40[i];
+        Poly50 *poly = &o->m_28->m_14[i];
         Prim50 *prims = D_800C8C68->m_items[o->m_38]->m_04->m_1C;
+        int *idx = &o->m_40[i];
 
         do {
             Prim50 *p;
             u32 f;
             int k;
-            u32 *q;
 
             *dst = *poly;
             p = &prims[*idx];
@@ -378,13 +451,12 @@ void func_80076948(Msh50 *o) {
                 p->m_08 = (u32 *)((u32)p->m_08 | (poly->m_08[0] & 0xFFFFFF));
             }
             k = (f & 0x18000000) >> 27;
-            q = &poly->m_08[k];
-            for (; k >= 0; k--, q--) {
+            do {
                 u8 a, b;
 
                 if ((p->m_18 & 0x20004) == 0x20004) {
                     p->m_08[k] &= 0xFF000000;
-                    p->m_08[k] |= *q & 0xFFFFFF;
+                    p->m_08[k] |= ((u32 *)poly)[k + 2] & 0xFFFFFF;
                 }
                 a = poly->m_00[k];
                 b = poly->m_04[k];
@@ -406,16 +478,13 @@ void func_80076948(Msh50 *o) {
                     p->m_17 = b;
                     break;
                 }
-            }
+            } while (--k >= 0);
             dst--;
             poly--;
             idx--;
         } while (--i >= 0);
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_50", func_80076948);
-#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_50", func_80076BD8);
 
