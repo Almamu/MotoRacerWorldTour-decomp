@@ -19,6 +19,12 @@ struct Tabs28 {
     void *m_28;
     void *m_2C;
     void *m_30;
+    u8 m_34[0x10];
+    int m_44;
+    u8 m_48[0xC];
+    int m_54;
+    u8 m_58[8];
+    int m_60;
 };
 struct Game28 {
     u8 m_00[0x18];
@@ -187,6 +193,63 @@ Lst28 *func_800A14CC(void);
 Sel28 *func_800A1504(void);
 void func_800A1268(void *p);
 }
+// A screen's layout (60 bytes, chunk_29's Sc29)
+struct Scr28 {
+    u8 m_00[8];
+    short m_08[4];
+    short m_10[4];
+    short m_18[4];
+    short m_20[4];
+    int m_28[4];
+    int m_38; // the kind
+};
+extern Scr28 D_800C5FF4[];
+struct Ref28 {
+    u8 m_00[0x58];
+    int m_58;
+};
+struct Id28 {
+    int m_00;
+};
+struct IdP28 {
+    Id28 *m_00;
+};
+// The memory display's owner
+struct Mem28 {
+    u8 m_00[4];
+    Game28 **m_04;
+    IdP28 *m_08;
+};
+// The display's vtable: the entry at 0x60
+struct VtD28 {
+    u8 m_00[0x60];
+    short m_60;
+    short m_62;
+    void (*m_64)(void *o, int n);
+};
+extern int D_800C8DC4;
+extern int D_800C8DC8;
+extern int D_800C8D54;
+extern char D_800C642C[];
+extern "C" {
+int func_800B5A1C(void);
+int func_800A5DA4(const char *fmt, ...);
+int func_8004C02C(Scr28 *o);
+int func_8004BF30(Scr28 *o, int x, int y, int z);
+void func_8008A134(void *s, int a, int b, int c, int d, int e, int f, int g, int h);
+int func_8004A774(Mem28 *o);
+}
+
+// The four values of a screen, then a sound set from them
+static inline void Show28(Scr28 *e, int n, Game28 *g, void *snd, int f) {
+    int a = func_8004BF30(e, n, e->m_20[e->m_38], 0x92);
+    int b = func_8004BF30(e, n, e->m_08[e->m_38], 0x3C);
+    int c = func_8004BF30(e, n, e->m_10[e->m_38], 0x48);
+    int d = func_8004BF30(e, n, e->m_18[e->m_38], 0x7C);
+
+    func_8008A134(snd, g->m_C70->m_44, a, b, c, d, g->m_C70->m_60, g->m_C70->m_54, f);
+}
+
 extern int D_800D48BC;
 extern int D_800D48C0;
 
@@ -364,7 +427,38 @@ char *func_80049B9C(int i, int x, int f) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_28", func_80049C14);
 
+#ifdef NON_MATCHING
+// The middle (both runs of four lookups and the sound calls) is the original's. Left: the start, where GCC folds the printed (D_800C8DC4 - 16) - n into D_800C8DC4 - r (n being r - 16) and so keeps r in a saved register, with the loads ordered around it; and the vtable call's registers at the end (71 off).
+int func_8004A774(Mem28 *o) {
+    Scr28 *e = &D_800C5FF4[D_800D5F38];
+    Game28 *g = *o->m_04;
+    int n, s;
+    VtD28 *v;
+
+    e->m_38 = ((Ref28 *)func_80078FC4(&D_800CBC94, o->m_08->m_00->m_00))->m_58;
+    n = func_800B5A1C() - 16;
+    s = g->m_C70->m_44 << 2;
+    if (e->m_38) {
+        s = g->m_C70->m_44 << 3;
+    }
+    func_800A5DA4(
+        D_800C642C,
+        (u32)(D_800C8DC4 - 16 - n + func_8004C02C(e) * 281 / 256 + s + D_800C8DC8 + 0x3FF) >> 10);
+    n -= s;
+    Show28(e, n, g, &D_800CAFB8, 0);
+    D_800C8D54 = 80;
+    if (e->m_38) {
+        Show28(e, n, g, &D_800CB02C, 1);
+        D_800C8D54 = 190;
+    }
+    n = func_800B5A1C() - 16;
+    v = (VtD28 *)D_800C886C->m_68;
+    v->m_64((char *)D_800C886C + v->m_60, (n / 2) & ~3);
+    return 1;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_28", func_8004A774);
+#endif
 
 int func_8004AACC(Buf28 *b) {
     func_800A67E8(0);

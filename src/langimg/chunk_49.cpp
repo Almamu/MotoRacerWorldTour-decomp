@@ -13,7 +13,9 @@ struct Ent49 {
     int m_38; // where it is along the track
     u8 m_3C[4];
     int m_40;
-    u8 m_44[0x3C];
+    u8 m_44[0x34];
+    int m_78;
+    u8 m_7C[4];
     int m_80; // bit 0: in use
     u8 m_84[0x18];
     int m_9C; // its speed
@@ -24,18 +26,28 @@ struct Pool49 {
     u8 m_00[0xC];
     int m_0C; // how many racers
     u8 m_10[4];
-    struct Who49 *m_14[7]; // the racers
-    int m_30;              // how many
+    struct Who49 *m_14[6]; // the racers
+    int m_2C;
+    int m_30; // how many
     Ent49 *m_34;
+    int m_38; // how many rows
+    int m_3C; // the first row
+    u8 m_40[0xC];
+    int m_4C; // the nearest an entry may be
 };
 struct Rng49 {
     int m_00;
     int m_04; // the seed
 };
 struct Pos49 {
-    u8 m_00[0x10C];
+    u8 m_00[0x64];
+    int m_64[3]; // its position
+    u8 m_70[0x9C];
     int m_10C; // its lap's length
-    u8 m_110[0xF8];
+    u8 m_110[0xE4];
+    int m_1F4; // its section
+    int m_1F8; // its point
+    u8 m_1FC[0xC];
     int m_208;
 };
 struct Who49 {
@@ -44,8 +56,29 @@ struct Who49 {
     u8 m_34[0x155];
     s8 m_189;
 };
+// A section's point (20 bytes): its position and heading
+struct Pnt49 {
+    int x, y, z;
+    u8 m_0C[4];
+    short m_10;
+    u8 m_12[2];
+};
+// A row of a table (32 bytes)
+struct Row49 {
+    u8 m_00[7];
+    s8 m_07;
+    u8 m_08[0x18];
+};
+// A section (20 bytes)
+struct Sec49 {
+    u8 m_00[4];
+    Pnt49 *m_04;
+    Row49 **m_08;
+    u8 m_0C[8];
+};
 struct Trk49 {
-    u8 m_00[0x2C];
+    u8 m_00[0x28];
+    Sec49 *m_28;
     int m_2C; // the track's length
 };
 struct Node49 {
@@ -161,6 +194,11 @@ int func_80074AC8(Obj49 *o);
 void func_800746B0(Obj49 *o, int dflt, int dir, int e, int sub);
 Vec49 *func_8009964C(Vec49 *v, int k); // v * k, returns v
 void func_80099D48(Vec49 *v, int s);
+Vec49 *func_800997D0(Vec49 *v, Vec49 *a);
+Vec49 *func_800998D0(Vec49 *out, Vec49 *a, Vec49 *b);
+int func_8009923C(Vec49 *v);
+extern short D_800BF3A0[][2]; // sines and cosines by angle (4.12)
+void func_80073E54(Pool49 *p, Who49 *w, Trk49 *t);
 void func_80063C60(Pos49 *o, u8 *p, Vec49 *v, int a, int k, int b, int d);
 void func_8007356C(Pool49 *p, Pos49 *w, Trk49 *t);
 int func_80073C2C(Pool49 *p, int lo, int hi, Trk49 *t, int m, int racers, Ent49 *skip, int skipv,
@@ -354,7 +392,50 @@ int func_80073C2C(Pool49 *p, int lo, int hi, Trk49 *t, int m, int racers, Ent49 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_49", func_80073C2C);
 #endif
 
+// The distance from m to a point ahead along its section, by row k
+static inline int Ahead49(Trk49 *t, Pos49 *m, int k) {
+    Sec49 *sec = &t->m_28[m->m_1F4];
+    Pnt49 *pt = &sec->m_04[m->m_1F8];
+    Vec49 v, d;
+
+    v.x = pt->x;
+    v.y = pt->y;
+    v.z = pt->z;
+    d.x = D_800BF3A0[(pt->m_10 - 0x400) & 0xFFF][1];
+    d.y = 0;
+    d.z = D_800BF3A0[(sec->m_04[m->m_1F8].m_10 - 0x400) & 0xFFF][0];
+    func_8009964C(&d, sec->m_08[k][m->m_1F8].m_07 << 9);
+    func_80099D48(&d, 12);
+    func_800997D0(&v, &d);
+    func_800998D0(&d, &v, (Vec49 *)m->m_64);
+    return func_8009923C(&d);
+}
+
+#ifdef NON_MATCHING
+// A first draft, the original's calls and tests in order (207 off). The original keeps nine values in saved registers (the pool, the entry, the position's link at 0x1B4 as a pointer, &v, &d, &m_64, the sine table, the count, the length) and leaves the track in its argument slot (0x80); it reads the point through the section each time, and uses the same vector at 0x38 for the direction (stored at fixed offsets, its address rebuilt for the scaling calls) and the difference (its address kept in $s0). Ours keeps the track and the position in saved registers instead.
+void func_80073E54(Pool49 *p, Who49 *w, Trk49 *t) {
+    int best;
+    Ent49 *e;
+
+    if (p->m_2C && (e = func_800741D8(p, &best, w, t)) && !e->m_78 && !(e->m_80 & 4) &&
+        func_80073C2C(p, e->m_38, e->m_38, t, 0x1E000, 0, e, -1, -1)) {
+        Pos49 *m = w->m_30;
+        int len = Ahead49(t, m, e->m_04);
+        int i;
+
+        for (i = 0; i < p->m_38; i++) {
+            if (i != e->m_04 && Ahead49(t, m, p->m_3C + i) < len) {
+                break;
+            }
+        }
+        if (i == p->m_38 && best < p->m_4C) {
+            e->m_80 |= 0xC;
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_49", func_80073E54);
+#endif
 
 #ifdef NON_MATCHING
 // Registers: the original keeps the pool in $a0 and reuses $a3 for the distance

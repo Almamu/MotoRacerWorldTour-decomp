@@ -78,3 +78,8 @@ globals.
   (`cb = &poly->m_00[k]; ca = cb; cb += 4;`); `func_80076658` steps a
   separate pointer to the first colour word, before the polygon; and
   `func_80076948` takes the destination's address before the source's.
+- `func_8007702C` written and parked (236 off, a first draft): the
+  model's primitives given colours between two polygon sets (`Lerp50`),
+  the sibling of `func_80076658`. Left: the loop optimiser's pointers
+  into the two polygons (the original steps `a`, `a + 4`, `a + 0xA` and
+  the same for `b`) and its stack slots.

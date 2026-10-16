@@ -1544,6 +1544,12 @@ two (or two merged into one).
   `func_8003DF7C` and `func_8003E194` matched (12 off each before). A sweep
   over a chunk's parked functions trying each parameter copied is cheap and
   found that one; on others it only came closer.
+- **A value assigned to a second variable as well.** When the original
+  copies a register (`addu $a2, $a0, $zero`) and reads one field through the
+  copy after a branch, assign the load to a second, otherwise unused
+  variable too (`r = run = o->m_378; Laps37(r);`, `run` declared early).
+  chunk_37's `func_8005C648` matched this way (3 off before; from the
+  permuter).
 - The permuter (`tools/permuter_setup.py`) is the tool for this. Most of
   its suggestions are noise (dummy variables, `x++; x--;`); keep the idea
   behind a good one, written plainly (the `ClearFlags` case above).

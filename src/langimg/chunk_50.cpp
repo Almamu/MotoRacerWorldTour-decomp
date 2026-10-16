@@ -107,7 +107,10 @@ struct Pad50 {
 struct Poly50 {
     u8 m_00[4];
     u8 m_04[4];
-    u32 m_08[4];
+    union {
+        u32 m_08[4];
+        u8 m_08c[4][4]; // as colours
+    };
     s8 m_18;
     u8 m_19;
     short m_1A;
@@ -116,7 +119,10 @@ struct Poly50 {
 // A primitive of the model (28 bytes)
 struct Prim50 {
     u8 m_00[8];
-    u32 *m_08;
+    union {
+        u32 *m_08;
+        u8 m_08c[4]; // as a colour
+    };
     u8 m_0C, m_0D;
     short m_0E;
     u8 m_10, m_11;
@@ -148,7 +154,9 @@ struct MVt50 {
     void (*m_24)(void *o);
 };
 struct Msh50 {
-    u8 m_00[0x28];
+    u8 m_00[0x10];
+    int m_10; // how far from the polygons at 0x44 to the others (16.16)
+    u8 m_14[0x14];
     PSrc50 *m_28;
     u8 m_2C[8];
     MVt50 *m_34;
@@ -167,6 +175,7 @@ extern int D_800C87EC;
 extern "C" {
 void func_80075A1C(Seg50 *o);
 void func_80076948(Msh50 *o);
+int func_8007702C(Msh50 *o, PSrc50 *s, Mdl50 *m);
 void func_80076658(Msh50 *o, int a, int b, int c, int d);
 void func_80015E04(Prim50 *p);
 void func_800746B0(Msh50 *o, int a, int b, int c, int d);
@@ -490,4 +499,72 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_50", func_80076BD8);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_50", func_80076E20);
 
+// b to a by t (16.16)
+static inline int Lerp50(int a, int b, int t) {
+    return b + (a - b) * t / 0x10000;
+}
+
+/* The model's primitives given the colours between s's polygons and the mesh's, by its 0x10. */
+#ifdef NON_MATCHING
+// A first draft with the original's calls, tests and stores (236 off): the original's loop keeps six pointers into the two polygons (a, a + 4, a + 0xA, b, b + 4, b + 0xA) in saved registers, the index and primitives pointers and the 0x20004 mask in stack slots, and in the inner loop four more stepped by 4 per corner; ours steps other offsets (a + 9, b + 0xA) and keeps the mask in $t9, so every register differs.
+int func_8007702C(Msh50 *o, PSrc50 *s, Mdl50 *m) {
+    int i = o->m_3C - 1;
+    Poly50 *a = &s->m_14[i];
+    Poly50 *b = &o->m_44[i];
+    int *idx = &o->m_40[i];
+    Prim50 *prims = m->m_04->m_1C;
+
+    do {
+        Prim50 *p = &prims[*idx];
+        u32 f;
+        int k;
+
+        if (a->m_18 == 0x40) {
+            p->m_12 = a->m_18;
+            func_80015E04(p);
+        }
+        f = p->m_18;
+        if ((f & 0x20004) == 0x20000) {
+            p->m_08c[0] = Lerp50(a->m_08c[0][0], b->m_08c[0][0], o->m_10);
+            p->m_08c[1] = Lerp50(a->m_08c[0][1], b->m_08c[0][1], o->m_10);
+            p->m_08c[2] = Lerp50(a->m_08c[0][2], b->m_08c[0][2], o->m_10);
+        }
+        k = (f & 0x18000000) >> 27;
+        do {
+            u8 ca, cb;
+
+            if ((p->m_18 & 0x20004) == 0x20004) {
+                ((u8 *)&p->m_08[k])[0] = Lerp50(a->m_08c[k][0], b->m_08c[k][0], o->m_10);
+                ((u8 *)&p->m_08[k])[1] = Lerp50(a->m_08c[k][1], b->m_08c[k][1], o->m_10);
+                ((u8 *)&p->m_08[k])[2] = Lerp50(a->m_08c[k][2], b->m_08c[k][2], o->m_10);
+            }
+            ca = Lerp50(a->m_00[k], b->m_00[k], o->m_10);
+            cb = Lerp50(a->m_04[k], b->m_04[k], o->m_10);
+            switch (k) {
+            case 0:
+                p->m_0C = ca;
+                p->m_0D = cb;
+                break;
+            case 1:
+                p->m_10 = ca;
+                p->m_11 = cb;
+                break;
+            case 2:
+                p->m_14 = ca;
+                p->m_15 = cb;
+                break;
+            case 3:
+                p->m_16 = ca;
+                p->m_17 = cb;
+                break;
+            }
+        } while (--k >= 0);
+        a--;
+        b--;
+        idx--;
+    } while (--i >= 0);
+    return 1;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_50", func_8007702C);
+#endif

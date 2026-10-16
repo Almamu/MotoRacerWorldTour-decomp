@@ -81,12 +81,16 @@ struct Bike37 {
 // The run (chunk_33's Run33)
 // The race's rules (chunk_36's Hold36)
 struct Rul37 {
-    u8 m_00[0x52C];
+    u8 m_00[0x4E4];
+    int m_4E4;
+    u8 m_4E8[0x44];
     int m_52C;
     u8 m_530[8];
     int m_538[7];
     int m_554;
     int m_558;
+    u8 m_55C[0x18];
+    int m_574;
 };
 struct Run37 {
     u32 m_00;
@@ -94,16 +98,21 @@ struct Run37 {
     int m_08;
     u8 m_0C[4];
     Rul37 *m_10;
-    u8 m_14[0x2C];
+    short m_14; // the laps to run
+    u8 m_16[0x2A];
     int m_40[5];
     int m_54[5][8];
     u8 m_F4[0x1F4];
     Bike37 m_2E8[5];
-    u8 m_1DF0[0x34];
+    u8 m_1DF0[0x18];
+    int m_1E08;
+    u8 m_1E0C[0x18];
     s8 m_1E24[2];
     s8 m_1E26[5];
     s8 m_1E2B[0x15];
-    u8 m_1E40[0x104]; // a list
+    u8 m_1E40[0xE6]; // a list
+    short m_1F26;    // its first entry
+    u8 m_1F28[0x1C];
     u8 m_1F44;
     u8 m_1F45[5];
     s8 m_1F4A;
@@ -139,6 +148,10 @@ struct Spr37 {
 struct Ent37 {
     u8 m_00[2];
     s8 m_02;
+    u8 m_03[5];
+    u16 m_08; // its laps
+    u8 m_0A[0x46];
+    Ent37 *m_50; // the next
 };
 // What func_800891E8 returns
 struct Txt37 {
@@ -191,12 +204,42 @@ struct Own37 {
     int m_450, m_454;
     u8 m_458[0x24];
     void *m_47C;
-    u8 m_480[0x7EC];
+    u8 m_480[0x18];
+    struct Mode37 *m_498;
+    u8 m_49C[0x7D0];
     struct Grid37 *m_C6C;
     struct Buf37 *m_C70;
 };
 
 extern int D_800CB3C0;
+// The display's mode: its top five bits
+struct Mode37 {
+    u32 m_lo : 27;
+    u32 m_hi : 5;
+};
+// What func_8008280C returns: its flags, and the same as a word
+struct Pic37 {
+    u8 m_00[8];
+    int m_08;
+    u16 m_0C;
+};
+extern int D_800D5E70;
+extern int D_800C6AC8;
+extern int D_800D5F10;
+extern int D_800D5F6C;
+extern int D_800D4898;
+extern int D_800CBD50;
+struct Sel37 {
+    u8 m_00[4];
+    int m_04;
+};
+Sel37 *func_800A1504(void);
+void func_800A1268(void *p);
+void func_800A021C(void *p);
+void func_80048CF4(Own37 *o, void *a, void *b, int c);
+Pic37 *func_8008280C(int l, int a, int b, int c);
+void func_8008422C(Pic37 *p);
+int func_8005C648(Own37 *o);
 extern int D_800C6AB0[]; // "n_motoX"
 extern int D_800CBC94;
 extern int D_800CB400;   // a table of ints, declared small
@@ -691,7 +734,105 @@ void func_8005C608(void) {
     func_8006C8EC(func_80050E88(D_800D5F38), D_800D5F34, D_800D5F38);
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_37", func_8005C648);
+// The laps to run times the riders (one fewer when a rider is out)
+static inline void Laps37(Run37 *r) {
+    int n = r->m_04;
+
+    if (r->m_00 != 2 && r->m_10->m_4E4) {
+        n--;
+    }
+    r->m_14 *= n;
+}
+
+// The race started: the sprites' flags by mode, the laps to run, the bikes numbered
+int func_8005C648(Own37 *o) {
+    int r0 = 0;
+    int i;
+    Run37 *run; // the run once more: the original's copy of it for the laps
+    int j, k;
+    Run37 *r;
+
+    o->m_378->m_1E08 = 1;
+    o->m_498->m_hi = 0;
+    if (o->m_378->m_00 & 0xA8) {
+        o->m_498->m_hi = 7;
+    }
+    func_800A021C(&D_800D5E70);
+    func_80048CF4(o, &D_800C6AC8, &D_800D5F10, -1);
+    if (D_800D5F6C == 2) {
+        o->m_304 = 1;
+    } else {
+        if (D_800D5F40 != 8 || !func_800A1504()->m_04) {
+            func_800A1268(&D_800D4898);
+        }
+        func_8005B788(o);
+        r0 = 1;
+    }
+    o->m_378->m_10->m_574 = func_8005C46C(o, D_800D5F38);
+    for (i = 1; i >= 0; i--) {
+        for (j = 0; j < 9; j++) {
+            Pic37 *e = func_8008280C(D_800CBD50, o->m_378->m_00, j, i);
+
+            if (e) {
+                if (D_800D49A4 == 1 && o->m_378->m_00 == 8) {
+                    int f = e->m_0C;
+
+                    f &= ~4;
+                    f &= ~8;
+                    f &= ~0x10;
+                    f &= ~1;
+                    f &= ~2;
+                    e->m_0C = f;
+                    e->m_08 = (short)f;
+                }
+                if (o->m_378->m_04 == 1 || (o->m_378->m_00 & 2)) {
+                    int f = e->m_0C;
+
+                    f &= ~0x80;
+                    f &= ~0x100;
+                    e->m_0C = f;
+                    e->m_08 = (short)f;
+                }
+                if (D_800D5F40 == 2) {
+                    int f = e->m_0C;
+
+                    f &= ~1;
+                    f &= ~2;
+                    e->m_0C = f;
+                    e->m_08 = (short)f;
+                }
+                func_8008422C(e);
+            }
+        }
+    }
+    if (D_800D5F38 == 2 && o->m_378->m_00 == 2) {
+        o->m_378->m_10->m_4E4 = 0;
+    }
+    o->m_378->m_14 = 0;
+    r = o->m_378;
+    if (r->m_1F4A > 0) {
+        Ent37 *h = func_8007142C(r->m_1E40, r->m_1F26);
+        Ent37 *e = h;
+
+        do {
+            o->m_378->m_14 += e->m_08;
+            e = e->m_50;
+        } while (e != h);
+        r = run = o->m_378;
+        Laps37(r);
+        r = o->m_378;
+    }
+    {
+        Bike37 *b;
+
+        k = 4;
+        b = &r->m_2E8[4];
+        for (; k >= 0; k--, b--) {
+            b->m_44 = k;
+        }
+    }
+    return r0;
+}
 
 #ifdef NON_MATCHING
 // The race display's layout, written in full: the original keeps the first loop's counter in a saved register shared with the second loop ($s2) and loads D_800CC088 before the first store; here the first counter is a temporary and the text's height is reloaded in another order (165 off).

@@ -114,3 +114,9 @@ with the same symbol for its last store, plus:
   `D_800D5F4C` (the other orders let the scheduler move the loads);
 - the zero word after its jump table spelled out in `.rodata`
   (`D_800B7544`).
+- `func_8004A774` written and parked (71 off): the free memory shown,
+  then two runs of four lookups on the screen's tables, each into a sound
+  set (`Show28`), and the display's vtable call. The middle is the
+  original's. Left: the start, where GCC folds `(D_800C8DC4 - 16) - n`
+  into `D_800C8DC4 - r` and keeps `r` in a saved register, and the
+  vtable call's registers.
