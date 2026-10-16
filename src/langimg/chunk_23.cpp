@@ -105,9 +105,31 @@ struct SceneItem {
     u8 m_3C[0x38];
 };
 
+// A script's handler by name (0x2C bytes): the function and its context
+struct Handler23 {
+    char m_00[0x20];
+    void *m_20;
+    void *m_24;
+    u8 m_28[4];
+};
+struct Handlers23 {
+    u8 m_00[8];
+    Handler23 *m_08;
+    u8 m_0C[0xC];
+    int m_18; // how many
+};
+// The view a scene shows (chunk_22's)
+struct View23 {
+    u8 m_00[0x30];
+    u8 m_30;
+    u8 m_31[3];
+    int m_34;
+};
 // A scene: its items
 struct Scene {
-    u8 m_00[0xA70];
+    u8 m_00[0x74];
+    Handlers23 m_74; // its script's handlers
+    u8 m_90[0x9E0];
     int m_count; // 0xA70
     u8 m_A74[8];
     SceneItem *m_items; // 0xA7C
@@ -159,6 +181,21 @@ void func_8003FE2C(Named *o, const char *name);
 void func_8003FE5C(Named *o, int on);
 void func_8003FE78(Named *o, int on);
 void func_8003F6B8(Scene *s);
+void func_8003F740(Scene *s);
+void func_8003F314(Scene *s);
+void func_8003E3AC(Scene *s);
+void func_8003BD5C(Scene *s, int a, int b);
+int func_800A6100(const char *a, const char *b, int n);
+int func_8003D674(Scene *s, int *sp);
+int func_8003D714(Scene *s, int *sp);
+int func_8003D73C(Scene *s, int *sp);
+int func_8003D7F0(Scene *s, int *sp);
+int func_8003D8B4(Scene *s, int *sp);
+int func_8003D8FC(Scene *s, int *sp);
+int func_8003D924(Scene *s, int *sp);
+int func_8003D970(Scene *s, int *sp);
+extern char D_800C4DDC[], D_800C4E54[], D_800C4E60[], D_800C4E64[], D_800C4E70[], D_800C4E80[],
+    D_800C4E8C[], D_800C4E94[];
 int func_80040CC8(Named *o);
 void func_8004047C(Named *o, Holder *h, const char *name);
 void func_8004041C(Named *o, Holder *h, const char *name);
@@ -202,7 +239,7 @@ struct Stage {
 struct Seven {
     int m_00[7];
 };
-extern Seven D_800D497C;
+extern int D_800D497C; // a Seven, declared small so its address is one la
 
 // The race's settings
 struct Config {
@@ -230,7 +267,6 @@ void func_80040B04(Named *o);
 void func_8009D350(void);
 void func_8003B484(void *a, int b, int c, int *d, int e, int f);
 void func_8003B51C(void *a, int *b, int c, int d);
-void func_8003F740(void *a);
 void func_8003B47C(void *a);
 int func_800955C4(int a, const char *name);
 void func_8007F2AC(int a, int b, int c);
@@ -292,7 +328,60 @@ void func_8003F6B8(Scene *s) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_23", func_8003F740);
+// The handler named so, or 0
+static inline Handler23 *Find23(Handlers23 *t, const char *name) {
+    Handler23 *r = 0;
+
+    if (t->m_08) {
+        int i;
+
+        for (i = 0; i < t->m_18; i++) {
+            int n = strlen(t->m_08[i].m_00);
+
+            if (n && !func_800A6100(name, t->m_08[i].m_00, n)) {
+                r = &t->m_08[i];
+                break;
+            }
+        }
+    }
+    return r;
+}
+
+/* Eight of the script's handlers, found by name, given their functions and
+ * the scene; then func_8003F6B8 on the items, func_8003F314, chunk_22's
+ * func_8003E3AC and func_8003BD5C with two of the view's values. */
+void func_8003F740(Scene *s) {
+    Handler23 *h;
+
+    h = Find23(&s->m_74, D_800C4E54);
+    h->m_20 = (void *)func_8003D674;
+    h->m_24 = s;
+    h = Find23(&s->m_74, D_800C4E60);
+    h->m_20 = (void *)func_8003D714;
+    h->m_24 = s;
+    h = Find23(&s->m_74, D_800C4E64);
+    h->m_20 = (void *)func_8003D73C;
+    h->m_24 = s;
+    h = Find23(&s->m_74, D_800C4E70);
+    h->m_20 = (void *)func_8003D7F0;
+    h->m_24 = s;
+    h = Find23(&s->m_74, D_800C4E80);
+    h->m_20 = (void *)func_8003D8B4;
+    h->m_24 = s;
+    h = Find23(&s->m_74, D_800C4DDC);
+    h->m_20 = (void *)func_8003D8FC;
+    h->m_24 = s;
+    h = Find23(&s->m_74, D_800C4E8C);
+    h->m_20 = (void *)func_8003D924;
+    h->m_24 = s;
+    h = Find23(&s->m_74, D_800C4E94);
+    h->m_20 = (void *)func_8003D970;
+    h->m_24 = s;
+    func_8003F6B8(s);
+    func_8003F314(s);
+    func_8003E3AC(s);
+    func_8003BD5C(s, ((View23 *)s->m_A80)->m_30 >> 4, ((View23 *)s->m_A80)->m_34);
+}
 
 #ifdef NON_MATCHING
 /* Registers: the original keeps -1 in $v1 for both tests (7 off) */
@@ -644,7 +733,7 @@ int func_800406A4(Named *o) {
 }
 
 #ifdef NON_MATCHING
-/* Temporaries' registers and the prologue's order (20 off) */
+/* Temporaries' registers and the prologue's order (13 off; D_800D497C declared small for its one la, from 20) */
 /* The stage set up: virtual call 25, its numbers and sounds, its two
  * tables (21 and 9 entries). */
 int func_800406E0(Named *o, int a) {
@@ -659,7 +748,7 @@ int func_800406E0(Named *o, int a) {
     o->m_138 = 0;
     o->m_A4 = 0;
     o->m_134 = o;
-    *(Seven *)(p + 0x40) = D_800D497C;
+    *(Seven *)(p + 0x40) = *(Seven *)&D_800D497C;
     ((Stage *)o->m_A0)->m_DC = 9;
     ((Stage *)o->m_A0)->m_15C = new int[21];
     ((Stage *)o->m_A0)->m_15C[1] = 0;
@@ -705,7 +794,7 @@ int func_80040A24(Named *o, int *a) {
     o->m_14C = D_800D489C;
     func_8003B484(o->m_A0, o->m_60, D_800C9360, &o->m_14C, 4, 1);
     func_8003B51C(o->m_A0, &o->m_14C, 4, 1);
-    func_8003F740(o->m_A0);
+    func_8003F740((Scene *)o->m_A0);
     D_800C873C = o->m_70;
     D_800C4938 = o->m_74;
     D_800C8C68 = o->m_78;
