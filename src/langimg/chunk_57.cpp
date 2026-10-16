@@ -77,7 +77,10 @@ struct Time57 {
 };
 
 struct Win57 {
-    u8 m_00[0x24];
+    u8 m_00[0x18];
+    int m_18; // the origin
+    u8 m_1C[4];
+    int m_20;
     int m_24; // its height
     int m_28;
     u8 m_2C[8];
@@ -711,7 +714,173 @@ void func_8008422C(Node57 *n) {
     }
 }
 
+// A label of a screen: its position, parents, alignment, frame, timer and colours
+struct Lbl57 {
+    short m_00, m_02;
+    short m_04, m_06; // its size
+    void *m_08;       // its frames
+    struct {
+        int x : 10;
+        int y : 10;
+        int bx : 10; // its x before alignment
+        int fl : 2;
+    } m_0C;
+    int m_10; // its y before alignment
+    struct {
+        int px : 6; // the parents by index, or -1
+        int py : 6;
+        int z1 : 10;
+        int z2 : 10;
+    } m_14;
+    struct {
+        int ax : 10; // its alignment flags
+        int ay : 10;
+        int font : 4;
+        int frame : 6;
+        int ind : 2; // the frames through pointers
+    } m_18;
+    struct {
+        int mask : 6;
+        int timer : 16;
+        u32 c1 : 5; // its colours, timed and not
+        u32 c2 : 5;
+    } m_1C;
+};
+struct LblList57 {
+    u8 m_00[4];
+    Lbl57 **m_04;
+    u8 m_08[4];
+    short m_0C; // the labels shown, a bit each
+};
+struct Scr57 {
+    u8 m_00[0x30];
+    int m_30, m_34; // its size
+};
+struct Add57 {
+    u8 m_00[4];
+    int m_04;
+};
+extern Scr57 *D_800CBD3C;
+extern int D_800CBD40;
+extern Add57 *D_800CAE80;
+extern int D_800C8A04[];
+extern int D_800D6128;
+extern int D_800CBD58_far[] __asm__("D_800CBD58_far");
+extern "C" void func_800842E8(LblList57 *l, int first, int last, int stored);
+
+#ifdef NON_MATCHING
+// The original's code; left: the colour table's address loaded before the timer's test (GCC loads it in the branch), a parent's index and alignment read in the other order, and $v0/$v1 swapped in the colour and timer tests (31 off).
+void func_800842E8(LblList57 *l, int first, int last, int stored) {
+    Scr57 *sc = D_800CBD3C;
+    int mask = D_800CAE80->m_04;
+    int i;
+
+    for (i = first; i <= last; i++) {
+        Lbl57 *o;
+        int x, y;
+        char *f;
+        void *fr;
+
+        if ((l->m_0C >> i) & 1) {
+        } else {
+            continue;
+        }
+        o = l->m_04[i];
+        if (!o || !(fr = o->m_08)) {
+            continue;
+        }
+        if (o->m_0C.fl || !stored) {
+            Lbl57 *q;
+            int a, w, px, py, ax, ay;
+
+            x = o->m_0C.bx;
+            y = o->m_10;
+            px = o->m_14.px;
+            ax = o->m_18.ax;
+            if (px != -1 && (q = l->m_04[px]) != 0) {
+                a = q->m_00;
+                w = q->m_04;
+            } else {
+                a = 0;
+                w = sc->m_30;
+            }
+            if (ax & 0x30) {
+                if (ax & 0x10) {
+                    w >>= 1;
+                }
+                x += w;
+            }
+            x += a;
+            ay = o->m_18.ay;
+            py = o->m_14.py;
+            if (py != -1 && (q = l->m_04[py]) != 0) {
+                a = q->m_02;
+                w = q->m_06;
+            } else {
+                a = 0;
+                w = sc->m_34;
+            }
+            if (ay & 0x300) {
+                if (ay & 0x100) {
+                    w >>= 1;
+                }
+                y += w;
+            }
+            y += a;
+            o->m_0C.x = x;
+            o->m_0C.y = y;
+        } else {
+            x = o->m_0C.x;
+            y = o->m_0C.y;
+        }
+        {
+            int k = o->m_18.frame * D_800CBD40;
+
+            if (o->m_18.ind) {
+                f = *(char **)((char *)fr + k * 4);
+            } else {
+                f = (char *)fr + k;
+            }
+        }
+        if (!f) {
+            continue;
+        }
+        {
+            int *tab = D_800C8A04;
+            u32 c;
+
+            if (o->m_1C.timer > 0) {
+                o->m_1C.timer -= D_800D6128;
+                if (o->m_1C.timer > 0) {
+                    c = o->m_1C.c1;
+                    goto have;
+                }
+            }
+            c = o->m_1C.c2;
+        have:
+            c = tab[c] & 0xFFFFFF;
+            if (c != D_800C89D8) {
+                D_800C89D8 = c;
+                func_80080F8C();
+            }
+        }
+        D_800C89D0 = o->m_14.z2 | o->m_14.z1;
+        if (o->m_1C.timer > 0 && !(o->m_1C.mask & mask)) {
+            continue;
+        }
+        {
+            int ox = D_800C8D90->m_18;
+            int oy = D_800C8D90->m_20;
+
+            func_80080040(D_800CBD58_far[o->m_18.font], f, x + ox, y + oy, (int *)o);
+            o->m_00 -= ox;
+            o->m_02 -= oy;
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_57", func_800842E8);
+#endif
 
 #ifdef NON_MATCHING
 // The gp global's store: the original stores it first

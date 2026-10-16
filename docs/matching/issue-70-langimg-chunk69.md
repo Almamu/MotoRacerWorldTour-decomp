@@ -16,7 +16,7 @@ one). Through its two views (`m_A80`, `m_A84`, chosen by the mode at
 
 One file, `src/langimg/chunk_69.cpp`, 0x8009B17C-0x8009D0E4.
 
-23 functions: 19 match, 3 are parked, 1 is still asm.
+23 functions: 19 match, 4 are parked.
 
 ## The settings
 
@@ -61,7 +61,7 @@ global.
 
 | Function | State | Notes |
 |---|---|---|
-| `func_8009B17C` | asm | 283 instructions |
+| `func_8009B17C` | parked | the run's results printed: registers |
 | `func_8009B5E8` | matches | the settings screen filled |
 | `func_8009B838` | matches | the name copied to the drawing |
 | `func_8009B8BC` | matches | a call when there's a screen |
@@ -139,3 +139,14 @@ list, its effect, then a flash) matches:
   (`*(int *)((u8 *)d->m_194 + (i << 2))`): that gives the original's
   base + offset order and its temporaries; as `d->m_194[i]`, GCC added the
   offset first and the loop's values came out in other registers (10 off).
+
+## Group C: more `$fp` functions
+
+`func_8009B17C` prints a run's results once (unless the view's name is
+`D_800C92CC`): the racers' names copied into the record, the record
+saved, the times computed (`func_800237E8`), three columns per racer,
+two more rows, then the speeds sampled and the graph's top value by the
+track. Reading the view before the test brought it from 269 to 234 off.
+Parked: the screen in `$s5` where GCC uses `$s4`, the counters in
+`$s1`/`$s4`, and the original spills the row offset (`i * 12`) where GCC
+spills a column pointer.
