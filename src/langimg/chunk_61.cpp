@@ -175,6 +175,9 @@ void func_8008BCB0(Plane61 *o, Cam61 *c, void *m, Bk61 *b, Vec61 *v, Game61 *g);
 int func_80099B88(Vec61 *a, Vec61 *b);
 int func_8008B998(Plane61 *o, Vec61 *v);
 Vec61 *func_800998D0(Vec61 *d, Vec61 *a, Vec61 *b);
+Vec61 *func_80099898(Vec61 *d, Vec61 *a, Vec61 *b);
+Vec61 *func_80099DA0(Vec61 *d, Vec61 *s, int k);
+Vec61 *func_80099690(Vec61 *v, int k);
 u32 func_8009923C(Vec61 *v);
 Plane61 *func_8008C678(List61 *l, int a, Vec61 *v, int b);
 void func_8008CE34(Zone61 *z);
@@ -224,18 +227,6 @@ int func_8008B998(Plane61 *o, Vec61 *v) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_61", func_8008B998);
 #endif
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_61", func_8008BA50);
-
-static inline void VecCopyL61(Vec61 *d, Vec61 *s) {
-    int x = s->x;
-    int y = s->y;
-    int z = s->z;
-
-    d->x = x;
-    d->y = y;
-    d->z = z;
-}
-
 static inline void SetVec61(Vec61 *v, int x, int y, int z) {
     v->x = x;
     v->y = y;
@@ -251,6 +242,58 @@ static inline void SetLook61(Vec61 *s) {
     D_800CBE48 = x;
     D_800CBE4C = y;
     D_800CBE50 = z;
+}
+
+static inline void VecCopyL61(Vec61 *d, Vec61 *s) {
+    int x = s->x;
+    int y = s->y;
+    int z = s->z;
+
+    d->x = x;
+    d->y = y;
+    d->z = z;
+}
+
+/* A plane entered: its easing in set up from the camera's move and where it
+ * looks from, or the camera put there at once. */
+void func_8008BA50(void *p) {
+    Plane61 *o = (Plane61 *)p;
+    Vec61 r;
+
+    D_800CBDD0 = 0;
+    D_800CBDC8 = D_800CBDCA;
+    if (o->m_58 & 1) {
+        Vec61 b, a, c, d, e, f;
+        int n = o->m_62;
+        int n2 = n * n;
+        int n3 = n2 * n;
+        Vec61 *pb = &b;
+
+        o->m_58 |= 0x20;
+        func_80099718(&a, VEC61(D_800CBDF8), n);
+        func_80099DA0(&c, VEC61(D_800CBE48), 1);
+        func_80099898(pb, &a, &c);
+        func_80099DA0(&d, &o->m_0C, 1);
+        func_800998D0(&r, pb, &d);
+        VecCopyL61(VEC61(D_800CBE08), &r);
+        func_80099690(VEC61(D_800CBE08), n3 >> 8);
+        func_80099718(&a, &o->m_0C, 3);
+        func_80099718(&e, VEC61(D_800CBDF8), o->m_62);
+        func_80099DA0(&c, &e, 1);
+        func_800998D0(pb, &a, &c);
+        func_80099718(&f, VEC61(D_800CBE48), 3);
+        func_800998D0(&r, pb, &f);
+        VecCopyL61(VEC61(D_800CBE18), &r);
+        func_80099690(VEC61(D_800CBE18), n2);
+        VecCopyL61(VEC61(D_800CBE28), VEC61(D_800CBDF8));
+        VecCopyL61(VEC61(D_800CBE38), VEC61(D_800CBE48));
+    } else {
+        SetVec61(&r, 0, 0, 0);
+        D_800CBDCA = o->m_6E;
+        o->m_58 &= ~0x20;
+        VecCopyL61(VEC61(D_800CBDF8), &r);
+        VecCopyL61(VEC61(D_800CBE48), &o->m_0C);
+    }
 }
 
 // And read

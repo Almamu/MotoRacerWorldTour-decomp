@@ -121,7 +121,9 @@ struct Run57 {
     Hold57 *m_10;
 };
 struct Game57 {
-    u8 m_00[0x378];
+    u32 m_00;
+    u32 m_04; // 2: the race's times shown
+    u8 m_08[0x370];
     Run57 *m_378;
 };
 
@@ -191,7 +193,12 @@ void func_8008350C(Txt57 *t, int i);
 void func_8008388C(Hud57 *h, int i, int k, Box57 *w, int flags, int c);
 void func_800831BC(Txt57 *t, int i, int k, Box57 *w, int flags);
 short func_800803C4(int a, char *b);
+int func_80083E78(Hud57 *h, int i);
+char *func_800A5F90(char *d, int v);
+char *func_8005C424(Game57 *g, int i);
+char *strcpy(char *d, const char *s);
 }
+extern u8 *D_800CC0A4; // the stars' image
 
 // A name shown on its own line: its font, place, width and image
 struct Label57 {
@@ -594,7 +601,90 @@ void func_80083E14(Hud57 *h, int i, int a, int t, int v) {
     h->m_7C[i] = a;
 }
 
+/* Player i's message drawn: its text, its image with the value beside it,
+ * and five stars, those past the score dimmed; whether there was one. */
+#ifdef NON_MATCHING
+// In the original's shape; left: the saved registers (the original keeps i * 4 twice, in $fp and $s3, and spills only h->m_84's base; here i * 4 is spilled) and the value's placement around them (151 off).
+int func_80083E78(Hud57 *h, int i) {
+    int r = 0;
+
+    if (h->m_7C[i]) {
+        int x = h->m_10[i];
+        int y = h->m_0C[i];
+        int k, n, step;
+        u8 *img;
+
+        r = 1;
+        D_800C89D0 = 0;
+        if (D_800C89D4 != 8 || D_800C89D5) {
+            D_800C89D4 = 8;
+            D_800C89D5 = 0;
+            func_80080F8C();
+        }
+        if (D_800C89D8 != 0xFFFFFF) {
+            D_800C89D8 = 0xFFFFFF;
+            func_80080F8C();
+        }
+        func_80080040((int)D_800CBD5C, h->m_3C[i], x, y, 0);
+        if (h->m_84[i]) {
+            u8 *m = (u8 *)h->m_84[i];
+            int w = (m[4] - m[0] + 1) >> 1;
+            int hh = (m[9] - m[1] + 1) >> 1;
+            int f = 1;
+            int v;
+
+            y = y + 3 + *D_800CBD5C;
+            v = h->m_14[i];
+            if ((u32)(h->m_7C[i] - 3) >= 2 || (D_800C5E14->m_04 & 2)) {
+                char buf[16];
+                char *t = func_800A5F90(buf, v);
+
+                if (!v) {
+                    f = 3;
+                } else if (v < 1000) {
+                    char *u;
+
+                    if (v >= 100) {
+                        f = 0;
+                    }
+                    *t++ = ' ';
+                    u = func_8005C424(D_800C5E14, 0x31);
+                    if (u) {
+                        strcpy(t, u);
+                    }
+                }
+                D_800C89D0 = 0x110;
+                if (D_800C89D8 != 0xFF) {
+                    D_800C89D8 = 0xFF;
+                    func_80080F8C();
+                }
+                func_80080040((&D_800CBD58)[f], buf, x + w, y + hh, 0);
+            }
+            D_800C885C = 0;
+            D_800C885D = 0x80;
+            func_80077BE4(h->m_84[i], 0, x, y);
+        }
+        x = h->m_18[i];
+        y = h->m_1C[i];
+        n = h->m_24[i] * 5 >> 12;
+        img = D_800CC0A4;
+        step = img[4] - img[0] + 3;
+        for (k = 0; k < 5; k++) {
+            if (n >= k) {
+                D_800C885C = 0;
+            } else {
+                D_800C885C = 4;
+            }
+            D_800C885D = 0x80;
+            func_80077BE4((int)img, 0, x, y);
+            x += step;
+        }
+    }
+    return r;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_57", func_80083E78);
+#endif
 
 /* Value i, from the node or its parents. */
 int func_800841BC(Node57 *n, int i, int force) {

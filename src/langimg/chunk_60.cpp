@@ -25,24 +25,45 @@ struct Buf60 {
 
 // Something with eight halfwords at 0x5C
 // An entry of a list, with flags for each parity of the frame
+// A pool of 0x68-byte items
+struct Pool60 {
+    int m_00;
+    u8 *m_items;
+    u8 **m_free;
+    short m_0C, m_0E;
+};
+
+struct Node60;
 struct Ent60 {
-    u8 m_00[4];
+    Ent60 *m_prev;
     Ent60 *m_next;
-    u8 m_08[0x24];
+    u8 m_08[4];
+    struct Node60 *m_0C[2]; // per parity: nodes given back to the list at 0x3C
+    struct Node60 *m_14[2];
+    struct Node60 *m_1C[2]; // and to the list at 0x4C
+    struct Node60 *m_24[2];
     u16 m_frame; // 0x2C
     s8 m_done[2];
     u8 m_30[5];
     s8 m_35;
-    u8 m_36[2];
+    u8 m_36;
+    u8 m_37; // bits 0 and 1: kept for each parity
     int m_38;
+    int *m_3C;
+    short m_40; // its id
 };
 
 struct Cnt60 {
     u8 m_00[8];
     u16 m_08; // the frame
-    u8 m_0A[0x22];
-    Ent60 *m_2C;
-    u8 m_30[0x2C];
+    u8 m_0A[2];
+    u8 m_0C[0x20]; // its ids (Ids60)
+    union {
+        Ent60 *m_2C;          // the entries in use
+        struct Pool60 m_pool; // in their pool
+    };
+    u8 m_3C[0x10]; // two lists (List60)
+    u8 m_4C[0x10];
     short m_5C[8];
 };
 
@@ -56,14 +77,6 @@ struct List60 {
     short m_n;
     u8 m_04[4];
     Node60 **m_nodes;
-};
-
-// A pool of 0x68-byte items
-struct Pool60 {
-    int m_00;
-    u8 *m_items;
-    u8 **m_free;
-    short m_0C, m_0E;
 };
 
 // A pool of items of any size (0x10 bytes)
@@ -260,6 +273,7 @@ void func_8008A01C(Pool60 *p);
 void func_8008A70C(struct Hold60 *h, Want60 *w);
 void func_8008A1D0(Hold60 *h);
 void func_8008A220(Cnt60 *c);
+void func_8008A518(Cnt60 *o);
 void func_8008A4E4(List60 *l, Node60 *n);
 void *func_800B5990(int n, int size);
 void ClearOTagR(int *ot, int n);
@@ -267,7 +281,7 @@ void *memset(void *p, int c, size_t n);
 int func_8009574C(Item60 *o, int a);
 extern Virt60 *D_800CBDC4;
 extern int D_800CBDC0;
-extern int D_800C8C70_[] asm("D_800C8C70"); // also read here as an array
+extern int D_800C8C70_far[]; // D_800C8C70 by its second name, not through $gp
 
 void func_80089AA4(Pieces60 *o);
 Hold60 *func_8008A06C(Hold60 *h);
@@ -494,7 +508,7 @@ int func_800897FC(Buf60 *b, int a, int n) {
 }
 
 #ifdef NON_MATCHING
-/* D_800C8C70 is read here with lui and lw into one register, not through $gp as elsewhere in the file (2 off) */
+/* D_800C8C70 is read here with lui and lw, not through $gp as elsewhere in the file: through its second name D_800C8C70_far the address is right; left is the value loaded into $v0 where the original uses $v1, the lui's register (2 off) */
 /* The frame's ordering table cleared. */
 int func_800898C4(Buf60 *b) {
     if (!b->m_10) {
@@ -502,7 +516,7 @@ int func_800898C4(Buf60 *b) {
     }
     ClearOTagR(b->m_10 + b->m_0C * D_800B8868, b->m_0C);
     func_800895D8();
-    return D_800C8C70_[0] != 0;
+    return D_800C8C70_far[0] != 0;
 }
 #else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_60", func_800898C4);
@@ -783,7 +797,74 @@ void func_8008A4E4(List60 *l, Node60 *n) {
     l->m_n = i;
 }
 
+/* The entries past their frame released: their nodes given back for this
+ * parity, and those two frames old freed. */
+#ifdef NON_MATCHING
+// Only the constant 1 for the release test: the original builds it in $a2, GCC in $v0 (3 off). frame - 2 kept in $fp through a local set inside the if, the bit masked before the frame test.
+void func_8008A518(Cnt60 *o) {
+    int frame = o->m_08;
+    Ent60 *e = o->m_2C;
+    int par = frame & 1;
+
+    if (e) {
+        int old = frame - 2;
+
+        do {
+            int rm = 0;
+            int f = (s8)e->m_37;
+            Ent60 *next;
+
+            if (par) {
+                f >>= 1;
+            }
+            next = e->m_next;
+            f &= 1;
+            if (e->m_frame != frame || f) {
+                if (e->m_0C[par]) {
+                    func_8008A4E4((List60 *)o->m_3C, e->m_0C[par]);
+                    e->m_0C[par] = 0;
+                }
+                if (e->m_14[par]) {
+                    func_8008A4E4((List60 *)o->m_3C, e->m_14[par]);
+                    e->m_14[par] = 0;
+                }
+                if (e->m_1C[par]) {
+                    func_8008A4E4((List60 *)o->m_4C, e->m_1C[par]);
+                    e->m_1C[par] = 0;
+                }
+                if (e->m_24[par]) {
+                    func_8008A4E4((List60 *)o->m_4C, e->m_24[par]);
+                    e->m_24[par] = 0;
+                }
+                e->m_done[par] = 0;
+                if (frame - e->m_frame >= 2) {
+                    e->m_frame = old;
+                    rm = 1;
+                }
+            }
+            if (rm == 1) {
+                Pool60 *p;
+
+                *e->m_3C = 0;
+                func_80089E24((Ids60 *)o->m_0C, e->m_40);
+                p = &o->m_pool;
+                if (e->m_next) {
+                    e->m_next->m_prev = e->m_prev;
+                }
+                if (e->m_prev) {
+                    e->m_prev->m_next = e->m_next;
+                } else {
+                    o->m_2C = e->m_next;
+                }
+                p->m_free[p->m_0C++] = (u8 *)e;
+            }
+            e = next;
+        } while (e);
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_60", func_8008A518);
+#endif
 
 // An item taken from the pool and put at the head of its list, or 0
 static inline Node68 *Take60(Pool60 *p) {

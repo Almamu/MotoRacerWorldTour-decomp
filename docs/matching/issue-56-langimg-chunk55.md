@@ -12,7 +12,7 @@ What's here:
 
 One file, `src/langimg/chunk_55.cpp`, 0x8007F294-0x80081270.
 
-20 functions: 13 match, 3 are parked, 4 are still asm.
+20 functions: 13 match, 5 are parked, 2 are still asm.
 
 ## The settings
 
@@ -61,9 +61,9 @@ globals from `D_800C89D0` on.
 | `func_8007F2AC` | matches | a sprite's two fields |
 | `func_8007F2C8` | matches | a pair's value |
 | `func_8007F33C` | parked | a string's width with its kerning: 92 off |
-| `func_8007F5E8` | asm | 216 instructions |
+| `func_8007F5E8` | parked | a text's size, every line: the previous character's register (88 off) |
 | `func_8007F948` | asm | 446 instructions |
-| `func_80080040` | asm | 225 instructions |
+| `func_80080040` | parked | a text drawn, a sprite each glyph: the frame and the loop's registers (209 off) |
 | `func_800803C4` | parked | a string's width: see above |
 | `func_800804B8`, `func_80080598` | match | characters to the font's symbols and back |
 | `func_80080678` | matches | a value pulsed |
@@ -82,3 +82,24 @@ globals from `D_800C89D0` on.
   stay live in `$a0`-`$a3` until that call and the result goes to `$t0`.
   Both functions now take `(void *font, void *t, int x, int y)` (the
   callee's asm reads all four).
+
+## The `$fp` pass
+
+Two of the functions with nine saved registers, both parked:
+- `func_8007F5E8` is `func_8007F33C` for every line (the widest line's
+  width and the height packed in a word, the first line's width apart).
+  Written as that one, it has the original's shape once the kerning table
+  is read through a pointer set where it's used (`s8 *kt = (s8 *)f->m_18`,
+  hoisted as the original's base at 0x10) and the space's glyph indexed
+  from the font (`((u8 *)f)[(c - f->m_02) * 4 + 0x1A]`). Left, as in
+  `func_8007F33C`: the previous character in `$a1` where the original
+  keeps it in `$t0`, which moves the constants and the spacing along
+  (88 off).
+- `func_80080040` draws a text, a sprite a glyph (codes 1 and 2 for a
+  colour and an icon, D_800C89D0's flags for its alignment), and gives
+  back its box. As `func_800803C4`, the loop isn't one to GCC in the
+  original (nothing hoisted under `-fmove-all-movables`): a `goto` gives
+  that. Left: the original's frame of 0x48 (the last glyph and the
+  height's word spilled and reloaded through `$s7`), the string copied to
+  `$s1` only past the font's test, and the loop's values in other
+  temporaries (209 off).

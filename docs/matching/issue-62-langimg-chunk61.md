@@ -12,7 +12,7 @@ What's here:
 
 One file, `src/langimg/chunk_61.cpp`, 0x8008B208-0x8008D168.
 
-23 functions: 14 match, 2 are parked, 7 are still asm.
+23 functions: 15 match, 2 are parked, 6 are still asm.
 
 ## The settings
 
@@ -54,7 +54,7 @@ globals.
 |---|---|---|
 | `func_8008B208`, `func_8008B364`, `func_8008B500`, `func_8008B65C`, `func_8008B7F8` | asm | 88 to 105 instructions |
 | `func_8008B998` | parked | a point against a zone's planes: the last tests' branches |
-| `func_8008BA50` | asm | 152 instructions |
+| `func_8008BA50` | matches | a plane entered: its easing in set up, or the camera put there |
 | `func_8008BCB0` | parked | the camera along its path: a layout shift |
 | `func_8008C500` | matches | the texture of a bike's track point by the lap |
 | `func_8008C678` | matches | the nearest zone |
@@ -110,3 +110,14 @@ What got it there:
   - both "return 0" exits through one `none:` label after the normal
     return, as the original lays them out;
   - `func_8008BA50` takes the texture (`$a0`).
+
+## The `$fp` pass
+
+`func_8008BA50` matches: a plane entered sets up the camera's easing in
+(its move and where it looks from blended over the plane's frames into
+the vectors at 0x800CBE08-0x800CBE40) or puts the camera there at once.
+The struct copies go through `VecCopyL61` (the first word through the
+stack slot, the others through the address, as the original), the zeroed
+vector through `SetVec61`; both moved above it. One vector's address held
+in a pointer local (`Vec61 *pb = &b`) gives the two scratch vectors the
+original's `$s4` and `$s5`.
