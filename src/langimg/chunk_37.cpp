@@ -744,11 +744,12 @@ static inline void Laps37(Run37 *r) {
     r->m_14 *= n;
 }
 
-#ifdef NON_MATCHING
-// 3 off: in the laps product the original copies the run ($a0 to $a2, in the first test's delay slot) and reads and writes the laps through the copy; here GCC uses $a0 throughout.
+// The race started: the sprites' flags by mode, the laps to run, the bikes numbered
 int func_8005C648(Own37 *o) {
     int r0 = 0;
-    int i, j, k;
+    int i;
+    Run37 *run; // the run once more: the original's copy of it for the laps
+    int j, k;
     Run37 *r;
 
     o->m_378->m_1E08 = 1;
@@ -817,7 +818,7 @@ int func_8005C648(Own37 *o) {
             o->m_378->m_14 += e->m_08;
             e = e->m_50;
         } while (e != h);
-        r = o->m_378;
+        r = run = o->m_378;
         Laps37(r);
         r = o->m_378;
     }
@@ -832,9 +833,6 @@ int func_8005C648(Own37 *o) {
     }
     return r0;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_37", func_8005C648);
-#endif
 
 #ifdef NON_MATCHING
 // The race display's layout, written in full: the original keeps the first loop's counter in a saved register shared with the second loop ($s2) and loads D_800CC088 before the first store; here the first counter is a temporary and the text's height is reloaded in another order (165 off).
