@@ -53,7 +53,8 @@ globals.
 | `func_800764BC` | matches | a value passed to a global, then a call |
 | `func_80076504` | parked | an angle within half a turn: the angle's register |
 | `func_80076568`, `func_80076600` | match | destructors |
-| `func_80076658`, `func_80076948`, `func_80076BD8`, `func_80076E20`, `func_8007702C` | asm | 131 to 239 instructions |
+| `func_80076658`, `func_80076948` | match | a mesh's polygons copied to and from its primitives |
+| `func_80076BD8`, `func_80076E20`, `func_8007702C` | asm | 131 to 239 instructions |
 
 ## Fourth pass
 
@@ -63,3 +64,17 @@ globals.
   and `$t0`/`$t1` here, and the differences' loads come in another order
   (104 off, the structure the same). The four nodes are read before the
   copies, as the original's.
+
+## $fp pass
+
+- **`func_80076658`** and **`func_80076948`** (a mesh's polygons copied
+  back from, and out to, its model's primitives) match, and chunk_50 now
+  builds with `-fmove-all-movables`: both hoist the inner loop's
+  constants out of the outer loop, and every other function in the chunk
+  stays identical under the flag. The inner loops are `do`/`while`s with
+  no entry test; the 24-bit colour words are indexed as
+  `((u32 *)poly)[k + 2]`, which gives the original's `k * 4 + 8` address;
+  the colour bytes go through one pointer copied and then stepped by 4
+  (`cb = &poly->m_00[k]; ca = cb; cb += 4;`); `func_80076658` steps a
+  separate pointer to the first colour word, before the polygon; and
+  `func_80076948` takes the destination's address before the source's.

@@ -71,3 +71,15 @@ stack argument's load scheduled earlier, 26 off).
   shifts come in the other order, the fourth UV pair is read later, and
   the ordering table's index is tested as `len < 2` where the original has
   `1 < len`. This texture's fourth UV pair is at 0xA, not `UiTexture`'s 0xC.
+
+## $fp pass
+
+- **`func_8007792C`** (a mesh's points set from its source, rotated and
+  normalised when it has an angle) is parked, 4 off. It has one exit
+  through a result variable; both sources are read before they're tested;
+  the copies go through short locals; the model's point table is read
+  before the indices. `func_80099718` returns `void`, which the permuter
+  found (18 to 8 off), and the second loop's last call passes `off` and
+  steps it afterwards. Left: the first loop's copy loads x and y into
+  `$v0`/`$v1` the other way round, and no declaration or store order fixes
+  it.

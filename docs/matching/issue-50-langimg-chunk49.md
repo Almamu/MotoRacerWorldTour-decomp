@@ -72,7 +72,7 @@ globals.
 | `func_80073E54` | asm | 225 instructions |
 | `func_80073C2C` | parked | whether a stretch of track is free: an invariant hoisted |
 | `func_800741D8` | parked | the entry nearest ahead: registers |
-| `func_80074270` | asm | 168 instructions |
+| `func_80074270` | matches | the group's entries close ahead of a racer, sorted by distance |
 | `func_80074510` | matches | a base's fields set |
 | `func_80074534` | matches | the owner's constructor |
 | `func_800745AC` | matches | the owner's destructor |
@@ -118,3 +118,13 @@ globals.
   inline function returning a flag through a pointer. Left: the object
   and the second argument in swapped saved registers, and the call's two
   registers.
+
+## $fp pass
+
+- **`func_80074270`** (the group's entries within reach ahead of a racer,
+  sorted nearest first, the near ones told to give way) matches. The
+  entries are walked with a pointer and the in-use test is a `continue`;
+  the sort's inner index reuses the first loop's counter `i`, which puts it
+  in the same saved register as the original's; the comparison is written
+  `d[a] > d[i]`, and the last loop steps its threshold before its counter
+  (`k += 0xA000, i++`).
