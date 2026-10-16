@@ -1243,6 +1243,19 @@ Locals declared before the array keep their place in the frame.
   stack slot across the search, an inline taking its address (`Fn21 *h =
   0; FindFn21(t, name, &h);`, the inline storing `*out` and breaking)
   puts it there; chunk_21's `func_8003CDEC`.
+- **A call wrapped in an inline for a temporary argument.** When the
+  original passes a local's address to one call through a temporary
+  (`addiu $a0, $sp, 0x20` then `addu $a1, $a0`) and only takes it into a
+  saved register at a later use, the call is in a one-line inline
+  (`static inline void Rot07(Vector3 *v) { func_8009887C(v, v); }`): the
+  inline's parameter is a new value, apart from the later uses. chunk_07's
+  `func_800203A8` (15 off to 8).
+- **Copies of one source loaded twice.** When the original copies the
+  same vector twice with every load before every store (the second set
+  of loads through its own pointer), the copies are inlines with locals
+  (`VecCopy07(&e, &s->m_pos); VecCopy07(&g, &s->m_pos);`); struct
+  assignments load and store by turns, and one set of locals is loaded
+  once (chunk_07's `func_800203A8`, 223 off to 57).
 
 ## Register allocation
 

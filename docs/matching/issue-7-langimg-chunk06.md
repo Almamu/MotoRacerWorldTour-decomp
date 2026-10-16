@@ -4,8 +4,7 @@ The racer's arrays and planes, a visibility test through the GTE, the
 static racer's reference count, and a pool of 100 particles. One file,
 `src/langimg/chunk_06.cpp`, 0x8001D760-0x8001F7E4.
 
-17 functions: 12 match, 1 is parked, 4 are still asm (after the near-misses
-pass).
+17 functions: 12 match, 2 are parked, 3 are still asm.
 
 ## The settings
 
@@ -19,6 +18,24 @@ in the branch's delay slot, where split addresses put the `lui`), and
 match only with `-mno-split-addresses`; every other function matched so
 far matches either way. Their reference count, `D_800CA7D0`, and
 `D_800C4D14` are the file's small globals (`$gp`).
+
+## The particles' kinds
+
+`D_800C4994` holds the kinds (`ParticleDef`, 64 bytes): how many a step
+(`m_rate`, 4.12 of the strength), the step, gravity and drag, a speed, two
+spreads (of the direction and of the position), two ramps of three values
+with the life fraction where they turn (`m_mid`), and a life range. A
+random fraction is `D_800CA968[(u8)D_800C4D14++]` (chunk_07 fills the
+table). Each particle gets its two ramps' steps, 16.16 over each part of
+its life; each step is stored twice (first the difference, then the step),
+as the original does.
+
+`func_8001F13C` is written and parked (253 off): the structure and the
+body match, but GCC hoists the sum's stack address into `$s7`, where the
+original keeps the constant 16 and the distance travelled in `$fp`, and
+spills `&pos` and the kind's offset (0x90, 0x80). The two sums at 0x70
+are in their own blocks (the original shares one slot); the absolute
+strength is the branch-free `(s ^ s >> 31) - (s >> 31)`.
 
 ## The functions
 
@@ -34,7 +51,7 @@ far matches either way. Their reference count, `D_800CA7D0`, and
 | `func_8001E458`, `func_8001EAF4` | asm | 424 and 360 instructions |
 | `func_8001F090`, `func_8001F0CC` | match | the static racer's last and first user |
 | `func_8001F10C` | matches | the particles reset |
-| `func_8001F13C` | asm | 336 instructions |
+| `func_8001F13C` | parked | particles of a kind along a segment: hoisting and spills (253 off) |
 | `func_8001F67C` | matches | the particles' frame |
 
 - **An undeclared clobber.** `func_8001DFD8` loads the light matrix
