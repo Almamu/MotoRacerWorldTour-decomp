@@ -1,5 +1,6 @@
 #include "common.h"
 #include "psyq.h"
+#include "stdarg.h"
 
 // A primitive's tag: the next one's address and its length (PsyQ's P_TAG)
 struct Tag59 {
@@ -154,6 +155,10 @@ int func_80088F34(Grid59 *g);
 Tile59 *func_80089190(Grid59 *g, int y, int x);
 Tile59 *func_800891C8(Grid59 *g, int i);
 Tile59 *func_800891E8(Grid59 *g, int i);
+int func_80087A58(Grid59 *g, int a, int b, int c, int n, int w, int h, int k, int fl, va_list ap);
+int func_800960D0(Tile59 *t, int a, int n, int x);
+int func_800961EC(Tile59 *t, int a);
+void *memset(void *p, int c, unsigned int n);
 }
 
 // A movie's decoder: the work buffer and its size in bytes
@@ -369,7 +374,98 @@ void func_80087A14(Grid59 *g, int f) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_59", func_80087A58);
+/* The grid made: its tiles' arrays, the tiles made in order (or backwards), and
+ * values given to the edges' and then the rows' tiles from the arguments. */
+int func_80087A58(Grid59 *g, int a, int b, int c, int n, int w, int h, int k, int fl, va_list ap) {
+    int ok = 0;
+
+    if (a >= 0 && c > 0 && b > 0) {
+        int ok2 = 0;
+
+        if ((g->m_18 = new Tile59 *[a + c * b]) != 0) {
+            Tile59 *t = new Tile59[n];
+
+            g->m_24 = t;
+            if (t) {
+                ok2 = 1;
+            }
+        }
+        if (ok2) {
+            ok = 1;
+        }
+    }
+    if (ok) {
+        int i, j, y, st, v, x;
+
+        g->m_0C = b;
+        g->m_04 = a;
+        g->m_08 = c;
+        g->m_1C = n;
+        g->m_00 = a + c * b;
+        memset(g->m_18, 0, g->m_00 * 4);
+        memset(g->m_24, 0, g->m_1C * sizeof(Tile59));
+        g->m_10 = w;
+        g->m_14 = h;
+        g->m_30 = 0;
+        g->m_2C = k;
+        if (!(fl & 8)) {
+            j = 0;
+            st = 1;
+            if (fl & 0x10) {
+                st = -1;
+                j = g->m_00 - 1;
+            }
+            for (i = 0; i < g->m_04; i++) {
+                func_80088BBC(g, j);
+                j += st;
+            }
+            for (y = 0; y < g->m_0C; y++) {
+                for (i = 0; i < g->m_08; i++) {
+                    func_80088BBC(g, j);
+                    j += st;
+                }
+            }
+        }
+        for (i = 0; i < g->m_04; i++) {
+            Tile59 *t = func_800891C8(g, i);
+
+            if (fl & 4) {
+                v = va_arg(ap, int);
+                x = 0;
+                if (fl & 0x40) {
+                    x = va_arg(ap, int);
+                }
+                func_800960D0(t, g->m_2C, v, x);
+            }
+            if (fl & 2) {
+                func_800961EC(t, va_arg(ap, int));
+            }
+        }
+        if (ap) {
+            for (i = 0; i < g->m_08; i++) {
+                if (fl & 4) {
+                    v = va_arg(ap, int);
+                    x = 0;
+                    if (fl & 0x40) {
+                        x = va_arg(ap, int);
+                    }
+                    for (y = 0; y < g->m_0C; y++) {
+                        func_800960D0(func_80089190(g, y, i), g->m_2C, v, x);
+                    }
+                }
+                if (fl & 2) {
+                    x = va_arg(ap, int);
+                    for (y = 0; y < g->m_0C; y++) {
+                        func_800961EC(func_80089190(g, y, i), x);
+                    }
+                }
+            }
+        }
+    } else {
+        func_80088AA8(g);
+    }
+    return ok;
+}
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_59", func_80087EB0);
 
