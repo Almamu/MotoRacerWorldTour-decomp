@@ -13,12 +13,14 @@ globals set or cleared together.
 
 One file, `src/langimg/chunk_57.cpp`, 0x800831BC-0x80085258.
 
-22 functions: 11 match, 8 are parked, 3 are still asm.
+22 functions: 11 match, 9 are parked, 2 are still asm.
 
 ## The settings
 
 GCC 2.91.66, `-G8`, split addresses, divisions without checks, small
-globals from `D_800CBD24` on.
+globals from `D_800CBD24` on, `-fmove-all-movables` (for
+`func_80084E1C`'s loop constants; the matched functions build the same
+with it).
 
 ## Notes
 
@@ -70,7 +72,7 @@ globals from `D_800CBD24` on.
 | `func_80084720` | asm | 256 instructions |
 | `func_80084B1C` | parked | the dashboard: registers (99 off) |
 | `func_80084D58` | matches | a text drawn while bit 8 of the clock is set |
-| `func_80084E1C` | asm | 271 instructions |
+| `func_80084E1C` | parked | the map's edge markers: 259 off, registers |
 
 ## Group C, continued
 
