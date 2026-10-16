@@ -68,6 +68,7 @@ struct Tab62 {
     s8 *m_08; // the 4-byte entries' ids
     s8 *m_0C; // the 8-byte entries' ids
     Ent62 *m_10;
+    s8 *m_14; // a flag byte per channel (4: eased)
 };
 struct Owner62 {
     u8 m_00[0x10];
@@ -112,6 +113,7 @@ void func_8008E0C4(Anim62 *o, Tab62 *t);
 void func_8008E658(Anim62 *o, Model62 *m);
 void func_8008E1F8(Anim62 *o, Tab62 *t, int on, int *ids);
 void func_8008E354(Anim62 *o, Tab62 *t, int on, int *ids);
+void func_8008E46C(Anim62 *o, Tab62 *t, int on, int *ids);
 }
 
 // All three read first
@@ -437,7 +439,89 @@ void func_8008E354(Anim62 *o, Tab62 *t, int on, int *ids) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_62", func_8008E46C);
+// An entry zeroed: its first value at its offset, the others through its address
+static inline void ZeroEnt62(Ent62 *e) {
+    e->m_00 = 0;
+    e->m_02 = 0;
+    e->m_04 = 0;
+}
+
+/* The channels listed set from the tables: their angles, and their
+ * positions eased towards the 8-byte entries where both the channel's flag
+ * 0x40 and the table's flag 4 are set. */
+void func_8008E46C(Anim62 *o, Tab62 *t, int on, int *ids) {
+    if (on) {
+        Ent62 dent;
+        Pack62 def;
+        int i, next, n;
+        Chan62 *c;
+        Pack62 *src;
+        Ent62 *esrc;
+        s8 *fl;
+        s8 *idx;
+        s8 *eidx;
+        s8 direct;
+
+        c = o->m_08;
+        ZeroEnt62(&dent);
+        def.m_x = 0;
+        def.m_y = 0;
+        def.m_z = 0;
+        i = 0;
+        next = *ids++;
+        src = t->m_04;
+        esrc = t->m_10;
+        fl = t->m_14;
+        idx = t->m_08;
+        eidx = t->m_0C;
+        direct = t->m_03;
+        n = (s8)o->m_00;
+        do {
+            Pack62 *p;
+            Ent62 *e;
+
+            if (direct) {
+                p = src++;
+            } else {
+                p = &def;
+                if (idx && *idx == i) {
+                    p = src++;
+                    idx++;
+                }
+            }
+            if (direct) {
+                e = esrc++;
+            } else {
+                e = &dent;
+                if (eidx && *eidx == i) {
+                    e = esrc++;
+                    eidx++;
+                }
+            }
+            if (next == i) {
+                Pack62 q;
+                int x, y, z;
+
+                int k = *fl;
+
+                if ((c->m_36 & 0x40) && (k & 4)) {
+                    func_8008E054((Node62 *)c, e->m_00, e->m_02, e->m_04);
+                }
+                q = *p;
+                y = q.m_y;
+                z = q.m_z;
+                x = q.m_x;
+                c->m_14.vx = x << 2;
+                c->m_14.vy = y << 2;
+                c->m_14.vz = z << 2;
+                next = *ids++;
+            }
+            fl++;
+            c++;
+            i++;
+        } while (--n);
+    }
+}
 
 void func_8008E658(Anim62 *o, Model62 *m) {
     int n = m->m_00;

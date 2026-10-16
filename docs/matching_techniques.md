@@ -1297,6 +1297,33 @@ two (or two merged into one).
 
 - Declaration order of locals made no difference to registers in the
   cases tried (`FindEntry`); it does decide their stack slots (above).
+- **Nine saved registers (`$fp`).** `$fp` is only the ninth: get the
+  long-lived values and their lives right and it comes. What gave it in
+  the `$fp` pass:
+  - *Pointer locals assigned in the loop.* A stack vector's or matrix's
+    address set just before its use inside the loop body (`po = &out;`)
+    is hoisted by loop.c, in the order they appear, as the original's
+    set-ups before the loop. Declared with an initialiser before the loop
+    they get the registers but set up in the wrong order; plain `&out`
+    expressions aren't hoisted at all (chunk_64's `func_80092684`). One
+    such pointer can also swap two scratch vectors' registers into the
+    original's (chunk_61's `func_8008BA50`).
+  - *A loop invariant set inside an `if`.* `frame - 2` kept in `$fp` came
+    from `if (e) { int old = frame - 2; do { ... } while (e); }`; with a
+    `while` it's computed before the list's test (chunk_60's
+    `func_8008A518`).
+  - *A counter split.* A short loop's counter shared with a long one's
+    takes a saved register; one of its own stays in `$a2` (chunk_74's
+    `func_800A5530`). In the same function, indexing (`imp[i]`) where the
+    source had stepped a pointer let strength reduction make the
+    original's pointer, with its register.
+  - *Spill slots by declaration order.* When values are spilled (`$t1`
+    reloads from 0x10, 0x14, 0x18), their slots follow the locals'
+    declaration order: reorder the declarations to the original's slots.
+- **A pointer to member's call.** `(o->*o->m_2C)(0)`, the member declared
+  `void (Obj::*m_2C)(int)`, gives GCC 2's test of the index (virtual or
+  not) and the delta added, with the object and the member's address in
+  saved registers as the original (chunk_64).
 - **`MIN` and `MAX` as macros.** chunk_67's per-component minimum
   matched as `a->x = MIN67(a->x, b->x)` with `#define MIN67(a, b) ((a) <
   (b) ? (a) : (b))`; the same written as an `if` swapped the third

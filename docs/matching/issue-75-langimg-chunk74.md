@@ -6,8 +6,8 @@ table, `strupr` and `strlwr`, number and time formatting, a small
 overlay loader, cheat-code sequences, and hand-written decoders. One
 file, `src/langimg/chunk_74.cpp`, 0x800A54F0-0x800A7084.
 
-43 functions: 31 match, 6 are hand-written (they stay asm), 5 are
-parked, 1 is still asm.
+43 functions: 32 match, 6 are hand-written (they stay asm), 5 are
+parked.
 
 ## The settings
 
@@ -56,7 +56,7 @@ instructions GCC doesn't emit (`neg`, `add`, `addi`) or handles `$sp` and
 |---|---|---|
 | `func_800A54F0` | matches | empty |
 | `func_800A54F8` | matches | words relocated by a base |
-| `func_800A5530` | asm | a file loaded and its tables fixed up (173 instructions) |
+| `func_800A5530` | matches | a module loaded and linked: its exports, relocations, imports by name, entry points |
 | `func_800A57E4`, `func_800A5888` | match | the timer object's constructor and deleting destructor |
 | `func_800A58B0` | matches | a counter advanced by `m_150 * 64 / 1000` of the game object, and returned |
 | `func_800A5908`, `func_800A594C` | match | the timer's reset and start |
@@ -94,3 +94,16 @@ instructions GCC doesn't emit (`neg`, `add`, `addi`) or handles `$sp` and
   gave the original's two registers, and the frame's slot stored through
   its byte offset (`*(int *)((u8 *)q + (o->m_38 << 2))`), which adds the
   base first as the original does.
+
+## The `$fp` pass
+
+`func_800A5530` matches: a module loaded (`func_800A06AC`), its magic
+checked, its exports given out (address and size), its relocations done
+(`func_800A54F8`), its imports looked up by name in the caller's table
+(0x24 bytes each, the value at 0x20), its entry points given out (or 0
+for -1) and the file shrunk to its code (`func_800B5730`). What it took:
+the first loops' counter apart from the others' (it's in `$a2`, not a
+saved register), `ok` declared before the base, the spilled sizes in the
+original's slots by their declaration order (the imports' count first,
+then the size, then the buffer), the imports indexed (`imp[i]`, strength
+reduced to the original's pointer) and the tail nested in `if (ok)`.

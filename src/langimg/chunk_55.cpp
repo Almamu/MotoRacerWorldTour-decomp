@@ -46,9 +46,23 @@ struct Font55 {
     u8 m_07; // the kerning: a table after the glyphs, or chunk_56's pairs
     u16 m_08;
     u16 m_0A;
-    u8 m_0C[0xC];
+    u8 m_0C[8];
+    u16 m_14; // its palette
+    u16 m_16; // its texture page
     Glyph55 m_18[1];
 };
+// An icon's image: its corners in its page, and the page
+struct Img55 {
+    u8 m_00, m_01;
+    u16 m_02;
+    u8 m_04, m_05;
+    u16 m_06;
+    u8 m_08, m_09;
+};
+// A word stored anywhere
+struct UInt55 {
+    u32 v;
+} __attribute__((packed));
 // An icon: its left and right
 struct Icon55 {
     u8 m_00;
@@ -67,6 +81,18 @@ extern int D_800C89D0;
 extern int D_800C89EC;
 extern int D_800C89F0;
 extern int D_800CBC98;
+extern short D_800C89E4; // the palette, or -1 for the font's
+extern u32 *D_800C8C70;  // the next free GPU packet
+extern u32 *D_800CBDC0;  // the ordering table
+
+// ui.h's ADD_PRIM: links packet p in at ordering table entry ot (lwl/swl on the links' 3 bytes)
+#define ADD_PRIM55(ot, p) \
+    do { \
+        u32 _l, _p; \
+        __asm__ volatile("lwl %0, 2(%2)\n\tsll %1, %3, 8\n\tswl %0, 2(%3)\n\tswl %1, 2(%2)" \
+                         : "=&r"(_l), "=&r"(_p) \
+                         : "r"(ot), "r"(p)); \
+    } while (0)
 extern short D_800CBCD8;
 extern short D_800CBCDA;
 extern short D_800CBCDC;
@@ -80,6 +106,8 @@ void func_8007F294(void);
 void func_8007F2AC(Spr55 *p, u16 a, u16 b);
 int func_8007F2C8(Tab55 *t, u8 a, u8 b);
 int func_8007F33C(Font55 *f, u8 *s);
+void func_80080040(Font55 *f, u8 *s, int x, int y, short *r);
+int func_8007F5E8(Font55 *f, u8 *s, u32 *size, short *first);
 int func_80081330(void *t, int a, int b);
 void func_80080678(void);
 int func_80080F30(void *font, void *t, int x, int y);
@@ -185,11 +213,209 @@ int func_8007F33C(Font55 *f, u8 *s) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_55", func_8007F33C);
 #endif
 
+/* A text's size, every line: its widest line's width in the top half and its
+ * height in the bottom, and the first line's width. */
+#ifdef NON_MATCHING
+// In the original's shape (the glyphs' base hoisted through the kerning table's pointer, the space's glyph indexed from the font); left: the previous character in $a1 where the original keeps it in $t0 (as func_8007F33C's), which moves the constants and the spacing into the next registers (88 off).
+int func_8007F5E8(Font55 *f, u8 *s, u32 *size, short *first) {
+    u8 prev = 0;
+    u16 w = 0;
+    u16 h = 0;
+    u16 max = 0;
+    int c;
+
+    if (first) {
+        *first = 0;
+    }
+    while ((c = *s++) != 0) {
+        switch (c) {
+        case '\n':
+            h += f->m_00 + (s8)f->m_05;
+            if (first && !*first) {
+                *first = w;
+            }
+            if (max < w) {
+                max = w;
+            }
+            w = 0;
+            break;
+        case '\t':
+            w += f->m_06 * 2;
+            break;
+        case ' ':
+            if (f->m_02 <= ' ') {
+                int g = ((u8 *)f)[(c - f->m_02) * 4 + 0x1A];
+
+                w += g + (D_800C89E0 == -1 ? f->m_04 : D_800C89E0);
+            } else {
+                w += f->m_06;
+            }
+            break;
+        default: {
+            u8 i = c - f->m_02;
+
+            if (i < f->m_01) {
+                Glyph55 *g;
+
+                if (f->m_08) {
+                    if (f->m_07) {
+                        int base = ((f->m_01 * f->m_01) & ~3) + 4;
+
+                        if (prev) {
+                            s8 *kt = (s8 *)f->m_18;
+
+                            w += kt[prev - f->m_02 + f->m_01 * i];
+                        }
+                        g = (Glyph55 *)((u8 *)&f->m_18[i] + base);
+                    } else {
+                        if (prev) {
+                            w += func_8007F2C8((Tab55 *)f, prev, c);
+                        }
+                        g = &f->m_18[i] + f->m_08;
+                    }
+                } else {
+                    if (f->m_0A != 0xFFFF && prev) {
+                        int k = func_80081330((*D_800C8D8C)[f->m_07], prev, c);
+
+                        if (k) {
+                            w += (short)(k * f->m_00) / f->m_0A;
+                        }
+                    }
+                    g = &f->m_18[i];
+                }
+                w += g->m_02 + (D_800C89E0 != -1 ? D_800C89E0 : f->m_04);
+            }
+            prev = c;
+        }
+        }
+    }
+    h += f->m_00;
+    if (first && !*first) {
+        *first = w;
+    }
+    if (max < w) {
+        max = w;
+    }
+    *size = max << 16 | h;
+    return 1;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_55", func_8007F5E8);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_55", func_8007F948);
 
+/* A text drawn at x, y (aligned by D_800C89D0's flags): a sprite each glyph,
+ * code 1 and three bytes its colour, code 2 and a byte an icon; the box it
+ * took to r. */
+#ifdef NON_MATCHING
+// Written in full; the loop as a goto (not one to GCC in the original: nothing hoisted, the test at the bottom). Left: the frame (0x48 in the original, spilling the last glyph and the height's word to 0x10 and 0x18 and reloading them through $s7), the string copied into $s1 only past the font's test, and the loop's values in other temporaries ($t1 the packet, $t3 the table, $t4 the colour in the original) (209 off).
+void func_80080040(Font55 *f, u8 *s, int x, int y, short *r) {
+    int h;
+    int x0;
+
+    if (!f) {
+        return;
+    }
+    h = f->m_00;
+    if (s) {
+        int flags = D_800C89D0;
+        Glyph55 *gl;
+        int hy, col, first, last, sp, pal, ys, space;
+        u32 *ot;
+        u32 *p;
+        int c;
+
+        if (flags & 0x30) {
+            int w = func_800803C4(f, s);
+
+            if (flags & 0x10) {
+                w >>= 1;
+            }
+            x -= w;
+        }
+        if (flags & 0x300) {
+            y -= (flags & 0x100) ? h >> 1 : h;
+        }
+        x0 = x;
+        gl = f->m_18;
+        hy = f->m_00 << 16;
+        col = D_800C89DC;
+        first = f->m_02;
+        last = first + f->m_01 - 1;
+        space = f->m_06;
+        ys = y << 16;
+        pal = (D_800C89E4 != -1 ? D_800C89E4 : f->m_14) << 16;
+        col |= 0x64000000;
+        sp = D_800C89E0 != -1 ? D_800C89E0 : f->m_04;
+        space += sp;
+        ot = D_800CBDC0 + 1;
+        p = D_800C8C70;
+        goto next;
+    loop: {
+        if (c >= first && c <= last) {
+            u32 g = *(u32 *)&gl[c - first];
+            int w;
+
+            p[0] = 0x04000000;
+            p[1] = col;
+            p[2] = (x & 0xFFFF) | ys;
+            p[3] = (g & 0xFFFF) | pal;
+            w = (g >> 16) & 0xFF;
+            p[4] = w | hy;
+            ADD_PRIM55(ot, p);
+            p += 5;
+            x += w + sp;
+        } else if (c == ' ') {
+            x += space;
+        } else if (c == 1) {
+            col = (((UInt55 *)(s - 1))->v >> 8) | 0x64000000;
+            s += 3;
+        } else if (c == 2) {
+            Img55 *m = (Img55 *)D_800CC030[*s++];
+
+            p[0] = 0x04000000;
+            if (m) {
+                int w, mh;
+
+                p[1] = 0x64808080;
+                w = m->m_04 - m->m_00 + 1;
+                mh = m->m_09 - m->m_01 + 1;
+                p[3] = *(u16 *)m | m->m_02 << 16;
+                p[4] = (w & 0xFFFF) | mh << 16;
+                p[2] = (x & 0xFFFF) | (ys + ((f->m_00 - mh) >> 1 << 16));
+                ADD_PRIM55(ot, p);
+                p += 5;
+                x = x + 1 + w;
+                p[0] = 0x01000000;
+                p[1] = (m->m_06 & 0x19F) | 0xE1000200;
+                ADD_PRIM55(ot, p);
+                p += 2;
+            }
+        }
+    }
+    next:
+        if ((c = *s++) != 0) {
+            goto loop;
+        }
+        p[0] = 0x01000000;
+        p[1] = (f->m_16 & 0x19F) | (D_800C89D4 & 3) << 5 | 0xE1000200;
+        ADD_PRIM55(ot, p);
+        p += 2;
+        D_800C8C70 = p;
+    } else {
+        x0 = x;
+    }
+    if (r) {
+        r[0] = x0;
+        r[1] = y;
+        r[2] = x - x0;
+        r[3] = h;
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_55", func_80080040);
+#endif
 
 #ifdef NON_MATCHING
 // The loop isn't one to GCC in the original (no constant hoisted, the test at the bottom): a goto gives that shape, but the start and the registers differ

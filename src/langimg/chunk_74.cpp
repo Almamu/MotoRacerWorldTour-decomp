@@ -107,6 +107,20 @@ int func_800A68BC(int key, Seq74 *s, int n);
 void func_800A59D4(Obj74 *o);
 int func_800A6168(s8 *d, s8 *fmt, va_list ap);
 int func_800A54F8(u8 *base, int *offs, int n);
+// A name the module's imports are looked up by, and its value
+struct Sym74 {
+    char m_name[0x20];
+    int m_20;
+};
+// Where a module's export goes: its address and its size
+struct Exp74 {
+    u8 **m_ptr;
+    int *m_size;
+};
+extern char D_800C9F38[]; // the modules' magic
+int bcmp(const void *a, const void *b, int n);
+void *func_800B5730(void *p, int size);
+int func_800A5530(char *name, u8 ***out, int n, Sym74 *syms, int nsyms, Exp74 *exps);
 void func_800A5888(void *p, int flags);
 void func_800A5908(Obj74 *o);
 void func_800A5CBC(Obj74 *o);
@@ -137,7 +151,78 @@ int func_800A54F8(u8 *base, int *offs, int n) {
     return 1;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_74", func_800A5530);
+/* A module loaded and linked: its exports given out, its relocations done,
+ * its imports looked up by name, and its entry points given out; 0 when any
+ * of it fails. */
+int func_800A5530(char *name, u8 ***out, int n, Sym74 *syms, int nsyms, Exp74 *exps) {
+    int ok = 0;
+    u8 *base = 0;
+    int *p;
+    int cnt, i;
+    int nrel, nimp, nstr;
+    int size;
+    int *buf;
+    int *rel, *imp;
+    char *strs;
+    int *ents;
+
+    buf = (int *)func_800A06AC(name, 0, 0);
+    if (buf && !bcmp(buf, D_800C9F38, 4)) {
+        int e;
+
+        base = (u8 *)(buf + 2);
+        size = buf[1];
+        p = (int *)(base + size);
+        cnt = *p++;
+        for (e = 0; e < cnt; e++) {
+            *exps[e].m_ptr = base + *p++;
+        }
+        for (e = 0; e < cnt; e++) {
+            *exps[e].m_size = *p++;
+        }
+        nrel = *p++;
+        nimp = *p++;
+        nstr = *p++;
+        if (*p++ == n) {
+            rel = p;
+            imp = rel + nrel;
+            strs = (char *)(imp + nimp);
+            ents = (int *)(strs + nstr * 32);
+            ok = (int)buf;
+        }
+    }
+    if (ok) {
+        func_800A54F8(base, rel, nrel);
+        for (i = 0; i < nimp; i++) {
+            int found = 0;
+            int k = *(int *)(base + imp[i]);
+            int j;
+
+            for (j = 0; j < nsyms; j++) {
+                if (!strcmp(strs + k * 32, syms[j].m_name)) {
+                    found = 1;
+                    *(int *)(base + imp[i]) = syms[j].m_20;
+                    break;
+                }
+            }
+            if (!found) {
+                ok = 0;
+                break;
+            }
+        }
+        if (ok) {
+            for (i = 0; i < n; i++) {
+                if (ents[i] != -1) {
+                    *out[i] = base + ents[i];
+                } else {
+                    *out[i] = 0;
+                }
+            }
+            ok = (int)func_800B5730(buf, size + 8);
+        }
+    }
+    return ok;
+}
 
 Obj74 *func_800A57E4(Obj74 *o) {
     o->m_00 = 0;

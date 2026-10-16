@@ -111,12 +111,20 @@ struct Play64 {
     Pose64 m_2C; // the pose it started from
 };
 
+struct Kind64 {
+    u8 m_00[0x1E];
+    short m_1E; // its scale's shift
+};
 // An object of the list
 struct Obj64 {
-    u8 m_00[0x10];
+    u8 m_00[4];
+    Kind64 *m_04;
+    u8 m_08[8];
     Vec64 m_10;
     SVECTOR m_1C;
-    u8 m_24[0x14];
+    u8 m_24[8];
+    void (Obj64::*m_2C)(int a); // how it is drawn
+    u8 m_34[4];
     Track64 m_38;
     Play64 m_4C;
     struct Obj64 *m_94;
@@ -128,6 +136,11 @@ struct Obj64 {
 
 struct List64 {
     Obj64 *m_00;
+};
+// What the objects are seen from (its matrix at 0x60)
+struct Eye64 {
+    u8 m_00[0x60];
+    MATRIX m_60;
 };
 
 extern Ent64 D_800CBE60;           // the default 8-byte entry
@@ -157,6 +170,10 @@ void func_800928CC(void *a, SVECTOR *v);
 MATRIX *func_800985A8(MATRIX *a, MATRIX *b);
 void func_800910EC(Anim64 *a, MATRIX *root);
 void func_800928FC(Ent64 *d, Vec64 *s);
+Vec64 *func_800995C4(Vec64 *v, int len);
+MATRIX *func_80098674(MATRIX *a, MATRIX *b, MATRIX *out); // a product
+void func_8009887C(long *in, long *out);
+void func_80092684(List64 *l, Eye64 *e);
 }
 
 /* The channels posed in the model's order under a root matrix: each one's
@@ -467,7 +484,57 @@ void func_800925A8(List64 *l, int a) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_64", func_80092684);
+// The identity, rows from the diagonal out
+static inline void IdentMat64(MATRIX *m) {
+    m->m[0][0] = 0x1000;
+    m->m[0][1] = m->m[0][2] = m->t[0] = 0;
+    m->m[1][1] = 0x1000;
+    m->m[1][0] = m->m[1][2] = m->t[1] = 0;
+    m->m[2][2] = 0x1000;
+    m->m[2][0] = m->m[2][1] = m->t[2] = 0;
+}
+
+/* Each object on: posed under the eye's matrix, then drawn through its
+ * pointer to member. */
+// a - b, all six loads first
+static inline void VecSub64(Vec64 *d, Vec64 *a, Vec64 *b) {
+    long ax = a->m_00;
+    long ay = a->m_04;
+    long az = a->m_08;
+    long bx = b->m_00;
+    long by = b->m_04;
+    long bz = b->m_08;
+
+    ax -= bx;
+    ay -= by;
+    az -= bz;
+    d->m_00 = ax;
+    d->m_04 = ay;
+    d->m_08 = az;
+}
+
+void func_80092684(List64 *l, Eye64 *e) {
+    Obj64 *o;
+
+    for (o = l->m_00; o; o = o->m_94) {
+        if (o->m_B0) {
+            MATRIX out, m;
+            Vec64 d;
+            MATRIX *po;
+            Vec64 *mt;
+
+            IdentMat64(&m);
+            func_800995C4((Vec64 *)e->m_60.t, o->m_04->m_1E);
+            po = &out;
+            func_80098674(&e->m_60, &m, po);
+            mt = (Vec64 *)m.t;
+            VecSub64(&d, mt, (Vec64 *)e->m_60.t);
+            func_8009887C(&d.m_00, out.t);
+            func_800910EC((Anim64 *)o, po);
+            (o->*o->m_2C)(0);
+        }
+    }
+}
 
 static inline void func_80092824_vzero(Vec64 *v) {
     v->m_00 = 0;

@@ -8,7 +8,7 @@ dispatched once for each parity of the frame, and a menu's entries
 searched and chosen. One file, `src/langimg/chunk_60.cpp`,
 0x80089200-0x8008B208.
 
-51 functions: 43 match, 3 are parked, 5 are still asm.
+51 functions: 43 match, 4 are parked, 4 are still asm.
 
 ## The settings
 
@@ -23,13 +23,14 @@ small globals (`langimg.chunk_60_*`), as chunk_71 and chunk_72.
 | `func_800892DC` to `func_800893C8` | match | an entry chosen, its menu sound |
 | `func_800893E8` | matches | a projection's derived values (third pass) |
 | `func_80089508` to `func_800897FC` | match | the frame buffer: constructors, destructor, its frames, its allocation |
-| `func_800898C4` | parked | the frame's ordering table cleared: a global read without `$gp` here (2 off) |
+| `func_800898C4` | parked | the frame's ordering table cleared: through `D_800C8C70_far`, the loaded value's register (2 off) |
 | `func_80089930` to `func_80089C7C` | match | the pools and ids: constructors, destructors, allocation, reset |
 | `func_80089CF4` | parked | a reference to an id: registers (41 off) |
 | `func_80089E24` to `func_8008A220` | match | an id released, the pool of 0x68-byte items, the holder |
 | `func_8008A250` | asm | 166 instructions |
 | `func_8008A4E4` | matches | a chain of nodes added to a list |
-| `func_8008A518`, `func_8008A91C` | asm | 125 and 400 instructions |
+| `func_8008A518` | parked | the entries past their frame released: the constant 1's register (3 off) |
+| `func_8008A91C` | asm | 400 instructions |
 | `func_8008A70C` | parked | a sprite's node from the pool: one instruction shifted (121 off) |
 | `func_8008AF5C` | matches | the entries of this frame dispatched once |
 | `func_8008B000` | asm | 91 instructions |
@@ -75,3 +76,20 @@ small globals (`langimg.chunk_60_*`), as chunk_71 and chunk_72.
   the work, and `i--` last: GCC doesn't rotate that loop, so it keeps the
   original's test at the top and indexes the entries afresh each time.
   As a `for` loop it was rotated (13 off); a `goto` loop came out worse.
+
+## The `$fp` pass
+
+- `func_8008A518` releases the entries past their frame: each one's four
+  node chains for this parity given back to the lists at 0x3C and 0x4C
+  (`func_8008A4E4`), and those two frames old unlinked, their id released
+  and put back in the pool. `Ent60` and `Cnt60` filled in for it (the
+  entries' list at 0x2C is the pool's first word). `frame - 2` sits in
+  `$fp` in the original: a local set inside an `if (e)` around a `do`
+  loop gives that (`while` computes it before the test; chunk_60 can't
+  take `-fmove-all-movables`, which breaks others). Left: the constant 1
+  for `rm == 1` in `$a2`, where GCC builds it in `$v0` (3 off).
+- `func_800898C4` reads `D_800C8C70` through a second linker symbol now,
+  `D_800C8C70_far` in `linker/langimg/undefined_syms_manual.txt` (see "A
+  second linker symbol" in the techniques): the address is the original's,
+  `lui` and `lw`. Left: the value loaded into `$v0`, where the original
+  loads it into `$v1`, the `lui`'s register (2 off; the scalar form is 3).

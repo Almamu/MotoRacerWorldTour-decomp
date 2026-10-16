@@ -33,12 +33,16 @@ struct Rng49 {
     int m_04; // the seed
 };
 struct Pos49 {
-    u8 m_00[0x208];
+    u8 m_00[0x10C];
+    int m_10C; // its lap's length
+    u8 m_110[0xF8];
     int m_208;
 };
 struct Who49 {
     u8 m_00[0x30];
     Pos49 *m_30;
+    u8 m_34[0x155];
+    s8 m_189;
 };
 struct Trk49 {
     u8 m_00[0x2C];
@@ -136,6 +140,9 @@ extern int D_800C860C; // each point's distance, 11 per section
 void func_80073AA0(void *g, int k, int *lo, int *hi);
 Ent49 *func_8007345C(Pool49 *p, Rng49 *r);
 int func_8007351C(Pool49 *p);
+int func_800A6FA0(int a, int b, int c);
+void func_80072D80(Ent49 *o, int f);
+int func_80074270(Pool49 *g, Who49 *b, Trk49 *c);
 Ent49 *func_800741D8(Pool49 *p, int *best, Who49 *w, Trk49 *t);
 Base49 *func_80074510(Base49 *b);
 Obj49 *func_80074534(Obj49 *o);
@@ -380,7 +387,77 @@ Ent49 *func_800741D8(Pool49 *p, int *best, Who49 *w, Trk49 *t) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_49", func_800741D8);
 #endif
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_49", func_80074270);
+int func_80074270(Pool49 *g, Who49 *b, Trk49 *c) {
+    Pos49 *m = b->m_30;
+    int ok = 0;
+    int i, n, len, pos;
+    s8 ids[24];
+    int w[20];
+    int d[20];
+
+    if (b->m_189 || m->m_10C <= 0x1DFFF) {
+        ok = 1;
+    }
+    if (!ok) {
+        return 0;
+    }
+    len = c->m_2C;
+    pos = m->m_208;
+    n = 0;
+    {
+        Ent49 *e = g->m_34;
+
+        for (i = 0; i < g->m_30; i++, e++) {
+            if (!(e->m_80 & 1)) {
+                continue;
+            }
+            {
+                int k = func_800A6FA0(e->m_34, e->m_34, 0x1E000) << 1;
+                int t = pos - e->m_38;
+
+                if (t < 0) {
+                    t += len;
+                }
+                if (t < k + 0xFA000) {
+                    ids[n] = i;
+                    w[n] = k;
+                    d[n] = t;
+                    n++;
+                }
+            }
+        }
+    }
+    {
+        int a;
+
+        for (a = 0; a < n - 1; a++) {
+            for (i = a + 1; i < n; i++) {
+                if (d[a] > d[i]) {
+                    int t = d[i];
+                    s8 y = ids[i];
+                    int z = w[i];
+
+                    ids[i] = ids[a];
+                    w[i] = w[a];
+                    d[i] = d[a];
+                    ids[a] = y;
+                    w[a] = z;
+                    d[a] = t;
+                }
+            }
+        }
+    }
+    {
+        int k = 0x7000;
+
+        for (i = 0; i < n; k += 0xA000, i++) {
+            if (w[i] >= d[i] - k) {
+                func_80072D80(&g->m_34[ids[i]], 0);
+            }
+        }
+    }
+    return n >= 4;
+}
 
 Base49 *func_80074510(Base49 *b) {
     b->m_00 = 0;

@@ -13,7 +13,7 @@ globals set or cleared together.
 
 One file, `src/langimg/chunk_57.cpp`, 0x800831BC-0x80085258.
 
-22 functions: 11 match, 7 are parked, 4 are still asm.
+22 functions: 11 match, 8 are parked, 3 are still asm.
 
 ## The settings
 
@@ -62,7 +62,7 @@ globals from `D_800CBD24` on.
 | `func_80083B08` | matches | a message's slide stepped |
 | `func_80083D18` | matches | a timer set |
 | `func_80083D40`, `func_80083E14` | match | a message shown |
-| `func_80083E78` | asm | 209 instructions |
+| `func_80083E78` | parked | a player's message drawn, its value and five stars: the saved registers (151 off) |
 | `func_800841BC`, `func_8008422C` | match | a node's values |
 | `func_800842E8` | asm | 241 instructions |
 | `func_800846AC` | parked | six globals set: the gp store's place |
@@ -116,3 +116,14 @@ original keeps it in a register.
   the original (#298's "Saved register order"). Left: the text call's
   arguments in another order and the measured width reloaded from the
   stack.
+
+## The `$fp` pass
+
+`func_80083E78` draws a player's message: its text, its image with a value
+beside it (in the font by its size, and a unit from `func_8005C424`), then
+five stars, those past the score dimmed. In the original's shape; the
+stars' test written `if (n >= k)` for the original's branch. Left: the
+saved registers. The original keeps `i * 4` twice (`$fp`, and a copy in
+`$s3` later reused for the font) and spills only `h->m_84`'s base; here
+`i * 4` is spilled instead and the others move along (151 off). A
+20-minute permuter run found nothing real.

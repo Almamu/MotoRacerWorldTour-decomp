@@ -14,7 +14,7 @@ and a tree of nodes (`Node62`, a child at 0 and a sibling at 8):
   0x0A (`func_8008E658`);
 - the channels' angles (and, with flag 0x40, positions) set from chunk_64's
   tables (`func_8008E0C4`, `func_8008E354`, and `func_8008E1F8` and
-  `func_8008E46C`, still asm);
+  `func_8008E46C`);
 - through the GTE: the sum of a vector's squares (`func_8008D27C`, `sqr`),
   a vector's length (`func_8008D2B0`, through `func_8009923C`), an
   integer square root (`func_8008DFA0`, from the GTE's leading-zero
@@ -22,7 +22,7 @@ and a tree of nodes (`Node62`, a child at 0 and a sibling at 8):
 
 One file, `src/langimg/chunk_62.cpp`, 0x8008D168-0x8008F368.
 
-13 functions: 7 match, 2 are parked, 4 are still asm.
+13 functions: 8 match, 2 are parked, 3 are still asm.
 
 ## The settings
 
@@ -85,7 +85,7 @@ globals.
 | `func_8008E0C4` | parked | the channels from a table: the counts' loads |
 | `func_8008E1F8` | matches | the channels listed, angles and positions |
 | `func_8008E354` | matches | the channels listed, positions cleared |
-| `func_8008E46C` | asm | 123 instructions |
+| `func_8008E46C` | matches | the channels listed, eased where flagged |
 | `func_8008E658` | matches | an animation given a model |
 | `func_8008E70C` | asm | 792 instructions (GTE) |
 
@@ -105,3 +105,13 @@ globals.
 - `func_8008E0C4` (still parked) came from 54 to 41 off: the counts'
   minimum is taken on the values shifted left by 24 (`int a = o->m_00 <<
   24; ... (a < b ? a : b) >> 24`), and the coordinates are read y, z, x.
+
+## The `$fp` pass
+
+`func_8008E46C` matches: `func_8008E1F8`'s channels listed, those with
+flag 0x40 and the table's flag 4 eased (`func_8008E054`) before their
+position is set. What it took: the channel pointer read first, the two
+defaults zeroed before the counters (their bitfield masks are built
+early), the test written `next == i` for the original's operand order,
+and the flag byte read into an `int` before the 0x40 test (the original's
+signed load, early).

@@ -146,8 +146,18 @@ struct Mdl51 {
     Shape51 *m_04;
 };
 // A mesh: its model, its points' indices, the points placed and their offsets
+struct Src51 {
+    u8 m_00[0x14];
+    SVECTOR *m_14; // its points
+};
 struct Mesh51 {
-    u8 m_00[0x38];
+    u8 m_00[0x10];
+    int m_10;
+    int m_14;
+    u8 m_18[0x14];
+    Src51 *m_2C;
+    Src51 *m_30;
+    u8 m_34[4];
     int m_38;
     int m_3C;
     int *m_40;
@@ -156,6 +166,11 @@ struct Mesh51 {
 };
 void func_80099EF4(SVECTOR *out, Pt51 *a, Pt51 *b);
 void func_80077844(Mesh51 *o);
+int func_8007792C(Mesh51 *o);
+SVECTOR *func_80099E84(SVECTOR *v, SVECTOR *a);
+SVECTOR *func_80099EBC(SVECTOR *d, SVECTOR *a, SVECTOR *b);
+void func_80099718(Vec51 *d, Vec51 *s, int k);
+Vec51 *func_80099D48(Vec51 *v, int shift);
 void func_80078280(C51 *o);
 void func_80078458(C51 *o, Vector3 *at);
 void func_80098E9C(Vector3 *v);
@@ -320,7 +335,106 @@ void func_80077844(Mesh51 *o) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_51", func_80077844);
 #endif
 
+#ifdef NON_MATCHING
+// Temporaries only: the first loop's copy loads the point's x and y into $v0/$v1 the other way round (4 off); no declaration or store order fixes it.
+int func_8007792C(Mesh51 *o) {
+    int r = 0;
+
+    if (func_80074AC8((U51 *)o)) {
+        Src51 *sa = o->m_2C;
+        Src51 *sb = o->m_30;
+
+        if (sa || sb) {
+            Src51 *src = sa ? sa : sb;
+
+            if (o->m_14 <= 0) {
+                SVECTOR a;
+                SVECTOR *pa = &a;
+                int i = o->m_3C - 1;
+                SVECTOR *from = &src->m_14[i];
+                SVECTOR *pts = (SVECTOR *)((Mdl51 *)D_800C8C68->m_items[o->m_38])->m_04->m_18;
+                int *idx = &o->m_40[i];
+
+                do {
+                    int k = *idx--;
+
+                    func_80099EBC(&a, (SVECTOR *)&o->m_48[k], from--);
+                    {
+                        short x = a.vx;
+                        short y = pa->vy;
+                        short z = pa->vz;
+
+                        pts[k].vx = x;
+                        pts[k].vy = y;
+                        pts[k].vz = z;
+                    }
+                } while (--i >= 0);
+                r = 1;
+            } else {
+                SVECTOR a;
+                Vec51 w, v;
+                SVECTOR *pa = &a;
+                Vec51 *pw = &w;
+                int i = o->m_3C - 1;
+                SVECTOR *from = &src->m_14[i];
+                SVECTOR *off = &o->m_44[i];
+                SVECTOR *pts = (SVECTOR *)((Mdl51 *)D_800C8C68->m_items[o->m_38])->m_04->m_18;
+                int *idx = &o->m_40[i];
+
+                do {
+                    int k = *idx--;
+                    SVECTOR *d;
+
+                    func_80099EF4(&a, (Pt51 *)from, (Pt51 *)off);
+                    {
+                        int y = pa->vy;
+                        int x = a.vx;
+                        int z;
+
+                        v.x = x;
+                        z = pa->vz;
+                        v.y = y;
+                        w.x = x;
+                        w.y = y;
+                        v.z = z;
+                        w.z = z;
+                    }
+                    func_80099718(&v, pw, o->m_10);
+                    from--;
+                    {
+                        int x = v.x;
+                        int y = v.y;
+                        int z = v.z;
+
+                        w.x = x;
+                        w.y = y;
+                        w.z = z;
+                    }
+                    func_80099D48(pw, 16);
+                    d = &pts[k];
+                    func_80099EBC(pa, (SVECTOR *)&o->m_48[k], off);
+                    off--;
+                    {
+                        short x = a.vx;
+                        short y = pa->vy;
+                        short z = pa->vz;
+
+                        d->vx = x;
+                        d->vy = y;
+                        d->vz = z;
+                    }
+                    func_80077BC8(pa, (Vector3 *)pw);
+                    func_80099E84(d, pa);
+                } while (--i >= 0);
+                r = 1;
+            }
+        }
+    }
+    return r;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_51", func_8007792C);
+#endif
 
 void *func_80077BA0(void) {
     return func_800774B8(__builtin_new(0x18));
