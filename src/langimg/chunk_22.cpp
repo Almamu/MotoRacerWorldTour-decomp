@@ -113,12 +113,45 @@ struct Game22 {
     Slot22 *m_ABC;
 };
 
+// A script's named values: two tables of name and value
+struct TEnt22 {
+    char *m_00;
+    int m_04;
+};
+struct Tab22 {
+    u8 m_00[0x10];
+    TEnt22 *m_10;
+    int m_14;
+    TEnt22 *m_18;
+    int m_1C;
+};
+// A scene's record (0x74 bytes): its name and five values found by it
+struct Rec22 {
+    char *m_00;
+    u8 m_04[0x5C];
+    int m_60, m_64, m_68, m_6C, m_70;
+};
+// The scene (chunk_23's Scene)
+struct Scr22 {
+    u8 m_00[0x5C];
+    Tab22 *m_5C;
+    u8 m_60[0xA10];
+    int m_A70; // how many records
+    u8 m_A74[8];
+    Rec22 *m_A7C;
+};
+extern char D_800C4E2C[];
+extern char D_800C4E38[];
+extern char D_800C4E40[];
+extern char D_800C4E4C[];
 extern char D_800C4E14[];
 extern char D_800C4E20[];
 extern int D_800C4D98[];
 
 extern "C" {
 int sprintf(char *buf, const char *fmt, ...);
+int func_800A60AC(const char *a, const char *b); // strcmp
+void func_8003F314(Scr22 *s);
 void *func_8003AA90(View22 *v, char *name);
 void func_8003CBA0(Game22 *g, Ent22 *e, int a);
 void func_8003CC9C(Game22 *g, int a);
@@ -1073,4 +1106,77 @@ int func_8003F0F8(Game22 *g, int kind, int set) {
     return r;
 }
 
+// The entry named so in the second table, or 0
+static inline void FindA22(Tab22 *t, char *name, TEnt22 **out) {
+    int i;
+
+    for (i = 0; i < t->m_1C; i++) {
+        if (!func_800A60AC(t->m_18[i].m_00, name)) {
+            *out = &t->m_18[i];
+            break;
+        }
+    }
+}
+
+// The entry named so in the first table, or 0
+static inline void FindB22(Tab22 *t, char *name, TEnt22 **out) {
+    int i;
+
+    for (i = 0; i < t->m_14; i++) {
+        if (!func_800A60AC(t->m_10[i].m_00, name)) {
+            *out = &t->m_10[i];
+            break;
+        }
+    }
+}
+
+/* Each of the scene's records given five values from the script's tables:
+ * by its name, then by four names made from it. */
+#ifdef NON_MATCHING
+// The original's shape: five lookups through inline functions writing the found entry to a stack slot (0x50, then one shared 0x54). Left: after the first lookup GCC loads the records' table above the found entry's test, into the load's delay slot, where the original loads it in the branch; that one-instruction shift runs to the end (194 off), with the table and the counter in swapped saved registers in the first lookup.
+void func_8003F314(Scr22 *s) {
+    int i;
+
+    if (!s->m_5C) {
+        return;
+    }
+    for (i = 0; i < s->m_A70; i++) {
+        char buf[0x40];
+        TEnt22 *e = 0;
+        TEnt22 *f;
+
+        FindA22(s->m_5C, s->m_A7C[i].m_00, &e);
+        if (e) {
+            Rec22 *r = &s->m_A7C[i];
+
+            r->m_60 = e->m_04;
+        }
+        sprintf(buf, D_800C4E2C, s->m_A7C[i].m_00);
+        f = 0;
+        FindB22(s->m_5C, buf, &f);
+        if (f) {
+            s->m_A7C[i].m_64 = f->m_04;
+        }
+        sprintf(buf, D_800C4E38, s->m_A7C[i].m_00);
+        f = 0;
+        FindB22(s->m_5C, buf, &f);
+        if (f) {
+            s->m_A7C[i].m_68 = f->m_04;
+        }
+        sprintf(buf, D_800C4E40, s->m_A7C[i].m_00);
+        f = 0;
+        FindB22(s->m_5C, buf, &f);
+        if (f) {
+            s->m_A7C[i].m_6C = f->m_04;
+        }
+        sprintf(buf, D_800C4E4C, s->m_A7C[i].m_00);
+        f = 0;
+        FindB22(s->m_5C, buf, &f);
+        if (f) {
+            s->m_A7C[i].m_70 = f->m_04;
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_22", func_8003F314);
+#endif
