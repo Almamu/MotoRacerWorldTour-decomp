@@ -69,6 +69,25 @@ globals.
   recursive call passes the sub-menu's group as its reference. Its jump
   table is the chunk's only `.rodata`, so the word after it is a padding
   `D_800B7304` at the end of the file.
+- `func_80037E70` (new, matches): `func_8003781C`'s drawing half for
+  the items owned by the menu (owner 1), after the first item of kind 3
+  with no owner is found; its sequence entry looked up by the page's row
+  (the list page and its entry through chunk_19's `Res19` and `Elem19`).
+  The item's cursor is signed (`lb`), so `Item19::m_30` is `s8`.
+- `func_8003907C` (new, matches): the group's cursor stepped on until a
+  menu that can be chosen, with the group's wrap mode at the end; the old
+  menu's handler called with 1 and the menu drawn unchosen
+  (`func_80037E70`, the cursor put back for it), the new one's with 0 and
+  drawn chosen (`func_8003781C`), and a slider then chosen stepped up.
+  Four things made it match: the cursor read and written as the field
+  (`t->m_0A++`, not a local), so GCC keeps the stored value and
+  sign-extends it at each use as the original does; the loop as
+  `for (;;)` with the step first and `if (stop) break;`, which GCC lays out
+  with the menu's test first and a jump into the step; the table read into
+  a local before the second lookup (the permuter's finding); and case 1 of
+  the wrap `switch` with its own copy of case 2's statement instead of
+  falling through, which GCC cross-jumps into one block and allocates as
+  the original (20 off from the registers otherwise).
 
 ## The functions
 
@@ -79,7 +98,7 @@ globals.
 | `func_80037C80`, `func_80037CF8` | match | an entry's value |
 | `func_80037D58` | matches | an entry's value set |
 | `func_80037DC8` | matches | a named list's entry |
-| `func_80037E70` | asm | 190 instructions |
+| `func_80037E70` | matches | a menu's items drawn, as `func_8003781C`, by kind |
 | `func_80038168` | matches | an entry's value refreshed |
 | `func_80038218`, `func_8003828C` | match | a letter stepped |
 | `func_80038300`, `func_80038370` | match | the choice moved |
@@ -90,4 +109,4 @@ globals.
 | `func_80038B24` | matches | a table's menus of kind 4 |
 | `func_80038BBC`, `func_80038CE4` | match | the next and previous handlers |
 | `func_80038E0C`, `func_80038F44` | match | the letters stepped up, down |
-| `func_8003907C` | asm | 279 instructions |
+| `func_8003907C` | matches | the group's cursor moved to the next menu that can be chosen |
