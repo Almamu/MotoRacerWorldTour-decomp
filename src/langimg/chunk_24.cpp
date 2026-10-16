@@ -170,7 +170,7 @@ void func_8003CD30(Scene24 *s);
 Def24 *func_8003CBA0(Scene24 *s, const char *name, int dec);
 void func_8006F7D4(void);
 int func_800A60AC(const char *a, const char *b);
-int func_800401FC(Named24 *o, Def24 *d, Entry24 *e, ...);
+int func_800401FC(Named24 *o, Def24 *d, Entry24 *e, const char *s, ...);
 int func_800A5CD0(u32 ms, int *m, int *sec, int *cs);
 char *func_8005C424(Owner24 *w, int x);
 Obj24 *func_8003A86C(Def24 *d, const char *name);
