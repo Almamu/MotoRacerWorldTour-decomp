@@ -5,7 +5,7 @@ A C++ class of named objects with a small state machine, its vtable at
 stage: its tables, its sounds, its numbers from the race's settings.
 One file, `src/langimg/chunk_23.cpp`, 0x8003F6B8-0x8004184C.
 
-55 functions: 49 match, 4 are parked, 2 are still asm (the constructor
+55 functions: 50 match, 4 are parked, 1 is still asm (the constructor
 matched during chunk_45, #46).
 
 ## The settings
@@ -31,7 +31,8 @@ return 0 or 1, or nothing.
 | Function | State | Notes |
 |---|---|---|
 | `func_8003F6B8` | matches | a scene's items' object lists |
-| `func_8003F740`, `func_80040E98` | asm | 314 and 621 instructions |
+| `func_8003F740` | matches | eight script handlers set by name |
+| `func_80040E98` | asm | 621 instructions |
 | `func_8003FC28` | parked | a sound from one of two tables: -1 kept in another register (7 off) |
 | `func_8003FC94` | matches | the constructor: its zeros as one chained assignment (found with the permuter, during #46) |
 | `func_8003FCF8` to `func_8003FF68` | match | the destructor, the states, the name, flags, the default virtuals |
@@ -59,3 +60,17 @@ return 0 or 1, or nothing.
 - **A result set after a call.** `func_80040CC8` keeps its result in a
   temporary, so it can't be live across the first call: `int v =
   VCALL(...); int r = 0; if (v) r = ...;`.
+
+## Near-misses and large functions pass
+
+- `func_8003F740` (314 instructions) matches, newly written: eight of the
+  script's handlers (0x2C-byte entries at the scene's 0x74, now `Handlers23`)
+  found by name and given their function and the scene, then four calls.
+  The lookup is an inline function with its own result set to 0 and a
+  `break` when found, and it is called with `&s->m_74` at each call: with
+  the table's address in a local passed to the eight calls, GCC kept one
+  copy where the original has two (311 instructions built, against 314).
+- `func_800406E0` goes from 20 to 13 off with `D_800D497C` declared small
+  (`extern int`, copied through a cast) so its address is one `la`, as the
+  original's; left: a temporary's register and where the prologue stores
+  `$s1`.

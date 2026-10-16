@@ -87,7 +87,7 @@ globals.
 | `func_80062E40` | matches | the constructor |
 | `func_80062EEC` | matches | the destructor |
 | `func_80062FB4` | parked | everything moving reset: the first stores' registers |
-| `func_800630D8` | parked | a reset: the stores' order around the constants |
+| `func_800630D8` | parked | a reset: one register for an address and a constant (13 off) |
 | `func_800631A4` | matches | the last values kept |
 | `func_80063250` | matches | a band from three tables, a value interpolated |
 | `func_80063398` | parked | a vector from two others: the last copy's registers |
@@ -104,3 +104,11 @@ globals.
   pointer form loads through the address). Left: the bike and the step's
   index in other saved registers, and the matrix at 0x2A4's address not
   kept in `$s0`.
+
+## Group B near-misses, continued
+
+`func_800630D8` went from 19 off to 13 with the chained `0x199` stores
+before the `3`. Left: the original has `&m_11C` in `$v0`, reused for
+`0x199` after the vector's stores, so its `li` stays there; ours has the
+address in `$v1` and the `li` is scheduled first. `-fno-schedule-insns`
+changes nothing.

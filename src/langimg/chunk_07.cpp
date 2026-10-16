@@ -258,7 +258,7 @@ void func_80020AB0(NodePool *p) {
 }
 
 #ifdef NON_MATCHING
-/* Registers, and the loop's pointers based at other fields (29 off) */
+/* Registers, and the loop's pointers based at other fields (25 off, the radius scaled in place) */
 /* Which slots the camera sees: a sphere 1.5 times the slot's size, in
  * front of the camera and within the racer's distance. */
 void func_80020AE4(NodePool *p, u8 *seen) {
@@ -284,7 +284,8 @@ void func_80020AE4(NodePool *p, u8 *seen) {
             x -= cx;
             y -= cy;
             z -= cz;
-            radius = (radius + (radius >> 1)) >> 8;
+            radius += radius >> 1;
+            radius >>= 8;
             x >>= 8;
             y >>= 8;
             z >>= 8;

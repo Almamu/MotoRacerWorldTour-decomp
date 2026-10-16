@@ -177,6 +177,14 @@ array); with one register, `lui $a0` and `lw $a0, %lo(x)($a0)`, it's the
 assembler's expansion of an `lw x` GCC emitted for a global it thought
 small (a scalar; chunk_71).
 
+A function that matches only with `-mno-split-addresses`, in a chunk where
+that flag breaks a matched function, often needs only one address unsplit:
+declare that global small (`extern int x;`, used through `&x` and a cast)
+in place of the flag. chunk_25's `func_80044CC4` and `func_800450C0`
+matched that way (`D_800C55E8`, chunk_74's `D_800D60E8`), and chunk_23's
+`func_800406E0` went from 20 to 13 off (`D_800D497C`, a `Seven` copied
+through `*(Seven *)&D_800D497C`).
+
 ### Divisions
 
 GCC 2.9x leaves a division to the assembler (`div $2,$3,$4`), which
@@ -569,6 +577,12 @@ globals), a script that tries every order is quicker than guessing:
   other registers. `(x << 12) * 3` gives the original's code (chunk_02b's
   `func_80016A8C`, 20 off to 0): the `* 3` expanded as a shift and an add
   of the shifted value.
+- **A constant loaded twice: the store last.** When the original loads the
+  same constant twice, once for a field and once for the result
+  (`addiu $v1, 1` for `t->m_08 = 1`, then `addiu $v0, 1` to return 1), the
+  field's store is the function's last statement: stored earlier, GCC
+  shares one register between them. chunk_45's `func_8006C094` (22 off to
+  0, with the other stores in the original's order too).
 - **One variable for two values in turn.** When the original keeps a
   call's result where it was computed and puts the next sum in another
   temporary, the source may reuse one variable for two values one after the
@@ -659,6 +673,21 @@ globals), a script that tries every order is quicker than guessing:
   runs that end at the same label are merged into one; the original's
   separate copies came from a second pointer for the loop
   (`func_80017E64`).
+- **A clamp cross-jumped into another: the same types.** chunk_10's
+  `func_80026A1C` clamps a `short` field in two branches, and the
+  original merges the first clamp into the last. With the first written
+  on a `short` local the two differed by a sign extension and stayed
+  apart; as an `int v` stored to the field and compared as `(short)v`,
+  the code is the same and GCC cross-jumps it (25 to 11 off).
+- **The position summed in locals, then stored.** chunk_06's
+  `func_8001F67C` adds the speed into locals (`x += vx; y += vy; z +=
+  vz;`), then stores the three, and changes the speed in its local before
+  its store (`vy -= g >> 12; p->m_vel.vy = vy;`); written as
+  `p->m_pos.vx += vx` the loads and stores interleaved.
+- **The table's address at each call.** chunk_23's `func_8003F740`
+  inlines a lookup eight times; passed a local `t = &s->m_74`, GCC kept
+  one copy of the address where the original keeps two (in `$s1` and
+  `$s3`); written `&s->m_74` at each call, it matches.
 - **A value tested twice, a field read again.** `func_800194E4` keeps the
   prim in `$a0` and a copy in `$a2` for its second call: `page = prim[1];
   if (o->m_page) page = o->m_page ? o->m_page : prim[1];` and the calls
@@ -1020,6 +1049,9 @@ mean a `short` field.
   engine's `|x|` is `sra`, `xor`, `subu`: `ABS(x)` in
   `lib/sound/include/sound.h`, `((x) ^ ((x) >> 31)) - ((x) >> 31)`
   (`func_80012504`).
+- **`abs()` against a macro.** GCC's builtin `abs(x)` branches on `x`
+  itself (`bgez x`, `negu` in the delay slot); a macro `IABS(x)` copies
+  `x` to a temporary first. chunk_12's `func_8002A268` needed `abs()`.
 - **Bitfields as the original reads them.** A signed bitfield compared
   with -1 is a mask test (`(x & 0xFFF000) == 0xFFF000`), and one read as a
   value is `sll`/`sra` (`SeqEntry`, `func_80019578`). Tested in place

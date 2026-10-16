@@ -44,8 +44,8 @@ struct Particles {
     short m_live; // 0x4B0C
     short m_4B0E;
 };
-extern int D_800D6100; // the frame's time
-void func_80099574(Vector3 *v, int drag);
+extern int D_800D6100;                        // the frame's time
+Vector3 *func_80099574(Vector3 *v, int drag); // returns v
 void func_8001DFD8(Racer *r, int dist);
 void func_8001F67C(Particles *p);
 
@@ -324,8 +324,6 @@ void func_8001F10C(Particles *p) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_06", func_8001F13C);
 
-#ifdef NON_MATCHING
-/* Registers (23 off): the position, the definition and the speed in other temporaries ($a1, $a3, $t0, $t1 and $a2 for the speed in the original) */
 /* The particles' frame: moved, slowed, aged and faded; the live ones
  * counted. */
 void func_8001F67C(Particles *ps) {
@@ -353,10 +351,14 @@ void func_8001F67C(Particles *ps) {
                     int vy = p->m_vel.vy;
                     int vz = p->m_vel.vz;
 
-                    p->m_pos.vx = x + vx;
-                    p->m_pos.vy = y + vy;
-                    p->m_pos.vz = z + vz;
-                    p->m_vel.vy = vy - (g >> 12);
+                    x += vx;
+                    y += vy;
+                    z += vz;
+                    p->m_pos.vx = x;
+                    p->m_pos.vy = y;
+                    p->m_pos.vz = z;
+                    vy -= g >> 12;
+                    p->m_vel.vy = vy;
                 }
                 func_80099574(&p->m_vel, d->m_drag);
                 live++;
@@ -371,6 +373,3 @@ void func_8001F67C(Particles *ps) {
     } while (--i);
     ps->m_live = live;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_06", func_8001F67C);
-#endif

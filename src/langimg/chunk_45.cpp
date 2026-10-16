@@ -798,26 +798,21 @@ int func_8006C064(Table45 *t, short s) {
     return 1;
 }
 
-#ifdef NON_MATCHING
-/* The constant 1 loaded twice (the field and the result) in the original, and the halfword's store scheduled later (22 off) */
 int func_8006C094(Table45 *t, int a, Info45 *d) {
     if (t->m_00 >= 8000) {
         return 0;
     }
     t->m_cur.m_08 = d->m_08;
-    t->m_cur.m_00 = a;
     t->m_cur.m_09 = d->m_09;
+    t->m_cur.m_00 = a;
     t->m_cur.m_04 = d->m_04;
     t->m_cur.m_05 = d->m_05;
     t->m_cur.m_03 = d->m_0D;
     t->m_cur.m_06 = d->m_07;
-    t->m_08 = 1;
     t->m_cur.m_0A = d->m_0A;
+    t->m_08 = 1;
     return 1;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_45", func_8006C094);
-#endif
 
 int func_8006C110(Table45 *t) {
     int r = func_8006C140(t);
