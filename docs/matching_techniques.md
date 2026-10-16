@@ -389,6 +389,11 @@ globals), a script that tries every order is quicker than guessing:
   `== 1`, `< 2`, `== 0`, `== 2`: cases 1 and 2 written apart, with the same
   code, merged by cross-jumping after the tests. `case 1: case 2:` became a
   range test (`bltz`, `slti 3`).
+- **A fall-through written out.** chunk_19's `func_8003907C`: `case 1:
+  stop = 1;` falling into `case 2:`'s clamp gives the right code but the
+  wrong registers in the loop around it (20 off). Case 1 with its own copy
+  of the statement and a `break` cross-jumps into the same block, and the
+  loop's pseudos come out in the original's order.
 - **Two tests GCC would fold, nested.** `v != -1 && v != 0` becomes one
   unsigned test (`addiu`, `sltiu 2`). chunk_56's `func_80082BEC` tests
   them apart: `if (v != -1) { if (v != 0) { ... } else { c[0] = 0; } }
