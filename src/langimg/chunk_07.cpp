@@ -28,13 +28,16 @@ struct Node {
     short m_slot; // 0x36: its slot, or -1
 };
 
+// Three angles
+struct Ang07 {
+    short x, y, z;
+};
+
 // A slot (0x18 bytes): a position and its first node
 struct NodeSlot {
     Vector3 m_pos;
     int m_0C; // its size
-    struct Ang07 {
-        short x, y, z;
-    } m_10;
+    Ang07 m_10;
     short m_first;
 };
 
@@ -223,7 +226,7 @@ static inline void VecCopy07(Vector3 *d, Vector3 *s) {
     d->vz = z;
 }
 
-static inline void VecFromAng07(Vector3 *d, NodeSlot::Ang07 *a) {
+static inline void VecFromAng07(Vector3 *d, Ang07 *a) {
     int x = a->x;
     int y = a->y;
     int z = a->z;
@@ -308,7 +311,7 @@ void func_800203A8(NodePool *p, MATRIX *m, Vector3 *pos, int w, int slot) {
         nd->m_16 = h.vz;
     }
     func_80021138((SVECTOR *)&h, &n);
-    p->m_slots[slot].m_10 = *(NodeSlot::Ang07 *)&h;
+    p->m_slots[slot].m_10 = *(Ang07 *)&h;
     func_80099D48(&l, 5);
     func_80099D48(&u, 5);
     func_80099D48(&f, 5);
