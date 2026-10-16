@@ -291,4 +291,328 @@ void func_800A4608(int v) {
     D_800BC898[0] = v;
 }
 
+extern "C" {
+void func_800A29E0(void);
+void func_800A2A40(void);
+int func_800A2AA0(void);
+int func_800A2AB0(void);
+int func_800A2AC0(int n, int a, int b, int c, int d);
+int func_800A3A44(int n, int *out, int a);
+int _card_info(char *name);
+int _card_clear(char *name);
+int _card_load(char *name);
+int _card_read(char *name, int block, u8 *buf);
+int _card_chan(void);
+int format(char *name);
+void *memset(void *d, int c, int n);
+int func_800A4614(int n, int *out);
+}
+extern int D_800D6090[];
+extern int D_800BC930[];
+extern int D_800BC934[];
+extern int D_800D60BC[];
+extern int D_800D60C0[];
+extern int D_800D60C8[];
+extern char *D_800D6070[];
+extern "C" const char D_800B7BE8[];
+extern "C" const char D_800B7BFC[]; // "%d %d\n", in .rodata (defined after its use, see D_800B7BD4)
+#ifdef NON_MATCHING
+extern "C" const char D_800B7C04[12] __attribute__((section(".rodata"))) = "Format pOK\n";
+extern "C" const char D_800B7C10[16] __attribute__((section(".rodata"))) = "Format No card\n";
+extern "C" const char D_800B7C20[16] __attribute__((section(".rodata"))) = "Format Error\n";
+extern "C" const char D_800B7C30[20] __attribute__((section(".rodata"))) = "ERROR:[%d,%d](%d)\n";
+
+// Registers: n and r swap $s2/$s1 and the base copies $s5/$s3; ours keeps
+// about 60 more instructions (tails the original shares)
+/* A memory card slot's state machine stepped: the request it's running
+ * moved on a step; returns the slot's result (the card's status when idle). */
+int func_800A4614(int n, int *out) {
+    int r;
+
+    switch (D_800D6098[0][n].m_00) {
+    case 0:
+        func_800A29E0();
+        D_800D6090[0] = 30;
+        if (!_card_info(D_800BC89C[n])) {
+            D_800D6098[0][n].m_04 = 4;
+            D_800D6098[0][n].m_00 = 0x12;
+        } else {
+            D_800D6098[0][n].m_04 = 0;
+            D_800D6098[0][n].m_00 = 1;
+        }
+        r = D_800D6098[0][n].m_04;
+        break;
+    case 1:
+        if ((D_800D6098[0][n].m_08 = func_800A2AA0()) != -1) {
+            switch (D_800D6098[0][n].m_08) {
+            case 0:
+                D_800D6098[0][n].m_04 = 1;
+                D_800D6098[0][n].m_00 = 2;
+                break;
+            case 1:
+                D_800D6098[0][n].m_04 = 4;
+                D_800D6098[0][n].m_00 = 0x12;
+                break;
+            case 2:
+                func_800A29E0();
+                _card_info(D_800BC89C[n]);
+                if (--D_800D6090[0] < 0) {
+                    D_800D6098[0][n].m_04 = 2;
+                    D_800D6098[0][n].m_00 = 0x12;
+                }
+                break;
+            case 3:
+                D_800D6098[0][n].m_04 = 1;
+                D_800D6098[0][n].m_00 = 2;
+                break;
+            }
+        }
+        r = D_800D6098[0][n].m_04;
+        break;
+    case 2:
+        func_800A2A40();
+        if (!_card_clear(D_800BC89C[n])) {
+            D_800D6098[0][n].m_04 = 4;
+            D_800D6098[0][n].m_00 = 0x12;
+        } else {
+            D_800D6098[0][n].m_04 = 0;
+            D_800D6098[0][n].m_00 = 3;
+            D_800D6098[0][n].m_46C8 = 1;
+        }
+        r = D_800D6098[0][n].m_04;
+        break;
+    case 3:
+        if ((D_800D6098[0][n].m_08 = func_800A2AB0()) != -1) {
+            switch (D_800D6098[0][n].m_08) {
+            case 0:
+            case 2:
+                D_800D6098[0][n].m_04 = 1;
+                D_800D6098[0][n].m_00 = 4;
+                break;
+            case 1:
+            case 3:
+                D_800D6098[0][n].m_04 = 4;
+                D_800D6098[0][n].m_00 = 0x12;
+                break;
+            }
+        }
+        r = D_800D6098[0][n].m_04;
+        break;
+    case 4:
+        func_800A26A0();
+        func_800A29E0();
+        D_800D6098[0][n].m_46C8 = 0;
+        if (!_card_load(D_800BC89C[n])) {
+            D_800D6098[0][n].m_04 = 4;
+            D_800D6098[0][n].m_00 = 0x12;
+        } else {
+            D_800D6098[0][n].m_04 = 0;
+            D_800D6098[0][n].m_00 = 5;
+        }
+        r = D_800D6098[0][n].m_04;
+        break;
+    case 5:
+        if ((D_800D6098[0][n].m_08 = func_800A2AA0()) != -1) {
+            switch (D_800D6098[0][n].m_08) {
+            case 0:
+            case 2:
+                D_800D6098[0][n].m_04 = 1;
+                D_800D6098[0][n].m_00 = 6;
+                break;
+            case 1:
+                D_800D6098[0][n].m_04 = 4;
+                D_800D6098[0][n].m_00 = 0x12;
+                break;
+            case 3:
+                D_800D6098[0][n].m_04 = 0xF;
+                D_800D6098[0][n].m_00 = 0x12;
+                break;
+            }
+        }
+        r = D_800D6098[0][n].m_04;
+        break;
+    case 6:
+        if ((D_800D6098[0][n].m_04 = func_800A3A44(n, out, 0)) != 0xE) {
+            *out = 0;
+            D_800D6098[0][n].m_00 = 7;
+        }
+        if (D_800D6098[0][n].m_04 == 0xE) {
+            D_800D6098[0][n].m_00 = 0x12;
+        }
+        r = D_800D6098[0][n].m_04;
+        break;
+    case 7:
+        if ((D_800D6098[0][n].m_04 = func_800A3A44(n, out, 1)) == 0x12) {
+            D_800D6098[0][n].m_00 = 0x12;
+        }
+        r = D_800D6098[0][n].m_04;
+        break;
+    case 8:
+        D_800D6098[0][n].m_04 = func_800A2AC0(n, 0, (int)out, 0, 1);
+        if (D_800D6098[0][n].m_04) {
+            D_800D6098[0][n].m_00 = 0x12;
+        }
+        r = D_800D6098[0][n].m_04;
+        break;
+    case 9:
+        D_800D6098[0][n].m_04 = func_800A2AC0(n, D_800D6098[0][n].m_0C, D_800D6098[0][n].m_14,
+                                              D_800D6098[0][n].m_18, 0);
+        if (!D_800D6098[0][n].m_04) {
+            *out = 0;
+            D_800D6098[0][n].m_00 = 8;
+        }
+        r = D_800D6098[0][n].m_04;
+        break;
+    case 10:
+        D_800D6098[0][n].m_04 =
+            func_800A32A0(n, (char *)D_800D6098[0][n].m_10, (char *)D_800D6098[0][n].m_0C,
+                          (u8 *)D_800D6098[0][n].m_14, D_800D6098[0][n].m_18, 0);
+        if (!D_800D6098[0][n].m_04) {
+            *out = 0;
+            D_800D6098[0][n].m_00 = 0xC;
+        }
+        r = D_800D6098[0][n].m_04;
+        break;
+    case 11:
+        D_800D6098[0][n].m_04 =
+            func_800A32A0(n, (char *)D_800D6098[0][n].m_10, (char *)D_800D6098[0][n].m_0C,
+                          (u8 *)D_800D6098[0][n].m_14, D_800D6098[0][n].m_18, 0x20);
+        if (!D_800D6098[0][n].m_04) {
+            *out = 0;
+            D_800D6098[0][n].m_00 = 0xC;
+        }
+        r = D_800D6098[0][n].m_04;
+        break;
+    case 12:
+        D_800D6098[0][n].m_04 = func_800A32A0(n, 0, 0, (u8 *)out, 0, 1);
+        if (D_800D6098[0][n].m_04) {
+            D_800D6098[0][n].m_00 = 0x12;
+        }
+        r = D_800D6098[0][n].m_04;
+        break;
+    case 13:
+        sprintf(D_800D6098[0][n].m_1C, D_800B7BE8, D_800BC89C[n]);
+        func_800A26A0();
+        func_800A2A40();
+        D_800D6098[0][n].m_08 = format(D_800D6098[0][n].m_1C);
+        func_800A5DA4(D_800B7BFC, D_800D60C8[0], D_800D6098[0][n].m_08);
+        if (D_800D60C8[0] != 0x24 && D_800D60C8[0] != 0x48 && !D_800D60C0[0]) {
+            memset(&D_800D6098[0][n].m_3C[16], 0, 0x2000);
+            D_800D6098[0][n].m_08 = 1;
+            D_800D6098[0][n].m_04 = 4;
+            D_800D6098[0][n].m_00 = 0x12;
+        } else {
+            func_800A5DA4(D_800B7C04);
+            D_800D6098[0][n].m_08 = D_800D60C0[0];
+            switch (D_800D6098[0][n].m_08) {
+            case 0:
+                func_800A2A40();
+                if (!_card_read(D_800BC89C[n], 0, (u8 *)&D_800D6098[0][n].m_3C[16])) {
+                    D_800D6098[0][n].m_04 = 4;
+                    D_800D6098[0][n].m_00 = 0x12;
+                    func_800A5DA4(D_800B7C20);
+                } else {
+                    D_800D6098[0][n].m_04 = 0;
+                    D_800D6098[0][n].m_00 = 0xF;
+                }
+                break;
+            case 2:
+            case 3:
+                D_800D6098[0][n].m_04 = 2;
+                D_800D6098[0][n].m_00 = 0x12;
+                func_800A5DA4(D_800B7C10);
+                break;
+            }
+        }
+        r = D_800D6098[0][n].m_04;
+        break;
+    case 14:
+        func_800A2AB0();
+        break;
+    case 15:
+        func_800A2AB0();
+        switch (D_800D6098[0][n].m_08) {
+        case 0:
+            D_800D6098[0][n].m_04 = 1;
+            D_800D6098[0][n].m_00 = 0x12;
+            break;
+        case 1:
+        case 5:
+            D_800D6098[0][n].m_04 = 0x10;
+            D_800D6098[0][n].m_00 = 0x12;
+            break;
+        case 2:
+        case 3:
+            D_800D6098[0][n].m_04 = 2;
+            D_800D6098[0][n].m_00 = 0x12;
+            break;
+        }
+        r = D_800D6098[0][n].m_04;
+        break;
+    case 16:
+        func_800A29E0();
+        if (!_card_info(D_800BC89C[n])) {
+            D_800D6098[0][n].m_04 = 4;
+            D_800D6098[0][n].m_00 = 0x12;
+        } else {
+            D_800D6098[0][n].m_04 = 0;
+            D_800D6098[0][n].m_00 = 0x11;
+        }
+        r = D_800D6098[0][n].m_04;
+        break;
+    case 17:
+        if ((D_800D6098[0][n].m_08 = func_800A2AA0()) != -1) {
+            if (D_800D6098[0][n].m_08) {
+                D_800D6098[0][n].m_04 = 0;
+                D_800D6098[0][n].m_00 = 1;
+            } else {
+                D_800D6098[0][n].m_04 = 1;
+                D_800D6098[0][n].m_00 = 0x12;
+            }
+        }
+        r = D_800D6098[0][n].m_04;
+        break;
+    case 18:
+        if (D_800BC934[0] > 10) {
+            D_800BC934[0] = 0;
+            D_800D60BC[0] = 30;
+            func_800A29E0();
+            _card_info(D_800BC89C[n]);
+        } else {
+            D_800D6098[0][n].m_08 = func_800A2AA0();
+            switch (D_800D6098[0][n].m_08) {
+            case -1:
+                r = 0;
+                break;
+            case 0:
+                r = 1;
+                D_800BC930[0] = 0;
+                break;
+            case 1:
+                r = 4;
+                func_800A5DA4(D_800B7C30, D_800D6070[0], _card_chan(), D_800BC930[0]);
+                D_800BC930[0] = 0;
+                break;
+            case 2:
+                r = 2;
+                break;
+            case 3:
+                r = 1;
+                if (D_800D6070[0] == D_800BC89C[n]) {
+                    r = 3;
+                }
+                break;
+            }
+        }
+        D_800BC934[0]++;
+        break;
+    }
+    if (D_800D6098[0][n].m_00 != 0x12) {
+        D_800BC930[0] = 0;
+    }
+    return r;
+}
+extern "C" const char D_800B7BFC[8] __attribute__((section(".rodata"))) = "%d %d\n";
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_73", func_800A4614);
+#endif

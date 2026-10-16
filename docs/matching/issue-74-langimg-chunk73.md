@@ -11,12 +11,12 @@ first word is its state, 0x12 when it's idle. The small functions:
 - a slot made idle again;
 - three settings and one more global stored.
 
-Two of the larger functions, still asm (`func_800A3A44`, `func_800A4614`),
-use the device name format `"bu%02x:"`.
+Two of the larger functions (`func_800A3A44`, still asm, and the parked
+`func_800A4614`) use the device name format `"bu%02x:"`.
 
 One file, `src/langimg/chunk_73.cpp`, 0x800A32A0-0x800A54F0.
 
-17 functions: 14 match, 3 are still asm.
+17 functions: 14 match, 1 is parked, 2 are still asm.
 
 ## The settings
 
@@ -53,7 +53,7 @@ globals.
 | `func_800A44F8` | matches | a slot's state |
 | `func_800A45B4` | matches | a slot made idle |
 | `func_800A4608` | matches | a global stored |
-| `func_800A4614` | asm | 995 instructions |
+| `func_800A4614` | parked | the slots' state machine (registers and shared tails) |
 
 ## Group C, continued
 
@@ -75,3 +75,15 @@ short would go to `.sdata` under `-G8`), then the unused `"bu%02x:%s"`.
   (`blocks *= 0x2000; hdr[3] = blocks / 0x2000;`); the title is read as
   `s8` for the `lb`. Its three strings (`"%s :%s"`, `"%s"` and the
   printf's) are defined after it in `.rodata`, as `D_800B7BD4`.
+
+## Group C, the state machine
+
+`func_800A4614` steps a slot's request: a 19-state switch (info, clear,
+load, read, write, format and the idle poll), each state reading a
+`func_800A2AA0`/`func_800A2AB0` status and moving on. It's parked with the
+right shape: each state ends `r = D_800D6098[0][n].m_04; break;`, the
+status stored and tested in one expression (`if ((... .m_08 = f()) !=
+-1)`), and the five debug strings defined in `.rodata` before it. Still
+different: `n` and `r` swap `$s2` and `$s1` (and the base's two copies
+`$s5`/`$s3`), and ours is about 60 instructions longer, where the
+original shares more tails (`m_00 = x; goto tail`).
