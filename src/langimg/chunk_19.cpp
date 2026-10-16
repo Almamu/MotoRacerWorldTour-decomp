@@ -27,7 +27,7 @@ struct Item19 {
     s8 m_2D;
     s8 m_2E;
     s8 m_2F;
-    u8 m_30;
+    s8 m_30; // a cursor (kind 3)
     s8 m_31; // the second value is used
     s8 m_32;
     u8 m_33;
@@ -174,7 +174,9 @@ struct Ctx19 {
     void *m_44; // its sounds
     u8 m_48[4];
     Row19 *m_4C;
+    u8 m_50[4]; // its sequences
 };
+
 // A letter's first word: its colour page in bits 25-28
 struct Page19 {
     unsigned m_lo : 25;
@@ -218,6 +220,7 @@ int func_80019D0C(void *set, Seq19 *s, int a, int back, int c);
 int func_8001983C(Seq19 *s);
 void func_80019B2C(Seq19 *s, int id);
 int func_8003781C(Menu19 *n, Ctx19 *x, Ref19 *r, int a, int b);
+void func_80037E70(Menu19 *n, Ctx19 *x, Ref19 *r, int a);
 int func_8003899C(Tab19 *t, int flag);
 void func_800386B4(Bar19 *m, Game19 *g, int mode);
 void func_80038828(Bar19 *m, Game19 *g, int mode);
@@ -484,7 +487,92 @@ u8 *func_80037DC8(Menu19 *m, void *v) {
     return r;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_19", func_80037E70);
+void func_80037E70(Menu19 *n, Ctx19 *x, Ref19 *r, int a) {
+    Item19 *it = n->m_2C;
+
+    if (it) {
+        Item19 *head = it;
+        Item19 *first = 0;
+
+        for (; it; it = it->m_08) {
+            if (it->m_04 == 0 && it->m_00 == 3) {
+                first = it;
+                break;
+            }
+        }
+        for (it = head; it; it = it->m_08) {
+            if (it->m_04 != 1) {
+                continue;
+            }
+            switch (it->m_00) {
+            case 1: {
+                int nm;
+                int xm;
+                int c;
+                Slot19 *sl;
+
+                nm = ((Flags19 *)n)->m_mode;
+                c = it->m_col.m_value;
+                if (nm) {
+                    c = n->m_38;
+                }
+                xm = x->m_mode;
+                sl = n->m_28;
+                if (xm) {
+                    if (!(sl->m_04 & 0x41)) {
+                        break;
+                    }
+                    sl->m_0C = c;
+                    ((Page19 *)sl->m_10)->m_page = it->m_col.m_page;
+                } else {
+                    if (!(sl->m_04 & 0x40)) {
+                        break;
+                    }
+                    sl->m_54 = c;
+                    ((Page19 *)n->m_28->m_58)->m_page = it->m_col.m_page;
+                }
+                break;
+            }
+            case 2:
+                if (a) {
+                    int h = func_80017E10(x->m_38, it->m_0C, strlen(it->m_0C));
+
+                    func_800184A4(x->m_38, h);
+                }
+                break;
+            case 3:
+                if (!first) {
+                    break;
+                }
+                if (it->m_30) {
+                    func_80037318(it, x, a, n);
+                } else {
+                    Res19 *pg = func_8003AA90(x, it->m_0C);
+
+                    if (pg && first->m_2C != -1) {
+                        Elem19 *e =
+                            func_8003B3C4((View19 *)x, (const char *)(pg->m_28 + first->m_2C * 32));
+
+                        if (e) {
+                            func_80019D0C(x->m_50, e->m_30, *(int *)e->m_2C, e->m_28, -1);
+                        }
+                    }
+                }
+                break;
+            case 5: {
+                Grp19 *g = x->m_4C[it->m_num.m_row].m_08;
+
+                if (g) {
+                    Grp19 *e = &g[it->m_col.m_value];
+
+                    func_80037E70(e->m_0C[r->m_0A], x, (Ref19 *)e, a);
+                }
+                break;
+            }
+            }
+        }
+    }
+}
 
 void func_80038168(Menu19 *m, int k) {
     Item19 *p;
