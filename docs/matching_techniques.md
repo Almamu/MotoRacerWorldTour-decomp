@@ -1016,6 +1016,13 @@ An `int` field stored into a `short` can be loaded with `lhu`: GCC
 narrows the load (chunk_66's `func_8009574C`). An `lhu` doesn't by itself
 mean a `short` field.
 
+A local array initialised by a loop counting down to -1 (`addiu $v1,
+$zero, 0xFF` ... `addiu $v1, $v1, -1; bne $v1, -1`), with more empty
+countdown loops before each return, is an array of a class with a
+constructor and an empty destructor: GCC emits the destructor loops even
+though they do nothing (chunk_67's `func_80097128`, `Ent67 ents[256]`).
+Locals declared before the array keep their place in the frame.
+
 ### Types
 
 - **`char` is unsigned here; a `lb` means `s8`.** chunk_74's `strupr`,
@@ -1218,6 +1225,19 @@ mean a `short` field.
 - **C linkage for placeholder names.** A function in a `.cpp` chunk whose
   real name isn't known is declared `extern "C"` (`lib/sound/include/sound.h`),
   so its symbol is the plain `func_XXXXXXXX` the asm calls.
+- **Calls through a pointer to member.** A call that tests a halfword
+  index (`blez`), loads an 8-byte vtable entry and adds two `this`
+  adjustments before a `jalr` is GCC 2.91.66's pointer-to-member call;
+  written as one (`(a->*a->m_2C)(&m)`, the member declared `void
+  (Anim17::*m_2C)(MATRIX *)`) it comes out in that shape. A member
+  function can be named for its symbol with `__asm__` (`void Draw(MATRIX
+  *m) __asm__("func_8008FD74");`), and `tab[1] = &Anim17::Draw;` gives the
+  original's three stores (0, -1, the address). chunk_17's
+  `func_8003442C`.
+- **A lookup's result on the stack.** When a found pointer lives in a
+  stack slot across the search, an inline taking its address (`Fn21 *h =
+  0; FindFn21(t, name, &h);`, the inline storing `*out` and breaking)
+  puts it there; chunk_21's `func_8003CDEC`.
 
 ## Register allocation
 

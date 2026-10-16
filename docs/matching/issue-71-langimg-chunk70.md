@@ -7,7 +7,7 @@ settings' names and values, and the page's digits. One file,
 `src/langimg/chunk_70.cpp`, 0x8009D0E4-0x8009F180. It's a sibling of
 chunk_71 (the same callees and menu fields).
 
-39 functions: 35 match, 4 are parked, none is still asm.
+39 functions: 36 match, 3 are parked, none is still asm.
 
 ## The settings
 
@@ -54,7 +54,7 @@ globals (`D_800C935C`, `D_800C9360`, `D_800C9C04`, `D_800CBE98`).
 | `func_8009E01C` to `func_8009E360` | match | the buffer, buttons' states and flags, the gauge's call |
 | `func_8009E3C0` | parked | the gauge: a frame, a tick and the fill, with hand-linked packets (160 off) |
 | `func_8009E724` | matches | empty |
-| `func_8009E72C` | parked | the selected entry's four digits (registers) |
+| `func_8009E72C` | matches | the selected entry's four digits |
 | `func_8009E930` | matches | the digits' caller |
 | `func_8009E954` | parked | the page's setup: rectangles and two rows of cells (registers) |
 | `func_8009EAD0` | matches | a flag set when a choice is 0 |
@@ -92,3 +92,10 @@ own register; that part isn't solved.
   ((u32)o->m_08 >= 2 && o->m_08 != 0x12) o->m_00 = 0; else ...`), so the
   work falls after it; and `func_800A42EC` returns `int`, which moved the
   retry counter's increment from `$v0` to `$v1`.
+
+## Group C, prototypes
+
+`func_8009E72C` was 112 off because `func_80037C80` (chunk_19) was
+declared with two arguments; it takes one. Declared as defined, it was 7
+off, and the digits' table address matched once its base is assigned
+first and the index added after (`e = p->m_14; e += ...;`).
