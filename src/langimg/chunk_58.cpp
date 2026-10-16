@@ -59,14 +59,46 @@ struct Set58 {
     int m_30;
 };
 // The race (chunk_36's Own36) and a bike (chunk_36's Bike36)
+struct Vec58 {
+    long vx, vy, vz;
+};
+struct Body58 {
+    u8 m_00[0x64];
+    Vec58 m_64; // its position
+};
 struct Bike58 {
-    u8 m_00[0x320];
+    u32 m_00; // bit 6: in the race; bits 1-5: its kind
+    u8 m_04[0x2C];
+    Body58 *m_30;
+    u8 m_34[0x2EC];
     s8 m_320;
     u8 m_321[0x247];
 };
+struct Hold58 {
+    u8 m_00[0x52C];
+    int m_52C; // the race's state
+};
 struct Run58 {
-    u8 m_00[0x2E8];
+    u8 m_00[0x10];
+    Hold58 *m_10;
+    u8 m_14[0x2C];
+    int m_40[5]; // the bikes' places
+    u8 m_54[0x294];
     Bike58 m_2E8[5];
+};
+// An image on the map: its texture page coordinates, its CLUT and page
+struct Img58 {
+    u8 m_00, m_01;
+    u16 m_02; // the CLUT
+    u8 m_04[2];
+    u16 m_06; // the page
+};
+// The map: where it's drawn, how the track is turned onto it, its images
+struct Map58 {
+    short m_00, m_02;
+    MATRIX m_04;
+    Img58 *m_24; // the bikes' dot
+    Img58 *m_28; // the map
 };
 struct Own58 {
     u8 m_00[0x378];
@@ -502,7 +534,102 @@ void func_80086A50(Pt58 *c, int a, int b) {
     c->m_28 = D_800CC030.m_88;
 }
 
+extern "C" {
+Vec58 *func_80099DCC(Vec58 *out, Vec58 *v, int shift);
+void func_80098768(MATRIX *m, Vec58 *v, Vec58 *out);
+Vec58 *func_800997D0(Vec58 *v, Vec58 *a);
+void func_80086A78(Map58 *m);
+}
+
+// A draw mode packet: its tag and its one word
+struct Dm58 {
+    u_long m_tag;
+    u_long m_code;
+};
+
+#ifdef NON_MATCHING
+// The original's code and registers except at two links: after the draw mode packet and the map's quad it keeps a copy of the packet pointer in $a3 and computes the next pointer from another copy ($v1), where GCC links and bumps the one register (15 off).
+void func_80086A78(Map58 *m) {
+    Run58 *r = D_800C5E14->m_378;
+
+    if ((u32)(r->m_10->m_52C - 5) >= 2) {
+        if (m->m_24) {
+            int *pl = r->m_40;
+            int i = 0;
+            Bike58 *b = r->m_2E8;
+
+            for (; i < 5; b++, i++, pl++) {
+                if ((b->m_00 >> 6) & 1) {
+                    Vec58 w, v;
+                    u32 col;
+                    u_long *p;
+
+                    func_80099DCC(&v, &b->m_30->m_64, 12);
+                    func_80098768(&m->m_04, &v, &w);
+                    func_800997D0(&w, (Vec58 *)m->m_04.t);
+                    col = 0xF04020;
+                    if ((int)(b->m_00 << 26) >> 27 == 1) {
+                        col = 0xFF40;
+                    } else if (!*pl) {
+                        col = 0xFF;
+                    }
+                    p = (u_long *)D_800C8C70;
+                    p[0] = 0x4000000;
+                    p[1] = col | 0x64000000;
+                    p[2] = XY(m->m_00 + w.vx - 3, m->m_02 + w.vy - 3);
+                    {
+                        Img58 *im = m->m_24;
+                        int u = im->m_00;
+                        int t = im->m_01;
+                        int c = im->m_02;
+
+                        p[4] = 0x80008;
+                        p[3] = u | (t << 8) | (c << 16);
+                    }
+                    ADD_PRIM(D_800CBDC0 + 1, D_800C8C70);
+                    D_800C8C70 += 0x14;
+                }
+            }
+            {
+                Dm58 *p = (Dm58 *)D_800C8C70;
+
+                p->m_tag = 0x1000000;
+                p->m_code = (m->m_24->m_06 & 0x1FF) | 0xE1000200;
+                ADD_PRIM(D_800CBDC0 + 1, D_800C8C70);
+                D_800C8C70 = (u8 *)(p + 1);
+            }
+        }
+        if (m->m_28) {
+            u8 *p = D_800C8C70;
+
+            *(u_long *)(p + 0) = 0x9000000;
+            *(u_long *)(p + 4) = 0x2EFFFFFF;
+            *(short *)(p + 0x08) = m->m_00;
+            *(short *)(p + 0x0A) = m->m_02;
+            *(short *)(p + 0x10) = m->m_00 + 0x68;
+            *(short *)(p + 0x12) = m->m_02;
+            *(short *)(p + 0x18) = m->m_00;
+            *(short *)(p + 0x1A) = m->m_02 + 0x40;
+            *(short *)(p + 0x20) = m->m_00 + 0x68;
+            *(short *)(p + 0x22) = m->m_02 + 0x40;
+            p[0x0C] = m->m_28->m_00;
+            p[0x0D] = m->m_28->m_01;
+            p[0x14] = m->m_28->m_00 + 0x68;
+            p[0x15] = m->m_28->m_01;
+            p[0x1C] = m->m_28->m_00;
+            p[0x1D] = m->m_28->m_01 + 0x40;
+            p[0x24] = m->m_28->m_00 + 0x68;
+            p[0x25] = m->m_28->m_01 + 0x40;
+            *(u16 *)(p + 0x16) = m->m_28->m_06;
+            *(u16 *)(p + 0x0E) = m->m_28->m_02;
+            ADD_PRIM(D_800CBDC0 + 1, D_800C8C70);
+            D_800C8C70 += 0x28;
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_58", func_80086A78);
+#endif
 
 Buf58 *func_80086E68(Buf58 *b) {
     b->m_00 = 0;

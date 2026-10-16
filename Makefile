@@ -162,7 +162,7 @@ langimg.chunk_73_GCC  := 2.91.66-psx
 langimg.chunk_73_CFLAGS :=
 langimg.chunk_73_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=
 langimg.chunk_58_GCC  := 2.91.66-psx
-langimg.chunk_58_CFLAGS :=
+langimg.chunk_58_CFLAGS := -fmove-all-movables
 langimg.chunk_58_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=D_800C8BAC,D_800CBD30,D_800CBD34,D_800CBD3C,D_800CBD44
 langimg.chunk_69_GCC  := 2.91.66-psx
 langimg.chunk_69_CFLAGS :=
