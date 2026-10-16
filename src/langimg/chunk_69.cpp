@@ -302,7 +302,7 @@ extern u8 *D_800C8C70;            // the next free GPU packet
 extern unsigned long *D_800CBDC0; // the ordering table
 extern char D_800C92CC[];
 extern char D_800C92C8[];
-void func_800237E8(Draw69 *d, int *out);
+extern "C" void func_800237E8(Draw69 *d, int *out);
 
 // Links packet p in at ordering table entry ot (ui.h's ADD_PRIM)
 #define ADD_PRIM69(ot, p) \
