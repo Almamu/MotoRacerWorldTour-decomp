@@ -38,7 +38,9 @@ struct Obj41 {
     u8 m_58;
     u8 m_59;
     u8 m_5A;
-    u8 m_5B[9];
+    u8 m_5B[6];
+    u8 m_61;
+    u8 m_62[2];
     int m_64[3];
     short m_70[3]; // the angles
     u8 m_76[2];
@@ -200,6 +202,18 @@ Obj41 *func_80062E40(Obj41 *o); // the base's constructor, returning this
 void func_800643E4(Obj41 *o);
 void func_8006348C(Obj41 *o, int *a, int *b);
 void func_80064310(void *o, short *v);
+// The grid's cells (56 bytes each), found by position
+struct Cel41 {
+    u8 m_00[0x38];
+};
+struct Grid41 {
+    u8 m_00[4];
+    Cel41 *m_04;
+};
+int func_8001A6AC(Grid41 *g, Vec41 *v, int a, int exact);
+int func_80097AC8(int x); // a square root
+void func_80099898(Vec41 *out, Vec41 *a, Vec41 *b);
+void func_800634BC(Obj41 *o, Grid41 *g);
 extern short D_800BF3A0[][2]; // sines and cosines by angle (4.12)
 extern int D_800CB448;
 void func_8009964C(Vec41 *v, int k);
@@ -244,8 +258,6 @@ void func_8006348C(Obj41 *o, int *a, int *b) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_41", func_800634BC);
-
 // A vector copied with all three loads first (chunk_47's VecCopyL)
 static inline void VecCopyL41(Vec41 *d, Vec41 *s) {
     int x = s->x;
@@ -256,6 +268,102 @@ static inline void VecCopyL41(Vec41 *d, Vec41 *s) {
     d->y = y;
     d->z = z;
 }
+
+// A turn about y alone, from r's heading made unit length
+static inline void Yaw41(Mat41 *m, Mat41 *r) {
+    int a = r->m[0][2];
+    int b = r->m[2][2];
+    int l = func_80097AC8(a * a + b * b);
+
+    if (l) {
+        l = 0x1000000 / l;
+    }
+    a = a * l >> 12;
+    b = b * l >> 12;
+    m->m[0][0] = b;
+    m->m[0][1] = 0;
+    m->m[0][2] = a;
+    m->m[1][0] = 0;
+    m->m[1][1] = 0x1000;
+    m->m[1][2] = 0;
+    m->m[2][0] = -a;
+    m->m[2][1] = 0;
+    m->m[2][2] = b;
+    m->t.z = 0;
+    m->t.y = 0;
+    m->t.x = 0;
+}
+
+static inline void SetV41(Vec41 *v, int x, int y, int z) {
+    v->x = x;
+    v->y = y;
+    v->z = z;
+}
+
+// The cell at p, or none
+static inline Kind41 *Cell41At(Grid41 *g, Vec41 *p) {
+    Kind41 *c = 0;
+    int k = func_8001A6AC(g, p, 0, 0);
+
+    if (k != -1) {
+        c = (Kind41 *)&g->m_04[k];
+    }
+    return c;
+}
+
+// A state given a new cell (the old one kept) and position
+static inline void Push41(St41 *s, Kind41 *c, Vec41 *p) {
+    Kind41 *old = s->m_00;
+
+    s->m_00 = c;
+    s->m_04 = (int)old;
+    VecCopyL41(&s->m_08, p);
+}
+
+/* The cells under the object and at 0x147A to either side, pushed into its states. */
+#ifdef NON_MATCHING
+// Registers only (48 off): the original keeps o in $s4, &m in $s3, &v in $s0 (born only at func_80099898: its first two uses rebuild sp+0x70) and the second and third cells in $s5 and $s1; ours gives o $s5, &m $s4 and &v its own register from the first turn.
+void func_800634BC(Obj41 *o, Grid41 *g) {
+    Vec41 p;
+    Mat41 m;
+    Mat41 r;
+    Vec41 out;
+    Vec41 v;
+    Vec41 w;
+    Vec41 w2;
+    Kind41 *c;
+    Vec41 *pos;
+
+    o->m_61 = 0;
+    p = *(Vec41 *)o->m_64;
+    pos = (Vec41 *)o->m_64;
+    c = Cell41At(g, &p);
+    Push41(o->m_220, c, &p);
+    func_80064310(&r, o->m_70);
+    r.t.z = 0;
+    r.t.y = 0;
+    r.t.x = 0;
+    Yaw41(&m, &r);
+    SetV41(&w, 0, 0, 0x147A);
+    func_80098768(&m, &w, &v);
+    func_800997D0(&v, &m.t);
+    func_80099898(&out, pos, &v);
+    VecCopyL41(&p, &out);
+    c = Cell41At(g, &p);
+    Push41(o->m_224, c, &p);
+    Push41(o->m_22C, c, &p);
+    SetV41(&w2, 0, 0, 0x147A);
+    func_80098768(&m, &w2, &v);
+    func_800997D0(&v, &m.t);
+    func_800998D0(&out, pos, &v);
+    VecCopyL41(&p, &out);
+    c = Cell41At(g, &p);
+    Push41(o->m_228, c, &p);
+    Push41(o->m_230, c, &p);
+}
+#else
+INCLUDE_ASM("asm/langimg/nonmatchings/chunk_41", func_800634BC);
+#endif
 
 static inline void StCopy41(St41 *d, St41 *s) {
     d->m_00 = s->m_00;
