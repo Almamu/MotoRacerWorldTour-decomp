@@ -17,7 +17,9 @@ One file, `src/langimg/chunk_21.cpp`, 0x8003B600-0x8003D60C.
 ## The settings
 
 GCC 2.91.66, `-G8`, split addresses, divisions without checks, small
-globals `D_800C4D88`, `D_800C4D98` and `D_800C4D9C`.
+globals `D_800C4D88`, `D_800C4D98` and `D_800C4D9C`, and
+`-fmove-all-movables` (`func_8003B850` keeps `&depth` and `~0x10` in
+saved registers over its loop; the other functions don't change).
 
 ## Notes
 
@@ -48,6 +50,27 @@ globals `D_800C4D88`, `D_800C4D98` and `D_800C4D9C`.
   `func_8003CD88` load the item from the history before storing the
   flags: `s->m_A80 = s->m_A88[s->m_A8C - 1];` comes first.
 
+- **The scene's draw (`func_8003B850`).** The view set up from the
+  place found by name, the stage's objects drawn and culled against the
+  fog, the overlay's drawn. Its second argument is the state chunk_27
+  passes, handed on to `func_80078FC4`; the objects are chunk_23's
+  `Cobjet`/`CobjetList` (`langimg/cobjet.h`). What made it match:
+  - the place in two variables, one (`p`) for its fog and matrix tests,
+    the other (`q`, a `Cobjet *`) for the `else` branch, so GCC keeps
+    the copy in its own saved register;
+  - the view's position through a pointer local set in both branches
+    (`fp = &v->m_F8;`) and the copy into the matrix written with
+    `&v->m_F8` again;
+  - the matrix's translation read into three fresh locals through a
+    `MATRIX *` local (not an inline taking `&t`, which addressed `t`
+    through a register);
+  - the stage's draw mode (a signed 2-bit field) read into a local
+    before its test, so GCC extracts it with `sll`/`sra`;
+  - the model kept in a local (`Model21 *m = e->m_04;`) rather than read
+    twice;
+  - the depth `func_8001DF10` writes an `int`, declared in the inner
+    block.
+
 ## The functions
 
 | Function | State | Notes |
@@ -56,7 +79,7 @@ globals `D_800C4D88`, `D_800C4D98` and `D_800C4D9C`.
 | `func_8003B734` | matches | its end |
 | `func_8003B7B0` | matches | a buffer copied back |
 | `func_8003B7E0` | matches | a named link found |
-| `func_8003B850` | asm | 323 instructions |
+| `func_8003B850` | matches | the scene's draw |
 | `func_8003BD5C` | matches | the colour zone set |
 | `func_8003BF0C` | asm | 774 instructions |
 | `func_8003CB24` | matches | an item found by name |

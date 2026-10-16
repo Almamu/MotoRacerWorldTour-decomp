@@ -312,8 +312,6 @@ static inline void VecCopyL21(Vector3 *d, Vector3 *s) {
     d->vz = z;
 }
 
-#ifdef NON_MATCHING
-// Right in shape (the view set up, the stage's two object passes, the overlay; the chunk built with -fmove-all-movables for its hoisted constants, the state passed on to func_80078FC4): the original keeps the place found in $s0 and a copy of it in $s3 that later holds the stage's list, where GCC folds the copy into the place, so the camera and the place swap saved registers (272 off)
 void func_8003B850(Scene21 *s, int state) {
     VObj21 *ot;
 
@@ -333,7 +331,9 @@ void func_8003B850(Scene21 *s, int state) {
         }
         if (it && v) {
             CobjetModel *p = (CobjetModel *)func_80017E10(it->m_38, D_800C4D8C, 9);
-            void *q;
+            Cobjet *q;
+            CobjetList *l;
+            Vector3 *fp;
             int d;
 
             func_8001D1C4(s->m_38, cam->m_A0);
@@ -344,16 +344,27 @@ void func_8003B850(Scene21 *s, int state) {
                 Vector3 t;
 
                 v->m_00 = *p->m_matp;
-                VecCopyL21(&t, (Vector3 *)p->m_matp->t);
-                VecCopyL21(&v->m_F8, &t);
+                {
+                    MATRIX *mp = p->m_matp;
+                    int x = mp->t[0];
+                    int y = mp->t[1];
+                    int z = mp->t[2];
+
+                    t.vx = x;
+                    t.vy = y;
+                    t.vz = z;
+                }
+                fp = &v->m_F8;
+                VecCopyL21(fp, &t);
             } else {
                 SVECTOR r;
                 Vector3 t;
 
-                func_800167F8((Cobjet *)q, &r);
+                func_800167F8(q, &r);
                 func_80097F68(&v->m_00, &r);
-                t = ((Cobjet *)q)->m_pos;
-                VecCopyL21(&v->m_F8, &t);
+                t = (q)->m_pos;
+                fp = &v->m_F8;
+                VecCopyL21(fp, &t);
             }
             func_8007857C(v);
             func_800788D8(v);
@@ -367,10 +378,11 @@ void func_8003B850(Scene21 *s, int state) {
                 it->m_68(s);
             }
             VCALL21(D_800C886C, 14, s->m_08);
-            q = it->m_38;
-            if ((d = it->m_draw) != 0) {
-                int n = ((CobjetList *)q)->m_count;
-                Cobjet **o = ((CobjetList *)q)->m_items;
+            l = it->m_38;
+            d = it->m_draw;
+            if (d) {
+                int n = (l)->m_count;
+                Cobjet **o = (l)->m_items;
 
                 if (n > 0) {
                     do {
@@ -383,8 +395,8 @@ void func_8003B850(Scene21 *s, int state) {
                 }
             }
             if (((Stage21 *)s->m_A80)->m_28 >= 0) {
-                int n = ((CobjetList *)q)->m_count;
-                Cobjet **oo = ((CobjetList *)q)->m_items;
+                int n = (l)->m_count;
+                Cobjet **oo = (l)->m_items;
 
                 if (n > 0) {
                     do {
@@ -394,11 +406,13 @@ void func_8003B850(Scene21 *s, int state) {
                             Ref21 *e = (Ref21 *)func_80017948(o);
 
                             if (e) {
-                                if (e->m_04) {
+                                Model21 *m = e->m_04;
+
+                                if (m) {
                                     Vector3 pos = o->m_pos;
                                     int depth;
 
-                                    if (!func_8001DF10(s->m_38, &pos, e->m_04->m_14, s->m_0C << 12,
+                                    if (!func_8001DF10(s->m_38, &pos, m->m_14, s->m_0C << 12,
                                                        &depth)) {
                                         o->m_04 &= ~0x10;
                                         goto next;
@@ -413,9 +427,9 @@ void func_8003B850(Scene21 *s, int state) {
                     } while (n);
                 }
             } else {
-                func_800185F0((CobjetList *)q, 0x10, 0, 0, 0x10000);
+                func_800185F0(l, 0x10, 0, 0, 0x10000);
             }
-            func_800177E8((CobjetList *)q, 0, ((CobjetList *)q)->m_count);
+            func_800177E8(l, 0, (l)->m_count);
             if (it->m_6C) {
                 it->m_6C(s);
             }
@@ -430,9 +444,6 @@ void func_8003B850(Scene21 *s, int state) {
     func_8003E6FC(s);
     D_800C4988 += D_800D6128;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_21", func_8003B850);
-#endif
 
 /* The colour zone off (0), set from the table (1) or fading (2, 3). */
 void func_8003BD5C(Scene21 *s, int mode, Par21 *p) {
