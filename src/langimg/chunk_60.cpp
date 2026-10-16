@@ -296,23 +296,29 @@ int func_80089200(Menu60 *m, int dir);
 T36 *func_80089CF4(Ids60 *o, int i);
 }
 
-#ifdef NON_MATCHING
-/* The downward search: the original's loop isn't rotated and indexes the entries afresh each time (13 off) */
-/* The first entry that can be chosen, from the end or the start. */
+/* The first entry that can be chosen, from the end or the start. The
+ * downward search is a while (1) with its bound tested first inside, so GCC
+ * doesn't rotate it (and indexes the entries afresh each time). */
 int func_80089200(Menu60 *m, int dir) {
     int r = -1;
     int i;
 
     if (dir) {
-        for (i = m->m_n - 1; i >= 0; i--) {
-            Item60 *e = m->m_items[i];
+        i = m->m_n - 1;
+        while (1) {
+            Item60 *e;
 
+            if (i < 0) {
+                break;
+            }
+            e = m->m_items[i];
             if (e && e->m_48 && e->m_44) {
                 r = i;
             }
             if (r != -1) {
                 break;
             }
+            i--;
         }
     } else {
         for (i = 0; r == -1 && i < m->m_n; i++) {
@@ -325,9 +331,6 @@ int func_80089200(Menu60 *m, int dir) {
     }
     return r;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_60", func_80089200);
-#endif
 
 /* An entry chosen: its object's virtual call 5. */
 int func_800892DC(Menu60 *m, int i) {
