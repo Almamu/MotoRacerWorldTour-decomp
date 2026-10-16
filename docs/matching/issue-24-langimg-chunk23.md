@@ -41,7 +41,7 @@ return 0 or 1, or nothing.
 | `func_8004009C` | parked | an entry's text from a format, cut to its room (9 off) |
 | `func_800404D0` | parked | the subclass's constructor: -1 in another register (7 off; the chained assignments didn't help) |
 | `func_800405A0`, `func_800406A4` | match | the stage's numbers from the settings; a sound bank |
-| `func_800406E0` | parked | the stage's setup, its two tables (20 off) |
+| `func_800406E0` | parked | the stage's setup, its two tables (5 off) |
 | `func_80040A24` to `func_80040E50` | match | the stage's start, its sounds, virtual calls, the destructor's cleanup |
 
 - **Old-style varargs.** `func_800401FC` and `func_80040178` store their
@@ -72,5 +72,7 @@ return 0 or 1, or nothing.
   copy where the original has two (311 instructions built, against 314).
 - `func_800406E0` goes from 20 to 13 off with `D_800D497C` declared small
   (`extern int`, copied through a cast) so its address is one `la`, as the
-  original's; left: a temporary's register and where the prologue stores
-  `$s1`.
+  original's, and to 5 with `func_80044D0C` declared with its second
+  argument (chunk_25 defines it with two; the original passes `a` on in
+  `$a1` and saves it after the call); left: the vtable's and the stage's
+  loads in other temporaries.
