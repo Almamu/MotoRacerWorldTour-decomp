@@ -26,7 +26,7 @@ the run's bikes (`Bike34`, 0x568 bytes):
   section and point, 4 bytes per gate at 0xE4): the gate's counter, a time
   added in mode 4, `func_80057814`, the lap done at gate 0
   (`func_80056CD4`);
-- a lap done (`func_80056F64`, parked): its time corrected by how far past
+- a lap done (`func_80056F64`): its time corrected by how far past
   the line the bike is, a text when it beats the earlier laps, the next
   lap's time cleared, a text and `func_8006CA84(56, 127)` at the last lap,
   or the bike's finish and place.
@@ -78,9 +78,6 @@ globals.
 - **Parked.**
   - `func_80056874`: the run read for the time at 0x1DF0 in `$a0` where
     the original has `$a2` (and copies it to `$a0` for the loop), 5 off.
-  - `func_80056F64`: the bike's index at 0x43 in `$v1` where the original
-    has `$a1`, and the -1 it's compared with in another register (5 off);
-    the permuter got to 4 only with -1 in a variable.
 - **Still asm.** `func_800557C4` (926 instructions), not tried.
 
 ## The functions
@@ -96,4 +93,12 @@ globals.
 | `func_80056874` | parked | the race's clock: registers |
 | `func_80056B68` | matches | a bike's times added to |
 | `func_80056CD4` | matches | a bike passing a gate |
-| `func_80056F64` | parked | a lap done: registers |
+| `func_80056F64` | matches | a lap done |
+
+## Group B large functions, third pass
+
+`func_80056F64` matches. The index in `$a1` was an argument: the
+original passes the bike's index to `func_80053198`, whose definition
+takes `(Own34 *o, int i)`, but the prototype here declared only the
+first. With the second argument declared and passed, the function
+matches with no other change.

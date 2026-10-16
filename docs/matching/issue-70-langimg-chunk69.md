@@ -16,7 +16,7 @@ one). Through its two views (`m_A80`, `m_A84`, chosen by the mode at
 
 One file, `src/langimg/chunk_69.cpp`, 0x8009B17C-0x8009D0E4.
 
-23 functions: 18 match, 4 are parked, 1 is still asm.
+23 functions: 19 match, 3 are parked, 1 is still asm.
 
 ## The settings
 
@@ -62,7 +62,7 @@ global.
 | Function | State | Notes |
 |---|---|---|
 | `func_8009B17C` | asm | 283 instructions |
-| `func_8009B5E8` | parked | the settings screen filled: 10 off |
+| `func_8009B5E8` | matches | the settings screen filled |
 | `func_8009B838` | matches | the name copied to the drawing |
 | `func_8009B8BC` | matches | a call when there's a screen |
 | `func_8009B8F8` | matches | a part moved by a fraction |
@@ -131,3 +131,11 @@ list, its effect, then a flash) matches:
   keeps the corners and the last point in temporaries after the two calls
   (a frame of 0x30); GCC keeps one of them in a saved register more (0x38),
   which shifts everything after. The chunk now includes `psyq.h`.
+
+## Group C near-misses
+
+- `func_8009B5E8` matches. The record's table at 0x194 is a pointer,
+  indexed in the loop through a hand-scaled byte offset
+  (`*(int *)((u8 *)d->m_194 + (i << 2))`): that gives the original's
+  base + offset order and its temporaries; as `d->m_194[i]`, GCC added the
+  offset first and the loop's values came out in other registers (10 off).

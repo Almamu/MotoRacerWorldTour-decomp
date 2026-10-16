@@ -418,6 +418,14 @@ globals), a script that tries every order is quicker than guessing:
 
 ### Loops
 
+- **A loop GCC doesn't rotate: `while (1)` with the bound tested
+  first.** When the original keeps a search loop's bound test at the top
+  (`bltz` before the body, a `j` back to it at the bottom) and indexes the
+  array afresh each pass, write `i = n - 1; while (1) { if (i < 0)
+  break; ...; if (found) break; i--; }`: GCC leaves that loop as written.
+  As `for (i = n - 1; i >= 0; i--)` it was rotated (the test moved to the
+  bottom, a pointer stepped), and a `goto` loop came out worse (chunk_60's
+  `func_80089200`, from 13 off).
 - **A loop entered at its body: `do`/`while`.** chunk_38's loops over
   the five bikes jump into the body and test the count at the top of the
   next pass: `i = 0; b = r->m_2E8; do { ...; b++; } while (++i < 5);`
@@ -826,6 +834,14 @@ globals), a script that tries every order is quicker than guessing:
   in a saved register across calls and returns it from one place, write
   it with one `int r` and nested `if`s, not early returns (chunk_34's
   `func_80056CD4`).
+- **Arguments passed through.** A result in `$t0`-`$t3` where GCC puts
+  it in `$a0` can mean the function has parameters it hands on unchanged
+  to a call, so `$a0`-`$a3` stay live until then: chunk_55's
+  `func_80080F30` was declared `(void)`, but chunk_22 calls it with four
+  arguments and it passes them to `func_8007F948` (whose asm reads all
+  four). Declared with them and passing them on, it matched (from 3 off).
+  Check other files' prototypes and call sites of a parked function, and
+  the callee's first instructions for `$a0`-`$a3` reads.
 - **Declare what a callee returns.** A call whose result is unused still
   changes the code around it with the callee's declared return type:
   chunk_18's `func_80036850` matched only with `func_8001B350` declared
@@ -853,7 +869,15 @@ globals), a script that tries every order is quicker than guessing:
   with the wrong number of arguments changes the caller: chunk_25 passed
   `k` to `func_8001687C`, which takes nothing (chunk_02b's definition),
   and kept `k` in another register for it; declared as defined,
-  `func_80044D0C` matched. And when a library function's real prototype
+  `func_80044D0C` matched. The other way round, a prototype with fewer
+  arguments than the definition leaves out a value the original passes.
+  The near-miss then reads as "a value in `$a1` where we have another
+  register" or "the original loads a field we never use". This was the
+  case for chunk_52's `func_80079438` (`func_800895A0` takes the buffer's
+  size too) and chunk_34's `func_80056F64` (`func_80053198` takes the
+  bike's index). Both matched once the argument was declared and passed.
+  A sweep of every chunk's prototypes against the definitions' parameter
+  counts finds these. And when a library function's real prototype
   returns something the original's didn't (`memcpy`), a second declaration
   returning `void` with an asm label (`void memcpy20(...)
   asm("memcpy");`) calls the same symbol (chunk_20's `func_8003B51C`).

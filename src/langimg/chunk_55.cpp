@@ -73,7 +73,7 @@ extern short D_800CBCDC;
 extern short D_800CBCDE;
 
 extern "C" {
-int func_8007F948(void);
+int func_8007F948(void *font, void *t, int x, int y);
 int func_80081270(Map55 *m, int k);
 int func_800812C4(Map55 *m);
 void func_8007F294(void);
@@ -82,7 +82,7 @@ int func_8007F2C8(Tab55 *t, u8 a, u8 b);
 int func_8007F33C(Font55 *f, u8 *s);
 int func_80081330(void *t, int a, int b);
 void func_80080678(void);
-int func_80080F30(void);
+int func_80080F30(void *font, void *t, int x, int y);
 int func_800803C4(Font55 *f, u8 *s);
 int func_800804B8(s8 c);
 int func_80080598(s8 c);
@@ -321,9 +321,8 @@ void func_80080678(void) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_55", func_800806D4);
 
-#ifdef NON_MATCHING
-// The result's register: $t0 in the original, $a0 here (3 off). The compare tree (0x1000 first, then below 0x1001, then 0) came with the switch on an unsigned value and a third empty case, which keeps GCC from dropping the empty case 0x1000
-int func_80080F30(void) {
+// The compare tree (0x1000 first, then below 0x1001, then 0) comes with the switch on an unsigned value and a third empty case, which keeps GCC from dropping the empty case 0x1000; the four arguments are passed through to func_8007F948
+int func_80080F30(void *font, void *t, int x, int y) {
     int r;
 
     D_800CBCDC = 0;
@@ -333,7 +332,7 @@ int func_80080F30(void) {
     r = 0;
     switch ((u32)(D_800C89D0 & 0xF000)) {
     case 0:
-        r = func_8007F948();
+        r = func_8007F948(font, t, x, y);
         break;
     case 0x1000:
         break;
@@ -342,9 +341,6 @@ int func_80080F30(void) {
     }
     return r;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_55", func_80080F30);
-#endif
 
 #ifdef NON_MATCHING
 // The colour's three shifted copies: the original ors (f << 8) | 0x66000000 into f << 16, GCC (f << 16) | 0x66000000 first (5 off; the switch on f &= 3 kept in f's register as the original)

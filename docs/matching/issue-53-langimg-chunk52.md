@@ -48,7 +48,7 @@ globals.
 | `func_80079328` | matches | the callbacks removed, `ResetGraph(3)` |
 | `func_80079350`, `func_80079390` | match | the vsync and drawsync callbacks |
 | `func_800793C0`, `func_80079400` | match | the callbacks installed and removed |
-| `func_80079438` | parked | a check through the buffer: the argument's temporaries (4 off) |
+| `func_80079438` | matches | a check through the buffer |
 | `func_80079494`, `func_800794B4`, `func_800794BC` | match | a wrapper, a return of 1, a reset |
 | `func_800794E8` | matches | the screen cleared (and the line at 510 moved to 511) |
 | `func_800795A0`, `func_800795FC` | match | the buffer allocated and freed |
@@ -95,3 +95,10 @@ first call (`int ok = f(...); r = 0; if (ok) r = ...;`) and the global
 written first in the product (`D_800B8868[0] * g->m_24`). Left: the
 argument's temporaries (the original loads `m_24` into `$a1` and `m_28`
 into `$v0`).
+
+## Group B large functions, third pass
+
+`func_80079438` matches. Its last four instructions were a missing
+argument: `func_800895A0` takes the buffer and its size (`m_24`), and
+the prototype here declared only the buffer. The `m_24` in `$a1` was the
+second argument, not a temporary.
