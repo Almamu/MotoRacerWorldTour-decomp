@@ -48,7 +48,7 @@ globals.
 
 | Function | State | Notes |
 |---|---|---|
-| `func_8006F29C` | asm | an entry started (321 instructions) |
+| `func_8006F29C` | matches | a bike's sounds each frame |
 | `func_8006F7A0` to `func_8006F968` | match | the entries' init and calls, an entry started near or far, a camera set |
 | `func_8006F9BC` | matches | a mode's two setups |
 | `func_8006FA30`, `func_8006FADC`, `func_8006FAF8` | match | the volumes (0 to 63) |
@@ -61,3 +61,26 @@ globals.
 | `func_80070C10`, `func_80070CCC`, `func_80070D54` | match | points along an angle, a distance along it, its sine and cosine |
 | `func_80070D98` to `func_80070E20` | match | a list's elements, a key searched for |
 | `func_80070E40` | asm | 379 instructions |
+
+## Group B large functions, third pass
+
+`func_8006F29C` matches. Each frame it sets a bike's sounds:
+
+- the listener (the camera or the bike's model);
+- the engine (`func_8006E474` or `func_8006EB54` by the game mode);
+- a landing scaled by the fall's speed;
+- the one-shot sounds (`Play47`);
+- the bumps, skids and wind (the wind is a looping voice kept at the
+  entry's 0x78).
+
+The new structs are `Bk47`, `Mdl47` and `Mode47`, and `World47` and
+`Ent47` gained the fields used here. Everything matched quickly except the
+bump's volume. There the original masks the byte at 0x5C again
+(`andi 0xFF`) before doubling it. That needed two things:
+
+- the strength computed in an inline helper that takes a `u8`;
+- the hard-bump test written as a fresh signed read, `(s8)m->m_5C < 0`,
+  not a cast of the local.
+
+With one local doing both jobs, GCC dropped the mask (4 off). The
+permuter found the re-read.
