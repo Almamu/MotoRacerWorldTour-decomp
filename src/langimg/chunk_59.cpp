@@ -70,7 +70,8 @@ struct Tile59 {
     int m_40;
     int m_44;
     int m_48;
-    u8 m_4C[0x4C];
+    int m_4C; // its flags
+    u8 m_50[0x48];
     Obj59 *m_98;
     int m_9C;
     Sub59 m_A0;
@@ -159,6 +160,20 @@ int func_80087A58(Grid59 *g, int a, int b, int c, int n, int w, int h, int k, in
 int func_800960D0(Tile59 *t, int a, int n, int x);
 int func_800961EC(Tile59 *t, int a);
 void *memset(void *p, int c, unsigned int n);
+int func_80087EB0(Grid59 *g, int force, int mode, va_list ap);
+void func_800957C0(Tile59 *t, Tile59 *a, int b);
+void func_800957D4(Tile59 *t, Tile59 *a, int b);
+void func_800957E8(Tile59 *t, Tile59 *a, int b);
+void func_800957FC(Tile59 *t, Tile59 *a, int b);
+void func_80095810(Tile59 *t, Tile59 *a);
+void func_80095820(Tile59 *t, int a);
+void func_80095830(Tile59 *t, int a);
+void func_80095840(Tile59 *t, int a);
+void func_80095850(Tile59 *t, int a);
+void func_80095860(Tile59 *t, int a);
+void func_80095870(Tile59 *t, int a);
+void func_80095880(Tile59 *t, int a);
+void func_80095890(Tile59 *t, int a);
 }
 
 // A movie's decoder: the work buffer and its size in bytes
@@ -467,7 +482,284 @@ int func_80087A58(Grid59 *g, int a, int b, int c, int n, int w, int h, int k, in
     return ok;
 }
 
+/* The tiles laid out: all reset, the edges' set, then the rows by the mode
+ * (from the arguments: a row, two sizes). */
+#ifdef NON_MATCHING
+// The original's shape, cases in its order; left: in the two-row modes the original keeps the sizes on the stack and computes x + 8, y + 8 and w + 12 again before each row's loop, where GCC hoists them out of both loops, which shifts the saved registers (480 off).
+int func_80087EB0(Grid59 *g, int force, int mode, va_list ap) {
+    int r = 0;
+    int i, row, w, h;
+    Tile59 *t, *prev, *first, *rowfirst;
+
+    if (!g->m_18) {
+        goto out;
+    }
+    if (force || g->m_28 != mode) {
+        g->m_28 = mode;
+        w = (g->m_10 << 5) >> 12;
+        h = (g->m_14 << 5) >> 12;
+        for (i = 0; i < g->m_00; i++) {
+            t = func_800891E8(g, i);
+            t->m_9C = 0;
+            t->m_44 = 1;
+            t->m_48 = 0;
+            func_80095820(t, 0x7FFFFFFF);
+            func_80095830(t, 0x7FFFFFFF);
+            func_80095840(t, 0x7FFFFFFF);
+            func_80095850(t, 0x7FFFFFFF);
+            func_80095860(t, 0);
+            func_80095880(t, 0);
+            func_80095870(t, 0);
+            func_80095890(t, 0);
+            t->m_4C = 0x110;
+        }
+        for (i = 0; i < g->m_04; i++) {
+            t = func_800891E8(g, i);
+            if ((unsigned)(i - 2) < 8) {
+                func_80095860(t, 0);
+                func_80095870(t, 0);
+                func_80095880(t, 0);
+                func_80095890(t, 0);
+            } else {
+                func_80095860(t, w + 12);
+                func_80095870(t, w + 12);
+                func_80095880(t, h + 8);
+                func_80095890(t, h + 8);
+            }
+            func_800957C0(t, 0, 0);
+            func_800957E8(t, 0, 0);
+            func_800957D4(t, 0, 0);
+            func_800957FC(t, 0, 0);
+            t->m_4C = 0x110;
+            t->m_48 = 1;
+        }
+        switch (mode) {
+        case 3: {
+            int x, y;
+
+            va_arg(ap, int);
+            va_arg(ap, int);
+            x = va_arg(ap, int);
+            y = va_arg(ap, int);
+            first = 0;
+            prev = 0;
+            for (row = 0; row < 2; row++) {
+                rowfirst = 0;
+                for (i = 0; i < g->m_08; i++) {
+                    t = func_800891E8(g, g->m_04 + i + g->m_08 * row);
+                    if (i == 0) {
+                        rowfirst = t;
+                        if (row == 0) {
+                            first = t;
+                        }
+                    }
+                    func_80095810(t, prev);
+                    t->m_48 = 1;
+                    if (row == 0) {
+                        func_80095860(t, w + 12);
+                        func_800957C0(t, 0, 0);
+                        func_80095820(t, 0x8000);
+                        t->m_4C = 0x100;
+                    } else {
+                        func_80095860(t, w);
+                        func_800957C0(t, first, 0);
+                        func_80095870(t, w + 12);
+                        func_800957D4(t, 0, 0);
+                        t->m_4C = 0x120;
+                    }
+                    if (i < 2) {
+                        func_80095890(t, 8);
+                        func_800957FC(t, 0, 0);
+                        func_80095850(t, (g->m_14 - (x + 8)) << 16);
+                    } else if (i == 2) {
+                        func_80095890(t, 0);
+                        func_800957FC(t, rowfirst, 0);
+                        func_80095850(t, (g->m_14 - (x + 8) - y) << 16);
+                    } else if ((unsigned)(i - 3) < 3) {
+                        func_80095880(t, 8);
+                        func_800957E8(t, 0, 0);
+                        func_800957FC(t, rowfirst, 0);
+                    } else if (i == 6) {
+                        func_80095880(t, 8);
+                        func_800957E8(t, 0, 0);
+                        func_80095830(t, (y + 8) << 16);
+                    } else if (i == 7) {
+                        func_80095880(t, 8);
+                        func_800957E8(t, 0, 0);
+                        func_80095890(t, 8);
+                        func_800957FC(t, 0, 0);
+                    }
+                    prev = t;
+                }
+                prev = 0;
+            }
+            break;
+        }
+        case 1: {
+            int x, y;
+
+            va_arg(ap, int);
+            va_arg(ap, int);
+            x = va_arg(ap, int);
+            y = va_arg(ap, int);
+            first = 0;
+            rowfirst = 0;
+            for (row = 0; row < 2; row++) {
+                for (i = 0; i < g->m_08; i++) {
+                    t = func_800891E8(g, g->m_04 + i + g->m_08 * row);
+                    if (row == 0 && i == 0) {
+                        first = t;
+                    }
+                    if (i == 0) {
+                        rowfirst = t;
+                    }
+                    func_800957C0(t, 0, 0);
+                    func_800957D4(t, 0, 0);
+                    func_80095860(t, w + 12);
+                    func_80095870(t, w + 12);
+                    func_80095810(t, 0);
+                    t->m_48 = 1;
+                    t->m_4C = row ? 0x210 : 0x10;
+                    if (i < 2) {
+                        if (row == 1) {
+                            func_80095890(t, 8);
+                            func_80095850(t, (g->m_14 - (x + 8)) << 16);
+                            func_80095830(t, (x + 8) << 16);
+                        } else {
+                            func_80095890(t, 0);
+                            func_80095850(t, (g->m_14 / 2 - x) << 16);
+                            func_80095830(t, x << 16);
+                        }
+                        func_800957FC(t, 0, 0);
+                    } else if (i == 2) {
+                        int v;
+
+                        if (row == 0) {
+                            v = g->m_14 / 2 - x;
+                        } else {
+                            v = g->m_14 - (x + 8);
+                        }
+                        func_80095850(t, (v - y) << 16);
+                        func_80095890(t, 0);
+                        func_800957FC(t, rowfirst, 0);
+                        func_80095830(t, y << 16);
+                    } else if ((unsigned)(i - 3) < 3) {
+                        if (row == 0) {
+                            func_80095880(t, 8);
+                            func_800957E8(t, 0, 0);
+                        } else {
+                            func_80095880(t, 0);
+                            func_800957E8(t, first, 0);
+                        }
+                        func_800957FC(t, rowfirst, 0);
+                    } else if (i == 6) {
+                        if (row == 0) {
+                            func_80095880(t, 8);
+                            func_800957E8(t, 0, 0);
+                            func_80095830(t, (y + 8) << 16);
+                        } else {
+                            func_80095880(t, 0);
+                            func_800957E8(t, first, 0);
+                            func_80095830(t, y << 16);
+                        }
+                    } else if (i == 7) {
+                        func_80095830(t, 0x8000);
+                        if (row == 0) {
+                            func_80095880(t, 8);
+                            func_800957E8(t, 0, 0);
+                        } else {
+                            func_80095850(t, 0x8100);
+                            func_80095890(t, 8);
+                            func_800957FC(t, 0, 0);
+                        }
+                    }
+                }
+                rowfirst = 0;
+            }
+            break;
+        }
+        case 0: {
+            int m, x, y;
+
+            m = va_arg(ap, int);
+            va_arg(ap, int);
+            x = va_arg(ap, int);
+            y = va_arg(ap, int);
+            prev = 0;
+            rowfirst = 0;
+            for (i = 0; i < g->m_08; i++) {
+                t = func_800891E8(g, g->m_04 + m * g->m_08 + i);
+                if (i == 0) {
+                    rowfirst = t;
+                }
+                t->m_48 = 1;
+                func_80095810(t, prev);
+                func_80095860(t, w + 12);
+                func_800957C0(t, 0, 0);
+                func_80095870(t, w + 12);
+                func_800957D4(t, 0, 0);
+                t->m_4C = 0x110;
+                if (i < 2) {
+                    func_80095890(t, 8);
+                    func_800957FC(t, 0, 0);
+                    func_80095850(t, (g->m_14 - (x + 8)) << 16);
+                } else if (i == 2) {
+                    func_80095890(t, 0);
+                    func_800957FC(t, rowfirst, 0);
+                    func_80095850(t, (g->m_14 - (x + 8) - y) << 16);
+                } else if ((unsigned)(i - 3) < 3) {
+                    func_80095880(t, 8);
+                    func_800957E8(t, 0, 0);
+                    func_800957FC(t, rowfirst, 0);
+                } else if (i == 6) {
+                    func_80095880(t, 8);
+                    func_800957E8(t, 0, 0);
+                    func_80095830(t, (y + 8) << 16);
+                } else if (i == 7) {
+                    func_80095880(t, 8);
+                    func_800957E8(t, 0, 0);
+                    func_80095890(t, 8);
+                    func_800957FC(t, 0, 0);
+                }
+                prev = t;
+            }
+            break;
+        }
+        case 2:
+            prev = 0;
+            for (i = 0; i < g->m_00; i++) {
+                t = func_800891E8(g, i);
+                t->m_48 = 1;
+                func_800957C0(t, 0, 0);
+                func_800957E8(t, 0, 0);
+                func_800957D4(t, 0, 0);
+                func_800957FC(t, 0, 0);
+                func_80095860(t, w + 12);
+                func_80095870(t, w + 12);
+                func_80095880(t, h + 8);
+                func_80095890(t, h + 8);
+                func_80095810(t, prev);
+                t->m_4C = 0x110;
+                prev = t;
+            }
+            break;
+        case -1:
+        default:
+            g->m_28 = -1;
+            break;
+        }
+    } else {
+        r = 1;
+    }
+    if (g->m_28 != -1) {
+        r = func_80088D04(g, 0, 0, 0);
+    }
+out:
+    return r;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_59", func_80087EB0);
+#endif
 
 /* The tiles resized. */
 int func_80088A08(Grid59 *g, int w, int h) {
