@@ -15,9 +15,26 @@ struct Sphere {
 
 // What a particle is
 struct ParticleDef {
-    u8 m_00[0xC];
+    short m_00;
+    short m_02;
+    short m_04;
+    short m_rate; // 0x06: how many a step, 4.12 of the strength
+    short m_step; // 0x08: the distance between two
+    short m_0A;
     int m_gravity; // 0x0C
     int m_drag;
+    short m_speed;    // 0x14
+    short m_spread;   // 0x16: of the direction
+    short m_18, m_1A; // a range
+    short m_a[3];     // 0x1C: a ramp's three values
+    short m_b[3];     // 0x22: another's
+    short m_mid;      // 0x28: where the ramps turn, 4.12 of the life
+    short m_life[2];  // 0x2A: a range
+    short m_2E;
+    short m_posSpread; // 0x30
+    short m_32;
+    int m_34;
+    u8 m_38[8];
 };
 
 // A particle (0x60 bytes)
@@ -28,11 +45,16 @@ struct Particle {
     Vector3 m_vel;  // 0x1C
     short m_28;
     short m_life; // 0x2A
-    u8 m_2C[0x20];
+    struct Ramp06 {
+        int m_step[2]; // by part, 16.16 a life's 4.12
+        int m_shift[2];
+    } m_a, m_b;    // 0x2C, 0x3C
     short m_alpha; // 0x4C
     short m_4E;
     int m_fade; // 0x50
-    u8 m_54[0xC];
+    u8 m_54[4];
+    short m_58;
+    int m_5C;
 };
 struct Particles {
     u8 m_00[0x2580];
@@ -44,7 +66,14 @@ struct Particles {
     short m_live; // 0x4B0C
     short m_4B0E;
 };
-extern int D_800D6100;                        // the frame's time
+extern int D_800D6100;           // the frame's time
+extern ParticleDef D_800C4994[]; // the particles' kinds
+extern short D_800CA968[256];    // random 4.12 fractions
+extern u16 D_800C4D14;           // the next of them
+int func_8009923C(Vector3 *v);
+void func_80098E9C(Vector3 *v);
+Vector3 *func_800994F0(Vector3 *v, int a, int shift); // v * a >> shift
+void func_8001F13C(Particles *ps, int kind, Vector3 *to, Vector3 *from, Vector3 *vel, int strength);
 Vector3 *func_80099574(Vector3 *v, int drag); // returns v
 void func_8001DFD8(Racer *r, int dist);
 void func_8001F67C(Particles *p);
@@ -322,7 +351,149 @@ void func_8001F10C(Particles *p) {
     p->m_2580 = 0;
 }
 
+static inline void VecCopy06(Vector3 *d, Vector3 *s) {
+    int x = s->vx;
+    int y = s->vy;
+    int z = s->vz;
+
+    d->vx = x;
+    d->vy = y;
+    d->vz = z;
+}
+
+static inline int Rand06(void) {
+    return D_800CA968[(u8)D_800C4D14++];
+}
+
+static inline void Spread06(Vector3 *v, short k) {
+    int x = (Rand06() * k >> 12) - k / 2;
+    int y = (Rand06() * k >> 12) - k / 2;
+    int z = (Rand06() * k >> 12) - k / 2;
+
+    v->vx = x;
+    v->vy = y;
+    v->vz = z;
+}
+
+static inline void VecSub06(Vector3 *d, Vector3 *a, Vector3 *b) {
+    int ax = a->vx;
+    int ay = a->vy;
+    int az = a->vz;
+    int bx = b->vx;
+    int by = b->vy;
+    int bz = b->vz;
+    int x = ax - bx;
+    int y = ay - by;
+    int z = az - bz;
+
+    d->vx = x;
+    d->vy = y;
+    d->vz = z;
+}
+
+static inline void VecCopyP06(Vector3 *d, Vector3 *s) {
+    d->vx = s->vx;
+    d->vy = s->vy;
+    d->vz = s->vz;
+}
+
+/* Particles of a kind along a segment: a step apart, as many a step as
+ * the strength gives, spread around it and moving at a velocity. */
+#ifdef NON_MATCHING
+// 253 off, the shape is right: the sum's address (sp+0x70) is hoisted into $s7 where the original keeps the constant 16 there and the distance in $fp (ours spills it); the original hoists &pos into a spill slot (0x90) and keeps the kind's offset at 0x80; the first difference's loads are interleaved with its stores where the original loads all six first.
+void func_8001F13C(Particles *ps, int kind, Vector3 *to, Vector3 *from, Vector3 *vel,
+                   int strength) {
+    Vector3 pos, dir, v, o, w, ow;
+    int step, len, n, s;
+    u32 t;
+
+    VecSub06(&dir, to, from);
+    step = D_800C4994[kind].m_step;
+    len = func_8009923C(&dir);
+    if (len) {
+        func_80098E9C(&dir);
+    }
+    func_80099574(&dir, step);
+    VecCopyP06(&pos, from);
+    {
+        int sg = strength >> 31;
+
+        s = (strength ^ sg) - sg;
+    }
+    if (s >= 0x1000) {
+        s = 0x1000;
+    }
+    n = D_800C4994[kind].m_rate * s >> 12;
+    t = 0;
+    do {
+        int i;
+
+        for (i = n; i; i--) {
+            int dt;
+            int k;
+            Particle *p;
+            ParticleDef *d = &D_800C4994[kind];
+
+            Spread06(&o, d->m_spread);
+            k = ps->m_4B04;
+            p = &ps->m_items[k];
+            dt = (D_800D6100 << 12) / 1000;
+            {
+                Vector3 q;
+
+                func_80099898(&q, vel, &o);
+                VecCopy06(&v, &q);
+            }
+            func_800994F0(&v, dt * d->m_speed, 24);
+            Spread06(&ow, d->m_posSpread);
+            {
+                Vector3 q;
+
+                func_80099898(&q, &ow, &pos);
+                p->m_def = d;
+                p->m_28 = d->m_02;
+                VecCopyP06(&p->m_pos, &q);
+                VecCopyP06(&p->m_vel, &v);
+                p->m_life = d->m_life[0] + (Rand06() * (d->m_life[1] - d->m_life[0]) >> 12);
+                VecCopy06(&w, &q);
+            }
+            p->m_58 = d->m_18 + (Rand06() * (d->m_1A - d->m_18) >> 12);
+            p->m_5C = d->m_34;
+            p->m_fade = 0x40000 / p->m_life;
+            {
+                int m = d->m_mid ? d->m_mid : 1;
+                int a;
+
+                a = d->m_a[1] - d->m_a[0];
+                p->m_a.m_shift[0] = 16;
+                p->m_a.m_step[0] = a;
+                p->m_a.m_step[0] = (a << 16) / m;
+                a = d->m_b[1] - d->m_b[0];
+                p->m_b.m_shift[0] = 16;
+                p->m_b.m_step[0] = a;
+                p->m_b.m_step[0] = (a << 16) / m;
+                m = 0x1000 - (d->m_mid != 0x1000 ? d->m_mid : 1);
+                a = d->m_a[2] - d->m_a[1];
+                p->m_a.m_shift[1] = 16;
+                p->m_a.m_step[1] = a;
+                p->m_a.m_step[1] = (a << 16) / m;
+                a = d->m_b[2] - d->m_b[1];
+                p->m_b.m_shift[1] = 16;
+                p->m_b.m_step[1] = a;
+                p->m_b.m_step[1] = (a << 16) / m;
+            }
+            if (++k == 100) {
+                k = 0;
+            }
+            ps->m_4B04 = k;
+        }
+        func_800997D0((long *)&pos, (long *)&dir);
+        t += step;
+    } while (t < (u32)len);
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_06", func_8001F13C);
+#endif
 
 /* The particles' frame: moved, slowed, aged and faded; the live ones
  * counted. */

@@ -556,6 +556,11 @@ globals), a script that tries every order is quicker than guessing:
 - **The step's order.** A loop over the bikes with a pointer and a count
   increments the pointers first: `for (i = 0; i < 5; b++, i++)`;
   `i++, b++` put the count's `addiu` first (chunk_33's `func_80055410`).
+- **A second value stepped in the body.** Where the original reloads the
+  loop's bound before the count's `addiu` and steps a second value in the
+  branch's delay slot, the second step is a statement of its own after the
+  call, not in the `for`'s step: `for (i = 0; i < g->m_04; i++) { f(g, j);
+  j += st; }` (chunk_59's `func_80087A58`, 141 to 4 off).
 - **A count and an end per loop.** chunk_33's `func_800550C0` counts
   over the same five bikes twice; with one count and one end pointer for
   both loops, the first loop's two registers swapped; with a second
@@ -1243,6 +1248,19 @@ Locals declared before the array keep their place in the frame.
   stack slot across the search, an inline taking its address (`Fn21 *h =
   0; FindFn21(t, name, &h);`, the inline storing `*out` and breaking)
   puts it there; chunk_21's `func_8003CDEC`.
+- **A call wrapped in an inline for a temporary argument.** When the
+  original passes a local's address to one call through a temporary
+  (`addiu $a0, $sp, 0x20` then `addu $a1, $a0`) and only takes it into a
+  saved register at a later use, the call is in a one-line inline
+  (`static inline void Rot07(Vector3 *v) { func_8009887C(v, v); }`): the
+  inline's parameter is a new value, apart from the later uses. chunk_07's
+  `func_800203A8` (15 off to 8).
+- **Copies of one source loaded twice.** When the original copies the
+  same vector twice with every load before every store (the second set
+  of loads through its own pointer), the copies are inlines with locals
+  (`VecCopy07(&e, &s->m_pos); VecCopy07(&g, &s->m_pos);`); struct
+  assignments load and store by turns, and one set of locals is loaded
+  once (chunk_07's `func_800203A8`, 223 off to 57).
 
 ## Register allocation
 

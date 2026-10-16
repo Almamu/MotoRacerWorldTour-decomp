@@ -258,7 +258,7 @@ langimg.chunk_16_GCC  := 2.91.66-psx
 langimg.chunk_16_CFLAGS :=
 langimg.chunk_16_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=
 langimg.chunk_18_GCC  := 2.91.66-psx
-langimg.chunk_18_CFLAGS :=
+langimg.chunk_18_CFLAGS := -fmove-all-movables
 langimg.chunk_18_MASPSXFLAGS = $(MASPSXFLAGS) --div-no-checks --small-externs=
 langimg.chunk_53_GCC  := 2.91.66-psx
 langimg.chunk_53_CFLAGS :=

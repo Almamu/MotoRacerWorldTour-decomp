@@ -13,7 +13,7 @@ globals set or cleared together.
 
 One file, `src/langimg/chunk_57.cpp`, 0x800831BC-0x80085258.
 
-22 functions: 11 match, 9 are parked, 2 are still asm.
+22 functions: 11 match, 10 are parked, 1 is still asm.
 
 ## The settings
 
@@ -66,7 +66,7 @@ with it).
 | `func_80083D40`, `func_80083E14` | match | a message shown |
 | `func_80083E78` | parked | a player's message drawn, its value and five stars: the saved registers (151 off) |
 | `func_800841BC`, `func_8008422C` | match | a node's values |
-| `func_800842E8` | asm | 241 instructions |
+| `func_800842E8` | parked | a screen's labels drawn: scheduling |
 | `func_800846AC` | parked | six globals set: the gp store's place |
 | `func_800846FC` | matches | the globals cleared |
 | `func_80084720` | asm | 256 instructions |
@@ -129,3 +129,27 @@ saved registers. The original keeps `i * 4` twice (`$fp`, and a copy in
 `$s3` later reused for the font) and spills only `h->m_84`'s base; here
 `i * 4` is spilled instead and the others move along (151 off). A
 20-minute permuter run found nothing real.
+
+## Group C: more `$fp` functions
+
+`func_800842E8` draws a screen's labels (`Lbl57`, in `LblList57`'s array,
+one bit each in its mask): a label stored at its last place, or placed
+again by its two parents (indices of 6 bits, -1 for the screen) and its
+alignment flags, its frame (by index, or through a pointer table), its
+colour by its timer, then `func_80080040` with the window's origin. The
+packed words are bitfield structs. What helped:
+- **Signed 2-bit flags.** The "placed" and "frames through pointers" tests
+  are `and` with 0xC0000000 in the original, which a signed `int f : 2`
+  field gave (unsigned, GCC shifted).
+- **The frames pointer in a local** from the early null test
+  (`!(fr = o->m_08)`), used again for the frame: 113 to 103 off.
+- **A bit tested in the `if`, the skip in its `else`** (`if ((m >> i) & 1)
+  {} else continue;`): GCC tested with `andi` instead of `xori`.
+- **The colour's `goto`** past the untimed one and the table in a local
+  (39 off), and the clip value written `z2 | z1` (31 off).
+
+Left (parked, 31 off): the original loads the colour table's address
+before the timer's test (GCC loads it in a temporary and copies it), reads
+a parent's index before the alignment, and has `$v0`/`$v1` swapped in two
+tests. A second linker symbol, `D_800CBD58_far`, gives the font table its
+`%hi`/`%lo` access where the chunk's other functions read it small.

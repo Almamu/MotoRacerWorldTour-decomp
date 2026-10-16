@@ -6,7 +6,7 @@ array. Then the slots' visibility, a table of random fractions, and the
 particles' and slots' drawing. One file, `src/langimg/chunk_07.cpp`,
 0x8001F7E4-0x80021154.
 
-24 functions: 18 match, 1 is parked, 5 are still asm.
+24 functions: 18 match, 2 are parked, 4 are still asm.
 
 ## The settings
 
@@ -24,13 +24,32 @@ nodes' count and two cursors. A handle is the node's index and the
 slot's, `(node << 16) | slot`; a handle whose node has moved to another
 slot is stale.
 
+## A node's ends
+
+`func_800203A8` (the matrix and width from `func_80020868` and
+`func_80020998`) places a node's two ends, `-w/2` and `w/2` on x, by the
+matrix (`func_80098768`, then the GTE's `func_8009887C` with the matrix
+already set), grows its slot's box to them, turns the previous node's
+position towards the new one and stores the angles (`Ang07`, three
+shorts at the slot's 0x10). The node's position (0x06, 0x0E, 0x16) and its
+direction's x and z bytes (0x1E, 0x1F) are stored last, in 1/32.
+
+Parked at 8 off. What got it there: the slot indexed each time
+(`p->m_slots[slot]`, not a pointer), the copies as inlines with locals
+(`VecCopy07`) so the two copies of the slot's position load twice, the
+second rotation in an inline (`Rot07`) so its address is a temporary,
+and the previous node's position and the angles read in one group. Left:
+the midpoint call's delay slot holds the `a2` move where the original has
+`&h`'s address into `$s7`, and the last copy into `h` swaps `$v0`/`$v1`
+(its halfword in `$v1`, the original's `$a1`).
+
 ## The functions
 
 | Function | State | Notes |
 |---|---|---|
 | `func_8001F7E4`, `func_8001FCC8`, `func_8001FEE4` | asm | the particles drawn (`rtpt`, `avsz3`, OT links by hand; 314, 136, 129 instructions) |
 | `func_800200E4` to `func_8002034C` | match | a node's links, a slot's first, the pool reset and given memory, a slot emptied, a node taken out |
-| `func_800203A8` | asm | a node's draw data (293 instructions, 14 callees) |
+| `func_800203A8` | parked | a node's ends and its slot's box: a delay slot and one copy's registers (8 off) |
 | `func_8002083C` | matches | the node cursor |
 | `func_80020868`, `func_80020998` | match | a position added in a new slot, or linked to a handle's |
 | `func_80020AB0` | matches | the frame: visibility into the scratchpad, then the draw |
