@@ -1,4 +1,6 @@
 #include "common.h"
+#include "psyq.h"
+#include "langimg/cobjet.h"
 
 /* A scene (chunk_23's named object with its items): the items' history,
  * found by name, and its buffers (docs/matching/issue-22-langimg-chunk21.md). */
@@ -42,6 +44,51 @@ struct Par21 {
 };
 
 struct Scene21;
+// A GCC 2 vtable entry
+struct VtE21 {
+    short m_delta;
+    short m_index;
+    void *m_func;
+};
+// An object with its vtable at 0x68
+struct VObj21 {
+    u8 m_00[0x68];
+    VtE21 *m_68;
+};
+// What func_80017948 gives for an object: its model
+struct Model21 {
+    u8 m_00[0x14];
+    int m_14; // its radius
+};
+struct Ref21 {
+    u8 m_00[4];
+    Model21 *m_04;
+};
+// The view's matrix and its position
+struct View21 {
+    MATRIX m_00;
+    MATRIX m_20;
+    u8 m_40[0xB8];
+    Vector3 m_F8;
+};
+struct Cam21 {
+    u8 m_00[0x9C];
+    View21 *m_9C;
+    u8 m_A0[4];
+};
+// The scene's current item, seen as a stage
+struct Stage21 {
+    u8 m_00[0x28];
+    int m_28;
+    unsigned m_2C_lo : 24;
+    int m_draw : 2;
+    unsigned m_2C_hi : 6;
+    u8 m_30[8];
+    CobjetList *m_38; // its objects
+    u8 m_3C[0x2C];
+    void (*m_68)(struct Scene21 *s); // before drawing
+    void (*m_6C)(struct Scene21 *s); // after
+};
 // A named handler (8 bytes)
 struct Fn21 {
     char *m_00;
@@ -97,11 +144,15 @@ struct Ev21 {
 };
 // The scene
 struct Scene21 {
-    u8 m_00[0x38];
+    u8 m_00[8];
+    int m_08; // its view's index
+    int m_0C; // its fog's distance
+    u8 m_10[0x28];
     void *m_38; // a racer (chunk_05's)
     u8 m_3C[0x20];
     struct Fns21 *m_5C;
-    u8 m_60[0x14];
+    CobjetList *m_60; // the overlay's objects
+    u8 m_64[0x10];
     struct Tab21 m_74;
     u8 m_8C[0x4C];
     struct Zone21 m_D8;
@@ -168,6 +219,26 @@ void func_8003CD30(Scene21 *s);
 void func_8003CD38(Scene21 *s);
 void func_8003CD88(Scene21 *s);
 void func_8003BD5C(Scene21 *s, int mode, Par21 *p);
+void func_8003B850(Scene21 *s, int state);
+extern int D_800CBC94[1];
+extern VObj21 *D_800C886C;
+extern char D_800C4D8C[];
+extern int D_800C4D88;
+extern int D_800C4988;
+extern int D_800D6128;
+VObj21 *func_80078FC4(void *a, int b);
+void func_8001D1C4(void *r, void *a);
+void func_8001D23C(void *r, int a, int b, int c, int d);
+void func_80095F84(Cam21 *c);
+void func_80097F68(MATRIX *m, SVECTOR *r);
+void func_8007857C(View21 *v);
+void func_800788D8(View21 *v);
+void func_8001DA44(void *r, MATRIX *m);
+void func_800194E4(Cobjet *o);
+int func_8001DF10(void *r, Vector3 *p, int radius, int fog, int *depth);
+void func_800185F0(CobjetList *l, int a, int b, int c, int d);
+void func_8008C884(Zone21 *z);
+void func_8003E6FC(Scene21 *s);
 void func_8008C7E8(Zone21 *c, int a, int b, int d, int e);
 void func_8008C808(Zone21 *c, int mode, int *a, int *b, int *d, int *e);
 }
@@ -228,7 +299,151 @@ Link21 *func_8003B7E0(Scene21 *s, const char *name) {
     return r;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_21", func_8003B850);
+#define VCALL21(o, i, a) \
+    (((void *(*)(void *, int))(o)->m_68[i].m_func)((char *)(o) + (o)->m_68[i].m_delta, a))
+
+static inline void VecCopyL21(Vector3 *d, Vector3 *s) {
+    int x = s->vx;
+    int y = s->vy;
+    int z = s->vz;
+
+    d->vx = x;
+    d->vy = y;
+    d->vz = z;
+}
+
+void func_8003B850(Scene21 *s, int state) {
+    VObj21 *ot;
+
+    if (s->m_A94 & 0x10) {
+        return;
+    }
+    ot = func_80078FC4(D_800CBC94, state);
+    if (ot) {
+        Cam21 *cam = (Cam21 *)VCALL21(D_800C886C, 14, s->m_08);
+        View21 *v = cam->m_9C;
+        Stage21 *it;
+
+        if (s->m_A90 == 1 || s->m_A90 == 4) {
+            it = (Stage21 *)s->m_A84;
+        } else {
+            it = (Stage21 *)s->m_A80;
+        }
+        if (it && v) {
+            CobjetModel *p = (CobjetModel *)func_80017E10(it->m_38, D_800C4D8C, 9);
+            Cobjet *q;
+            CobjetList *l;
+            Vector3 *fp;
+            int d;
+
+            func_8001D1C4(s->m_38, cam->m_A0);
+            q = p;
+            func_8001D23C(s->m_38, s->m_0C << 12, p->m_54 * 326 / 4096, 0x800, 0);
+            func_80095F84(cam);
+            if (p->m_matp) {
+                Vector3 t;
+
+                v->m_00 = *p->m_matp;
+                {
+                    MATRIX *mp = p->m_matp;
+                    int x = mp->t[0];
+                    int y = mp->t[1];
+                    int z = mp->t[2];
+
+                    t.vx = x;
+                    t.vy = y;
+                    t.vz = z;
+                }
+                fp = &v->m_F8;
+                VecCopyL21(fp, &t);
+            } else {
+                SVECTOR r;
+                Vector3 t;
+
+                func_800167F8(q, &r);
+                func_80097F68(&v->m_00, &r);
+                t = (q)->m_pos;
+                fp = &v->m_F8;
+                VecCopyL21(fp, &t);
+            }
+            func_8007857C(v);
+            func_800788D8(v);
+            {
+                MATRIX m = v->m_20;
+
+                VecCopyL21((Vector3 *)m.t, &v->m_F8);
+                func_8001DA44(s->m_38, &m);
+            }
+            if (it->m_68) {
+                it->m_68(s);
+            }
+            VCALL21(D_800C886C, 14, s->m_08);
+            l = it->m_38;
+            d = it->m_draw;
+            if (d) {
+                int n = (l)->m_count;
+                Cobjet **o = (l)->m_items;
+
+                if (n > 0) {
+                    do {
+                        if (*o && ((*o)->m_04 & 0x41)) {
+                            func_800194E4(*o);
+                        }
+                        n--;
+                        o++;
+                    } while (n);
+                }
+            }
+            if (((Stage21 *)s->m_A80)->m_28 >= 0) {
+                int n = (l)->m_count;
+                Cobjet **oo = (l)->m_items;
+
+                if (n > 0) {
+                    do {
+                        Cobjet *o = *oo;
+
+                        if (o && !(o->m_04 & 1)) {
+                            Ref21 *e = (Ref21 *)func_80017948(o);
+
+                            if (e) {
+                                Model21 *m = e->m_04;
+
+                                if (m) {
+                                    Vector3 pos = o->m_pos;
+                                    int depth;
+
+                                    if (!func_8001DF10(s->m_38, &pos, m->m_14, s->m_0C << 12,
+                                                       &depth)) {
+                                        o->m_04 &= ~0x10;
+                                        goto next;
+                                    }
+                                }
+                                o->m_04 |= 0x10;
+                            }
+                        }
+                    next:
+                        n--;
+                        oo++;
+                    } while (n);
+                }
+            } else {
+                func_800185F0(l, 0x10, 0, 0, 0x10000);
+            }
+            func_800177E8(l, 0, (l)->m_count);
+            if (it->m_6C) {
+                it->m_6C(s);
+            }
+            if (s->m_60 && D_800C4D88 && s->m_60->m_count) {
+                func_800185F0(s->m_60, 0x10, 0, 0, 0x10000);
+                func_800177E8(s->m_60, 0, s->m_60->m_count);
+            }
+        }
+    }
+    func_8008C884(&s->m_D8);
+    VCALL21(ot, 14, 0);
+    func_8003E6FC(s);
+    D_800C4988 += D_800D6128;
+}
 
 /* The colour zone off (0), set from the table (1) or fading (2, 3). */
 void func_8003BD5C(Scene21 *s, int mode, Par21 *p) {
