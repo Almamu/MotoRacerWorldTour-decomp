@@ -869,7 +869,15 @@ globals), a script that tries every order is quicker than guessing:
   with the wrong number of arguments changes the caller: chunk_25 passed
   `k` to `func_8001687C`, which takes nothing (chunk_02b's definition),
   and kept `k` in another register for it; declared as defined,
-  `func_80044D0C` matched. And when a library function's real prototype
+  `func_80044D0C` matched. The other way round, a prototype with fewer
+  arguments than the definition leaves out a value the original passes.
+  The near-miss then reads as "a value in `$a1` where we have another
+  register" or "the original loads a field we never use". This was the
+  case for chunk_52's `func_80079438` (`func_800895A0` takes the buffer's
+  size too) and chunk_34's `func_80056F64` (`func_80053198` takes the
+  bike's index). Both matched once the argument was declared and passed.
+  A sweep of every chunk's prototypes against the definitions' parameter
+  counts finds these. And when a library function's real prototype
   returns something the original's didn't (`memcpy`), a second declaration
   returning `void` with an asm label (`void memcpy20(...)
   asm("memcpy");`) calls the same symbol (chunk_20's `func_8003B51C`).

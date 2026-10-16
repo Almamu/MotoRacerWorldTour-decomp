@@ -116,7 +116,7 @@ extern u_long *D_800CBDC0; // the ordering table
 extern Ot52 *D_800CBDC4;
 extern s8 D_800B8868[];
 void *malloc(int n);
-int func_800895A0(u8 *p);
+int func_800895A0(u8 *p, int n);
 int func_80088F34(u8 *p);
 Ent52 *func_800891E8(void *l, int i);
 void func_800798FC(Gfx52 *g, int a, int b, int c, int d);
@@ -209,11 +209,9 @@ void func_80079400(void) {
     ExitCriticalSection();
 }
 
-#ifdef NON_MATCHING
-// The result set to 0 after the first call (29 off to 4); left: the argument's temporaries (the original loads m_24 into $a1 and m_28 into $v0)
 int func_80079438(Gfx52 *g) {
     int r;
-    int ok = func_800895A0(g->m_28 + D_800B8868[0] * g->m_24);
+    int ok = func_800895A0(g->m_28 + g->m_24 * D_800B8868[0], g->m_24);
 
     r = 0;
     if (ok) {
@@ -221,9 +219,6 @@ int func_80079438(Gfx52 *g) {
     }
     return r;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_52", func_80079438);
-#endif
 
 void func_80079494(void *a, void *b, void *c) {
     func_80078CEC(a, b, c);

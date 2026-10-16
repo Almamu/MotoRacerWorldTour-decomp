@@ -63,7 +63,10 @@ struct Ent47 {
     u8 m_10[0x30];
     u8 m_40[0xC]; // the second part
     void *m_4C;   // its vtable
-    u8 m_50[0x2C];
+    u8 m_50[0x20];
+    u8 m_70; // last frame's flags at the model's 0x158
+    u8 m_71[7];
+    int m_78; // the voice playing, or -1
 };
 
 // A position, an angle (12 bits) and a length
@@ -83,14 +86,72 @@ struct SinCos47 {
     short m_02;
 };
 struct Cam47 {
-    u8 m_00[0x3C];
+    u8 m_00[8];
+    Vec47 m_08;
+    Vec47 m_14;
+    u8 m_20[0x1C];
 };
 // What D_800D11D0 holds, as far as it's used here
 struct World47 {
-    u8 m_00[0x1C0C];
+    u8 m_00[3];
+    s8 m_03;
+    u8 m_04[0x1C08];
     Cam47 m_1C0C[3];
     u8 m_1CC0[0x10];
     Cam47 *m_1CD0;
+    Vec47 *m_1CD4; // the listener's position
+    Vec47 *m_1CD8; // and the point it faces
+    u8 m_1CDC[0x1A];
+    short m_1CF6;
+    int m_1CF8;
+    int m_1CFC;
+};
+// A bike's model, as its sounds read it
+struct Mdl47 {
+    u8 m_00[0x59];
+    s8 m_59; // the player's
+    u8 m_5A[2];
+    u8 m_5C; // a bump's strength; bit 7: a hard one
+    u8 m_5D;
+    u8 m_5E;
+    u8 m_5F[5];
+    Vec47 m_64;
+    u8 m_70[0x14];
+    Vec47 m_84;
+    u8 m_90[0x98];
+    int m_128;
+    u8 m_12C[0x2C];
+    s8 m_158;
+};
+struct Mode47 {
+    u8 m_00[0x3EC];
+    int m_3EC; // the game mode
+};
+// A bike, as its sounds read it
+struct Bk47 {
+    u8 m_00[0x2C];
+    Mode47 *m_2C;
+    Mdl47 *m_30;
+    u8 m_34[0x10];
+    s8 m_44;
+    u8 m_45[0x143];
+    s8 m_188;
+    s8 m_189;
+    u8 m_18A[0xD2];
+    int m_25C;
+    u8 m_260[4];
+    Vec47 m_264;
+    u8 m_270[4];
+    int m_274;
+    Vec47 m_278;
+    u8 m_284[0x7C];
+    u8 m_300;
+    u8 m_301;
+    u8 m_302;
+    u8 m_303;
+    u8 m_304[0x1C];
+    u32 m_320;
+    s8 m_324;
 };
 extern SinCos47 D_800BF3A0[];
 extern int D_800C838C;
@@ -170,7 +231,19 @@ void func_8006E054(void *p);
 extern int D_800CB5DC;
 extern int D_800C83D8; // the entries' two vtables (built with la)
 extern int D_800C8400;
-void func_8006F29C(Ent47 *e, u8 *x);
+void func_8006F29C(Ent47 *e, Bk47 *b);
+extern s8 D_800C7F2C;
+extern s8 D_800C7F2E;
+void func_8001483C(World47 *w, int k, int n);
+int func_80063A30(Mdl47 *m);
+void func_8006E474(void *s, Bk47 *b);
+void func_8006EB54(Ent47 *e, Bk47 *b);
+int func_8006CB68(int vol, int a, int b, int c, int d, int e);
+int func_80014A98(World47 *w, int a, int mode);
+void func_80014368(World47 *w, int v, int vol);
+void func_80014B18(World47 *w, int v);
+void func_80014530(World47 *w, Vec47 *a, Vec47 *b);
+void func_80014B74(World47 *w, int v);
 
 void func_8006F7A0(void);
 void func_8006F824(int i);
@@ -225,7 +298,172 @@ static inline void VecCopy(Vec47 *d, Vec47 *s) {
     d->vz = s->vz;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_47", func_8006F29C);
+// A bump's strength (0x80: a hard one) as a volume
+static inline int Bump47(u8 h) {
+    int v = h << 1;
+
+    if (v >= 0) {
+        if (v < 0x100) {
+            return v;
+        }
+        return 0xFF;
+    }
+    return 0;
+}
+
+// A one-shot sound started at full volume
+static inline void Play47(World47 *w, int id) {
+    int n = func_80014A98(w, id, 0);
+
+    func_80014368(w, n, 0x7F);
+    func_80014B18(w, n);
+}
+
+/* A bike's sounds each frame: the listener, the engine, the bumps, the
+ * skids and the wind. */
+void func_8006F29C(Ent47 *e, Bk47 *b) {
+    World47 *w = &D_800D11D0;
+    Mdl47 *m;
+    int k;
+
+    w->m_1CF8 = 0x24E6;
+    if (b->m_320 & 0xFF00FF) {
+        Cam47 *cam = w->m_1CD0;
+
+        w->m_1CF6 = 0x1000;
+        w->m_1CD4 = &cam->m_08;
+        w->m_1CD8 = &cam->m_14;
+    } else {
+        Mdl47 *p = b->m_30;
+
+        w->m_1CF6 = 0xCCC;
+        w->m_1CD4 = &p->m_64;
+        w->m_1CD8 = &p->m_84;
+    }
+    k = b->m_44;
+    D_800D11D0.m_1CFC = k;
+    func_8001483C(&D_800D11D0, k, 0x20);
+    if ((u32)(b->m_2C->m_3EC - 5) < 2) {
+        int hard = (func_80063A30(b->m_30) & 7) >= 6;
+
+        if (hard) {
+            D_800D11D0.m_03 = 1;
+        }
+        func_8006E474(e->m_40, b);
+    } else {
+        if (D_800C7F2E) {
+            D_800D11D0.m_03 = 1;
+        }
+        func_8006EB54(e, b);
+    }
+    m = b->m_30;
+    if (m->m_59) {
+        s8 f = m->m_158;
+
+        if (!(e->m_70 & 1) && (f & 1)) {
+            int sp = -m->m_128;
+            int v;
+
+            if (sp > 0x1000) {
+                if (sp < 0x2000) {
+                    v = (sp - 0x1000) * 255 / 4096;
+                } else {
+                    v = 255;
+                }
+            } else {
+                v = 0;
+            }
+            if (v) {
+                func_8006CB68(v, 0x58, 0x59, 0x5A, -1, -1);
+            }
+        }
+        e->m_70 = f;
+    }
+    if (b->m_324) {
+        if (D_800C7F2C) {
+            Play47(&D_800D11D0, 0x67);
+        }
+        b->m_324 = 0;
+    }
+    if (b->m_188) {
+        Play47(&D_800D11D0, 0x57);
+    }
+    if (m->m_5C) {
+        int h = m->m_5C;
+        int g = Bump47(h);
+
+        if ((s8)m->m_5C < 0) {
+            func_8006CB68(g, 0x5E, -1, -1, -1, -1);
+        }
+        func_8006CB68(g, 0x5C, 0x5D, -1, -1, -1);
+        m->m_5C = 0;
+    }
+    if (m->m_5D) {
+        func_8006CB68(m->m_5D, 0x5C, 0x5D, -1, -1, -1);
+        m->m_5D = 0;
+    }
+    if (m->m_5E) {
+        m->m_5E = 0;
+    }
+    D_800D11D0.m_1CF8 = 0x48E;
+    func_80014530(&D_800D11D0, &b->m_278, &b->m_264);
+    if (b->m_189) {
+        if (b->m_301) {
+            int d = b->m_25C >> 6;
+            int v;
+
+            d = (d ^ (b->m_25C >> 31)) - (b->m_25C >> 31);
+            if (d > 0x60) {
+                if (d < 0x380) {
+                    v = (d - 0x60) * 255 / 800;
+                } else {
+                    v = 255;
+                }
+            } else {
+                v = 0;
+            }
+            if (b->m_300 < 4) {
+                func_8006CB68(v, 0x6D, -1, -1, -1, -1);
+            }
+        }
+        if (b->m_303 >= 3) {
+            int cur = e->m_78;
+            int s, vol;
+
+            if (cur == -1) {
+                int n = func_80014A98(&D_800D11D0, 0x6E, 0);
+
+                func_80014368(&D_800D11D0, n, 0x7F);
+                func_80014B18(&D_800D11D0, n);
+                e->m_78 = n;
+                if (n == cur) {
+                    goto done;
+                }
+            }
+            s = b->m_274;
+            if (s > 0x666) {
+                if (s < 0x1999) {
+                    vol = (s - 0x666) * 127 / 0x1333;
+                } else {
+                    vol = 0x7F;
+                }
+            } else {
+                vol = 0;
+            }
+            func_80014368(&D_800D11D0, e->m_78, vol);
+        } else if (e->m_78 != -1) {
+            func_80014B74(&D_800D11D0, e->m_78);
+            e->m_78 = -1;
+        }
+    } else if (e->m_78 != -1) {
+        func_80014B74(&D_800D11D0, e->m_78);
+        e->m_78 = -1;
+    }
+done:
+    D_800D11D0.m_1CF8 = 0;
+    D_800D11D0.m_1CF6 = 0x1000;
+    D_800D11D0.m_03 = 0;
+}
 
 void func_8006F7A0(void) {
     func_8006F7D4();
@@ -262,7 +500,7 @@ void func_8006F88C(int i, u8 *x, int d) {
         func_8006F858(i, x);
     }
     if (d <= 0x95FFF && !D_800C8388) {
-        func_8006F29C(&ENTS47[i], x);
+        func_8006F29C(&ENTS47[i], (Bk47 *)x);
     } else {
         func_8006F21C(&ENTS47[i]);
     }
