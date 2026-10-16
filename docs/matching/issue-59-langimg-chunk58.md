@@ -16,12 +16,13 @@ Also:
 
 One file, `src/langimg/chunk_58.cpp`, 0x80085258-0x80087468.
 
-19 functions: 11 match, 4 are parked, 4 are still asm.
+19 functions: 11 match, 5 are parked, 3 are still asm.
 
 ## The settings
 
 GCC 2.91.66, `-G8`, split addresses, divisions without checks, five
-small globals.
+small globals, `-fmove-all-movables` (for `func_80086A78`'s loop
+constants; the matched functions build the same with it).
 
 ## Notes
 
@@ -54,6 +55,19 @@ small globals.
   first branch's size store into the second branch's tail, and the clamp
   and the bike's lookup come out in another order.
 
+## Group C, more
+
+- `func_80086A78` (the map: a dot for each racer in the race, coloured
+  by its kind and place, a draw mode, then the map's textured quad) is
+  written and parked, 15 off. Its loop keeps five constants in saved
+  registers, which needs `-fmove-all-movables`; the image's three fields
+  read into locals first and the draw mode as a two-word struct gave
+  the rest. Left: after the draw mode and the quad, the original keeps
+  one copy of the packet pointer to link and another to step past it;
+  GCC uses one register for both. An inline link helper, separate
+  locals for the next pointer and a `do { } while (0)` (the permuter's
+  one find) didn't change it.
+
 ## The functions
 
 | Function | State | Notes |
@@ -70,7 +84,7 @@ small globals.
 | `func_800869E4` | matches | globals reset |
 | `func_80086A38` | matches | a buffer's word |
 | `func_80086A50` | matches | a point and two values set |
-| `func_80086A78` | asm | 252 instructions |
+| `func_80086A78` | parked | the map drawn: 15 off, the links' copies |
 | `func_80086E68` | matches | a buffer's constructor |
 | `func_80086E7C` | matches | a buffer's destructor |
 | `func_80086EC0` | matches | a buffer's memory freed if it's its own |

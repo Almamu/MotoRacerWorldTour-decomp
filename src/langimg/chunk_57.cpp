@@ -77,7 +77,8 @@ struct Time57 {
 };
 
 struct Win57 {
-    u8 m_00[0x28];
+    u8 m_00[0x24];
+    int m_24; // its height
     int m_28;
     u8 m_2C[8];
     int m_34;
@@ -831,4 +832,147 @@ void func_80084D58(void) {
     }
 }
 
+// A marker on the map's edge (chunk_58's Ent58): its kind, the racer's index
+// and place, where it is; its distance, colour and the next in the list
+struct Mark57 {
+    u32 kind : 4;
+    u32 who : 4;
+    u32 place : 4;
+    int x : 10;
+    int y : 10;
+    int m_04;
+    u32 m_08;
+    Mark57 *m_0C;
+};
+// A racer in full (0x568 bytes) and the race's five
+struct Rider57 {
+    u32 m_00; // bit 6: in the race; bits 1-5: its kind
+    u8 m_04[0x2C];
+    Phys57 *m_30;
+    u8 m_34[0xF];
+    s8 m_43; // < 0: the player's
+    u8 m_44[0x524];
+};
+struct Field57 {
+    u8 m_00[0x40];
+    int m_40[5]; // the places
+    u8 m_54[0x294];
+    Rider57 m_2E8[5];
+};
+
+extern u32 D_800D49F0; // which markers are shown
+extern Mark57 D_800CBD68[5];
+extern u32 D_800C8A60[]; // the racers' colours
+extern int D_800C8B58[]; // the distances' shifts
+extern "C" Mark57 *func_80085284(Mark57 *m, int a, Phys57 **bodies, int s);
+
+#ifdef NON_MATCHING
+// Written in full in the original's order (its loop constants hoisted by -fmove-all-movables); registers differ (259 off): the original addresses the markers' fields from three bases off D_800CBD68 (its +8 and +0xC as their own symbols) and keeps the list in $a1 until the call; GCC derives the bases from one pointer, keeps D_800CBD68's address in a saved register and spills the arguments when the markers are indexed.
+extern "C" void func_80084E1C(Field57 *f, int a, Rider57 *me, int s) {
+    u32 fl = D_800D49F0;
+    int edge = (fl >> 1) & 1;
+    int show = (fl >> 2) & 1;
+    Mark57 *list;
+
+    if (fl & 1) {
+        show |= 6;
+    }
+    if (edge) {
+        show |= 8;
+    }
+    list = 0;
+    if (show) {
+        Phys57 *bodies[6];
+        Phys57 **bp = bodies;
+        int n = 0;
+        int i;
+        int k;
+        Rider57 *b;
+        Mark57 *m;
+
+        Rider57 *first = f->m_2E8;
+
+        b = &f->m_2E8[4];
+        do {
+            if ((b->m_00 >> 6) & 1) {
+                n++;
+            }
+        } while (b-- != first);
+        i = 0;
+        k = 0;
+        m = D_800CBD68;
+        b = first;
+        do {
+            if (((b->m_00 >> 6) & 1) && b != me) {
+                *bp++ = b->m_30;
+                m->m_04 = 0x7FFFFFFF;
+                m->place = f->m_40[i];
+                m->who = i;
+                m->m_0C = 0;
+                m->kind = 0;
+                if (b->m_43 == -1) {
+                    m->m_08 = D_800C8A60[(int)(b->m_00 << 26) >> 27];
+                } else {
+                    m->m_08 = 0xFF0000;
+                }
+                m++;
+                k++;
+            }
+            b++;
+            i++;
+        } while (i <= n - 1);
+        *bp = 0;
+        if (k > 0) {
+            list = func_80085284(D_800CBD68, a, bodies, s);
+        }
+        for (; list; list = list->m_0C) {
+            int bit = 1 << list->kind;
+
+            if (show & bit) {
+                u32 col = ~((list->m_04 << 8) >> D_800C8B58[s]) & 0xFF;
+                u32 *q;
+                int x;
+                int y;
+
+                if (list->kind == 3) {
+                    list->y = D_800C8D90->m_24 - 14;
+                }
+                if (bit & 6) {
+                    int x2;
+
+                    x = list->x;
+                    y = list->y;
+                    x2 = x - 6;
+                    if (bit & 2) {
+                        x2 = x + 6;
+                    }
+                    q = (u32 *)D_800C8C70;
+                    q[1] = col | 0x22000000;
+                    q[0] = 0x4000000;
+                    q[2] = XY57(x2, y - 4);
+                    q[3] = XY57(x2, y + 4);
+                    q[4] = XY57(x, y);
+                } else {
+                    x = list->x;
+                    y = list->y;
+                    q = (u32 *)D_800C8C70;
+                    q[1] = col | 0x22000000;
+                    q[2] = XY57(x - 4, y);
+                    q[0] = 0x4000000;
+                    q[3] = XY57(x + 4, y);
+                    q[4] = XY57(x, y + 6);
+                }
+                q = (u32 *)D_800C8C70;
+                ADD_PRIM57(D_800CBDC0 + 1, q);
+                q += 5;
+                SetDM57(q, 0xE1000200);
+                D_800C8C70 = (u8 *)q;
+                ADD_PRIM57(D_800CBDC0 + 1, q);
+                D_800C8C70 = (u8 *)(q + 2);
+            }
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_57", func_80084E1C);
+#endif

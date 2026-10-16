@@ -19,7 +19,7 @@ A grid of tiles (`Grid59`), each tile chunk_66's 0x110-byte object
 
 One file, `src/langimg/chunk_59.cpp`, 0x80087468-0x80089200.
 
-17 functions: 11 match, 3 are parked, 3 are still asm.
+17 functions: 11 match, 4 are parked, 2 are still asm.
 
 ## The settings
 
@@ -55,7 +55,7 @@ globals.
 
 | Function | State | Notes |
 |---|---|---|
-| `func_80087468` | asm | 249 instructions |
+| `func_80087468` | parked | a movie frame decoded and loaded: 198 off, registers |
 | `func_8008784C`, `func_8008788C` | match | a sound's constructor and destructor |
 | `func_80087900` | parked | the voices' rates: registers |
 | `func_800879D4`, `func_80087A14` | match | a grid's constructor and destructor |
