@@ -14,7 +14,7 @@ The game's maths library.
 
 One file, `src/langimg/chunk_67.cpp`, 0x80097128-0x800990E8.
 
-30 functions: 15 match, 5 are parked, 10 are still asm.
+30 functions: 16 match, 5 are parked, 9 are still asm.
 
 ## The settings
 
@@ -56,7 +56,7 @@ globals.
 
 | Function | State | Notes |
 |---|---|---|
-| `func_80097128` | asm | 537 instructions |
+| `func_80097128` | matches | a script's expression evaluated on a value stack |
 | `func_8009793C` | matches | empty |
 | `func_80097944` | asm | a 64-bit by 32-bit division (73 instructions) |
 | `func_80097A68` | parked | `(a << s) / b` through it: registers |
@@ -92,3 +92,24 @@ globals.
 each output's two cross terms grouped as one difference:
 `(s * v->x + 2 * (q->x * d) + ((q->w * q->y >> 11) * v->z - ...)) >> 12`;
 added one by one, the products came out in other registers.
+
+## Group C large functions
+
+`func_80097128` (the scripts' expression evaluator) matches. It keeps a
+stack of 256 values and of 256 `Ent67` entries; `Ent67` has a
+constructor and an empty destructor, which gives the original's
+constructor loop (255 down to -1) and the destructor countdowns before
+each return. What it took, from 507 off:
+
+- the counter `n` declared before the constructed array;
+- the unset-slot error as one `goto` to a label after the final return;
+- every element reached as `s->m_00[i]`, never through a pointer local;
+- case 0's kinds as a switch (`case 2:` / `case 3: case 4:`);
+- the call's fields re-read for each use;
+- the binary operators as `vals[n - 2] = vals[n - 2] OP vals[n - 1];
+  n--;` (decrement after);
+- the assignment's kind read into an `int` and tested through a `u16`
+  copy (the original's `andi`);
+- logical not as an explicit if/else;
+- the call's argument address hand-scaled, `(int *)((n << 2) + (int)vals)`
+  (the operand order of the `addu`).

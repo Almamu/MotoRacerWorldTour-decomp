@@ -1008,6 +1008,13 @@ An `int` field stored into a `short` can be loaded with `lhu`: GCC
 narrows the load (chunk_66's `func_8009574C`). An `lhu` doesn't by itself
 mean a `short` field.
 
+A local array initialised by a loop counting down to -1 (`addiu $v1,
+$zero, 0xFF` ... `addiu $v1, $v1, -1; bne $v1, -1`), with more empty
+countdown loops before each return, is an array of a class with a
+constructor and an empty destructor: GCC emits the destructor loops even
+though they do nothing (chunk_67's `func_80097128`, `Ent67 ents[256]`).
+Locals declared before the array keep their place in the frame.
+
 ### Types
 
 - **`char` is unsigned here; a `lb` means `s8`.** chunk_74's `strupr`,
