@@ -7,7 +7,7 @@ a table of packed entries with settings read from and written to a bit
 stream; a value eased towards its target. One file,
 `src/langimg/chunk_45.cpp`, 0x8006B3B0-0x8006D388.
 
-66 functions: 63 match, 3 are parked.
+66 functions: 64 match, 2 are parked.
 
 ## The settings
 
@@ -43,7 +43,7 @@ mode (its `lui` before the call, `addiu` in the delay slot).
 | `func_8006BB48` to `func_8006BB9C` | match | flags; an animation channel's constructor |
 | `func_8006BBC4` | parked | a value eased towards its target: `MULSHIFT`, registers (85 off) |
 | `func_8006BD78` to `func_8006C064` | match | a word packed through bitfields, the table's destructor, reset, cursor and entries |
-| `func_8006C094` | parked | the settings set from a description: the constant 1 loaded twice (22 off) |
+| `func_8006C094` | matches | the settings set from a description |
 | `func_8006C110` to `func_8006C7A0` | match | the settings written to and read from the stream, a parity, the channel set |
 | `func_8006C7CC` | matches | a bank loaded |
 | `func_8006C82C` | matches | |
@@ -111,3 +111,11 @@ declaration:
   `$at` form. With it, the small aliases for its two tables and the
   comparisons written `c == t[i].m_02 || a == t[i].m_01`, `func_8006C8EC`
   matched from 54 off.
+
+## Group B near-misses, continued
+
+`func_8006C094` (from 22 off) matched with its stores in the original's
+order: `m_00 = a` after the second byte, and `t->m_08 = 1` after the last
+field. With the field's store last, its 1 and the result's 1 come out as
+two loads, as in the original; stored earlier, GCC shared one register for
+both.
