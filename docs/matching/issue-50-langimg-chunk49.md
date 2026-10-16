@@ -128,3 +128,7 @@ globals.
   in the same saved register as the original's; the comparison is written
   `d[a] > d[i]`, and the last loop steps its threshold before its counter
   (`k += 0xA000, i++`).
+- `func_80073E54` written and parked (207 off, a first draft): the entry
+  nearest ahead, when free and clear of the others, flagged if no other
+  row's point ahead is nearer (`Ahead49`). Left: the original keeps nine
+  values in saved registers and the track in its argument slot.

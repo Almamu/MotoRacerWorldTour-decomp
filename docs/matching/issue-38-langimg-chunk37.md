@@ -128,3 +128,13 @@ global (`D_800CB3C0`).
   and the cameras' fonts and texts. Left: the original keeps the first
   loop's counter in a saved register shared with the second loop, and
   reloads the text's height in another order.
+- `func_8005C648` matches: the race started (the display mode's top
+  bits, the sprites' flags cleared by mode, the laps to run times the
+  riders, the bikes numbered). The flags are cleared one statement at a
+  time on an `int` read from the `u16` field, so each mask stays a
+  constant the chunk's `-fmove-all-movables` hoists into a saved register
+  (a `short` local reads them signed; a `u16` local folds them into one
+  `andi`). The bikes are numbered through a pointer started after the
+  counter. Last, from the permuter: the run is also assigned to a second
+  variable (`r = run = o->m_378`) before the laps helper, which gives the
+  original's copy of it (`$a0` to `$a2`) for the laps' read and write.

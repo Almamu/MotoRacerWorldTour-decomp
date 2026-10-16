@@ -118,3 +118,10 @@ small globals.
   definition's `return v`, the asm's `addu $v0, $a2, $zero`); declared
   `void` here, GCC used `$v0` for a constant the original keeps in `$v1`.
 - `func_800650F8` matches with the same two declarations, from 5 off.
+- `func_800634BC` written and parked (48 off, registers only): the grid's
+  cells under the object and at 0x147A to either side pushed into its
+  five states. The heading is read inside the helper that builds the yaw
+  matrix (`Yaw41`), so the matrix's address is born before the square
+  root; the position is copied as a struct before its address is taken
+  into a variable. Left: the original gives the object, the matrix and
+  the result vector other saved registers.
