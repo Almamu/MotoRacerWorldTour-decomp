@@ -20,6 +20,14 @@ found through `CName::Get`; `SeqSet` holds them along `Seq::m_next`).
 ## Second pass
 
 - `func_8001983C`: chunk_04 built with `-fmove-all-movables`, the constants written as literals again, and the seen table indexed by bytes (`(char *)seen + (t << 2)`).
+- `func_8001B350` (new, parked): a position walked through the grids,
+  ten steps at most: the cell tested, else the nearest side crossed into
+  its neighbour (never back to the last two), or the position put on a
+  side with no neighbour; when that fails, the set's grid holding it. The
+  blocks are in the original's order (a `while` whose condition makes the
+  two calls, the no-neighbour side as the `else`); left are registers: the
+  chunk's `-fmove-all-movables` hoists `-1` into a saved register, which
+  pushes the walk itself onto the stack (207 off).
 
 ## The functions
 
@@ -41,7 +49,8 @@ found through `CName::Get`; `SeqSet` holds them along `Seq::m_next`).
 | `func_8001ACE4` | parked | a plane test through the GTE: scheduling, registers |
 | `func_8001AD78`, `func_8001AD9C`, `func_8001AE40` | match | a ratio, an interpolation, a plane crossing |
 | `func_8001AF3C`, `func_8001AFB0` | match | positions to cells and back |
-| `func_8001AFF4`, `func_8001B15C`, `func_8001B350` | asm | GTE plane pushes and the grid's update |
+| `func_8001AFF4`, `func_8001B15C` | asm | GTE plane pushes |
+| `func_8001B350` | parked | a position walked through the grids: the blocks in the original's order, registers (the walk spilled where the original spills the side vectors) |
 | `func_8001B6B4`, `func_8001B76C` | match | the race entries sorted by kind |
 
 - **Bitfields read into a local.** `if (s->m_state)` on a signed 2-bit

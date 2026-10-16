@@ -92,6 +92,13 @@ globals.
   its own pointer before the draw mode (the "GPU packets" idiom). Left:
   the first loop's counter and flag zeroed in the other order, and the
   packets' registers.
+- `func_8003F314` (new, parked): each of the scene's records given its
+  value from the script's second table by its name, and four more from
+  the first by names made from it (`sprintf`), the lookups inline
+  functions writing the found entry to a stack slot. One shared slot for
+  the four gives the original's frame; left is a one-instruction shift
+  from the first lookup on (the records' table loaded into the found
+  entry's load delay slot).
 
 ## The functions
 
@@ -113,4 +120,4 @@ globals.
 | `func_8003EC6C` | matches | a slot's value |
 | `func_8003EC90` | matches | a handler stored by kind |
 | `func_8003F0F8` | matches | a handler read by kind |
-| `func_8003F314` | asm | 233 instructions |
+| `func_8003F314` | parked | the records' five values by name: the records' table loaded a slot early after the first lookup (194 off from that shift) |
