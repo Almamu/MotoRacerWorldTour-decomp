@@ -1,4 +1,5 @@
 #include "common.h"
+#include "psyq.h"
 
 /* The game's code built with GCC 2.91.66: more of the race
  * (docs/matching/issue-36-langimg-chunk35.md). */
@@ -134,7 +135,12 @@ struct Cur35 {
     Seq35 *m_04[11];
 };
 struct Obj35 {
-    u8 m_00[0x11C];
+    u8 m_00[0x20];
+    MATRIX m_20;
+    u8 m_40[0xAC];
+    Vec35 m_EC;
+    Vec35 m_F8;
+    u8 m_104[0x18];
     Vec35 m_11C;
 };
 // A line of text (chunk_57's)
@@ -208,6 +214,21 @@ struct Model35 {
 extern int D_800CAE90[];
 extern int D_800CB0A0[];
 void func_8005108C(Bike35 *b, int a);
+// The race's settings (chunk_51's)
+struct Set35 {
+    u8 m_00[0x58];
+    int m_58; // the players' mode
+};
+extern int D_800CBC94[];
+Set35 *func_80078FC4(int *list, int s);
+Vec35 *func_80098768(MATRIX *m, Vec35 *v, Vec35 *out);
+Vec35 *func_800997D0(Vec35 *v, Vec35 *a);
+Vec35 *func_800998D0(Vec35 *d, Vec35 *a, Vec35 *b);
+int func_8009923C(Vec35 *v);
+void func_8006F968(int i, Vec35 *pos, Vec35 *a, Vec35 *b, Vec35 *c);
+void func_8006DFD8(int i, Obj35 *o);
+void func_8006F88C(int i, Bike35 *b, int d);
+void func_80057D14(Own35 *o, int all);
 void func_80019DC0(void *set, int mode);
 int func_80019578(Seq35 *s, int a, int back, int c);
 void func_8006FF44(void *a);
@@ -502,7 +523,67 @@ void func_80057CF4(void *a) {
     func_8006F7A0(a);
 }
 
+static inline void SetVec35(Vec35 *v, int x, int y, int z) {
+    v->x = x;
+    v->y = y;
+    v->z = z;
+}
+
+// A unit vector turned by the matrix and moved by its translation
+static inline void Axis35(MATRIX *m, Vec35 *tr, Vec35 *u, Vec35 *w, Vec35 *out) {
+    func_80098768(m, u, w);
+    func_800997D0(w, tr);
+    VecCopyL35(out, w);
+}
+
+#ifdef NON_MATCHING
+// The original keeps five stack addresses in spill slots (the matrix, its translation 0x6C, both unit vectors and the last axis) and recomputes the working vector's; ours keeps the translation as the matrix plus 0x14, one spill slot less (frame 0xE0 against 0xE8), which shifts every slot after (167 off; the stack locals and the calls are the original's).
+void func_80057D14(Own35 *o, int all) {
+    int n = 1;
+    int i;
+
+    if ((u32)(func_80078FC4(D_800CBC94, o->m_18)->m_58 - 2) < 2) {
+        n = 2;
+    }
+    for (i = 0; i < n; i++) {
+        Obj35 *ob = o->m_43C[i];
+        Vec35 pos, a, b, c;
+        MATRIX m;
+        Vec35 w, u, t;
+
+        if (!ob) {
+            continue;
+        }
+        m = ob->m_20;
+        VecCopyL35(&pos, &ob->m_F8);
+        VecCopyL35(&a, &ob->m_EC);
+        SetVec35(&u, 0, 0, 0x1000);
+        Axis35(&m, (Vec35 *)m.t, &u, &w, &b);
+        SetVec35(&t, 0, 0x1000, 0);
+        Axis35(&m, (Vec35 *)m.t, &t, &w, &c);
+        func_8006F968(i, &pos, &a, &b, &c);
+        func_8006DFD8(i, ob);
+        if (all) {
+            int j;
+            Bike35 *p = o->m_378->m_2E8;
+
+            for (j = 0; j < 5; j++, p++) {
+                if ((p->m_00 >> 6) & 1) {
+                    int d;
+
+                    func_800998D0(&w, &p->m_30->m_64, &pos);
+                    d = func_8009923C(&w);
+                    if (n == 1 || (n == 2 && i == j)) {
+                        func_8006F88C(j, p, d);
+                    }
+                }
+            }
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_35", func_80057D14);
+#endif
 
 #ifdef NON_MATCHING
 // Registers and scheduling: the original loads the vectors' values in another order and squares each clamped value as soon as it's ready; GCC keeps the values in other registers (39 off).

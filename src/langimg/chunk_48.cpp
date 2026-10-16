@@ -17,7 +17,10 @@ struct Ent48 {
     u8 m_10[0x40];
     struct Ent48 *m_50; // the next section
     struct Ent48 *m_54; // the previous one
-    u8 m_58[0x10];
+    struct Link48 {
+        struct Link48 *m_00; // the next
+        short *m_04;         // a section's id
+    } m_58, m_60;            // the sections ahead, behind
 };
 // A list: its entries
 struct List48 {
@@ -144,6 +147,11 @@ void *memset(void *d, int c, unsigned int n);
 int abs(int x);
 
 Ent48 *func_8007142C(List48 *l, int i);
+int func_80070DB0(Ent48 *e);
+int func_80070DD0(Ent48 *e);
+int func_80071464(List48 *l, short *sec, short *pt, int a, int *dist, int step, int x, int f,
+                  int end);
+int func_800716A0(List48 *l, short *sec, short *pt, int a, int *dist, int dir, int x);
 void func_80071E1C(Obj48 *o);
 void func_800728E0(Obj48 *o, Src48 *q, int unused, int k, Def48 *t, int a, int n, Obj48 **prev,
                    int id, int b, int c);
@@ -174,7 +182,99 @@ Ent48 *func_8007142C(List48 *l, int i) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_48", func_80071464);
 
+// A candidate point: its section, its distance and the point
+struct Cand48 {
+    int sec;
+    int dist;
+    int pt;
+};
+
+static inline void Clear48(Cand48 *c) {
+    int j;
+
+    for (j = 0; j < 16; j++) {
+        c[j].sec = -1;
+        c[j].dist = 0x7FFFFFFF;
+        c[j].pt = -1;
+    }
+}
+
+#ifdef NON_MATCHING
+// The candidates' first walker shares its address with the init loop's array base (the inline's parameter) where the original computes it again; then the step's sign, the found flag (kept on the stack) and the second loop's registers differ, and ours is three instructions shorter, which shifts the rest (171 off; the stack slots and the calls are the original's).
+int func_800716A0(List48 *l, short *sec, short *pt, int a, int *dist, int dir, int x) {
+    int r = 1;
+    int ends = 0;
+    Cand48 c[16];
+    short cs, cp;
+    Ent48 *e = func_8007142C(l, *sec);
+    Ent48::Link48 *k;
+    int i, best, min;
+    int *pd, *ps, *pp;
+    int end;
+    s8 step;
+
+    Clear48(c);
+    switch (dir) {
+    case 0:
+        k = &e->m_60;
+        break;
+    case 1:
+        k = &e->m_58;
+        break;
+    }
+    pp = &c[0].pt;
+    ps = &c[0].sec;
+    pd = &c[0].dist;
+    for (; k; k = k->m_00) {
+        if (k->m_04) {
+            Ent48 *n;
+
+            cs = *k->m_04;
+            n = func_8007142C(l, cs);
+            switch (dir) {
+            case 0:
+                end = func_80070DB0(e);
+                step = -1;
+                cp = n->m_08 - 1;
+                break;
+            case 1:
+                end = func_80070DD0(e);
+                cp = 0;
+                step = 1;
+                break;
+            }
+            if (func_80071464(l, &cs, &cp, a, pd, step, x, 1, end)) {
+                *ps = cs;
+                *pp = cp;
+                ends = func_8007142C(l, cs)->m_02 != -1;
+            }
+            pp += 3;
+            ps += 3;
+            pd += 3;
+        }
+    }
+    best = -1;
+    min = 0x7FFFFFFF;
+    for (i = 0; i < 16; i++) {
+        if (c[i].dist >= 0 && c[i].sec != -1 && c[i].dist < min) {
+            if (!ends || func_8007142C(l, c[i].sec)->m_02 != -1) {
+                min = c[i].dist;
+                best = i;
+            }
+        }
+    }
+    if (best != -1) {
+        *sec = c[best].sec;
+        *pt = c[best].pt;
+        *dist = c[best].dist;
+    } else {
+        r = 0;
+    }
+    return r;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_48", func_800716A0);
+#endif
 
 int func_80071994(void *o, int deep, Ent48 **pe, int *pi, Vec48 *x, int *pr, int *pflag) {
     int found = 0;
