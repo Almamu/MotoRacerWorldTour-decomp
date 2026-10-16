@@ -169,7 +169,7 @@ void func_80077844(Mesh51 *o);
 int func_8007792C(Mesh51 *o);
 SVECTOR *func_80099E84(SVECTOR *v, SVECTOR *a);
 SVECTOR *func_80099EBC(SVECTOR *d, SVECTOR *a, SVECTOR *b);
-Vec51 *func_80099718(Vec51 *d, Vec51 *s, int k);
+void func_80099718(Vec51 *d, Vec51 *s, int k);
 Vec51 *func_80099D48(Vec51 *v, int shift);
 void func_80078280(C51 *o);
 void func_80078458(C51 *o, Vector3 *at);
@@ -336,7 +336,7 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_51", func_80077844);
 #endif
 
 #ifdef NON_MATCHING
-// Temporaries only: the points' copies load their shorts into $v0/$v1 the other way round, and the second loop's last call sets $a0 before $a2 (18 off).
+// Temporaries only: the first loop's copy loads the point's x and y into $v0/$v1 the other way round (4 off); no declaration or store order fixes it.
 int func_8007792C(Mesh51 *o) {
     int r = 0;
 
@@ -363,11 +363,10 @@ int func_8007792C(Mesh51 *o) {
                         short x = a.vx;
                         short y = pa->vy;
                         short z = pa->vz;
-                        SVECTOR *d = &pts[k];
 
-                        d->vx = x;
-                        d->vy = y;
-                        d->vz = z;
+                        pts[k].vx = x;
+                        pts[k].vy = y;
+                        pts[k].vz = z;
                     }
                 } while (--i >= 0);
                 r = 1;
@@ -413,7 +412,8 @@ int func_8007792C(Mesh51 *o) {
                     }
                     func_80099D48(pw, 16);
                     d = &pts[k];
-                    func_80099EBC(pa, (SVECTOR *)&o->m_48[k], off--);
+                    func_80099EBC(pa, (SVECTOR *)&o->m_48[k], off);
+                    off--;
                     {
                         short x = a.vx;
                         short y = pa->vy;
