@@ -210,11 +210,13 @@ void func_80079400(void) {
 }
 
 #ifdef NON_MATCHING
-// Registers: the original keeps the result in $v1 (not live across the first call) and reads the global after the prologue
+// The result set to 0 after the first call (29 off to 4); left: the argument's temporaries (the original loads m_24 into $a1 and m_28 into $v0)
 int func_80079438(Gfx52 *g) {
-    int r = 0;
+    int r;
+    int ok = func_800895A0(g->m_28 + D_800B8868[0] * g->m_24);
 
-    if (func_800895A0(g->m_28 + g->m_24 * D_800B8868[0])) {
+    r = 0;
+    if (ok) {
         r = func_80088F34((u8 *)g + 0x30) != 0;
     }
     return r;
@@ -335,8 +337,6 @@ int func_8007968C(Disp52 *d) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_52", func_8007968C);
 #endif
 
-#ifdef NON_MATCHING
-// The system pointer's %hi: the original loads it each time round, ours keeps it in $s3
 void func_80079848(Gfx52 *g) {
     int i;
 
@@ -347,13 +347,14 @@ void func_80079848(Gfx52 *g) {
             Sys52 *y = D_800C886C[0];
 
             y->m_68[14].m_func((char *)y + y->m_68[14].m_delta, i);
-            func_800798FC(g, e->m_00, e->m_04, e->m_08, e->m_0C);
+            {
+                int a0 = e->m_00, a1 = e->m_04, a2 = e->m_08, a3 = e->m_0C;
+
+                func_800798FC(g, a0, a1, a2, a3);
+            }
         }
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_52", func_80079848);
-#endif
 
 // Links packet p in at ordering table entry ot (ui.h's ADD_PRIM)
 #define ADD_PRIM52(ot, p) \

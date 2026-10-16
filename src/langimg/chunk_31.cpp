@@ -301,15 +301,13 @@ void func_8004F6C8(Two31 *o, Pos31 *p, void *m) {
     func_8001DA44(m, &t);
 }
 
-#ifdef NON_MATCHING
-// Registers: the counter and the flags' pointer swap $s0 and $s3 (9 off)
 void func_8004F76C(Two31 *o) {
-    int *f = o->m_488;
+    int i = 0;
     u8 *m = o->m_49C[0];
     int *id = o->m_BC;
-    int i;
+    int *f = o->m_488;
 
-    for (i = 0; i < 2; i++) {
+    for (; i < 2; i++) {
         if (*f & 1) {
             VtEntry31 *e = &D_800C886C->m_68[14];
             Got31 *g = ((Got31 * (*)(void *, int)) e->m_func)((char *)D_800C886C + e->m_delta, *id);
@@ -323,9 +321,6 @@ void func_8004F76C(Two31 *o) {
         f++;
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_31", func_8004F76C);
-#endif
 
 void func_8004F828(int a, int b) {
     D_800C8868 = b + 0x40;

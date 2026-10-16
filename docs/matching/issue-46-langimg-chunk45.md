@@ -7,7 +7,7 @@ a table of packed entries with settings read from and written to a bit
 stream; a value eased towards its target. One file,
 `src/langimg/chunk_45.cpp`, 0x8006B3B0-0x8006D388.
 
-65 functions: 57 match, 8 are parked.
+66 functions: 64 match, 2 are parked.
 
 ## The settings
 
@@ -39,15 +39,15 @@ mode (its `lui` before the call, `addiu` in the delay slot).
 |---|---|---|
 | `func_8006B3B0` to `func_8006B914`, `func_8006B9B0`, `func_8006BA80` | match | a slot finished, added, unlinked; virtual calls; the first free slot; the bank's last user |
 | `func_8006B9F8` | parked | the first object whose virtual call fails: the call as the loop's test, registers (8 off) |
-| `func_8006BABC` | parked | the bank's first user: the counter set before the array's address (3 off) |
+| `func_8006BABC` | matches | the bank's first user |
 | `func_8006BB48` to `func_8006BB9C` | match | flags; an animation channel's constructor |
 | `func_8006BBC4` | parked | a value eased towards its target: `MULSHIFT`, registers (85 off) |
 | `func_8006BD78` to `func_8006C064` | match | a word packed through bitfields, the table's destructor, reset, cursor and entries |
-| `func_8006C094` | parked | the settings set from a description: the constant 1 loaded twice (22 off) |
+| `func_8006C094` | matches | the settings set from a description |
 | `func_8006C110` to `func_8006C7A0` | match | the settings written to and read from the stream, a parity, the channel set |
-| `func_8006C7CC` | parked | a bank loaded: a call's arguments in the other order (3 off) |
+| `func_8006C7CC` | matches | a bank loaded |
 | `func_8006C82C` | matches | |
-| `func_8006C85C`, `func_8006C8EC` | parked | a sound's settings looked up; a scene's sounds and music |
+| `func_8006C85C`, `func_8006C8EC` | matches | a sound's settings looked up; a scene's sounds and music |
 | `func_8006CA50` to `func_8006CF8C` | match | sounds started, one at random; the lists' contexts and nodes |
 | `func_8006CFD0` | parked | an entry's nodes given to an empty list: a second pointer for a halfword (44 off) |
 | `func_8006D0BC` to `func_8006D314` | match | the banks' lists |
@@ -93,3 +93,29 @@ the permuter wrote its zeros as one chained assignment,
 ## Second pass
 
 - `func_8006B9F8` matches: its arguments copied into locals and the call as a plain `while` test (`while (VCALL(p, 6)) {...}`).
+
+## Group B near-misses
+
+Four functions matched with per-symbol aliases of the same global, declared
+through `__asm__("D_…")` so the chunk's other functions keep the original
+declaration:
+- **A small alias** (`extern int D_800CB498_la __asm__("D_800CB498");`,
+  used as `(Unit4C *)&D_800CB498_la`) makes the address one `la`, which the
+  scheduler leaves in place and CSE doesn't share: `func_8006BABC` and
+  `func_8006C7CC` (from 3 off), `func_8006C85C` (from 27: each field's
+  address built from the symbol, the "loops from 0 over a global table"
+  problem above) and `func_8006C8EC`'s music table.
+- **An array alias** (`extern int D_800D13D8_a[] __asm__("D_800D13D8");`)
+  does the opposite for a 4-byte global that isn't one of the chunk's small
+  globals: its store becomes a split `lui`/`sw %lo` instead of maspsx's
+  `$at` form. With it, the small aliases for its two tables and the
+  comparisons written `c == t[i].m_02 || a == t[i].m_01`, `func_8006C8EC`
+  matched from 54 off.
+
+## Group B near-misses, continued
+
+`func_8006C094` (from 22 off) matched with its stores in the original's
+order: `m_00 = a` after the second byte, and `t->m_08 = 1` after the last
+field. With the field's store last, its 1 and the result's 1 come out as
+two loads, as in the original; stored earlier, GCC shared one register for
+both.

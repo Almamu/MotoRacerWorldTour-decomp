@@ -569,6 +569,12 @@ globals), a script that tries every order is quicker than guessing:
   other registers. `(x << 12) * 3` gives the original's code (chunk_02b's
   `func_80016A8C`, 20 off to 0): the `* 3` expanded as a shift and an add
   of the shifted value.
+- **A constant loaded twice: the store last.** When the original loads the
+  same constant twice, once for a field and once for the result
+  (`addiu $v1, 1` for `t->m_08 = 1`, then `addiu $v0, 1` to return 1), the
+  field's store is the function's last statement: stored earlier, GCC
+  shares one register between them. chunk_45's `func_8006C094` (22 off to
+  0, with the other stores in the original's order too).
 - **One variable for two values in turn.** When the original keeps a
   call's result where it was computed and puts the next sum in another
   temporary, the source may reuse one variable for two values one after the
@@ -1057,6 +1063,28 @@ mean a `short` field.
   (`func_8006BF4C`); packing values with bitfield stores (`func_8006BD78`)
   likewise.
 
+- **A copy loop over a pointer stepped down.** Where the original shifts
+  entries of 12-byte items with a field pointer each (eight
+  strength-reduced pointers stepped together), write the loop through a
+  pointer, `E71 *q = &g->m_e[j]; ...; q->f = q[-1].f; q--`; indexed
+  directly (`g->m_e[j].f = g->m_e[j - 1].f`), GCC expands the multiply by
+  12 into shifts each time (chunk_71's `func_800A029C`).
+- **Two stack points as one array.** Two 4-byte locals whose addresses go
+  to calls sit 8 bytes apart (each is 8-aligned); at 0x10 and 0x14 they
+  are one `Pt71 pt[2]`. Declare the pointers to them in late blocks, the
+  first before the first call (chunk_71's `func_8009F82C`).
+- **A second pointer to a buffer for one more saved register.** When the
+  original keeps a parameter twice (one register for the stores, another
+  for a later struct copy), reach the second use through a typed pointer
+  made from it (`Head73 *h = (Head73 *)hdr; h->m_60 = *src;`): chunk_73's
+  `func_800A32A0`, with a rounding written in two steps (`blocks *=
+  0x2000; hdr[3] = blocks / 0x2000;`) for the original's order.
+- **A reset test written first.** When the original falls through to a
+  one-store branch and jumps to the work, write the test inverted with
+  the store in the `if` (`if ((u32)r >= 2 && r != 0x12) s = 0; else
+  {...}`): chunk_70's `func_8009D9CC`, 7 off to 3, then 0 once a callee
+  returned `int`.
+
 ## Calls and declarations
 
 - **Declarations matter, not only code.** The boot executable was built
@@ -1307,6 +1335,25 @@ two (or two merged into one).
   extract with shifts (`(int)(w << 10) >> 25`); as bitfields of one struct
   GCC merged the two branches' identical tails (chunk_61's `func_8008C500`,
   from 44 off to 0 with a shared `none:` exit for its two `return 0`s).
+- **Per-function aliases of a global.** When only one function wants a
+  global accessed the other way, alias the symbol for that function with
+  `__asm__` instead of changing the chunk's declaration:
+  `extern int D_800CB498_la __asm__("D_800CB498");` (used as `(Unit4C
+  *)&D_800CB498_la`) makes it small for that use, one `la` each time;
+  `extern int D_800D13D8_a[] __asm__("D_800D13D8");` makes a 4-byte global
+  that isn't one of the chunk's small globals a split `lui`/`sw %lo`, not
+  maspsx's `$at` form. chunk_45's `func_8006BABC`, `func_8006C7CC`,
+  `func_8006C85C` and `func_8006C8EC` matched with them.
+- **The base of an indexed address through an accessor.** When the
+  original adds the index to the array's address (`addiu $v1, $s2, 0x470;
+  addu $a2, $v1, $s4`) and GCC adds the field's offset to the index first,
+  return the array from an inline accessor: `Picks29(g) + i` (chunk_29's
+  `func_8004C1BC`).
+- **A call's arguments read into locals in order.** `func_80079848`
+  (chunk_52) matched once the four fields passed to a call were read into
+  locals first; read in the call's argument list, GCC loaded the stack
+  argument first, and hoisted a global's `%hi` out of the loop into a saved
+  register.
 - **A bit test as an empty `if`.** When the original tests a flag with
   `andi`, then `bnez` past the work, and GCC gives `xori`/`andi`/`beqz`
   for `if (!((f >> 1) & 1)) {...}`, write the test the other way with an

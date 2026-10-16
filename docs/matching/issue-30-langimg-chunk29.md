@@ -15,7 +15,7 @@ Around them:
 
 One file, `src/langimg/chunk_29.cpp`, 0x8004B4B0-0x8004D560.
 
-31 functions: 23 match, 5 are parked, 3 are still asm.
+31 functions: 24 match, 4 are parked, 3 are still asm.
 
 ## The settings
 
@@ -78,7 +78,7 @@ small globals.
 | `func_8004C02C` | parked | the scale's length: the original copies the column's pointer through several registers |
 | `func_8004C0E4` to `func_8004C0FC` | match | return 1 |
 | `func_8004C104` to `func_8004C184` | match | destructors |
-| `func_8004C1BC` | parked | a player given a bike: an address's order |
+| `func_8004C1BC` | matches | a player given a bike |
 | `func_8004C38C` | matches | both players set up |
 | `func_8004C3FC`, `func_8004C420` | match | a player's values set |
 | `func_8004C430` | matches | a player's choice stepped back, unless their bike is busy |
@@ -123,3 +123,12 @@ small globals.
   `func_80050E88` for the player count's compare, which shifts everything
   after it by one instruction. A permuter run found only changes to the
   meaning.
+
+## Group B near-misses
+
+- `func_8004C1BC` matched (from 2 off): the player's bike index is read
+  through an inline accessor returning the race's picks array
+  (`Picks29(g) + i`), so the array's address is a value of its own and is
+  computed before the index is added, as the original does; written as
+  `&g->m_470[i]` (or `g->m_470 + i`, or a byte offset) GCC adds 0x470 to the
+  index first.
