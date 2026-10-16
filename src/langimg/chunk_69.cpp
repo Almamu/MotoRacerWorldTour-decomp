@@ -88,7 +88,7 @@ struct Scr69 {
     struct Run69 *m_5C[8];
     u8 m_7C[0x14];
     struct Text69 *m_90;
-    u8 m_94[4];
+    struct Text69 *m_94;
     struct Bits69 *m_98;
     void *m_9C; // the graph's corners' objects
     void *m_A0;
@@ -301,6 +301,8 @@ extern Cam69 *D_800C8864;
 extern u8 *D_800C8C70;            // the next free GPU packet
 extern unsigned long *D_800CBDC0; // the ordering table
 extern char D_800C92CC[];
+extern char D_800C92C8[];
+void func_800237E8(Draw69 *d, int *out);
 
 // Links packet p in at ordering table entry ot (ui.h's ADD_PRIM)
 #define ADD_PRIM69(ot, p) \
@@ -393,7 +395,85 @@ void func_8009CD24(Game69 *o);
 void func_8009CEAC(Game69 *o, int s);
 }
 
+#ifdef NON_MATCHING
+// The original's code, but the saved registers differ: the screen in $s5 (ours $s4), the counters in $s1/$s4, and the original spills the table's row offset (i * 12) to the stack where GCC spills a text-array pointer (234 off).
+void func_8009B17C(Scr69 *s, Game69 *o) {
+    View69 *v = o->m_A80;
+
+    if (s->m_18 && !func_800A60AC(v->m_00, D_800C92CC)) {
+        int i, k, best, found;
+        int buf[6];
+        Text69 **a, **b, **c;
+        Run69 **r;
+
+        k = 0;
+        for (i = 0; i < s->m_04->m_174; i++) {
+            s->m_04->m_187.c[i] = *(u8 *)s->m_5C[i]->m_48;
+        }
+        s->m_04->m_187.c[6] = *(u8 *)s->m_5C[6]->m_48;
+        s->m_04->m_187.c[7] = *(u8 *)s->m_5C[7]->m_48;
+        func_8006976C(&s->m_04->m_174, s->m_04->m_170, s->m_04);
+        func_800237E8(s->m_04, buf);
+        a = (Text69 **)s->m_1C;
+        b = (Text69 **)(s->m_1C + 0x20);
+        for (i = 0; i < s->m_04->m_174; i++, k++) {
+            int o2 = *s->m_5C[k]->m_48 * 2 + i * 12;
+
+            sprintf(a[k]->m_0C, D_800C92C8, ((u8 *)s->m_04->m_194)[o2 + 0x20]);
+            sprintf(b[k]->m_0C, D_800C92C8, ((u8 *)s->m_04->m_194)[o2 + 0x21]);
+            sprintf(((Text69 **)s->m_7C)[k]->m_0C, D_800C92C8, func_800A6850(buf[k]));
+        }
+        if (s->m_04->m_174 == 5) {
+            k++;
+        }
+        {
+            int o2 = *s->m_5C[k]->m_48 * 2;
+
+            sprintf(a[k]->m_0C, D_800C92C8, ((u8 *)s->m_04->m_194)[o2 + 0x68]);
+            sprintf(b[k]->m_0C, D_800C92C8, ((u8 *)s->m_04->m_194)[o2 + 0x69]);
+        }
+        k++;
+        {
+            int o2 = *s->m_5C[k]->m_48 * 2;
+
+            sprintf(a[k]->m_0C, D_800C92C8, ((u8 *)s->m_04->m_194)[o2 + 0x70]);
+            sprintf(b[k]->m_0C, D_800C92C8, ((u8 *)s->m_04->m_194)[o2 + 0x71]);
+        }
+        func_80023E48(s->m_04, s->m_B8, 16, 2000);
+        best = 0;
+        found = 0;
+        s->m_2178 = 0;
+        s->m_217C = 0x7FFFFFFF;
+        for (i = 1999; i >= 0; i--) {
+            int v = s->m_B8[i];
+
+            if (best < v) {
+                if (!found) {
+                    best = v;
+                }
+            } else if (v * 36 / 40960 < best * 36 / 40960) {
+                found = 1;
+            }
+        }
+        switch (s->m_14w) {
+        case 0:
+            s->m_2178 = 0x6F1C7;
+            break;
+        case 1:
+            s->m_2178 = 0x29AAA;
+            break;
+        case 2:
+            s->m_2178 = 0x378E3;
+            break;
+        }
+        s->m_217C = 0;
+        sprintf(s->m_94->m_0C, D_800C92C8, func_800A6850(best));
+        s->m_18 = 0;
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_69", func_8009B17C);
+#endif
 
 // The table at 0x194 indexed through a hand-scaled byte offset (as chunk_37 and chunk_48), which gives the original's base + offset order
 void func_8009B5E8(Game69 *o) {
