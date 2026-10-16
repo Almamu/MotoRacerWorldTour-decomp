@@ -1346,6 +1346,19 @@ two (or two merged into one).
   class's; it matched once the base's was declared returning the object
   (`Obj41 *func_80062E40(Obj41 *o);`), as C++ constructors do (the
   permuter).
+- **A second linker symbol: one global both through `$gp` and not.** When
+  a chunk's `--small-externs` list has a global (most of its functions read
+  it `$gp`-relative) but one function reads or stores it with `lui` and
+  `lw`/`sw` (or the `lui $at` store form), the chunk holds code from two
+  original files that declared it differently. An `__asm__` alias doesn't
+  help (maspsx decides by the symbol's name, which stays the same); a
+  second name does: `D_800C5E2C_far = 0x800C5E2C;` in
+  `linker/langimg/undefined_syms_manual.txt`, `extern int D_800C5E2C_far;`
+  in the chunk, used by those functions. chunk_28's `func_80049B9C` (6 off
+  to 0) and `func_8004AFBC` (316 instructions, matched with it, small
+  `__asm__` aliases for three tables whose addresses are one `la`, the
+  first branch's stores in the original's order and a zero word after its
+  jump table) are the cases.
 - **One address unsplit: declare the symbol small.** When one address is
   an `la` the scheduler leaves alone (its `lui` not moved into a branch's
   delay slot) while the chunk's other addresses are split, declare that

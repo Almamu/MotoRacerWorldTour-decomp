@@ -1,0 +1,4 @@
+/* Second names for addresses a chunk needs both as one of its small ($gp)
+ * globals and not (see docs/matching_techniques.md, "A second linker symbol").
+ */
+D_800C5E2C_far = 0x800C5E2C;
