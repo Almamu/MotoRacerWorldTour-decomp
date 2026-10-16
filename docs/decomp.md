@@ -222,6 +222,18 @@ a global by the symbol splat gave it (`extern u32 D_800C4A10;`, or a name
 from `symbol_addrs.txt`), declared in a header with its real type (a small
 one is then reached through `$gp`).
 
+A chunk is an 8 KB split, so one chunk can hold the code of several
+original files, which didn't always declare a global the same way: one
+read it through `$gp`, another as a plain global. When one chunk needs the
+same global both ways (it's one of the chunk's `--small-externs` for most
+functions, but one reads it with `lui`/`lw`), the second form goes through
+a second name for the same address, defined in
+`linker/<target>/undefined_syms_manual.txt` (tracked, hand-written; the
+link reads it after splat's `undefined_syms_auto.txt`): for example
+`D_800C5E2C_far = 0x800C5E2C;`, declared `extern int D_800C5E2C_far;` in
+chunk_28 for the functions that need it. splat's files under `linker/` are
+regenerated; this one isn't.
+
 ### C++ names
 
 The game's functions have GCC 2.95 mangled names in `symbol_addrs.txt`:
@@ -241,6 +253,7 @@ vtables, which are still in the data disassembly.
 |--------------------------------|-------------------------------------------------------|
 | `config/<target>.yaml`         | splat config: the chunks, the `.rodata` split, the data |
 | `linker/`                      | splat's linker script, symbol lists and the stamp of the config they came from |
+| `linker/<target>/undefined_syms_manual.txt` | second names for addresses a chunk needs both as a small global and not (hand-written) |
 | `config/<target>/symbol_addrs.txt` | known symbols                                     |
 | `config/checksums.sha1`        | SHA-1 of the originals, checked against `build/*.bin` |
 | `src/<target>/`                | one source file per chunk of the executable's own code |
