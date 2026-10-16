@@ -98,7 +98,7 @@ globals.
 | `func_8005102C` | matches | a bike's place in the rank list |
 | `func_80051060`, `func_8005108C`, `func_80051094` | match | a bike's values set or reset |
 | `func_800510B4`, `func_80051114` | match | a bike's entry from a table, a call when a flag is set |
-| `func_8005114C` | asm | 208 instructions |
+| `func_8005114C` | parked | a bike's box from its model's corners: an order |
 | `func_8005148C` | matches | a bike's position from its model |
 
 ## Second pass
@@ -113,3 +113,14 @@ globals.
   the tie goes to the value born later. The original's flags pointer is in
   `$s0`, so it is assigned last (`int i = 0;` first, then the other two
   pointers, then `f = o->m_488`).
+- `func_8005114C` (a bike's box from its model's eight corners) is 14 off,
+  with every register and stack slot the original's. What it took: sixteen
+  unused words ahead of the locals (the original's frame is 0x40 bigger);
+  pointer locals for the up, the cross product and the side vectors
+  (`pw`, `pv`, `px`), which the original keeps in saved registers; the
+  first turn in an inline helper taking the translation's address from a
+  pointer local; and the corner loop's counter and table pointer set at the
+  top (`i = 0; id = D_800C6724;`, `for (; i < 8; id++, i++)`), so the
+  pointer lives through the whole function as the original's `$s5`. What
+  is left is two orders of independent instructions at the top and around
+  the first call.

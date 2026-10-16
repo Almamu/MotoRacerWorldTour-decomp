@@ -1,4 +1,5 @@
 #include "common.h"
+#include "psyq.h"
 
 // A primitive's tag: the next one's address and its length (PsyQ's P_TAG)
 struct Tag59 {
@@ -155,7 +156,141 @@ Tile59 *func_800891C8(Grid59 *g, int i);
 Tile59 *func_800891E8(Grid59 *g, int i);
 }
 
+// A movie's decoder: the work buffer and its size in bytes
+struct Dec59 {
+    u_long *m_00;
+    int m_04;
+};
+// A movie frame: its size, then the strips' bitstreams (or one, without the tag)
+struct Mov59 {
+    u8 m_00[4];
+    u16 m_04; // width
+    u16 m_06; // height
+    u_long m_08[1];
+};
+// A frame's mask: a bit per pixel, rows from the bottom
+struct Msk59 {
+    u8 m_00[0x4E];
+    u16 m_4E[1];
+};
+
+extern "C" {
+extern u_long D_800C8C60[];
+void func_800AA524(int mode);  // DecDCTReset
+int func_800AA558(u_long *bs); // DecDCTBufSize
+void func_800A6A4C(void);
+void func_800A6A98(u_long *bs, u_long *buf); // DecDCTvlc
+int func_800AA600(int mode);                 // DecDCToutSync
+void func_800AC0B0(RECT *r, u_long *p);      // LoadImage
+void func_80086F64(Dec59 *d, u_long *p, int w, int h);
+u16 func_800A63E4(u16 x);
+int func_80087468(Dec59 *d, Mov59 *h, int mode, int x, int y, Msk59 *mk);
+}
+
+#ifdef NON_MATCHING
+// Structure and calls are the original's; registers differ (198 off): the original spills the frame table's address, the strip count and mode + 2 (0x18-0x20) and keeps the pixel pointer in $s0 for both the mask and the colour-key loops, where GCC keeps the table's address in $s0 and spills the mask.
+int func_80087468(Dec59 *d, Mov59 *h, int mode, int x, int y, Msk59 *mk) {
+    int r = 0;
+    u_long *tab = h->m_08;
+
+    if (!bcmp(tab, D_800C8C60, 4)) {
+        int n = h->m_04 >> 4;
+        u_long *bs = (u_long *)((u8 *)h + n * 4 + 0xC);
+        int i;
+
+        func_800AA524(0);
+        i = 0;
+        func_800A6A4C();
+        if (n) {
+            int m2 = mode + 2;
+
+            do {
+                int sz = func_800AA558(bs) * 4;
+                int words = m2 * (h->m_06 << 2);
+                u_long *buf = d->m_00;
+                u_long *out = (u_long *)((u8 *)buf + sz) + 1;
+
+                if (sz + words * 4 < d->m_04) {
+                    RECT rc;
+                    u16 *q;
+
+                    func_800A6A98(bs, d->m_00);
+                    DecDCTin(d->m_00, mode);
+                    rc.w = 16;
+                    rc.y = y;
+                    rc.x = x + i * 16;
+                    rc.h = h->m_06;
+                    DecDCTout(out, words);
+                    func_800AA600(0);
+                    if (mode) {
+                        func_80086F64(d, out, 16, h->m_06);
+                    } else if (q = (u16 *)out, mk) {
+                        int w = h->m_04 >> 4;
+                        u16 *src = (u16 *)((u8 *)mk + i * 2 + 0x34) + (h->m_06 - 2) * w + 13;
+                        int j;
+
+                        for (j = 0; j < words / 8; j++) {
+                            int bits = func_800A63E4(*src);
+                            int k;
+
+                            for (k = 0; k < 16; k++, q++) {
+                                if (bits & 0x8000) {
+                                    *q = 0;
+                                }
+                                bits <<= 1;
+                            }
+                            src -= w;
+                        }
+                    } else {
+                        int k;
+
+                        for (k = 0; k < words * 2; k++, q++) {
+                            int v = *(short *)q;
+                            int r5 = v & 0x1F;
+                            int g5 = v & 0x3E0;
+                            int b5 = v & 0x7C00;
+
+                            if (r5 < 3 || g5 < 0x41 || b5 < 0x801) {
+                                *q = 0;
+                            }
+                        }
+                    }
+                    func_800AC0B0(&rc, out);
+                    r = 1;
+                }
+                bs += tab[++i] >> 2;
+            } while (i < n);
+        }
+        return r;
+    } else {
+        int sz = func_800AA558(tab);
+        int words = h->m_06 * 8;
+        u_long *out = d->m_00 + sz + 1;
+
+        if (sz * 4 + h->m_06 * 32 < d->m_04) {
+            RECT rc;
+
+            func_800AA524(0);
+            func_800A6A4C();
+            func_800A6A98(tab, d->m_00);
+            DecDCTin(d->m_00, 0);
+            rc.y = y;
+            rc.w = 16;
+            rc.h = h->m_06;
+            for (rc.x = x; rc.x < x + h->m_04; rc.x += 16) {
+                DecDCTout(out, words);
+                func_800AA600(0);
+                func_800AC0B0(&rc, out);
+                DrawSync(0);
+            }
+            r = 1;
+        }
+        return r;
+    }
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_59", func_80087468);
+#endif
 
 Snd59 *func_8008784C(Snd59 *s) {
     s->m_00.m_a = 1;

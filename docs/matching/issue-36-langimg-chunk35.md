@@ -68,7 +68,7 @@ globals `D_800C68BC` and `D_800CB3C4`.
 | `func_80057814` | parked | a gate passed, the gap shown: registers |
 | `func_80057B18` | parked | the bikes reset: a constant |
 | `func_80057CF4` | matches | a call passed through |
-| `func_80057D14` | asm | 172 instructions |
+| `func_80057D14` | parked | a bike's axes from its matrix: a spill |
 | `func_80057FC4` | parked | a squared distance: registers |
 | `func_80058070` | parked | the collisions: a constant |
 | `func_80058364` | matches | two bikes' models, in order |
@@ -81,3 +81,11 @@ globals `D_800C68BC` and `D_800CB3C4`.
 
 - `func_800591D4` matches: its parameter copied into a local first (`Own35 *o = race;`), which swapped the two saved registers back.
 - Built with `-fmove-all-movables` (the Makefile's CFLAGS for the chunk, group A's finding in the techniques): every matched function still matches, and the parked ones it touches come closer. `func_80057B18` went from 120 to 40 off and `func_80058070` from 119 to 34.
+
+## Group B, more $fp functions
+
+- `func_80057D14` (a bike's three axes turned by its matrix) is parked at
+  167 off with the original's stack locals and calls: the original keeps
+  five stack addresses in spill slots (the matrix, its translation, both
+  unit vectors and the last axis) where ours folds the translation into the
+  matrix plus 0x14, one slot less, which shifts every slot after.
