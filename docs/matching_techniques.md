@@ -1496,6 +1496,15 @@ two (or two merged into one).
   pointer, and one translation through an accessor. No compiler or
   option changes this (2.7.2 to 2.95.2, GCSE, CSE options, `-O1`,
   `-fno-omit-frame-pointer`).
+- **A bare stack address passed into an inline function is recomputed.**
+  The inliner substitutes a constant-address argument (`&v`, `sp+0xA0`)
+  into the body instead of making it a pseudo, so it is computed anew at
+  each call inside, as a local's would be. To keep such an address in a
+  saved register, as the original keeps some, hold it in a pointer local
+  first (`pv = &v; px = &x;`) and pass or use that. chunk_31's
+  `func_8005114C` came from 118 to 87 off with the cross product's and
+  the side vector's addresses in pointer locals (199 off with the two calls
+  in an inline helper taking `&x, &v`).
 - **Only the part with the calls in the inline function.** With the whole
   body inline, the code after the calls (a copy of the real function's
   local, `cur`) read it at fixed stack offsets; the original reads it

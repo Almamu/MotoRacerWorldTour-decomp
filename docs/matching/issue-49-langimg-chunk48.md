@@ -78,7 +78,7 @@ globals `D_800C8454` and `D_800C8458`.
 |---|---|---|
 | `func_8007142C` | matches | a section by index |
 | `func_80071464` | asm | 143 instructions |
-| `func_800716A0` | asm | 189 instructions |
+| `func_800716A0` | parked | the nearest point in the sections ahead or behind: registers |
 | `func_80071994` | matches | a point found along the sections |
 | `func_80071BCC` | asm | 148 instructions |
 | `func_80071E1C` | parked | an object reset: registers |
@@ -90,3 +90,12 @@ globals `D_800C8454` and `D_800C8458`.
 | `func_80072DA0` | matches | a group set up |
 | `func_80072ED4` | matches | a group each frame |
 | `func_800731EC` | parked | a group's objects spawned: registers |
+
+## Group B, more $fp functions
+
+- `func_800716A0` (the nearest point searched in the sections linked ahead
+  or behind) is parked at 171 off with the original's stack slots and
+  calls. The candidates' table is cleared in an inline helper (as #289's
+  rule says for the recomputed address), but our first walker still shares
+  the table's address; the step's sign and the found flag (the original
+  keeps it on the stack) differ after.
