@@ -19,7 +19,7 @@ ring's first), a racer and its slot, a camera's state.
 | `func_8001B778` | matches | the entries sorted by kind (as chunk_04's `func_8001B6B4`, counts on the stack) |
 | `func_8001B84C` | matches | the race state's frame |
 | `func_8001B974` | asm | an entry's step (715 instructions) |
-| `func_8001C4A0` | asm | vector work (264 instructions) |
+| `func_8001C4A0` | parked | a position along the track: 220 off, the saved registers rotated |
 | `func_8001C8C0` | parked | a position on the track, between two points, across a lane: a first draft (the track's sections, points and lanes are in `race.h`) |
 | `func_8001CBA0` | matches | the highest kind index along a chain |
 | `func_8001CC14` | parked | the ring by distance and its biggest gap: registers (111 off) |
@@ -51,3 +51,18 @@ ring's first), a racer and its slot, a camera's state.
 ## Second pass
 
 - `func_8001CF34`: chunk_05 built with `-fmove-all-movables`, and the places' loop counting with `j`.
+
+## Third pass
+
+- `func_8001C4A0` (new, parked): a lane's position and direction at a
+  distance along the track: the section and point walked forward or
+  back until the distance falls between a point and the next (the next
+  point found inline, wrapping into the section's successor), the
+  fraction between them, then three positions through `func_8001C8C0`
+  (the previous point, this one, the one after next) and the direction
+  between them normalised. Written on locals: a helper taking pointers
+  to the section and point forced them onto the stack (275 off). The
+  original keeps the track in `$s1` and the next point's pair in
+  `$s0`/`$s2`, where GCC uses `$s2` and `$s1`/`$s0`, which moves the
+  temporaries too (220 off); a permuter run got its score from 3335 to
+  2630 without a match.

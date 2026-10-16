@@ -27,6 +27,8 @@ static inline void VecCopyL(Vector3 *d, Vector3 *s) {
 extern "C" {
 extern short D_800BF3A0[][2]; // sines and cosines by angle (4.12)
 void func_8001C8C0(Track *t, Vector3 *out, int sec, int pt, int lane, int frac, Vector3 *dir);
+void func_8001C4A0(Track *t, int from, int to, Vector3 *pos, Vector3 *dir, int *sec, int *pt,
+                   int lane);
 Vector3 *func_80099834(Vector3 *v, Vector3 *w); // v -= w
 Vector3 *func_8009964C(Vector3 *v, int k);      // v * k
 Vector3 *func_80099D48(Vector3 *v, int shift);  // v >> shift
@@ -103,7 +105,133 @@ void func_8001B84C(RaceSort *t, RaceWorld *w) {
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_05", func_8001B974);
 
+#ifdef NON_MATCHING
+// Right in shape (the two searches, the next point inline, the three positions): the track in $s2 where the original has $s1 and the next point's pair in $s1/$s0 where it has $s0/$s2, which moves the temporaries too (220 off).
+void func_8001C4A0(Track *t, int from, int to, Vector3 *pos, Vector3 *dir, int *sec, int *pt,
+                   int lane) {
+    TrackSection *tab;
+    TrackSection *e;
+    int s, p, q, ns, np, a, b, in, f;
+    Vector3 tmp;
+
+    if (to - from > 0) {
+        s = *sec;
+        for (;;) {
+            tab = t->m_sections;
+            ns = s;
+            e = &tab[s];
+            p = *pt;
+            a = e->m_pts[p].m_0C;
+            q = p;
+            if (to < a) {
+                in = 0;
+            } else {
+                np = p + 1;
+                if (np >= e->m_count) {
+                    np = 0;
+                    if (s) {
+                        np = e->m_next;
+                        ns = 0;
+                    }
+                }
+                b = tab[ns].m_pts[np].m_0C;
+                if (b < a) {
+                    b += t->m_len;
+                }
+                in = to < b;
+            }
+            if (in) {
+                break;
+            }
+            *pt = q + 1;
+            s = *sec;
+            if (q + 1 >= t->m_sections[s].m_count) {
+                if (!s) {
+                    *pt = 0;
+                    s = *sec;
+                } else {
+                    *pt = t->m_sections[s].m_next;
+                    *sec = 0;
+                    s = 0;
+                }
+            }
+        }
+    } else {
+        for (;;) {
+            s = *sec;
+            p = *pt;
+            tab = t->m_sections;
+            ns = s;
+            e = &tab[s];
+            q = p;
+            a = e->m_pts[p].m_0C;
+            if (to < a) {
+                in = 0;
+            } else {
+                np = p + 1;
+                if (np >= e->m_count) {
+                    np = 0;
+                    if (s) {
+                        np = e->m_next;
+                        ns = 0;
+                    }
+                }
+                b = tab[ns].m_pts[np].m_0C;
+                if (b < a) {
+                    b += t->m_len;
+                }
+                in = to < b;
+            }
+            if (in) {
+                break;
+            }
+            *pt = q - 1;
+            if (q - 1 < 0 && !*sec) {
+                *pt = t->m_sections[0].m_count - 1;
+            }
+        }
+    }
+    ns = s;
+    np = p + 1;
+    if (np >= tab[s].m_count) {
+        np = 0;
+        if (s) {
+            np = tab[s].m_next;
+            ns = 0;
+        }
+    }
+    b = tab[ns].m_pts[np].m_0C;
+    a = tab[s].m_pts[p].m_0C;
+    if (b < a) {
+        b += t->m_len;
+    }
+    f = ((to - a) << 12) / (b - a);
+    func_8001C8C0(t, pos, s, p, lane, f, 0);
+    {
+        int ps = *sec;
+        int pp = *pt - 1;
+
+        if (pp < 0 && !ps) {
+            pp = t->m_sections[0].m_count - 1;
+        }
+        func_8001C8C0(t, &tmp, ps, pp, lane, f, 0);
+    }
+    s = ns;
+    p = np + 1;
+    if (p >= t->m_sections[ns].m_count) {
+        p = 0;
+        if (ns) {
+            p = t->m_sections[ns].m_next;
+            s = 0;
+        }
+    }
+    func_8001C8C0(t, dir, s, p, lane, f, 0);
+    func_80099834(dir, &tmp);
+    func_80098E9C(dir);
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_05", func_8001C4A0);
+#endif
 
 #ifdef NON_MATCHING
 /* A first draft, right in shape: the two sections' offsets swap saved registers and the lane reads are scheduled otherwise (95 off) */

@@ -56,12 +56,26 @@ globals.
   compares with 1 in `$t0` and keeps the argument in `$s5` (34 off). An
   `if` chain instead of the `switch` was further off.
 
+## Fourth pass
+
+- `func_8003781C` (new, matches): `func_8003762C`'s twin for the menu's
+  own items (owner 0), or, with its last argument, only whether it has
+  any. Three things made it match: the two 2-bit modes read into locals
+  before their tests (`int nm = ((Flags19 *)n)->m_mode;`), so GCC
+  extracts them with `sll`/`sra` instead of a mask; the colour page's
+  bitfield store written in both branches, which GCC then cross-jumps
+  into the original's shared tail; and the wrap mode as a `switch` (0,
+  then 1 and 2), as a range test GCC folded it into `sltiu`. The
+  recursive call passes the sub-menu's group as its reference. Its jump
+  table is the chunk's only `.rodata`, so the word after it is a padding
+  `D_800B7304` at the end of the file.
+
 ## The functions
 
 | Function | State | Notes |
 |---|---|---|
 | `func_8003762C` | parked | a menu's items by kind: a constant |
-| `func_8003781C` | asm | 288 instructions |
+| `func_8003781C` | matches | a menu's own items by kind, or a search |
 | `func_80037C80`, `func_80037CF8` | match | an entry's value |
 | `func_80037D58` | matches | an entry's value set |
 | `func_80037DC8` | matches | a named list's entry |
