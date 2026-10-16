@@ -19,7 +19,7 @@ A grid of tiles (`Grid59`), each tile chunk_66's 0x110-byte object
 
 One file, `src/langimg/chunk_59.cpp`, 0x80087468-0x80089200.
 
-17 functions: 11 match, 4 are parked, 2 are still asm.
+17 functions: 12 match, 5 are parked.
 
 ## The settings
 
@@ -59,8 +59,8 @@ globals.
 | `func_8008784C`, `func_8008788C` | match | a sound's constructor and destructor |
 | `func_80087900` | parked | the voices' rates: registers |
 | `func_800879D4`, `func_80087A14` | match | a grid's constructor and destructor |
-| `func_80087A58` | asm | 278 instructions |
-| `func_80087EB0` | asm | 732 instructions |
+| `func_80087A58` | matches | the grid made |
+| `func_80087EB0` | parked | the tiles laid out: registers |
 | `func_80088A08` | matches | the tiles resized |
 | `func_80088AA8` | matches | the tiles deleted |
 | `func_80088BBC` | matches | a tile made anew |
@@ -68,3 +68,24 @@ globals.
 | `func_80088F34` | matches | each live tile's object told |
 | `func_80088FD4` | parked | the primitives linked: a constant's register |
 | `func_80089190`, `func_800891C8`, `func_800891E8` | match | a tile at a row and column, or at an index |
+
+## Group C: more `$fp` functions
+
+- **`func_80087A58` matches**: the grid made (`new Tile59 *[n]`, then
+  `new Tile59[k]`, whose constructors GCC inlines in the loop, see
+  "Arrays of a class with a constructor" in the techniques), the tiles
+  made in order or backwards, then values given to the edges' tiles and
+  the rows' from a `va_list`. Two flags (`ok`, and one inside for the two
+  allocations) live on the stack in the original. What gave the match:
+  the stride added after the call in its own statement (`func(g, j); j +=
+  st;`, not in the `for`'s step: 141 to 4 off), the stores in the
+  original's order, and the last value read into the variable the earlier
+  branch used (`x`, one saved register).
+- **`func_80087EB0` parked** (480 off): the tiles laid out by a mode (a
+  switch from -1 to 3: two rows, one row, the whole grid, or none). In the
+  original's shape, with the result kept in one exit and the "same mode"
+  case as the `else`. Left: in the two-row modes the original keeps the
+  sizes on the stack and computes `x + 8`, `y + 8` and `w + 12` again
+  before each row's loop; GCC hoists them out of both loops, which moves
+  the saved registers. Computing them in the row loop's body made it
+  worse (566).

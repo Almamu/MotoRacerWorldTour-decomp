@@ -556,6 +556,11 @@ globals), a script that tries every order is quicker than guessing:
 - **The step's order.** A loop over the bikes with a pointer and a count
   increments the pointers first: `for (i = 0; i < 5; b++, i++)`;
   `i++, b++` put the count's `addiu` first (chunk_33's `func_80055410`).
+- **A second value stepped in the body.** Where the original reloads the
+  loop's bound before the count's `addiu` and steps a second value in the
+  branch's delay slot, the second step is a statement of its own after the
+  call, not in the `for`'s step: `for (i = 0; i < g->m_04; i++) { f(g, j);
+  j += st; }` (chunk_59's `func_80087A58`, 141 to 4 off).
 - **A count and an end per loop.** chunk_33's `func_800550C0` counts
   over the same five bikes twice; with one count and one end pointer for
   both loops, the first loop's two registers swapped; with a second
