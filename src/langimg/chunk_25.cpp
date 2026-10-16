@@ -92,9 +92,9 @@ extern int D_800C4938;
 extern int D_800C8C68;
 extern int D_800CBE90;
 extern int D_800CBE94;
-extern u8 D_800C55E8[];
+extern int D_800C55E8; // stored at 0x68; declared small so its address is one la
 extern char D_800CBC94[];
-extern u8 D_800D60E8[];
+extern int D_800D60E8; // chunk_74's, declared small so its address is one la
 extern Time25 D_800D6124;
 void __builtin_delete(void *p);
 Keep25 *func_8003FC94(Keep25 *k);
@@ -289,11 +289,9 @@ int func_80044CBC(void) {
     return 1;
 }
 
-#ifdef NON_MATCHING
-// Registers or a loop's shape (the permuter's to find)
 Keep25 *func_80044CC4(Keep25 *k) {
     func_8003FC94(k);
-    k->m_68 = D_800C55E8;
+    k->m_68 = (u8 *)&D_800C55E8;
     k->m_70 = 0;
     k->m_74 = 0;
     k->m_78 = 0;
@@ -301,9 +299,6 @@ Keep25 *func_80044CC4(Keep25 *k) {
     k->m_80 = 0;
     return k;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_25", func_80044CC4);
-#endif
 
 void func_80044D0C(Keep25 *k, int a) {
     Clear25();
@@ -385,16 +380,14 @@ void func_8004506C(Items25 *o, int flags) {
     }
 }
 
-#ifdef NON_MATCHING
-// Registers or a loop's shape (the permuter's to find)
 /* The timer ticked, and the frame's time and the first kept. */
 void func_800450C0(Items25 *o, int a) {
     int t;
 
     if (a) {
-        func_800A594C(D_800D60E8);
+        func_800A594C(&D_800D60E8);
     } else {
-        func_800A59D4(D_800D60E8);
+        func_800A59D4(&D_800D60E8);
     }
     t = o->m_2AC;
     o->m_2A8 = t;
@@ -407,9 +400,6 @@ void func_800450C0(Items25 *o, int a) {
         o->m_2B0 = o->m_2AC;
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_25", func_800450C0);
-#endif
 
 Item25 *func_80045154(Item25 *t) {
     t->m_24 = 0;

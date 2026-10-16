@@ -36,7 +36,7 @@ engaging, 2 neutral, 3 and 4 shifting up and down).
 | `func_80026648` | matches | once `func_80099D48` was declared to return its vector, as it does |
 | `func_80026720`, `func_800269C4`, `func_800269F0` | match | the motor's functions in the current gear |
 | `func_8002675C`, `func_80026BCC`, `func_8002726C` | asm | 155 to 246 instructions |
-| `func_80026A1C` | parked | the clutch's engagement: the first branch's clamp isn't cross-jumped into the last one as in the original (24 off) |
+| `func_80026A1C` | parked | the clutch's engagement: the call's result and two loads' registers (11 off; the clamps now cross-jumped) |
 | `func_80026FA0` | parked | a first draft: the gearbox's states in another order (56 off) |
 | `func_80027098` | matches | up a gear |
 | `func_800270FC` | matches | down a gear: the gear below in its own variable (`int g = cur - 1`) |

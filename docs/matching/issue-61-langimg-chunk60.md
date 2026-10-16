@@ -8,7 +8,7 @@ dispatched once for each parity of the frame, and a menu's entries
 searched and chosen. One file, `src/langimg/chunk_60.cpp`,
 0x80089200-0x8008B208.
 
-51 functions: 42 match, 4 are parked, 5 are still asm.
+51 functions: 43 match, 3 are parked, 5 are still asm.
 
 ## The settings
 
@@ -19,7 +19,7 @@ small globals (`langimg.chunk_60_*`), as chunk_71 and chunk_72.
 
 | Function | State | Notes |
 |---|---|---|
-| `func_80089200` | parked | an entry that can be chosen, searched down or up: the downward loop isn't rotated in the original (13 off) |
+| `func_80089200` | matches | an entry that can be chosen, searched down or up |
 | `func_800892DC` to `func_800893C8` | match | an entry chosen, its menu sound |
 | `func_800893E8` | matches | a projection's derived values (third pass) |
 | `func_80089508` to `func_800897FC` | match | the frame buffer: constructors, destructor, its frames, its allocation |
@@ -67,3 +67,11 @@ small globals (`langimg.chunk_60_*`), as chunk_71 and chunk_72.
   original leaves the second test's delay slot empty and loads -1 after
   the table's pointers where GCC fills the slot with the -1, which shifts
   everything after by one instruction.
+
+## Group C near-misses
+
+- `func_80089200` matches. The downward search is a `while (1)` with its
+  bound tested first inside (`if (i < 0) break;`), the found test after
+  the work, and `i--` last: GCC doesn't rotate that loop, so it keeps the
+  original's test at the top and indexes the entries afresh each time.
+  As a `for` loop it was rotated (13 off); a `goto` loop came out worse.

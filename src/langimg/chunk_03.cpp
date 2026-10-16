@@ -71,7 +71,7 @@ void *func_80081318(void *fonts, int i);
 void *func_80086A38(void *texts, int id);
 int func_80080F30(u8 *font, void *text, int x, int y);
 void func_80080F8C(void);
-void func_800806D4(u8 *font, void *text, int x, int y, int n, u8 *a, int *b);
+int func_800806D4(u8 *font, void *text, int x, int y, int n, u8 *a, int *b);
 /* The subclasses' vtables: one entry each, their destructor */
 extern int D_800C4948[];
 extern int D_800C4958[];
@@ -814,7 +814,8 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_03", func_80018954);
 /* The shape is the original's (the box as the GPU packets idiom, the second
  * packet's pointer stored before its tag); left: registers throughout, the
  * second link using the stored pointer where the original reads the global
- * again, and the draw state's call with its two registers swapped (53 off) */
+ * again, and the draw state's call with its two registers swapped (51 off,
+ * with func_800806D4 returning its int) */
 /* Draws a prim's text at (x, y) if on screen, by its kind (plain, shadowed,
  * boxed, blinking) or typed out; page is its colour, halved. */
 void func_80018AEC(int *prim, int page, int x, int y) {

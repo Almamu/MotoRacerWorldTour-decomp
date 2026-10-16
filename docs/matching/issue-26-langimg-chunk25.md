@@ -7,7 +7,7 @@ its calls; an object holding eight 0x50-byte items, claimed and set up
 from varargs by kind; and their constructors and destructor. One file,
 `src/langimg/chunk_25.cpp`, 0x8004316C-0x800452BC.
 
-25 functions: 20 match, 4 are parked, 1 is still asm.
+25 functions: 22 match, 2 are parked, 1 is still asm.
 
 ## The settings
 
@@ -45,10 +45,18 @@ globals.
 | `func_80044BF8`, `func_80044C80` | match | entries searched |
 | `func_80044B88`, `func_80044C54` | match | the next entry, the current one |
 | `func_80044CBC`, `func_80044F34` | match | return 1 |
-| `func_80044CC4` | parked | the class's constructor: `this` returned from its register early (a C++ constructor, likely) |
+| `func_80044CC4` | matches | the class's constructor |
 | `func_80044D0C` | matches | the globals cleared, then the base's calls |
 | `func_80044D70` to `func_80044ED8` | match | the five globals cleared or set back, around the base's calls |
 | `func_80044F3C`, `func_80044F9C`, `func_80044FC8` | match | a message formatted through a `va_list` |
 | `func_80044FE8`, `func_8004506C`, `func_80045154` | match | the items' constructor and destructor, an item's |
-| `func_800450C0` | parked | the timer's tick and the frame's time: registers |
+| `func_800450C0` | matches | the timer's tick and the frame's time |
 | `func_80045168` | matches | an item claimed and set up from varargs |
+
+## Near-misses pass
+
+- `func_80044CC4` and `func_800450C0` match: both matched with
+  `-mno-split-addresses`, which the chunk can't take (it shortens the
+  matched `func_80045168`), so the one symbol each needs as an `la` is
+  declared small instead (`extern int D_800C55E8;` and `extern int
+  D_800D60E8;`, used through `&`), each used only in that function.

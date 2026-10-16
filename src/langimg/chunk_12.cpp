@@ -106,9 +106,6 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_12", func_8002993C);
 void func_8002A260(void) {
 }
 
-#ifdef NON_MATCHING
-/* MULSHIFT's temporary in $v1, the original's in $v0, and one
- * instruction more (24 off, from 31 with func_80022D20 declared void) */
 void func_8002A268(Bike *b, Vector3 *v) {
     int ok = b->m_58 != 1;
 
@@ -130,15 +127,12 @@ void func_8002A268(Bike *b, Vector3 *v) {
             if (a) {
                 func_80023140(&t, a, 26);
                 func_800997D0(&w.vx, &t.vx);
-                func_80023140(&w, IABS(l), 23);
+                func_80023140(&w, abs(l), 23);
             }
-            *v = w;
+            VecCopyL(v, &w);
         }
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_12", func_8002A268);
-#endif
 
 void func_8002A394(Bike *b) {
     b->m_3AC = 0;

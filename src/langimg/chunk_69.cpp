@@ -395,8 +395,7 @@ void func_8009CEAC(Game69 *o, int s);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_69", func_8009B17C);
 
-#ifdef NON_MATCHING
-// Registers only: in the loop the table's value and the name's byte come out in other temporaries ($a2/$v1 where the original has $v1/$a2 and $a3/$t0), 10 off.
+// The table at 0x194 indexed through a hand-scaled byte offset (as chunk_37 and chunk_48), which gives the original's base + offset order
 void func_8009B5E8(Game69 *o) {
     Scr69 *s = o->m_A80->m_60;
     Draw69 *d = s->m_04;
@@ -414,7 +413,7 @@ void func_8009B5E8(Game69 *o) {
         s->m_A4->m_04 |= 2;
     }
     for (i = 0; i < 6; i++) {
-        s->m_5C[k]->m_50 = d->m_194[i] - 1;
+        s->m_5C[k]->m_50 = *(int *)((u8 *)d->m_194 + (i << 2)) - 1;
         *s->m_5C[k]->m_48 = (u8)d->m_187.c[i];
         func_8009B8F8(o, 3, s->m_5C[k]);
         k++;
@@ -429,9 +428,6 @@ void func_8009B5E8(Game69 *o) {
     s->m_08 = d->m_187;
     s->m_18 = 1;
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_69", func_8009B5E8);
-#endif
 
 /* The name copied to the screen's drawing, unless f. */
 void func_8009B838(Game69 *o, int f) {

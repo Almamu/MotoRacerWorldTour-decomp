@@ -34,7 +34,7 @@ slot is stale.
 | `func_8002083C` | matches | the node cursor |
 | `func_80020868`, `func_80020998` | match | a position added in a new slot, or linked to a handle's |
 | `func_80020AB0` | matches | the frame: visibility into the scratchpad, then the draw |
-| `func_80020AE4` | parked | the slots' visibility (as chunk_06's `func_8001E118`): registers, loop pointers (29 off) |
+| `func_80020AE4` | parked | the slots' visibility (as chunk_06's `func_8001E118`): registers, loop pointers (25 off) |
 | `func_80020C48` | asm | the slots drawn (283 instructions) |
 | `func_800210B0` | matches | the random table, made by its first user |
 | `func_80021138` | matches | a vector to an `SVECTOR` |

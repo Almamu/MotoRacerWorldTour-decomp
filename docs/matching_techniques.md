@@ -177,6 +177,14 @@ array); with one register, `lui $a0` and `lw $a0, %lo(x)($a0)`, it's the
 assembler's expansion of an `lw x` GCC emitted for a global it thought
 small (a scalar; chunk_71).
 
+A function that matches only with `-mno-split-addresses`, in a chunk where
+that flag breaks a matched function, often needs only one address unsplit:
+declare that global small (`extern int x;`, used through `&x` and a cast)
+in place of the flag. chunk_25's `func_80044CC4` and `func_800450C0`
+matched that way (`D_800C55E8`, chunk_74's `D_800D60E8`), and chunk_23's
+`func_800406E0` went from 20 to 13 off (`D_800D497C`, a `Seven` copied
+through `*(Seven *)&D_800D497C`).
+
 ### Divisions
 
 GCC 2.9x leaves a division to the assembler (`div $2,$3,$4`), which
@@ -410,6 +418,14 @@ globals), a script that tries every order is quicker than guessing:
 
 ### Loops
 
+- **A loop GCC doesn't rotate: `while (1)` with the bound tested
+  first.** When the original keeps a search loop's bound test at the top
+  (`bltz` before the body, a `j` back to it at the bottom) and indexes the
+  array afresh each pass, write `i = n - 1; while (1) { if (i < 0)
+  break; ...; if (found) break; i--; }`: GCC leaves that loop as written.
+  As `for (i = n - 1; i >= 0; i--)` it was rotated (the test moved to the
+  bottom, a pointer stepped), and a `goto` loop came out worse (chunk_60's
+  `func_80089200`, from 13 off).
 - **A loop entered at its body: `do`/`while`.** chunk_38's loops over
   the five bikes jump into the body and test the count at the top of the
   next pass: `i = 0; b = r->m_2E8; do { ...; b++; } while (++i < 5);`
@@ -657,6 +673,21 @@ globals), a script that tries every order is quicker than guessing:
   runs that end at the same label are merged into one; the original's
   separate copies came from a second pointer for the loop
   (`func_80017E64`).
+- **A clamp cross-jumped into another: the same types.** chunk_10's
+  `func_80026A1C` clamps a `short` field in two branches, and the
+  original merges the first clamp into the last. With the first written
+  on a `short` local the two differed by a sign extension and stayed
+  apart; as an `int v` stored to the field and compared as `(short)v`,
+  the code is the same and GCC cross-jumps it (25 to 11 off).
+- **The position summed in locals, then stored.** chunk_06's
+  `func_8001F67C` adds the speed into locals (`x += vx; y += vy; z +=
+  vz;`), then stores the three, and changes the speed in its local before
+  its store (`vy -= g >> 12; p->m_vel.vy = vy;`); written as
+  `p->m_pos.vx += vx` the loads and stores interleaved.
+- **The table's address at each call.** chunk_23's `func_8003F740`
+  inlines a lookup eight times; passed a local `t = &s->m_74`, GCC kept
+  one copy of the address where the original keeps two (in `$s1` and
+  `$s3`); written `&s->m_74` at each call, it matches.
 - **A value tested twice, a field read again.** `func_800194E4` keeps the
   prim in `$a0` and a copy in `$a2` for its second call: `page = prim[1];
   if (o->m_page) page = o->m_page ? o->m_page : prim[1];` and the calls
@@ -803,6 +834,14 @@ globals), a script that tries every order is quicker than guessing:
   in a saved register across calls and returns it from one place, write
   it with one `int r` and nested `if`s, not early returns (chunk_34's
   `func_80056CD4`).
+- **Arguments passed through.** A result in `$t0`-`$t3` where GCC puts
+  it in `$a0` can mean the function has parameters it hands on unchanged
+  to a call, so `$a0`-`$a3` stay live until then: chunk_55's
+  `func_80080F30` was declared `(void)`, but chunk_22 calls it with four
+  arguments and it passes them to `func_8007F948` (whose asm reads all
+  four). Declared with them and passing them on, it matched (from 3 off).
+  Check other files' prototypes and call sites of a parked function, and
+  the callee's first instructions for `$a0`-`$a3` reads.
 - **Declare what a callee returns.** A call whose result is unused still
   changes the code around it with the callee's declared return type:
   chunk_18's `func_80036850` matched only with `func_8001B350` declared
@@ -1018,6 +1057,9 @@ mean a `short` field.
   engine's `|x|` is `sra`, `xor`, `subu`: `ABS(x)` in
   `lib/sound/include/sound.h`, `((x) ^ ((x) >> 31)) - ((x) >> 31)`
   (`func_80012504`).
+- **`abs()` against a macro.** GCC's builtin `abs(x)` branches on `x`
+  itself (`bgez x`, `negu` in the delay slot); a macro `IABS(x)` copies
+  `x` to a temporary first. chunk_12's `func_8002A268` needed `abs()`.
 - **Bitfields as the original reads them.** A signed bitfield compared
   with -1 is a mask test (`(x & 0xFFF000) == 0xFFF000`), and one read as a
   value is `sll`/`sra` (`SeqEntry`, `func_80019578`). Tested in place
