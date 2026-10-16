@@ -11,7 +11,16 @@ extern "C" {
 
 // A node (0x38 bytes): linked to others by their distance in the array
 struct Node {
-    u8 m_00[0x26];
+    u8 m_00[6];
+    short m_06; // its position, in 1/32
+    u8 m_08[6];
+    short m_0E;
+    u8 m_10[6];
+    short m_16;
+    u8 m_18[6];
+    u8 m_1E; // its direction's x and z
+    u8 m_1F;
+    u8 m_20[6];
     short m_next; // 0x26: to the next, or NODE_NONE
     u8 m_28[6];
     short m_prev; // 0x2E: to the previous, or NODE_NONE
@@ -19,11 +28,16 @@ struct Node {
     short m_slot; // 0x36: its slot, or -1
 };
 
+// Three angles
+struct Ang07 {
+    short x, y, z;
+};
+
 // A slot (0x18 bytes): a position and its first node
 struct NodeSlot {
     Vector3 m_pos;
-    int m_0C;
-    u8 m_10[6];
+    int m_0C; // its size
+    Ang07 m_10;
     short m_first;
 };
 
@@ -51,7 +65,14 @@ void func_800202E0(NodePool *p, int slot);
 void func_8002034C(NodePool *p, int i);
 void func_8002083C(NodePool *p);
 void func_80021138(SVECTOR *out, Vector3 *in);
-void func_800203A8(NodePool *p, int a, Vector3 *pos, int c, int slot);
+Vector3 *func_80099DCC(Vector3 *d, Vector3 *s, int k);
+Vector3 *func_80099DA0(Vector3 *d, Vector3 *s, int k);
+Vector3 *func_8009986C(Vector3 *v, int k);
+Vector3 *func_80099808(Vector3 *v, int k);
+void func_80098DD4(Vector3 *a, Vector3 *b);
+void func_80098E38(Vector3 *a, Vector3 *b);
+Vector3 *func_80099D48(Vector3 *v, int k);
+void func_800203A8(NodePool *p, MATRIX *m, Vector3 *pos, int w, int slot);
 int func_80020868(NodePool *p, int a, Vector3 *pos, int c);
 int func_80020998(NodePool *p, int handle, int a, Vector3 *pos, int c);
 void func_80020AB0(NodePool *p);
@@ -189,7 +210,120 @@ void func_8002034C(NodePool *p, int i) {
     }
 }
 
+static inline void VecSet07(Vector3 *v, int x, int y, int z) {
+    v->vx = x;
+    v->vy = y;
+    v->vz = z;
+}
+
+static inline void VecCopy07(Vector3 *d, Vector3 *s) {
+    int x = s->vx;
+    int y = s->vy;
+    int z = s->vz;
+
+    d->vx = x;
+    d->vy = y;
+    d->vz = z;
+}
+
+static inline void VecFromAng07(Vector3 *d, Ang07 *a) {
+    int x = a->x;
+    int y = a->y;
+    int z = a->z;
+
+    d->vx = x;
+    d->vy = y;
+    d->vz = z;
+}
+
+/* A node's ends from a matrix and a width at a position; its slot's box
+ * grown to them and its angles. */
+static inline void Rot07(Vector3 *v) {
+    func_8009887C((long *)v, (long *)v);
+}
+
+#ifdef NON_MATCHING
+// 8 off: the midpoint call's delay slot holds the a2 move where the original has the $s7 (&h) address, and the last copy into h loads x and y into $v1/$v0 (the original $v0/$v1) and its halfword into $v1 ($a1).
+void func_800203A8(NodePool *p, MATRIX *m, Vector3 *pos, int w, int slot) {
+    Vector3 l, r, f, u, n, d, e, g, h, k, q, sv, t, x;
+    Node *nd;
+    int sz, sx, sy;
+
+    VecSet07(&l, -w / 2, 0, 0);
+    r.vx = w / 2;
+    r.vy = 0;
+    r.vz = 0;
+    func_80098768(m, (long *)&l, (long *)&l);
+    Rot07(&r);
+    func_800997D0((long *)&l, (long *)pos);
+    func_800997D0((long *)&r, (long *)pos);
+    func_800998D0(&e, &r, &l);
+    VecCopy07(&f, &e);
+    func_80099DCC(&e, &l, 12);
+    VecCopy07(&n, &e);
+    func_80099DA0(&e, &n, 12);
+    VecCopy07(&d, &e);
+    func_800998D0(&e, &l, &d);
+    VecCopy07(&u, &e);
+    {
+        int s = p->m_slots[slot].m_0C;
+
+        VecCopy07(&e, &p->m_slots[slot].m_pos);
+        VecCopy07(&g, &p->m_slots[slot].m_pos);
+        func_8009986C(&e, s);
+        func_80099808(&g, s);
+    }
+    func_80098DD4(&e, &l);
+    func_80098E38(&g, &l);
+    func_80098DD4(&e, &r);
+    func_80098E38(&g, &r);
+    func_80099898(&k, &e, &g);
+    func_80099DCC(&h, &k, 1);
+    VecCopy07(&p->m_slots[slot].m_pos, &h);
+    sy = g.vy - e.vy;
+    sx = g.vx - e.vx;
+    if (sy < sx) {
+        sy = sx;
+    }
+    sz = g.vz - e.vz;
+    if (sz < sy) {
+        sz = sy;
+    }
+    p->m_slots[slot].m_0C = sz >> 1;
+    nd = func_80020104(&p->m_nodes[p->m_cursor]);
+    if (nd) {
+        int hx = nd->m_06;
+        int hy = nd->m_0E;
+        int hz = nd->m_16;
+
+        h.vx = hx;
+        h.vy = hy;
+        h.vz = hz;
+        VecFromAng07(&t, &p->m_slots[slot].m_10);
+        func_80099DA0(&sv, &t, 7);
+        VecCopy07(&q, &sv);
+        func_800997D0((long *)&q, (long *)&h);
+        func_80099DCC(&x, &l, 5);
+        func_800998D0(&sv, &q, &x);
+        VecCopy07(&h, &sv);
+        nd->m_06 = h.vx;
+        nd->m_0E = h.vy;
+        nd->m_16 = h.vz;
+    }
+    func_80021138((SVECTOR *)&h, &n);
+    p->m_slots[slot].m_10 = *(Ang07 *)&h;
+    func_80099D48(&l, 5);
+    func_80099D48(&u, 5);
+    func_80099D48(&f, 5);
+    p->m_nodes[p->m_cursor].m_06 = u.vx;
+    p->m_nodes[p->m_cursor].m_0E = u.vy;
+    p->m_nodes[p->m_cursor].m_16 = u.vz;
+    p->m_nodes[p->m_cursor].m_1E = f.vx;
+    p->m_nodes[p->m_cursor].m_1F = f.vz;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_07", func_800203A8);
+#endif
 
 void func_8002083C(NodePool *p) {
     if (++p->m_cursor == p->m_count) {
@@ -217,7 +351,7 @@ int func_80020868(NodePool *p, int a, Vector3 *pos, int c) {
     func_800202E0(p, p->m_12CA);
     VecCopy(&p->m_slots[p->m_12CA].m_pos, pos);
     p->m_slots[p->m_12CA].m_0C = 0;
-    func_800203A8(p, a, pos, c, p->m_12CA);
+    func_800203A8(p, (MATRIX *)a, pos, c, p->m_12CA);
     p->m_nodes[p->m_cursor].m_slot = p->m_12CA;
     p->m_slots[p->m_12CA].m_first = p->m_cursor;
     r = (p->m_cursor << 16) | p->m_12CA;
@@ -241,7 +375,7 @@ int func_80020998(NodePool *p, int handle, int a, Vector3 *pos, int c) {
             func_8002034C(p, p->m_cursor);
             func_8002012C(&p->m_nodes[i], p->m_cursor - i);
             p->m_nodes[p->m_cursor].m_slot = slot;
-            func_800203A8(p, a, pos, c, slot);
+            func_800203A8(p, (MATRIX *)a, pos, c, slot);
             p->m_slots[slot].m_first = p->m_cursor;
             handle = (p->m_cursor << 16) | slot;
             func_8002083C(p);
