@@ -4,7 +4,7 @@ Six large methods of the bike (chunk_09): its per-frame state from the
 motion's flags, its drag, the engine's force on the ground, and three
 more. One file, `src/langimg/chunk_11.cpp`, 0x80027614-0x800297B4.
 
-6 functions: 2 match, 2 are parked, 2 are still asm.
+6 functions: 2 match, 3 are parked, 1 is still asm.
 
 ## The settings
 
@@ -16,7 +16,8 @@ checks, no small globals (`langimg.chunk_11_*`).
 | Function | State | Notes |
 |---|---|---|
 | `func_80027614` | parked | the automatic gearbox: registers (10 off) |
-| `func_80027A90`, `func_800283D0` | asm | 276 (with `sprintf`) and 927 instructions |
+| `func_80027A90` | parked | the time to 100 km/h (60 mph) and over a distance, shown as text: a double store GCC drops (23 off) |
+| `func_800283D0` | asm | 927 instructions |
 | `func_80027EE0` | matches | the ground and clutch flags from the motion, and `m_2E4` raised and lowered (316 instructions) |
 | `func_80029248` | parked | the engine's force: the first test's layout, and a flag GCC sets with `sltu` |
 | `func_800295D4` | matches | the drag: the speed squared times the motor's drag (120 instructions) |
@@ -61,3 +62,11 @@ shift first (`b->m_shift + b->m_gear > 0 && sp <
 upshift[(b->m_shift - 1) + b->m_gear]`). Left: the kind-3 branch's divisor
 and clamped value in other temporaries, and the gear and shift loads in the
 change-down test.
+
+`func_80027A90`: the 10-byte texts copied with `memcpy` (the original's
+`lw`/`lw`/`lh`, a struct copy gave `lwl`/`lwr`), the speed in km/h as one
+division (`sp * 36 / 40960`) and the shown text `D_800D4798` declared
+small so its address is built at each use. Left: the original stores the
+time to 0x5AC twice (the frame's time added, then the excess taken off),
+where GCC drops the first, and takes the number buffer's address after
+the text's copy (23 off).

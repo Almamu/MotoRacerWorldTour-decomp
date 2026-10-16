@@ -7,7 +7,17 @@ extern "C" {
 // An item (0x74 bytes): its name first
 struct Item21 {
     char *m_name;
-    u8 m_04[0x70];
+    u8 m_04[4];
+    s8 m_08[0x28]; // its text
+    int m_30;
+    u8 m_34[0x18];
+    struct Cell21 *m_4C;
+    u8 m_50[0x24];
+};
+// A cell of an item's grid (12 bytes)
+struct Cell21 {
+    int m_00;
+    u8 m_04[8];
 };
 
 // A named link of the list at 0x16C
@@ -31,11 +41,69 @@ struct Par21 {
     int m_10, m_14, m_18, m_1C;
 };
 
+struct Scene21;
+// A named handler (8 bytes)
+struct Fn21 {
+    char *m_00;
+    void (*m_04)(struct Scene21 *s, int why, struct Menu21 *m);
+};
+struct Fns21 {
+    u8 m_00[8];
+    Fn21 *m_08;
+    int m_0C; // how many
+};
+// A named value of a table (8 bytes)
+struct Ent21 {
+    char *m_name;
+    int m_used;
+};
+// The scene's values by name: the values, their names
+struct Tab21 {
+    int *m_00;
+    Ent21 *m_04;
+    u8 m_08[0xC];
+    int m_14; // how many
+};
+// A menu (chunk_19's Menu19)
+struct Menu21 {
+    short m_00; // its kind
+    u16 m_02;   // flags: bits 0-3 its state
+    u8 m_04[4];
+    char m_08[0x28];    // its name
+    struct Act21 *m_30; // its actions (16 bytes each)
+    int m_34;           // how many
+    u8 m_38[6];
+    s8 m_3E, m_3F, m_40, m_41, m_42;
+    u8 m_43[5];
+    union {
+        char m_s[0x20]; // a text
+        struct {
+            int m_a, m_b;
+        } m_v;
+    } m_48;
+    s8 m_68;
+    u8 m_69;
+    s8 m_6A;
+};
+struct Act21 {
+    u8 m_00[0x10];
+};
+// An event: its menus
+struct Ev21 {
+    u8 m_00[8];
+    short m_08;
+    short m_0A;
+    Menu21 **m_0C;
+};
 // The scene
 struct Scene21 {
     u8 m_00[0x38];
     void *m_38; // a racer (chunk_05's)
-    u8 m_3C[0x9C];
+    u8 m_3C[0x20];
+    struct Fns21 *m_5C;
+    u8 m_60[0x14];
+    struct Tab21 m_74;
+    u8 m_8C[0x4C];
     struct Zone21 m_D8;
     u8 m_F8[0x50];
     int *m_148; // a table
@@ -49,10 +117,10 @@ struct Scene21 {
     u8 m_A74[8];
     Item21 *m_A7C; // the items
     Item21 *m_A80; // the current one
-    u8 m_A84[4];
+    Item21 *m_A84;
     Item21 **m_A88; // the items gone through
     int m_A8C;      // how many
-    u8 m_A90[4];
+    int m_A90;
     int m_A94; // flags
     int *m_A98;
     int *m_A9C;
@@ -71,6 +139,21 @@ void *memcpy(void *d, const void *s, unsigned int n);
 int func_800A60AC(const char *a, const char *b); // strcmp
 void func_8001D180(void *r, int f);
 void func_8003FC28(Scene21 *s, int i, int j);
+extern char D_800C4DEC[], D_800C4DFC[];
+int func_80037C80(Menu21 *m);
+int func_80037CF8(Menu21 *m);
+char *func_80037DC8(Menu21 *m, Item21 *it);
+char *strcpy(char *d, const char *s);
+void func_8003D334(Scene21 *s, Ev21 *e);
+void func_8003CDEC(Scene21 *s, Ev21 *e);
+extern char D_800C4E0C[];
+void func_800A22F8(int a);
+void func_8003762C(Menu21 *m, Item21 *it, Ev21 *e, int a);
+int func_80097128(void *p);
+void *func_8003AB24(Item21 *it, int g, int a, int b, int c, int d, int e);
+void func_80039E74(Item21 *it, int a);
+int sprintf(char *s, const char *f, ...);
+unsigned int strlen(const char *s);
 
 void func_8003B600(Scene21 *s, int *src, unsigned int size, unsigned int size2, int reuse,
                    int copy);
@@ -299,6 +382,162 @@ void func_8003CD88(Scene21 *s) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_21", func_8003CDEC);
+// The value named name, or 0
+static inline int *Find21(Tab21 *t, const char *name) {
+    int *r = 0;
+    int i;
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_21", func_8003D334);
+    for (i = 0; i < t->m_14; i++) {
+        if (t->m_04[i].m_name && !func_800A60AC(name, t->m_04[i].m_name)) {
+            r = &t->m_00[i];
+            break;
+        }
+    }
+    return r;
+}
+
+// The value marked as used
+static inline void Use21(Tab21 *t, int *p) {
+    Ent21 *e = 0;
+
+    if (p >= t->m_00 && p < t->m_00 + t->m_14) {
+        e = &t->m_04[p - t->m_00];
+    }
+    e->m_used = 1;
+}
+
+// The handler named name into *out, if there is one
+static inline void FindFn21(Fns21 *t, const char *name, Fn21 **out) {
+    int i;
+
+    for (i = 0; i < t->m_0C; i++) {
+        if (!func_800A60AC(t->m_08[i].m_00, name)) {
+            *out = &t->m_08[i];
+            break;
+        }
+    }
+}
+
+void func_8003CDEC(Scene21 *s, Ev21 *e) {
+    Item21 *cur;
+    Menu21 *m;
+    int *p;
+    int i;
+
+    if (s->m_A90 == 1 || s->m_A90 == 4) {
+        cur = s->m_A84;
+    } else {
+        cur = s->m_A80;
+    }
+    func_800A22F8(2);
+    if (!e || !e->m_08) {
+        return;
+    }
+    m = e->m_0C[e->m_0A];
+    if ((m->m_02 & 0xF) != 1) {
+        return;
+    }
+    s->m_164 = m->m_40;
+    s->m_168 = m->m_42;
+    func_8003762C(m, cur, e, 1);
+    p = Find21(&s->m_74, D_800C4DEC);
+    Use21(&s->m_74, p);
+    *p = func_80037C80(m);
+    p = Find21(&s->m_74, D_800C4DFC);
+    Use21(&s->m_74, p);
+    *p = func_80037CF8(m);
+    s->m_A94 &= ~0x100;
+    if (m->m_30) {
+        for (i = 0; i < m->m_34; i++) {
+            func_80097128(&m->m_30[i]);
+        }
+    }
+    {
+        Fn21 *h = 0;
+
+        FindFn21(s->m_5C, m->m_08, &h);
+        if (h && h->m_04) {
+            h->m_04(s, 2, m);
+        }
+    }
+    if (m->m_00 != -1 && m->m_00 != 4) {
+        func_8003FC28(s, 2, m->m_3E);
+    }
+    switch (m->m_00) {
+    case 0:
+        if (!(cur->m_30 & 0xF)) {
+            strcpy((char *)cur->m_08, m->m_08);
+        } else {
+            strcpy((char *)cur->m_08, func_80037DC8(m, cur));
+        }
+        if (m->m_68) {
+            char buf[0x40];
+
+            for (i = 0; i < strlen((char *)cur->m_08); i++) {
+                if (cur->m_08[i] == '_') {
+                    break;
+                }
+            }
+            sprintf(buf, D_800C4E0C, m->m_48.m_s, cur->m_08 + i + 1);
+            func_8003CBA0(s, buf, m->m_6A);
+        } else {
+            func_8003CBA0(s, m->m_48.m_s, m->m_6A);
+        }
+        break;
+    case 1:
+        func_8003AB24(cur, m->m_48.m_v.m_b, 1, 0, 1, -1, 1);
+        func_80039E74(cur, 8);
+        cur->m_4C[m->m_48.m_v.m_a].m_00 = m->m_48.m_v.m_a;
+        func_8003AB24(cur, m->m_48.m_v.m_b, 0, 0, 1, -1, 1);
+        func_8003FC28(s, 5, m->m_41);
+        break;
+    case 2:
+        func_8003CC9C(s, m->m_48.m_v.m_a);
+        break;
+    case 3:
+        s->m_A94 |= 4;
+        break;
+    }
+}
+
+void func_8003D334(Scene21 *s, Ev21 *e) {
+    Item21 *cur;
+    Menu21 *m;
+    int *p;
+
+    if (s->m_A90 == 1 || s->m_A90 == 4) {
+        cur = s->m_A84;
+    } else {
+        cur = s->m_A80;
+    }
+    if (!e || !e->m_08 || !(m = e->m_0C[e->m_0A])) {
+        return;
+    }
+    if (s->m_A8C >= 2) {
+        func_8003FC28(s, 3, m->m_3F);
+    }
+    p = Find21(&s->m_74, D_800C4DEC);
+    Use21(&s->m_74, p);
+    *p = func_80037C80(m);
+    p = Find21(&s->m_74, D_800C4DFC);
+    Use21(&s->m_74, p);
+    *p = func_80037CF8(m);
+    switch (m->m_00) {
+    case -1:
+    case 0:
+    case 2:
+    case 3:
+        func_8003CD88(s);
+        if (!(cur->m_30 & 0xF)) {
+            strcpy((char *)cur->m_08, m->m_08);
+        } else {
+            strcpy((char *)cur->m_08, func_80037DC8(m, cur));
+        }
+        break;
+    case 1:
+        break;
+    }
+}
+
+// The word after its jump table, the end of this file's .rodata
+extern "C" const int D_800B73DC __attribute__((section(".rodata"))) = 0;

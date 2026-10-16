@@ -38,7 +38,9 @@ struct AnimChan {
 
 // What owns the bike (its m_54)
 struct BikeOwner {
-    u8 m_pad0[0x187];
+    u8 m_pad0[0x43];
+    s8 m_43; // its index in the race
+    u8 m_pad44[0x143];
     s8 m_187;
     u8 m_188;
     s8 m_189;

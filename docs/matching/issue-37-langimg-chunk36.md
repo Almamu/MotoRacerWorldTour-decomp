@@ -61,8 +61,7 @@ globals `D_800CB3A0`, `D_800CB3BC` and `D_800CB3C4`.
     before the slot's field; GCC adds them the other way round (7 off).
     Indexing the slot through the array each time and the comparison
     written `D_800C8A74 == ...` took it from 15.
-- **Still asm.** `func_800593CC` (357 instructions), `func_8005A148`
-  (275) and `func_8005A59C` (1154), not tried.
+- **Still asm.** `func_8005A59C` (1154 instructions), not tried.
 
 ## The functions
 
@@ -75,7 +74,7 @@ globals `D_800CB3A0`, `D_800CB3BC` and `D_800CB3C4`.
 | `func_80059CD4` | parked | the checks between frames: a search |
 | `func_80059ECC` | matches | the bikes of kind 1 given 25 |
 | `func_80059FAC` | matches | a definition started by the game mode |
-| `func_8005A148` | asm | 275 instructions |
+| `func_8005A148` | parked | the race's message by mode: an address's order (49 off) |
 | `func_8005A594` | matches | returns 1 |
 | `func_8005A59C` | asm | 1154 instructions |
 
@@ -95,3 +94,17 @@ globals `D_800CB3A0`, `D_800CB3BC` and `D_800CB3C4`.
     the point's and the flag's, as the original's;
   - the wrong-way bit set as a bitfield and read back as `(b->m_00 >> 7) &
     1`; the in-race test the same way, `(b->m_00 >> 6) & 1`.
+
+## Group B large functions, third pass
+
+`func_8005A148` is written and parked at 49 off. It's the message shown
+between races, chosen by the game mode (`D_800D5F40`): in mode 8 by the
+place and the record, in mode 4 by the bike's state and the laps left,
+otherwise by the bikes' kind at 0x00 (0xA8: both bikes' names put in a
+text with `sprintf`; 0x54; the rest). Then the object's vtable entries 22
+and 24 are called. The branches and calls are the original's. What's left:
+in the 0xA8 branch's last call, GCC computes the name's address before it
+loads `o->m_B8`. Because of that, the branch doesn't join the other two at
+the shared `2` argument. Folding the three calls into one after the
+branches (the original's shape at the source level) made it worse
+(80 off).

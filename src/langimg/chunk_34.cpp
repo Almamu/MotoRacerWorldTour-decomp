@@ -171,7 +171,7 @@ extern char D_800C688C[];
 extern char D_800C689C[];
 int func_80050D7C(Run34 *r, int k);
 void func_80082B14(void *p, Own34 *o);
-void *func_80053198(Own34 *o);
+void *func_80053198(Own34 *o, int i);
 Text34 *func_800841BC(void *n, int i, int force);
 void *func_8005C424(Own34 *o, int x);
 void func_80054744(Own34 *o, void *s, int t, int i, int a, int c, int d);
@@ -494,8 +494,6 @@ int func_80056CD4(Own34 *o, int k, Bike34 *b) {
     return r;
 }
 
-#ifdef NON_MATCHING
-// The bike's index at 0x43 in $v1 where the original has $a1, and the -1 it's compared with in another register (5 off).
 void func_80056F64(Own34 *o, int k, Bike34 *b) {
     if ((u32)(b->m_00b[1] - 3) >= 2) {
         int len = b->m_30->m_10C;
@@ -519,7 +517,7 @@ void func_80056F64(Own34 *o, int k, Bike34 *b) {
                 o->m_490 = kind;
                 idx = b->m_43;
                 if (!o->m_304 && idx != -1) {
-                    void *q = func_80053198(o);
+                    void *q = func_80053198(o, idx);
 
                     if (q) {
                         Text34 *x = func_800841BC(q, 1, 1);
@@ -598,6 +596,3 @@ void func_80056F64(Own34 *o, int k, Bike34 *b) {
         func_800574EC(o, k, b);
     }
 }
-#else
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_34", func_80056F64);
-#endif

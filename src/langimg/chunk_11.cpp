@@ -22,6 +22,19 @@ void func_80027614(Bike *b);
 Vector3 *func_80099D48(Vector3 *v, int shift); // v >> shift
 void func_80023004(Vector3 *v, Vector3 n);
 void func_80023140(Vector3 *v, int len, int shift);
+void func_80027A90(Bike *b);
+extern int D_800D49A8;                 // 0 in kilometres
+extern int D_800C4D18[], D_800C4D24[]; // two 10-byte texts
+void *memcpy(void *d, const void *s, unsigned int n);
+extern char D_800C4D30[];
+extern int D_800D4798_la __asm__(
+    "D_800D4798"); // the text shown, declared small: its address built at each use
+int func_800A5DBC(char *buf, int t, int f);
+Vector3 *func_800998D0(Vector3 *dst, Vector3 *a, Vector3 *b); /* a - b */
+int func_8009931C(Vector3 *v);
+void func_80054744(Game *g, char *s, int t, int i, int a, int c, int d);
+char *strcpy(char *d, const char *s);
+int sprintf(char *s, const char *f, ...);
 }
 
 /* The automatic gearbox: the engine speed asked for from the motion (clamped
@@ -136,7 +149,102 @@ void func_80027614(Bike *b) {
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_11", func_80027614);
 #endif
 
+/* The speed and distance timers: the time to 100 km/h (or 60 mph) and the
+ * time over the distance at 0x18FFFF, each shown once. */
+#ifdef NON_MATCHING
+// The original keeps both stores to 0x5AC (the frame's time added, then the excess taken off), where GCC drops the first as dead, and it takes the number buffer's address after the text's copy (23 off).
+void func_80027A90(Bike *b) {
+    int v, top, km;
+
+    if (b->m_58) {
+        return;
+    }
+    v = func_8002E684(b, 0) * 36 / 10;
+    top = 0x64000;
+    km = !D_800D49A8;
+    if (km) {
+        top = 0x608F5;
+    }
+    if (v < 0x19A) {
+        b->m_5AC = 0;
+        b->m_5B0 = 0;
+        b->m_5BC = 0;
+        b->m_5B4 = 0;
+        b->m_5C4 = 0;
+    } else {
+        if (!b->m_149 || b->m_14F) {
+            b->m_5B0 = 1;
+            b->m_5C4 = 1;
+        }
+        if (v < top) {
+            if (!b->m_5B0) {
+                b->m_5AC += b->m_298;
+            }
+        } else if (!b->m_5B0) {
+            int over = v - top;
+            int rate = (v - b->m_5A4) * 1000 / b->m_298;
+
+            b->m_5B0 = 1;
+            b->m_5AC += b->m_298;
+            b->m_5AC -= over * 1000 / rate;
+            b->m_5A8 = b->m_5AC;
+            if (D_800C5E14 && !D_800C5E14->m_304) {
+                char buf[0x20];
+                char num[0x10];
+
+                if (km) {
+                    memcpy(buf, D_800C4D18, 10);
+                } else {
+                    memcpy(buf, D_800C4D24, 10);
+                }
+                if (func_800A5DBC(num, b->m_5A8, 4)) {
+                    char *n = num;
+
+                    if ((num[0] == '0' || num[0] == ' ') && num[1] == '0') {
+                        n = &num[3];
+                    }
+                    strcpy(&buf[9], n);
+                    if (D_800C5E14 && b->m_54->m_43 != -1) {
+                        func_80054744(D_800C5E14, buf, 4000, b->m_54->m_43, 1, 0xFFFF00, -1);
+                    }
+                }
+            }
+        }
+        if (!b->m_5C4) {
+            Vector3 d;
+            int l;
+
+            func_800998D0(&d, &b->m_5CC->m_04, &b->m_5C8->m_04);
+            func_80099D48(&d, 5);
+            l = func_8009931C(&d);
+            if (!b->m_5C4) {
+                b->m_5B4 += l;
+            }
+        }
+        if (b->m_5B4 <= 0x18FFFF) {
+            b->m_5BC += b->m_298;
+        } else if (!b->m_5C4) {
+            int sp = func_8002E684(b, 0);
+            int t = b->m_5BC;
+
+            b->m_5C0 = sp;
+            b->m_5C4 = 1;
+            b->m_5B8 = t;
+            if ((u8)b->m_58 < 2 && D_800C5E14 && !D_800C5E14->m_304) {
+                sprintf((char *)&D_800D4798_la, D_800C4D30, t / 1000, t % 1000 / 10,
+                        sp * 36 / 40960);
+                if (D_800C5E14 && b->m_54->m_43 != -1) {
+                    func_80054744(D_800C5E14, (char *)&D_800D4798_la, 4000, b->m_54->m_43, 1,
+                                  0xFFFF00, -1);
+                }
+            }
+        }
+    }
+    b->m_5A4 = v;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_11", func_80027A90);
+#endif
 
 /* The frame's ground and clutch flags from the motion, and m_2E4 (a
  * temperature-like value, 0x333 to 0x1000) raised by the engine near its

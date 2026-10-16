@@ -20,7 +20,7 @@ calls in a row.
 
 One file, `src/langimg/chunk_17.cpp`, 0x80033720-0x80035518.
 
-18 functions: 14 match, 1 is parked, 3 are still asm.
+18 functions: 14 match, 2 are parked, 2 are still asm.
 
 ## The settings
 
@@ -66,7 +66,7 @@ global (`D_800C4D78`).
 | `func_80033E4C` | parked | the view each frame: the digits' loop and a flag's `sltiu` (183 off, 205 of 209 instructions built) |
 | `func_80034190` | matches | a vector halved, clamped and smoothed |
 | `func_8003425C` | matches | a camera from the view (inline helpers, see below) |
-| `func_8003442C` | asm | 316 instructions |
+| `func_8003442C` | parked | the rider drawn through its kind's pointer to member: saved registers (225 off) |
 | `func_8003491C` | matches | what the view looks at |
 | `func_800349C0` | matches | what it looks at changed |
 | `func_80034A38` | matches | a map's cell |
@@ -91,3 +91,12 @@ global (`D_800C4D78`).
   inline accessor `MatTrans17(&out)`, which keeps `out.t` in `$s3` as
   the original does (the permuter's find). docs/matching_techniques.md,
   "Stack addresses kept or recomputed: inline functions".
+
+`func_8003442C` calls through a pointer to member: the kind's entry of
+`D_800C8D34` (a `void (Anim17::*)(MATRIX *)` table whose entry 1 is set
+to `&Anim17::Draw`, `func_8008FD74` named with `__asm__`) copied to the
+animation at the view's 0x40 and called on it; GCC 2.91.66 gives the
+original's test of the index, vtable entry and `this` adjustment. Left:
+the saved registers (the animation's pointer copied for the call), the
+`u16` at 0x8 read with `lhu` where GCC narrows it to `lbu`, and the
+position's copy and the matrix's scaling read through pointers (225 off).

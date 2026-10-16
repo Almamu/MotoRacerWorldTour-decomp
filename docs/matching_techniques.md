@@ -869,7 +869,15 @@ globals), a script that tries every order is quicker than guessing:
   with the wrong number of arguments changes the caller: chunk_25 passed
   `k` to `func_8001687C`, which takes nothing (chunk_02b's definition),
   and kept `k` in another register for it; declared as defined,
-  `func_80044D0C` matched. And when a library function's real prototype
+  `func_80044D0C` matched. The other way round, a prototype with fewer
+  arguments than the definition leaves out a value the original passes.
+  The near-miss then reads as "a value in `$a1` where we have another
+  register" or "the original loads a field we never use". This was the
+  case for chunk_52's `func_80079438` (`func_800895A0` takes the buffer's
+  size too) and chunk_34's `func_80056F64` (`func_80053198` takes the
+  bike's index). Both matched once the argument was declared and passed.
+  A sweep of every chunk's prototypes against the definitions' parameter
+  counts finds these. And when a library function's real prototype
   returns something the original's didn't (`memcpy`), a second declaration
   returning `void` with an asm label (`void memcpy20(...)
   asm("memcpy");`) calls the same symbol (chunk_20's `func_8003B51C`).
@@ -1217,6 +1225,19 @@ Locals declared before the array keep their place in the frame.
 - **C linkage for placeholder names.** A function in a `.cpp` chunk whose
   real name isn't known is declared `extern "C"` (`lib/sound/include/sound.h`),
   so its symbol is the plain `func_XXXXXXXX` the asm calls.
+- **Calls through a pointer to member.** A call that tests a halfword
+  index (`blez`), loads an 8-byte vtable entry and adds two `this`
+  adjustments before a `jalr` is GCC 2.91.66's pointer-to-member call;
+  written as one (`(a->*a->m_2C)(&m)`, the member declared `void
+  (Anim17::*m_2C)(MATRIX *)`) it comes out in that shape. A member
+  function can be named for its symbol with `__asm__` (`void Draw(MATRIX
+  *m) __asm__("func_8008FD74");`), and `tab[1] = &Anim17::Draw;` gives the
+  original's three stores (0, -1, the address). chunk_17's
+  `func_8003442C`.
+- **A lookup's result on the stack.** When a found pointer lives in a
+  stack slot across the search, an inline taking its address (`Fn21 *h =
+  0; FindFn21(t, name, &h);`, the inline storing `*out` and breaking)
+  puts it there; chunk_21's `func_8003CDEC`.
 
 ## Register allocation
 

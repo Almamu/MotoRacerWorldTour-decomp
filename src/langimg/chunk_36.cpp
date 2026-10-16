@@ -39,7 +39,10 @@ struct Bike36 {
             unsigned m_back : 1; // going the wrong way
         } m_f;
     };
-    u8 m_04[0xC];
+    int m_04; // its time
+    u8 m_08[4];
+    short m_0C; // its points
+    u8 m_0E[2];
     int m_10;
     u8 m_14[8];
     int m_1C;
@@ -52,7 +55,9 @@ struct Bike36 {
     u8 m_34[8];
     short m_3C; // its distance from the start line
     short m_3E;
-    u8 m_40[3];
+    u8 m_40;
+    s8 m_41; // its place
+    u8 m_42;
     s8 m_43;
     u8 m_44;
     s8 m_45;
@@ -75,7 +80,9 @@ struct Run36 {
     int m_1DF4;
     u8 m_1DF8[0x10];
     int m_1E08;
-    u8 m_1E0C[0x2C];
+    u8 m_1E0C[0x18];
+    s8 m_1E24[2]; // the racers' bikes
+    u8 m_1E26[0x12];
     s8 m_1E38;
     s8 m_1E39;
     u8 m_1E3A[2];
@@ -197,6 +204,24 @@ extern char D_800C6920[];
 extern char D_800C692C[];
 extern char D_800C6938[];
 extern char D_800C6948[];
+extern char D_800C695C[];
+extern char D_800C696C[];
+extern char D_800C6980[];
+extern char D_800C6988[];
+extern char D_800C6990[];
+extern char D_800C6998[];
+extern int D_800D5FC8;
+extern int D_800D49E8;
+extern int D_800D5F2C;
+extern int *D_800C9EEC;
+int func_8005102C(Run36 *r, int a);
+int func_800A14CC(void);
+int func_800A1504(void);
+int func_800A1528(int a, int b);
+int func_800A158C(int a);
+void func_800A5F90(char *buf, int n);
+void func_800A5DBC(char *buf, int t, int f);
+int func_8005A148(Own36 *o);
 
 int sprintf(char *buf, const char *fmt, ...);
 int func_8006A994(void *c, int a, Slot36 *s, short b);
@@ -547,7 +572,111 @@ int func_80059FAC(Own36 *o) {
     return r;
 }
 
+// The run's bike k, or 0
+static inline Bike36 *Bike36At(Run36 *r, int k) {
+    Bike36 *b = 0;
+
+    if (k >= 0) {
+        b = &r->m_2E8[k];
+    }
+    return b;
+}
+
+#ifdef NON_MATCHING
+// The modes' branches and calls are the original's; left: in the 0xA8 branch's last call GCC computes the name's address before loading o->m_B8, so that branch doesn't join the other two at the shared 2 argument (49 off).
+int func_8005A148(Own36 *o) {
+    int r = 0;
+    Bike36 *b = Bike36At(o->m_378, o->m_378->m_1E24[0]);
+
+    if (!func_80059CD4(o)) {
+        if (!D_800D5F6C) {
+            VtEntry36 *v;
+            int place = func_8005102C(o->m_378, 0);
+
+            switch (D_800D5F40) {
+            case 8: {
+                int a = func_800A14CC();
+                int c = func_800A1504();
+                int k = D_800D5FC8;
+                int m = D_800D49E8;
+
+                if (k != -1) {
+                    func_80042FC0(o->m_B8, D_800C695C, 1, 0);
+                } else if (func_800A1528(a, c)) {
+                    if (place < 3) {
+                        if (m != k) {
+                            func_80042FC0(o->m_B8, D_800C695C, 1, 0);
+                        } else if (func_800A158C(c)) {
+                            func_80042FC0(o->m_B8, D_800C695C, 1, 0);
+                        } else {
+                            func_80042FC0(o->m_B8, D_800C696C, 1, 0);
+                        }
+                    } else {
+                        func_80042FC0(o->m_B8, D_800C695C, 1, 0);
+                    }
+                } else {
+                    func_80042FC0(o->m_B8, D_800C696C, 1, 0);
+                }
+                break;
+            }
+            case 4:
+                if (!b->m_41) {
+                    if (D_800D5F2C >= *D_800C9EEC - 1) {
+                        func_80042FC0(o->m_B8, D_800C6980, 0, 0);
+                    } else {
+                        func_80042FC0(o->m_B8, D_800C696C, 0, 0);
+                    }
+                } else {
+                    func_80042FC0(o->m_B8, D_800C6938, 0, 0);
+                }
+                break;
+            default:
+                if (o->m_378->m_00 & 0xA8) {
+                    char buf[32];
+                    void *h = func_8003CB24(o->m_B8->m_A0, D_800C690C);
+                    Run36 *run;
+                    Bike36 *p, *q;
+
+                    sprintf(buf, D_800C691C, D_800D5FC0);
+                    func_80040178(o->m_B8, h, D_800C6920, buf);
+                    sprintf(buf, D_800C691C, D_800D5FC4);
+                    func_80040178(o->m_B8, h, D_800C692C, buf);
+                    run = o->m_378;
+                    p = Bike36At(run, run->m_1E24[0]);
+                    q = Bike36At(run, run->m_1E24[1]);
+                    if (run->m_00 == 0x20) {
+                        func_800A5F90(buf, p->m_0C);
+                        func_80040178(o->m_B8, h, D_800C6988, buf);
+                        func_800A5F90(buf, q->m_0C);
+                    } else {
+                        func_800A5DBC(buf, p->m_04, 0);
+                        func_80040178(o->m_B8, h, D_800C6988, buf);
+                        func_800A5DBC(buf, q->m_04, 0);
+                    }
+                    func_80040178(o->m_B8, h, D_800C6990, buf);
+                    func_80042FC0(o->m_B8, D_800C690C, 2, 0);
+                } else if (o->m_378->m_00 & 0x54) {
+                    func_80042FC0(o->m_B8, D_800C6948, 2, 0);
+                } else {
+                    func_80042FC0(o->m_B8, D_800C6998, 2, 0);
+                }
+                break;
+            }
+            v = &o->m_vtable[22];
+            ((void (*)(void *, int))v->m_func)((char *)o + v->m_delta, 0);
+            r = 1;
+            o->m_380 = 0;
+            v = &o->m_vtable[24];
+            ((void (*)(void *, int))v->m_func)((char *)o + v->m_delta, 0);
+        } else {
+            func_80048CFC(o);
+        }
+    }
+    return r;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_36", func_8005A148);
+#endif
 
 int func_8005A594(void) {
     return 1;
