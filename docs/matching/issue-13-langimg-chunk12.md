@@ -4,7 +4,7 @@ Bike methods (chunk_09): running into the back of another bike, a push
 sideways, the motion's two limits from the motor, and larger ones. One
 file, `src/langimg/chunk_12.cpp`, 0x800297B4-0x8002B800.
 
-11 functions: 4 match, 5 are parked, 2 are still asm.
+11 functions: 5 match, 4 are parked, 2 are still asm.
 
 ## The settings
 
@@ -18,7 +18,7 @@ checks, no small globals (`langimg.chunk_12_*`).
 | `func_800297B4` | parked | slowing behind another bike (recursive, once, the other way round): the original negates a call's result in `$v0`, here it's copied first |
 | `func_8002993C` | asm | 586 instructions |
 | `func_8002A260` | matches | empty |
-| `func_8002A268` | parked | a push sideways, scaled by `m_3AC`: `MULSHIFT`'s temporary register, one instruction more |
+| `func_8002A268` | matches | a push sideways, scaled by `m_3AC` |
 | `func_8002A394` | matches | one of two setups by the motor's flags, then a third call |
 | `func_8002A3F0` | matches | the speed's vector scaled and passed to the motions |
 | `func_8002A7A0` | parked | the lean from the steering, wrapped within the motor's limit: two registers swapped in one branch (13 off) |
@@ -58,3 +58,10 @@ whose owner's value at 0x4FA is under 0x1000, push the force's y; then the
 value at 0x554's change, and for kind 3 bikes in the air a push along the
 heading. `motor.h` names the four spring values and `bike.h` the owner's
 short at 0x4FA.
+
+## Near-misses pass
+
+- `func_8002A268` matches, from 24 off: the length's absolute value through
+  `abs()` (it branches on the variable itself, as the original), where the
+  `IABS` macro copied it first, and the vector copied back with
+  `VecCopyL` (all three loads first) instead of a struct assignment.
