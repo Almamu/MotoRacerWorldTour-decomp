@@ -12,7 +12,7 @@ What's here:
 
 One file, `src/langimg/chunk_55.cpp`, 0x8007F294-0x80081270.
 
-20 functions: 12 match, 4 are parked, 4 are still asm.
+20 functions: 13 match, 3 are parked, 4 are still asm.
 
 ## The settings
 
@@ -37,8 +37,9 @@ globals from `D_800C89D0` on.
   loop GCC's loop optimizer didn't recognize. A `goto` loop gives that
   shape; the function's start and its registers still differ. Parked.
 - **An empty case kept.** `func_80080F30` tests the value `0x1000`
-  before the case it acts on, though the `0x1000` case does nothing. A
-  switch with an empty case loses the test. Parked.
+  before the case it acts on, though the `0x1000` case does nothing: the
+  switch is on an unsigned value with a third empty case (see "Group C
+  near-misses" for what finished it).
 
 ## Group C, continued
 
@@ -67,8 +68,17 @@ globals from `D_800C89D0` on.
 | `func_800804B8`, `func_80080598` | match | characters to the font's symbols and back |
 | `func_80080678` | matches | a value pulsed |
 | `func_800806D4` | asm | 535 instructions |
-| `func_80080F30` | parked | an empty case's test |
+| `func_80080F30` | matches | four values cleared, then `func_8007F948` in mode 0 (its arguments passed through) |
 | `func_80080F8C` | parked | the colour: registers |
 | `func_8008106C`, `func_8008107C`, `func_800810C0` | match | the map's constructor and destructor |
 | `func_80081154` | matches | the map's arrays |
 | `func_800811C4`, `func_8008123C` | match | an entry set, cleared |
+
+## Group C near-misses
+
+- `func_80080F30` matches. Its result was in `$a0` where the original
+  has `$t0` (3 off): chunk_22 calls it with four arguments (`font`, the
+  text, x and y), and it passes them straight to `func_8007F948`, so they
+  stay live in `$a0`-`$a3` until that call and the result goes to `$t0`.
+  Both functions now take `(void *font, void *t, int x, int y)` (the
+  callee's asm reads all four).
