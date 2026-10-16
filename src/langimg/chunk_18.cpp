@@ -7,12 +7,19 @@ extern "C" {
 struct Vec18 {
     int x, y, z;
 };
+struct Sound18 {
+    void *m_00;
+};
 // A point of a shape (0x54 bytes)
 struct Pt18 {
     int m_00;
     Vec18 m_04; // in the shape
     Vec18 m_10; // placed
-    u8 m_1C[0x38];
+    Vec18 m_1C;
+    u8 m_28[0xC];
+    struct Sound18 m_34; // its ground
+    u8 m_38[0x10];
+    Vec18 m_48; // the ground's normal
 };
 // A shape placed by its matrix
 struct Shape18 {
@@ -57,9 +64,7 @@ struct Bike18 {
     u8 m_34[0x2F4];
     Slot18 m_328;
 };
-struct Sound18 {
-    void *m_00;
-};
+
 struct Own18 {
     u8 m_00[0x154];
     Bike18 *m_154;
@@ -72,7 +77,16 @@ void func_80098768(MATRIX *m, Vec18 *v, Vec18 *out);
 Vec18 *func_800997D0(Vec18 *v, Vec18 *a);
 void func_80097E4C(void *a, int x, int y, int z);
 int func_8001B350(Sound18 *s, Vec18 *v);
-int func_8001AFF4(void *s, Vec18 *v, int a);
+int func_8001AFF4(void *s, Vec18 *v, Vec18 *n);
+void func_80096E28(void *e, Vec18 *out, int shift);
+Vec18 *func_80099D48(Vec18 *v, int shift);
+Vec18 *func_800998D0(Vec18 *out, Vec18 *a, Vec18 *b);
+int func_8009923C(Vec18 *v);
+Vec18 *func_80099DCC(Vec18 *d, Vec18 *s, int k);
+int func_80099B88(Vec18 *a, Vec18 *b);
+Vec18 *func_8009964C(Vec18 *v, int k);
+Vec18 *func_80099834(Vec18 *v, Vec18 *a);
+void func_80035518(Shape18 *o);
 
 // A menu's page: its entries
 struct Row18 {
@@ -125,7 +139,118 @@ static inline void VecCopyL18(Vec18 *d, Vec18 *s) {
     d->z = z;
 }
 
+static inline int Abs18(int x) {
+    return x < 0 ? -x : x;
+}
+
+static inline int Max18(int m, int v) {
+    return Abs18(v) > Abs18(m) ? v : m;
+}
+
+#ifdef NON_MATCHING
+// Saved registers rotated: the point is in $s5 where the original has $s3, the try counter in $s4 ($s5) and the hit flag in $s3 ($s4); the max-abs helper's result in $a1 where the original has $a0. The loop shapes and stack slots are the original's (58 off).
+void func_80035518(Shape18 *o) {
+    MATRIX *m = &o->m_60;
+    Vec18 pos, acc, a, b, c, d;
+    int moved, iter;
+
+    {
+        int x = m->t[0];
+        int y = m->t[1];
+        int z = m->t[2];
+
+        iter = 0;
+        pos.x = x;
+        pos.y = y;
+        pos.z = z;
+    }
+    goto body;
+top:
+    if (iter >= 3) {
+        goto out;
+    }
+body: {
+    {
+        Pt18 *p = o->m_00;
+        int i;
+
+        moved = 0;
+        acc.x = 0;
+        acc.y = 0;
+        acc.z = 0;
+        for (i = 0; i < o->m_04; i++, p++) {
+            int k, hit;
+
+            k = 0;
+            do {
+                int r;
+
+                hit = 0;
+                {
+                    int x = p->m_10.x;
+                    int y = p->m_10.y;
+                    int z = p->m_10.z;
+
+                    a.x = x;
+                    a.y = y;
+                    a.z = z;
+                    b.x = x;
+                    b.y = y;
+                    b.z = z;
+                }
+                r = func_8001B350(&p->m_34, &a);
+                if (r == -1) {
+                    int h = func_8001AFF4(p->m_34.m_00, &a, &p->m_48);
+
+                    func_80099D48(&p->m_48, 12);
+                    if (a.y < h) {
+                        hit = 2;
+                        a.y = h;
+                    }
+                } else {
+                    hit = 1;
+                    func_80096E28((char *)p->m_34.m_00 + (r * 4 + 0x1C), &p->m_48, 14);
+                }
+                func_800998D0(&c, &b, &a);
+                k++;
+            } while (0x19000 < func_8009923C(&c) && k < 50);
+            if (hit) {
+                int l;
+
+                func_80099DCC(&c, &p->m_48, 2);
+                VecCopyL18(&p->m_1C, &c);
+                func_800998D0(&c, &b, &a);
+                l = func_80099B88(&c, &p->m_1C) - 10;
+                d = p->m_1C;
+                func_8009964C(&d, l + (l >> 3));
+                func_80099D48(&d, 12);
+                func_80099834(&c, &d);
+                func_800997D0(&a, &c);
+                p->m_00 = 1;
+                func_80099834(&a, &b);
+                acc.x = Max18(acc.x, a.x);
+                acc.y = Max18(acc.y, a.y);
+                acc.z = Max18(acc.z, a.z);
+                moved++;
+            }
+        }
+        iter++;
+        p = o->m_00;
+        for (i = 0; i < o->m_04; i++, p++) {
+            func_800997D0(&p->m_10, &acc);
+        }
+        func_800997D0(&pos, &acc);
+    }
+    if (moved) {
+        goto top;
+    }
+}
+out:
+    VecCopyL18((Vec18 *)m->t, &pos);
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_18", func_80035518);
+#endif
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_18", func_80035904);
 
