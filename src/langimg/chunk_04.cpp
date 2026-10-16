@@ -74,7 +74,8 @@ struct Grid {
     int m_y; // 24.8
     int m_z;
     short m_nb[4]; // 0x0C: the neighbours, as distances (-0x7FFF: none)
-    u8 m_14[0x14];
+    u8 m_14[8];
+    int m_1C[3]; // 0x1C: the sides' planes (the fourth is 0x28)
     int m_28;
     u8 m_2C[0xC];
 };
@@ -109,6 +110,19 @@ int func_8001B76C(Grid *g);
 void func_8001AD9C(void *self, int t, SVECTOR *a, SVECTOR *b, SVECTOR *out);
 int func_8001ACE4(void *self, int *plane, SVECTOR *a, SVECTOR *b, long *d);
 int func_8001AE40(void *self, int *plane, SVECTOR *a, SVECTOR *b, SVECTOR *out);
+
+// Where a position is: its grid and the position kept in it
+struct Walk04 {
+    Grid *m_00;
+    int m_04;
+    Vector3 m_08;
+};
+struct Hist04 {
+    Grid *m_00;
+    Grid *m_04;
+};
+int func_8001B350(Walk04 *t, Vector3 *v);
+void *memset(void *p, int c, unsigned n);
 
 void func_8001B6B4(RaceSort *t, RaceWorld *w);
 }
@@ -725,7 +739,129 @@ INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_8001AFF4);
 
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_8001B15C);
 
+static inline void VecCopyL04(Vector3 *d, Vector3 *s) {
+    int x = s->vx;
+    int y = s->vy;
+    int z = s->vz;
+
+    d->vx = x;
+    d->vy = y;
+    d->vz = z;
+}
+
+/* A position moved through the grids from the one it was in: each grid's
+ * cell tested, else its nearest side crossed into the neighbour there (10
+ * times at most, never back to the last two); on a side with no neighbour
+ * the position is put on that side. Returns the side, or -1. When no grid
+ * is found that way, the set's grid holding it. */
+#ifdef NON_MATCHING
+// The blocks are in the original's order (the cell test at the loop's bottom, the no-neighbour side last); left: register pressure. The chunk's -fmove-all-movables hoists -1 into a saved register here, which pushes the walk itself onto the stack where the original keeps it in $s6 and spills the two side vectors' addresses instead (207 off).
+int func_8001B350(Walk04 *t, Vector3 *v) {
+    Hist04 last;
+    union {
+        Hist04 init;
+        int dist[2];
+    } u;
+    SVECTOR c;
+    int d[4];
+    SVECTOR p;
+    SVECTOR q;
+    int n = 10;
+    int best;
+    Grid *cur;
+    Grid *next;
+    int k;
+
+    u.init.m_00 = t->m_00;
+    u.init.m_04 = t->m_00;
+    last = u.init;
+    memset(u.dist, 0, 8);
+    best = 0;
+    cur = t->m_00;
+    if (!cur) {
+        n = 0;
+        goto out;
+    }
+    while (k = -1, func_8001AF3C(cur, v, &c), !func_8001ABBC(cur, &c, (int)d)) {
+        int i;
+        int m = 0;
+
+        i = *(short *)&cur->m_28 < 0 ? 2 : 3;
+        for (; i != -1; i--) {
+            if (d[i] < m) {
+                int nb = cur->m_nb[i];
+
+                k = i;
+                next = nb == -0x7FFF ? 0 : cur + nb;
+                m = d[i];
+            }
+        }
+        if (next) {
+            if (next == last.m_00) {
+                if (d[k] < best) {
+                    cur = next;
+                }
+                k = -1;
+                goto found;
+            }
+            if (next == last.m_04) {
+                if (u.dist[0] < best) {
+                    if (best < d[k]) {
+                        cur = next;
+                    }
+                } else {
+                    cur = d[k] < u.dist[0] ? last.m_00 : next;
+                }
+                k = -1;
+                goto found;
+            }
+            last.m_04 = last.m_00;
+            last.m_00 = cur;
+            u.dist[1] = u.dist[0];
+            u.dist[0] = best;
+            best = d[k];
+            cur = next;
+        } else {
+            func_8001AF3C(cur, &t->m_08, &p);
+            func_8001AE40(cur, &cur->m_1C[k], &p, &c, &q);
+            func_8001AFB0(cur, &q, &t->m_08);
+            VecCopyL04(v, &t->m_08);
+            goto out;
+        }
+        if (!--n) {
+            goto lookup;
+        }
+    }
+found:
+    VecCopyL04(&t->m_08, v);
+out:
+    if (!n) {
+        GridSet *gs;
+        Grid *g;
+        int r;
+
+    lookup:
+        g = 0;
+        gs = *(GridSet **)(D_800C5E14 + 0xC6C);
+        r = func_8001A6AC(gs, v, (int)t->m_00, 0);
+        if (r != -1) {
+            g = gs->m_grids + r;
+        }
+        cur = g;
+        k = -1;
+        if (cur) {
+            t->m_00 = cur;
+            VecCopyL04(&t->m_08, v);
+        } else {
+            cur = t->m_00;
+        }
+    }
+    t->m_00 = cur;
+    return k;
+}
+#else
 INCLUDE_ASM("asm/langimg/nonmatchings/chunk_04", func_8001B350);
+#endif
 
 /* Sorts the race's entries of kind 0x44 by their m_474. */
 void func_8001B6B4(RaceSort *t, RaceWorld *w) {

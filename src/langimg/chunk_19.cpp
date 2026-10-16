@@ -27,7 +27,7 @@ struct Item19 {
     s8 m_2D;
     s8 m_2E;
     s8 m_2F;
-    u8 m_30;
+    s8 m_30; // a cursor (kind 3)
     s8 m_31; // the second value is used
     s8 m_32;
     u8 m_33;
@@ -50,7 +50,9 @@ struct Slot19 {
     u8 m_08[4];
     int m_0C; // its colour, for kind 0x41
     Char19 *m_10;
-    u8 m_14[0x40];
+    u8 m_14[0x24];
+    short *m_38; // its state (-1: off)
+    u8 m_3C[0x18];
     int m_54; // its colour
     Char19 *m_58;
 };
@@ -70,7 +72,9 @@ struct Menu19 {
     s8 m_3F;
     u8 m_40;
     s8 m_41;
-    u8 m_42[0xA];
+    u8 m_42;
+    s8 m_43;
+    u8 m_44[8];
     int m_4C; // how many
     int m_50; // which
     u8 m_54[4];
@@ -139,9 +143,10 @@ struct Own19 {
 };
 
 struct Tab19 {
-    u8 m_00[8];
-    short m_08;
-    u8 m_0A[2];
+    int m_00; // how its cursor moves: 0 wraps round, 1 and 2 stop at the end, -1 stays
+    u8 m_04[4];
+    short m_08; // how many
+    short m_0A; // which
     Menu19 **m_0C;
 };
 
@@ -174,7 +179,9 @@ struct Ctx19 {
     void *m_44; // its sounds
     u8 m_48[4];
     Row19 *m_4C;
+    u8 m_50[4]; // its sequences
 };
+
 // A letter's first word: its colour page in bits 25-28
 struct Page19 {
     unsigned m_lo : 25;
@@ -218,11 +225,13 @@ int func_80019D0C(void *set, Seq19 *s, int a, int back, int c);
 int func_8001983C(Seq19 *s);
 void func_80019B2C(Seq19 *s, int id);
 int func_8003781C(Menu19 *n, Ctx19 *x, Ref19 *r, int a, int b);
+void func_80037E70(Menu19 *n, Ctx19 *x, Ref19 *r, int a);
 int func_8003899C(Tab19 *t, int flag);
 void func_800386B4(Bar19 *m, Game19 *g, int mode);
 void func_80038828(Bar19 *m, Game19 *g, int mode);
 int func_800A60AC(const char *a, const char *b); // strcmp
 void func_80038F44(Tab19 *t, void *g);
+void func_8003907C(Tab19 *t, Game19 *g);
 int func_80037C80(Menu19 *m);
 int func_80037CF8(Menu19 *m);
 int func_80037D58(Menu19 *m, int v);
@@ -484,7 +493,92 @@ u8 *func_80037DC8(Menu19 *m, void *v) {
     return r;
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_19", func_80037E70);
+void func_80037E70(Menu19 *n, Ctx19 *x, Ref19 *r, int a) {
+    Item19 *it = n->m_2C;
+
+    if (it) {
+        Item19 *head = it;
+        Item19 *first = 0;
+
+        for (; it; it = it->m_08) {
+            if (it->m_04 == 0 && it->m_00 == 3) {
+                first = it;
+                break;
+            }
+        }
+        for (it = head; it; it = it->m_08) {
+            if (it->m_04 != 1) {
+                continue;
+            }
+            switch (it->m_00) {
+            case 1: {
+                int nm;
+                int xm;
+                int c;
+                Slot19 *sl;
+
+                nm = ((Flags19 *)n)->m_mode;
+                c = it->m_col.m_value;
+                if (nm) {
+                    c = n->m_38;
+                }
+                xm = x->m_mode;
+                sl = n->m_28;
+                if (xm) {
+                    if (!(sl->m_04 & 0x41)) {
+                        break;
+                    }
+                    sl->m_0C = c;
+                    ((Page19 *)sl->m_10)->m_page = it->m_col.m_page;
+                } else {
+                    if (!(sl->m_04 & 0x40)) {
+                        break;
+                    }
+                    sl->m_54 = c;
+                    ((Page19 *)n->m_28->m_58)->m_page = it->m_col.m_page;
+                }
+                break;
+            }
+            case 2:
+                if (a) {
+                    int h = func_80017E10(x->m_38, it->m_0C, strlen(it->m_0C));
+
+                    func_800184A4(x->m_38, h);
+                }
+                break;
+            case 3:
+                if (!first) {
+                    break;
+                }
+                if (it->m_30) {
+                    func_80037318(it, x, a, n);
+                } else {
+                    Res19 *pg = func_8003AA90(x, it->m_0C);
+
+                    if (pg && first->m_2C != -1) {
+                        Elem19 *e =
+                            func_8003B3C4((View19 *)x, (const char *)(pg->m_28 + first->m_2C * 32));
+
+                        if (e) {
+                            func_80019D0C(x->m_50, e->m_30, *(int *)e->m_2C, e->m_28, -1);
+                        }
+                    }
+                }
+                break;
+            case 5: {
+                Grp19 *g = x->m_4C[it->m_num.m_row].m_08;
+
+                if (g) {
+                    Grp19 *e = &g[it->m_col.m_value];
+
+                    func_80037E70(e->m_0C[r->m_0A], x, (Ref19 *)e, a);
+                }
+                break;
+            }
+            }
+        }
+    }
+}
 
 void func_80038168(Menu19 *m, int k) {
     Item19 *p;
@@ -887,7 +981,90 @@ void func_80038F44(Tab19 *t, void *g) {
     }
 }
 
-INCLUDE_ASM("asm/langimg/nonmatchings/chunk_19", func_8003907C);
+/* The group's cursor moved on to the next menu that can be chosen (as its
+ * mode says at the end); then the old menu's handler called with 1 and it
+ * drawn unchosen, the new one's with 0 and it drawn chosen. A slider then
+ * chosen is stepped up. */
+void func_8003907C(Tab19 *t, Game19 *g) {
+    View19 *v = View19Of(g);
+    int stop = 0;
+    int n = 0;
+    short old = t->m_0A;
+    Fn19 *f;
+
+    if (!t->m_08) {
+        return;
+    }
+    for (;;) {
+        if (t->m_00 != -1) {
+            t->m_0A++;
+        }
+        if (t->m_0A > t->m_08 - 1) {
+            switch (t->m_00) {
+            case 0:
+                t->m_0A = 0;
+                break;
+            case 1:
+                stop = 1;
+                t->m_0A = t->m_08 - 1;
+                break;
+            case 2:
+                t->m_0A = t->m_08 - 1;
+                break;
+            }
+        }
+        if (t->m_08 < n) {
+            stop = 1;
+        }
+        if (stop) {
+            break;
+        }
+        Slot19 *sl = t->m_0C[t->m_0A]->m_28;
+        int fl = sl->m_04;
+        short st;
+
+        if (fl & 1) {
+            st = 0;
+        } else {
+            st = *sl->m_38;
+        }
+        n++;
+        if (t->m_0C[t->m_0A]->m_02 & 0xF && (fl & 2 || st == -1)) {
+            break;
+        }
+    }
+    if (!stop) {
+        Menu19 **items;
+        short cur;
+
+        func_8003FC28(g, 7, t->m_0C[t->m_0A]->m_43);
+        f = 0;
+        Find19(g->m_5C, (char *)t->m_0C[old]->m_04 + 4, &f);
+        if (f && f->m_04) {
+            f->m_04(g, 1, t->m_0C[old]);
+        }
+        if (old != t->m_0A) {
+            func_80038168(t->m_0C[old], 0);
+        }
+        cur = t->m_0A;
+        t->m_0A = old;
+        func_80037E70(t->m_0C[old], (Ctx19 *)v, (Ref19 *)t, 1);
+        t->m_0A = cur;
+        items = t->m_0C;
+        f = 0;
+        Find19(g->m_5C, (char *)items[cur]->m_04 + 4, &f);
+        if (f && f->m_04) {
+            f->m_04(g, 0, t->m_0C[t->m_0A]);
+        }
+        if (old != t->m_0A) {
+            func_80038168(t->m_0C[t->m_0A], 0);
+        }
+        func_8003781C(t->m_0C[t->m_0A], (Ctx19 *)v, (Ref19 *)t, 1, 0);
+    }
+    if (t->m_0C[t->m_0A]->m_00 == 4) {
+        func_800386B4((Bar19 *)t->m_0C[t->m_0A], g, t->m_00);
+    }
+}
 
 // The word after its jump table, the end of this file's .rodata
 extern "C" const int D_800B7304 __attribute__((section(".rodata"))) = 0;
